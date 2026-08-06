@@ -1,0 +1,40 @@
+{%- assign featured_product = section.settings.product -%}
+<section class="featured-product section-shell page-width">
+  <div class="featured-product__media reveal">
+    {%- if featured_product.featured_media -%}
+      {{ featured_product.featured_media | image_url: width: 1400 | image_tag: widths: '500, 800, 1100, 1400', sizes: '(min-width: 900px) 50vw, 100vw', loading: 'lazy', alt: featured_product.featured_media.alt }}
+    {%- else -%}<img src="{{ 'shop-product.webp' | asset_url }}" width="2160" height="3840" loading="lazy" alt="Rascals Teamwear">{%- endif -%}
+  </div>
+  <div class="featured-product__content reveal">
+    <p class="eyebrow eyebrow--red">FEATURED PLAY</p>
+    <h2>{{ featured_product.title | default: section.settings.heading | escape }}</h2>
+    {%- if featured_product != blank -%}
+      {% render 'price', product: featured_product %}
+      {% form 'product', featured_product %}
+        <input type="hidden" name="id" value="{{ featured_product.selected_or_first_available_variant.id }}">
+        <button class="button button--red" type="submit">{{ 'products.product.add_to_cart' | t }} →</button>
+        {%- if section.settings.show_dynamic_checkout -%}{{ form | payment_button }}{%- endif -%}
+      {% endform %}
+    {%- else -%}
+      <p>{{ section.settings.text }}</p><a class="button button--red" href="{{ routes.all_products_collection_url }}">SHOP NOW →</a>
+    {%- endif -%}
+    {%- for block in section.blocks -%}{%- case block.type -%}{%- when '@app' -%}{% render block %}{%- when 'custom_liquid' -%}<div class="rte" {{ block.shopify_attributes }}>{{ block.settings.custom_liquid }}</div>{%- endcase -%}{%- endfor -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Featured product",
+  "settings": [
+    { "type": "product", "id": "product", "label": "Produkt" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "THE GAME CHANGER." },
+    { "type": "textarea", "id": "text", "label": "Body text", "default": "Dein neues Lieblingspiece in den Farben der Rascals." },
+    { "type": "checkbox", "id": "show_dynamic_checkout", "label": "Dynamischen Checkout anzeigen", "default": true }
+  ],
+  "blocks": [
+    { "type": "@app" },
+    { "type": "custom_liquid", "name": "Custom Liquid", "settings": [{ "type": "liquid", "id": "custom_liquid", "label": "Custom Liquid" }] }
+  ],
+  "presets": [{ "name": "Featured product" }]
+}
+{% endschema %}

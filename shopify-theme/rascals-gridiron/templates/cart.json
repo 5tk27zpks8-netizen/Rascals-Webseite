@@ -1,0 +1,4 @@
+{
+  "sections": { "main": { "type": "main-cart", "settings": {} }, "ticker": { "type": "play-ticker", "settings": { "label": "Checkout-Vorteile", "text": "SECURE CHECKOUT • TEAM OFFICIAL • READY FOR GAMEDAY" } } },
+  "order": ["main", "ticker"]
+}

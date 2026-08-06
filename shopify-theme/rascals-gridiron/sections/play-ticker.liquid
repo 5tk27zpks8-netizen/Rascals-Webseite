@@ -1,0 +1,18 @@
+<section class="play-ticker" aria-label="{{ section.settings.label | escape }}">
+  <div class="play-ticker__track">
+    {%- for repetition in (1..8) -%}
+      <span>{{ section.settings.text | escape }} <b>✦</b></span>
+    {%- endfor -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Game ticker",
+  "settings": [
+    { "type": "text", "id": "label", "label": "Barrierefreie Bezeichnung", "default": "Rascals Motto" },
+    { "type": "text", "id": "text", "label": "Text", "default": "ALL GRIT • ALL HEART • ALL RASCALS" }
+  ],
+  "presets": [{ "name": "Game ticker" }]
+}
+{% endschema %}

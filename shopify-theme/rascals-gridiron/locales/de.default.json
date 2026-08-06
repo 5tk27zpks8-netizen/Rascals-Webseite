@@ -1,0 +1,42 @@
+{
+  "accessibility": {
+    "skip_to_text": "Zum Inhalt springen",
+    "close": "Schließen",
+    "loading": "Wird geladen"
+  },
+  "general": {
+    "meta": {
+      "tags": "Markiert mit {{ tags }}",
+      "page": "Seite {{ page }}"
+    },
+    "search": {
+      "search": "Suche",
+      "placeholder": "Produkte durchsuchen",
+      "no_results": "Keine Treffer für „{{ terms }}“ gefunden."
+    },
+    "pagination": {
+      "previous": "Zurück",
+      "next": "Weiter"
+    }
+  },
+  "products": {
+    "product": {
+      "add_to_cart": "In den Warenkorb",
+      "sold_out": "Ausverkauft",
+      "unavailable": "Nicht verfügbar",
+      "quantity": "Anzahl"
+    }
+  },
+  "cart": {
+    "title": "Dein Warenkorb",
+    "empty": "Dein Warenkorb wartet auf den nächsten Spielzug.",
+    "continue_shopping": "Weiter shoppen",
+    "checkout": "Zur Kasse",
+    "update": "Aktualisieren",
+    "remove": "Entfernen",
+    "subtotal": "Zwischensumme"
+  },
+  "gift_cards": {
+    "issued": { "title": "Gutschein über {{ value }} für {{ shop }}" }
+  }
+}

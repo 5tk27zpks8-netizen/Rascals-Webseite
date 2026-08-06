@@ -1,0 +1,11 @@
+{
+  "accessibility": { "skip_to_text": "Skip to content", "close": "Close", "loading": "Loading" },
+  "general": {
+    "meta": { "tags": "Tagged {{ tags }}", "page": "Page {{ page }}" },
+    "search": { "search": "Search", "placeholder": "Search products", "no_results": "No results for “{{ terms }}”." },
+    "pagination": { "previous": "Previous", "next": "Next" }
+  },
+  "products": { "product": { "add_to_cart": "Add to cart", "sold_out": "Sold out", "unavailable": "Unavailable", "quantity": "Quantity" } },
+  "cart": { "title": "Your cart", "empty": "Your cart is waiting for the next play.", "continue_shopping": "Continue shopping", "checkout": "Checkout", "update": "Update", "remove": "Remove", "subtotal": "Subtotal" },
+  "gift_cards": { "issued": { "title": "Gift card worth {{ value }} for {{ shop }}" } }
+}

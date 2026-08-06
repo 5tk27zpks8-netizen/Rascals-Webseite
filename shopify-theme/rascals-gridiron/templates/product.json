@@ -1,0 +1,22 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-product",
+      "blocks": {
+        "vendor": { "type": "vendor", "settings": {} },
+        "title": { "type": "title", "settings": {} },
+        "price": { "type": "price", "settings": {} },
+        "variant_picker": { "type": "variant_picker", "settings": {} },
+        "quantity": { "type": "quantity", "settings": {} },
+        "buy_buttons": { "type": "buy_buttons", "settings": { "show_dynamic_checkout": true } },
+        "trust": { "type": "trust", "settings": {} },
+        "description": { "type": "description", "settings": {} }
+      },
+      "block_order": ["vendor", "title", "price", "variant_picker", "quantity", "buy_buttons", "trust", "description"],
+      "settings": {}
+    },
+    "ticker": { "type": "play-ticker", "settings": { "label": "Versandvorteile", "text": "TEAM OFFICIAL • SECURE CHECKOUT • FAST DELIVERY" } },
+    "recommendations": { "type": "product-recommendations", "settings": { "heading": "COMPLETE THE FIT.", "products_to_show": 4 } }
+  },
+  "order": ["main", "ticker", "recommendations"]
+}

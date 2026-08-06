@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+    {%- assign formatted_initial_value = gift_card.initial_value | money_without_trailing_zeros -%}
+    <title>{{ 'gift_cards.issued.title' | t: value: formatted_initial_value, shop: shop.name }}</title>
+    {{ content_for_header }}
+    <style>body{margin:0;background:#061426;color:#fff;font-family:Arial,sans-serif}.gift-card{max-width:620px;margin:8vh auto;padding:3rem;text-align:center}.gift-card img{max-width:280px}.gift-card__value{font-size:4rem;font-weight:900}.gift-card__code{padding:1rem;background:#fff;color:#061426;font:700 1.4rem monospace}.gift-card a{color:#fff}</style>
+  </head>
+  <body><main class="gift-card"><img src="{{ 'rascals-logo.png' | asset_url }}" width="280" height="140" alt="{{ shop.name }}"><h1>RAS­CALS GIFT CARD</h1><p class="gift-card__value">{{ gift_card.balance | money }}</p><p class="gift-card__code">{{ gift_card.code | format_code }}</p>{% if gift_card.pass_url %}<a href="{{ gift_card.pass_url }}">Add to Apple Wallet</a>{% endif %}<p><a href="{{ shop.url }}">SHOP NOW →</a></p></main></body>
+</html>

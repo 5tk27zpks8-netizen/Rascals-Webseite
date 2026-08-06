@@ -1,0 +1,21 @@
+<section class="blog-page section-shell page-width">
+  <header class="page-title reveal"><p class="eyebrow eyebrow--red">FROM THE SIDELINE</p><h1>{{ blog.title | escape }}</h1></header>
+  {%- paginate blog.articles by section.settings.articles_per_page -%}
+    <div class="article-grid">
+      {%- for article in blog.articles -%}
+        <article class="article-card reveal">
+          <a class="article-card__media" href="{{ article.url }}">{%- if article.image -%}{{ article.image | image_url: width: 1200 | image_tag: widths: '450, 750, 1000, 1200', sizes: '(min-width: 900px) 33vw, 100vw', loading: 'lazy', alt: article.image.alt }}{%- else -%}<img src="{{ 'team-players.webp' | asset_url }}" width="3840" height="2160" loading="lazy" alt="Hellenstein Rascals Team">{%- endif -%}</a>
+          <div><p class="eyebrow eyebrow--red">{{ article.published_at | date: '%d.%m.%Y' }}</p><h2><a href="{{ article.url }}">{{ article.title | escape }}</a></h2><p>{{ article.excerpt_or_content | strip_html | truncatewords: 25 }}</p><a class="text-link text-link--dark" href="{{ article.url }}">STORY LESEN →</a></div>
+        </article>
+      {%- endfor -%}
+    </div>
+    {% render 'pagination', paginate: paginate %}
+  {%- endpaginate -%}
+</section>
+
+{% schema %}
+{
+  "name": "Blog",
+  "settings": [{ "type": "range", "id": "articles_per_page", "label": "Artikel pro Seite", "min": 3, "max": 18, "step": 3, "default": 9 }]
+}
+{% endschema %}
