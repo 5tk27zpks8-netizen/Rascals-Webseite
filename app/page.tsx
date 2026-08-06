@@ -1,5 +1,11 @@
+import { CmsHero } from "./CmsHero";
 import { SiteShell } from "./SiteShell";
 
 export default function Home() {
-  return <SiteShell page="home" />;
+  return (
+    <>
+      <CmsHero />
+      <SiteShell page="home" />
+    </>
+  );
 }
