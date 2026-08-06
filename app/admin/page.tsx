@@ -1,3 +1,4 @@
+import { requireChatGPTUser } from "../chatgpt-auth";
 import { AdminDashboard } from "./AdminDashboard";
 
 export const metadata = {
@@ -5,6 +6,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  await requireChatGPTUser("/admin");
   return <AdminDashboard />;
 }
