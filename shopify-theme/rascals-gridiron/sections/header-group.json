@@ -1,0 +1,21 @@
+{
+  "type": "header",
+  "name": "Header-Bereich",
+  "sections": {
+    "announcement": {
+      "type": "announcement-bar",
+      "settings": {
+        "text": "OFFICIAL HELLENSTEIN RASCALS TEAMWEAR • ALL GRIT. ALL HEART.",
+        "link": "/collections/all"
+      }
+    },
+    "header": {
+      "type": "header",
+      "settings": {
+        "menu": "main-menu",
+        "sticky": true
+      }
+    }
+  },
+  "order": ["announcement", "header"]
+}

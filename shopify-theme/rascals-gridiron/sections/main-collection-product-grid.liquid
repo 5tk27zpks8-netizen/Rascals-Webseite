@@ -1,0 +1,37 @@
+<section class="collection-shell section-shell page-width">
+  <header class="collection-hero reveal">
+    <p class="eyebrow eyebrow--red">TEAM SHOP</p>
+    <h1>{{ collection.title | escape }}</h1>
+    {%- if collection.description != blank -%}<div class="rte">{{ collection.description }}</div>{%- endif -%}
+  </header>
+
+  <form class="collection-toolbar" id="CollectionFilters" method="get">
+    <div class="active-filters">
+      {%- for filter in collection.filters -%}
+        {%- for value in filter.active_values -%}<a href="{{ value.url_to_remove }}">{{ value.label | escape }} ×</a>{%- endfor -%}
+      {%- endfor -%}
+    </div>
+    <label for="SortBy">SORTIEREN</label>
+    <select id="SortBy" name="sort_by" onchange="this.form.submit()">
+      {%- assign sort_by = collection.sort_by | default: collection.default_sort_by -%}
+      {%- for option in collection.sort_options -%}<option value="{{ option.value }}"{% if option.value == sort_by %} selected{% endif %}>{{ option.name }}</option>{%- endfor -%}
+    </select>
+  </form>
+
+  {%- paginate collection.products by section.settings.products_per_page -%}
+    <div class="product-grid product-grid--collection">
+      {%- for product in collection.products -%}{% render 'product-card', card_product: product, show_vendor: section.settings.show_vendor %}{%- else -%}<p>Diese Kollektion ist gerade im Locker Room.</p>{%- endfor -%}
+    </div>
+    {% render 'pagination', paginate: paginate %}
+  {%- endpaginate -%}
+</section>
+
+{% schema %}
+{
+  "name": "Collection products",
+  "settings": [
+    { "type": "range", "id": "products_per_page", "label": "Produkte pro Seite", "min": 8, "max": 32, "step": 4, "default": 16 },
+    { "type": "checkbox", "id": "show_vendor", "label": "Anbieter anzeigen", "default": false }
+  ]
+}
+{% endschema %}

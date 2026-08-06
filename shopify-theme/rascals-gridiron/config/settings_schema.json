@@ -1,0 +1,37 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Rascals Gridiron",
+    "theme_author": "Hellenstein Rascals",
+    "theme_version": "1.0.0",
+    "theme_documentation_url": "https://shopify.dev/docs/storefronts/themes",
+    "theme_support_email": "football@hsb1846.de"
+  },
+  {
+    "name": "Marke",
+    "settings": [
+      { "type": "image_picker", "id": "logo", "label": "Logo" },
+      { "type": "range", "id": "logo_width", "min": 120, "max": 340, "step": 10, "unit": "px", "label": "Logobreite", "default": 230 },
+      { "type": "image_picker", "id": "favicon", "label": "Favicon" },
+      { "type": "color", "id": "color_navy", "label": "Dunkelblau", "default": "#061426" },
+      { "type": "color", "id": "color_navy_soft", "label": "Helles Dunkelblau", "default": "#102540" },
+      { "type": "color", "id": "color_red", "label": "Rascals Rot", "default": "#e3132b" },
+      { "type": "color", "id": "color_ice", "label": "Eisgrau", "default": "#f2f4f3" }
+    ]
+  },
+  {
+    "name": "Layout",
+    "settings": [
+      { "type": "range", "id": "page_width", "min": 1100, "max": 1600, "step": 50, "unit": "px", "label": "Maximale Seitenbreite", "default": 1400 },
+      { "type": "range", "id": "heading_scale", "min": 80, "max": 130, "step": 5, "unit": "%", "label": "Überschriftengröße", "default": 100 },
+      { "type": "checkbox", "id": "use_motion", "label": "Animationen aktivieren", "default": true }
+    ]
+  },
+  {
+    "name": "Social Media",
+    "settings": [
+      { "type": "url", "id": "instagram_url", "label": "Instagram-URL" },
+      { "type": "url", "id": "facebook_url", "label": "Facebook-URL" }
+    ]
+  }
+]

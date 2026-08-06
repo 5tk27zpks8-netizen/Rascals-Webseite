@@ -1,0 +1,18 @@
+<section class="section-shell page-width">
+  <header class="page-title reveal"><p class="eyebrow eyebrow--red">CHOOSE YOUR UNIT</p><h1>{{ section.settings.heading | escape }}</h1></header>
+  <div class="collection-list">
+    {%- for collection in collections -%}
+      <a class="collection-card reveal" href="{{ collection.url }}">
+        {%- if collection.featured_image -%}{{ collection.featured_image | image_url: width: 1200 | image_tag: widths: '450, 750, 1000, 1200', loading: 'lazy', alt: collection.featured_image.alt }}{%- else -%}{{ 'collection-1' | placeholder_svg_tag }}{%- endif -%}
+        <span>{{ collection.title | escape }} <b>→</b></span>
+      </a>
+    {%- endfor -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Kollektionsliste",
+  "settings": [{ "type": "text", "id": "heading", "label": "Heading", "default": "SHOP BY POSITION." }]
+}
+{% endschema %}

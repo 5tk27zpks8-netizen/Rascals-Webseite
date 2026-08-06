@@ -1,0 +1,91 @@
+{%- liquid
+  assign current_variant = product.selected_or_first_available_variant
+  assign product_form_id = 'ProductForm-' | append: section.id
+-%}
+<section class="main-product section-shell page-width" data-product-root>
+  <div class="product-gallery reveal">
+    {%- if product.media.size > 0 -%}
+      <div class="product-gallery__stage">
+        {%- for media in product.media -%}
+          <div class="product-media{% unless forloop.first %} product-media--secondary{% endunless %}" data-media-id="{{ media.id }}">
+            {%- case media.media_type -%}
+              {%- when 'image' -%}
+                {%- if forloop.first -%}
+                  {{ media | image_url: width: 1800 | image_tag: widths: '600, 900, 1200, 1800', sizes: '(min-width: 900px) 58vw, 100vw', loading: 'eager', alt: media.alt }}
+                {%- else -%}
+                  {{ media | image_url: width: 1800 | image_tag: widths: '600, 900, 1200, 1800', sizes: '(min-width: 900px) 58vw, 100vw', loading: 'lazy', alt: media.alt }}
+                {%- endif -%}
+              {%- when 'video' -%}{{ media | video_tag: controls: true, preload: 'metadata' }}
+              {%- when 'external_video' -%}{{ media | external_video_tag }}
+              {%- when 'model' -%}{{ media | model_viewer_tag }}
+            {%- endcase -%}
+          </div>
+        {%- endfor -%}
+      </div>
+    {%- else -%}
+      <div class="product-gallery__stage product-placeholder">{{ 'product-1' | placeholder_svg_tag }}</div>
+    {%- endif -%}
+  </div>
+
+  <div class="product-info reveal">
+    <div class="product-info__sticky">
+      {%- for block in section.blocks -%}
+        {%- case block.type -%}
+          {%- when '@app' -%}{% render block %}
+          {%- when 'vendor' -%}<p class="eyebrow eyebrow--red" {{ block.shopify_attributes }}>{{ product.vendor }}</p>
+          {%- when 'title' -%}<h1 {{ block.shopify_attributes }}>{{ product.title | escape }}</h1>
+          {%- when 'price' -%}<div {{ block.shopify_attributes }}>{% render 'price', product: product %}</div>
+          {%- when 'variant_picker' -%}
+            {%- unless product.has_only_default_variant -%}
+              <variant-selects class="variant-selects" data-section="{{ section.id }}" {{ block.shopify_attributes }}>
+                {%- for option in product.options_with_values -%}
+                  <label for="Option-{{ section.id }}-{{ forloop.index0 }}">{{ option.name }}</label>
+                  <select id="Option-{{ section.id }}-{{ forloop.index0 }}" data-option-index="{{ forloop.index0 }}">
+                    {%- for value in option.values -%}<option value="{{ value | escape }}"{% if option.selected_value == value %} selected{% endif %}>{{ value }}</option>{%- endfor -%}
+                  </select>
+                {%- endfor -%}
+                <script type="application/json">{{ product.variants | json }}</script>
+              </variant-selects>
+            {%- endunless -%}
+          {%- when 'quantity' -%}
+            <div class="quantity-wrap" {{ block.shopify_attributes }}>
+              <label for="Quantity-{{ section.id }}">{{ 'products.product.quantity' | t }}</label>
+              <div class="quantity"><button type="button" data-quantity-minus aria-label="Anzahl verringern">−</button><input id="Quantity-{{ section.id }}" type="number" name="quantity" min="1" value="1" form="{{ product_form_id }}"><button type="button" data-quantity-plus aria-label="Anzahl erhöhen">+</button></div>
+            </div>
+          {%- when 'buy_buttons' -%}
+            <div class="buy-buttons" {{ block.shopify_attributes }}>
+              {% form 'product', product, id: product_form_id, class: 'product-form' %}
+                <input type="hidden" name="id" value="{{ current_variant.id }}" data-variant-id>
+                <button class="button button--red button--wide" type="submit" name="add"{% unless current_variant.available %} disabled{% endunless %} data-add-to-cart>
+                  <span>{% if current_variant.available %}{{ 'products.product.add_to_cart' | t }}{% else %}{{ 'products.product.sold_out' | t }}{% endif %}</span><b>→</b>
+                </button>
+                {%- if block.settings.show_dynamic_checkout -%}{{ form | payment_button }}{%- endif -%}
+              {% endform %}
+            </div>
+          {%- when 'description' -%}<div class="product-description rte" {{ block.shopify_attributes }}>{{ product.description }}</div>
+          {%- when 'custom_liquid' -%}<div class="rte" {{ block.shopify_attributes }}>{{ block.settings.custom_liquid }}</div>
+          {%- when 'trust' -%}<div class="trust-row" {{ block.shopify_attributes }}><span>✓ SICHERE ZAHLUNG</span><span>↗ SCHNELLER VERSAND</span><span>★ TEAM OFFICIAL</span></div>
+        {%- endcase -%}
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Product information",
+  "settings": [],
+  "blocks": [
+    { "type": "@app" },
+    { "type": "vendor", "name": "Anbieter", "limit": 1 },
+    { "type": "title", "name": "Heading", "limit": 1 },
+    { "type": "price", "name": "Preis", "limit": 1 },
+    { "type": "variant_picker", "name": "Variantenauswahl", "limit": 1 },
+    { "type": "quantity", "name": "Anzahl", "limit": 1 },
+    { "type": "buy_buttons", "name": "Kaufbuttons", "limit": 1, "settings": [{ "type": "checkbox", "id": "show_dynamic_checkout", "label": "Dynamischen Checkout anzeigen", "default": true }] },
+    { "type": "description", "name": "Produktbeschreibung", "limit": 1 },
+    { "type": "trust", "name": "Vertrauenspunkte", "limit": 1 },
+    { "type": "custom_liquid", "name": "Custom Liquid", "settings": [{ "type": "liquid", "id": "custom_liquid", "label": "Custom Liquid" }] }
+  ]
+}
+{% endschema %}

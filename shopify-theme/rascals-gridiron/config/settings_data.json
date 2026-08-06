@@ -1,0 +1,26 @@
+{
+  "current": {
+    "logo_width": 230,
+    "color_navy": "#061426",
+    "color_navy_soft": "#102540",
+    "color_red": "#e3132b",
+    "color_ice": "#f2f4f3",
+    "page_width": 1400,
+    "heading_scale": 100,
+    "use_motion": true,
+    "instagram_url": "https://www.instagram.com/hellenstein_rascals/",
+    "facebook_url": "https://www.facebook.com/HellensteinRascals/"
+  },
+  "presets": {
+    "Rascals Gridiron": {
+      "logo_width": 230,
+      "color_navy": "#061426",
+      "color_navy_soft": "#102540",
+      "color_red": "#e3132b",
+      "color_ice": "#f2f4f3",
+      "page_width": 1400,
+      "heading_scale": 100,
+      "use_motion": true
+    }
+  }
+}

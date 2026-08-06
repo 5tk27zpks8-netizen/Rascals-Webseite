@@ -1,0 +1,6 @@
+{
+  "sections": {
+    "main": { "type": "contact-form", "settings": { "heading": "LET'S HUDDLE.", "text": "<p>Fragen zu Größen, Versand oder deiner Bestellung? Schreib uns.</p>" } }
+  },
+  "order": ["main"]
+}
