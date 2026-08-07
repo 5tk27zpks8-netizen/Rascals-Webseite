@@ -1,17 +1,16 @@
-import { getChatGPTUser } from "../../chatgpt-auth";
 import { readCmsState, writeCmsState, type CmsState } from "../../lib/cms";
+import { requireCmsPermission } from "../../lib/permissions";
 
 export async function GET() {
-  const user = await getChatGPTUser();
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
+  const actor = await requireCmsPermission("hero");
+  if (actor instanceof Response) return actor;
   const state = await readCmsState();
-  return Response.json({ state, user: { email: user.email, name: user.displayName } });
+  return Response.json({ state, user: actor });
 }
 
 export async function PUT(request: Request) {
-  const user = await getChatGPTUser();
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const actor = await requireCmsPermission("hero");
+  if (actor instanceof Response) return actor;
 
   let state: CmsState;
   try {
@@ -25,5 +24,5 @@ export async function PUT(request: Request) {
   }
 
   await writeCmsState(state);
-  return Response.json({ ok: true, savedAt: new Date().toISOString() });
+  return Response.json({ ok: true, savedAt: new Date().toISOString(), savedBy: actor.email });
 }
