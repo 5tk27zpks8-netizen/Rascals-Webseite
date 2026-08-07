@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import "./admin-shell.css";
 
-type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users";
+type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "games" | "gameday";
 
 type AdminShellProps = {
   active: AdminSection;
@@ -19,11 +19,14 @@ const nav = [
   { key: "news", label: "News", href: "/admin/news", icon: "◆" },
   { key: "media", label: "Medien", href: "/admin/media", icon: "◫" },
   { key: "sponsors", label: "Sponsoren", href: "/admin/sponsors", icon: "◇" },
-  { key: "users", label: "Benutzer", href: "/admin/users", icon: "◎" },
+  { key: "players", label: "Spieler", href: "/admin/players", icon: "#" },
+  { key: "games", label: "Spielplan", href: "/admin/games", icon: "◎" },
+  { key: "gameday", label: "Gameday", href: "/admin/gameday", icon: "⚡" },
+  { key: "users", label: "Benutzer", href: "/admin/users", icon: "◉" },
   { key: "settings", label: "Einstellungen", href: "/admin/dashboard?section=settings", icon: "⚙" },
 ] as const;
 
-export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 3", actions, children }: AdminShellProps) {
+export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 4", actions, children }: AdminShellProps) {
   return (
     <div className="cms-shell">
       <aside className="cms-sidebar">
@@ -36,8 +39,10 @@ export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 3", 
           <NavItem item={nav[0]} active={active === nav[0].key} />
           <p>INHALTE</p>
           {nav.slice(1, 5).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          <p>FOOTBALL</p>
+          {nav.slice(5, 8).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
           <p>SYSTEM</p>
-          {nav.slice(5).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          {nav.slice(8).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
         </nav>
         <div className="cms-user"><span>CG</span><div><b>CMS Zugriff</b><small>Cloudflare Access + Rollen</small></div></div>
       </aside>
