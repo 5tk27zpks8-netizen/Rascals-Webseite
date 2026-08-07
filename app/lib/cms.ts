@@ -9,6 +9,9 @@ export type HeroSlide = {
   text: string;
   buttonLabel: string;
   buttonUrl: string;
+  active?: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
 };
 
 export type CmsState = {
@@ -41,6 +44,9 @@ export const defaultCmsState: CmsState = {
       text: "Ein Team. Eine Familie. Bereit für den nächsten Snap.",
       buttonLabel: "Teil des Teams werden",
       buttonUrl: "mailto:football@hsb1846.de",
+      active: true,
+      startsAt: null,
+      endsAt: null,
     },
     {
       id: "schedule",
@@ -51,6 +57,9 @@ export const defaultCmsState: CmsState = {
       text: "Alle bestätigten Termine, Gegner und Heimspiele auf einen Blick.",
       buttonLabel: "Zum Spielplan",
       buttonUrl: "/#spielplan",
+      active: true,
+      startsAt: null,
+      endsAt: null,
     },
   ],
 };
@@ -64,6 +73,21 @@ export async function ensureCmsSchema() {
   )`).run();
 }
 
+function normalizeCmsState(value: CmsState): CmsState {
+  return {
+    ...defaultCmsState,
+    ...value,
+    slides: Array.isArray(value.slides)
+      ? value.slides.map((slide) => ({
+          ...slide,
+          active: slide.active !== false,
+          startsAt: slide.startsAt ?? null,
+          endsAt: slide.endsAt ?? null,
+        }))
+      : defaultCmsState.slides,
+  };
+}
+
 export async function readCmsState(): Promise<CmsState> {
   await ensureCmsSchema();
   const { DB } = bindings();
@@ -72,7 +96,7 @@ export async function readCmsState(): Promise<CmsState> {
     .first<{ value: string }>();
   if (!row) return defaultCmsState;
   try {
-    return JSON.parse(row.value) as CmsState;
+    return normalizeCmsState(JSON.parse(row.value) as CmsState);
   } catch {
     return defaultCmsState;
   }
@@ -81,9 +105,10 @@ export async function readCmsState(): Promise<CmsState> {
 export async function writeCmsState(state: CmsState) {
   await ensureCmsSchema();
   const { DB } = bindings();
+  const normalized = normalizeCmsState(state);
   await DB.prepare(`INSERT INTO cms_settings (key, value, updated_at)
     VALUES (?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP`)
-    .bind("site", JSON.stringify(state))
+    .bind("site", JSON.stringify(normalized))
     .run();
 }
