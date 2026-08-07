@@ -42,25 +42,22 @@ export function AdminRuntimeBridge() {
       return nativeFetch(input, init);
     }) as typeof window.fetch;
 
-    const enableNewsLink = () => {
+    const activateNewsLink = () => {
       const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".admin-sidebar nav button"));
       const newsButton = buttons.find((button) => button.textContent?.includes("News"));
-      if (newsButton) {
-        newsButton.disabled = false;
-        newsButton.style.cursor = "pointer";
-        newsButton.onclick = () => { window.location.href = "/admin/news"; };
-        const phase = newsButton.querySelector("em");
-        if (phase) phase.textContent = "LIVE";
-      }
+      if (!newsButton) return;
+      newsButton.disabled = false;
+      newsButton.style.cursor = "pointer";
+      newsButton.onclick = () => { window.location.href = "/admin/news"; };
+      const phase = newsButton.querySelector("em");
+      if (phase) phase.textContent = "LIVE";
     };
 
-    enableNewsLink();
-    const observer = new MutationObserver(enableNewsLink);
-    observer.observe(document.body, { childList: true, subtree: true });
+    const frame = window.requestAnimationFrame(activateNewsLink);
 
     return () => {
+      window.cancelAnimationFrame(frame);
       window.fetch = nativeFetch;
-      observer.disconnect();
     };
   }, []);
 
