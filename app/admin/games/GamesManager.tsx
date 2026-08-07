@@ -17,15 +17,13 @@ type Game = {
   opponentScore: number;
   quarter: string;
   gameClock: string;
+  gamedayAssignee: string;
   createdAt: string;
   updatedAt: string;
 };
 
-type MediaItem = {
-  key: string;
-  url: string;
-  originalName?: string;
-};
+type MediaItem = { key: string; url: string; originalName?: string };
+type GamedayUser = { email: string; display_name: string; role: "admin" | "coach" | "gameday" };
 
 const emptyGame: Game = {
   id: "",
@@ -40,6 +38,7 @@ const emptyGame: Game = {
   opponentScore: 0,
   quarter: "",
   gameClock: "",
+  gamedayAssignee: "",
   createdAt: "",
   updatedAt: "",
 };
@@ -47,6 +46,7 @@ const emptyGame: Game = {
 export function GamesManager() {
   const [items, setItems] = useState<Game[]>([]);
   const [media, setMedia] = useState<MediaItem[]>([]);
+  const [gamedayUsers, setGamedayUsers] = useState<GamedayUser[]>([]);
   const [selected, setSelected] = useState<Game>(emptyGame);
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
@@ -59,12 +59,18 @@ export function GamesManager() {
   async function load() {
     setLoading(true);
     try {
-      const [gamesRes, mediaRes] = await Promise.all([fetch("/admin/api/games"), fetch("/admin/api/media")]);
+      const [gamesRes, mediaRes, usersRes] = await Promise.all([
+        fetch("/admin/api/games"),
+        fetch("/admin/api/media"),
+        fetch("/admin/api/gameday-users"),
+      ]);
       if (!gamesRes.ok) throw new Error("Spielplan konnte nicht geladen werden.");
       const games = await gamesRes.json() as { items: Game[] };
       const mediaBody = mediaRes.ok ? await mediaRes.json() as { items: MediaItem[] } : { items: [] };
+      const usersBody = usersRes.ok ? await usersRes.json() as { items: GamedayUser[] } : { items: [] };
       setItems(games.items);
       setMedia(mediaBody.items);
+      setGamedayUsers(usersBody.items);
       setSelected(games.items[0] ?? emptyGame);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Unbekannter Fehler");
@@ -92,11 +98,9 @@ export function GamesManager() {
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error ?? "Logo-Upload fehlgeschlagen.");
       }
-
       const newMedia = await refreshMedia();
       const uploaded = newMedia.find((item) => item.originalName === file.name) ?? newMedia[0];
       if (!uploaded) throw new Error("Logo wurde hochgeladen, konnte aber nicht automatisch ausgewählt werden.");
-
       setSelected((current) => ({ ...current, opponentLogo: uploaded.url }));
       setNotice("Gegnerlogo hochgeladen und ausgewählt. Spiel bitte noch speichern.");
     } catch (error) {
@@ -148,6 +152,7 @@ export function GamesManager() {
 
   const filtered = useMemo(() => items.filter((item) => `${item.opponent} ${item.venue} ${item.status}`.toLowerCase().includes(query.toLowerCase())), [items, query]);
   const isLive = selected.status === "live";
+  const assignedUser = gamedayUsers.find((user) => user.email.toLowerCase() === selected.gamedayAssignee.toLowerCase());
 
   return (
     <AdminShell active="games" title="Spielplan & Ergebnisse" actions={<button className="cms-button" disabled={saving || loading} onClick={() => void save()}>{saving ? "Speichert…" : "Spiel speichern"}</button>}>
@@ -186,16 +191,7 @@ export function GamesManager() {
                 <div className="opponent-logo-controls">
                   <label className={`cms-button secondary opponent-logo-upload ${uploadingLogo ? "disabled" : ""}`}>
                     {uploadingLogo ? "Upload läuft…" : "＋ Logo hochladen"}
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                      disabled={uploadingLogo}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void uploadOpponentLogo(file);
-                        event.currentTarget.value = "";
-                      }}
-                    />
+                    <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={uploadingLogo} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadOpponentLogo(file); event.currentTarget.value = ""; }} />
                   </label>
                   <select value={selected.opponentLogo} onChange={(event) => setSelected({ ...selected, opponentLogo: event.target.value })}>
                     <option value="">Kein Logo</option>
@@ -213,13 +209,14 @@ export function GamesManager() {
               <label className="cms-field hero-full"><span>Ort / Stadion</span><input value={selected.venue} onChange={(event) => setSelected({ ...selected, venue: event.target.value })} placeholder="z. B. Heidenheim" /></label>
               <label className="cms-field"><span>Status</span><select value={selected.status} onChange={(event) => setSelected({ ...selected, status: event.target.value as Game["status"] })}><option value="upcoming">Kommend</option><option value="live">Live</option><option value="final">Beendet</option><option value="postponed">Verschoben</option><option value="cancelled">Abgesagt</option></select></label>
               <label className="cms-field"><span>Quarter (optional)</span><select value={selected.quarter} onChange={(event) => setSelected({ ...selected, quarter: event.target.value })}><option value="">—</option><option>Q1</option><option>Q2</option><option>HALFTIME</option><option>Q3</option><option>Q4</option><option>OT</option><option>FINAL</option></select></label>
+              <label className="cms-field"><span>Liveticker-Verantwortlicher</span><select value={selected.gamedayAssignee} onChange={(event) => setSelected({ ...selected, gamedayAssignee: event.target.value })}><option value="">Niemand fest zugewiesen</option>{gamedayUsers.map((user) => <option key={user.email} value={user.email}>{user.display_name || user.email} · {user.role === "gameday" ? "GAMEDAY" : user.role.toUpperCase()}</option>)}</select><small>{assignedUser ? `${assignedUser.display_name || assignedUser.email} übernimmt den Liveticker für dieses Spiel.` : "Optional: z. B. einen verletzten oder nicht aufgestellten Spieler mit Gameday-Rolle auswählen."}</small></label>
               <label className="cms-field"><span>Rascals Punkte</span><input type="number" min="0" value={selected.rascalsScore} onChange={(event) => setSelected({ ...selected, rascalsScore: Math.max(0, Number(event.target.value)) })} /></label>
               <label className="cms-field"><span>Gegner Punkte</span><input type="number" min="0" value={selected.opponentScore} onChange={(event) => setSelected({ ...selected, opponentScore: Math.max(0, Number(event.target.value)) })} /></label>
             </div>
             <div className="quick-score"><span>Schnell ändern:</span><button onClick={() => setSelected({ ...selected, rascalsScore: selected.rascalsScore + 6 })}>Rascals +6</button><button onClick={() => setSelected({ ...selected, rascalsScore: selected.rascalsScore + 1 })}>+1</button><button onClick={() => setSelected({ ...selected, rascalsScore: selected.rascalsScore + 3 })}>+3</button><button onClick={() => setSelected({ ...selected, opponentScore: selected.opponentScore + 6 })}>Gegner +6</button><button onClick={() => setSelected({ ...selected, opponentScore: selected.opponentScore + 1 })}>+1</button><button onClick={() => setSelected({ ...selected, opponentScore: selected.opponentScore + 3 })}>+3</button></div>
           </AdminCard>
 
-          {selected.id && <AdminCard><div className="cms-section-head"><div><small>SPIELTAG</small><h2>Einfacher Live-Ticker</h2></div><a className="cms-button secondary" href={`/admin/gameday?game=${selected.id}`}>Gameday öffnen →</a></div><p className="cms-muted">Nur wichtige Ereignisse erfassen: Touchdown, Interception, Sack, Halbzeit, Spielende oder Freitext.</p></AdminCard>}
+          {selected.id && <AdminCard><div className="cms-section-head"><div><small>SPIELTAG</small><h2>Einfacher Live-Ticker</h2></div><a className="cms-button secondary" href={`/admin/gameday?game=${selected.id}`}>Gameday öffnen →</a></div><p className="cms-muted">Nur wichtige Ereignisse erfassen: Touchdown, Interception, Sack, Halbzeit, Spielende oder Freitext.{assignedUser ? ` Zugewiesen an ${assignedUser.display_name || assignedUser.email}.` : ""}</p></AdminCard>}
         </div>
       </div>
     </AdminShell>
