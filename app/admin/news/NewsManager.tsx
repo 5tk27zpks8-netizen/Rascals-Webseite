@@ -1,190 +1,39 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import "../admin.css";
-import "../phase2.css";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AdminCard, AdminNotice, AdminShell } from "../_components/AdminShell";
 import "./news.css";
 
-type NewsPost = {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  image: string;
-  category: string;
-  status: "draft" | "published";
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+type Status = "draft" | "scheduled" | "published" | "archived";
+type NewsPost = { id:string; slug:string; title:string; subtitle:string; excerpt:string; content:string; image:string; gallery:string[]; category:string; author:string; status:Status; publishAt:string|null; publishedAt:string|null; seoTitle:string; seoDescription:string; ogImage:string; createdAt:string; updatedAt:string };
+type MediaItem = { key:string; url:string };
+const categories=["Team","Gameday","Verein","Jugend","Flag Football","Events","Sponsoring","Shop","Presse"];
+const emptyPost:NewsPost={id:"",slug:"",title:"",subtitle:"",excerpt:"",content:"",image:"",gallery:[],category:"Team",author:"",status:"draft",publishAt:null,publishedAt:null,seoTitle:"",seoDescription:"",ogImage:"",createdAt:"",updatedAt:""};
 
-type MediaItem = {
-  key: string;
-  url: string;
-};
-
-const emptyPost: NewsPost = {
-  id: "",
-  slug: "",
-  title: "",
-  excerpt: "",
-  content: "",
-  image: "",
-  category: "Team",
-  status: "draft",
-  publishedAt: null,
-  createdAt: "",
-  updatedAt: "",
-};
-
-export function NewsManager() {
-  const [posts, setPosts] = useState<NewsPost[]>([]);
-  const [media, setMedia] = useState<MediaItem[]>([]);
-  const [selected, setSelected] = useState<NewsPost>(emptyPost);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    void load();
-  }, []);
-
-  async function load() {
-    setLoading(true);
-    try {
-      const [newsResponse, mediaResponse] = await Promise.all([
-        fetch("/api/news"),
-        fetch("/api/media"),
-      ]);
-      if (!newsResponse.ok || !mediaResponse.ok) throw new Error("Daten konnten nicht geladen werden.");
-      const news = await newsResponse.json() as { items: NewsPost[] };
-      const files = await mediaResponse.json() as { items: MediaItem[] };
-      setPosts(news.items);
-      setMedia(files.items);
-      setSelected(news.items[0] ?? emptyPost);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Unbekannter Fehler");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function save(status: "draft" | "published") {
-    if (!selected.title.trim()) {
-      setNotice("Bitte einen Titel eingeben.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const payload = { ...selected, status };
-      const response = await fetch("/api/news", {
-        method: selected.id ? "PUT" : "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error ?? "Speichern fehlgeschlagen.");
-      }
-      const body = await response.json() as { item: NewsPost };
-      setPosts((current) => selected.id
-        ? current.map((post) => post.id === body.item.id ? body.item : post)
-        : [body.item, ...current]);
-      setSelected(body.item);
-      setNotice(status === "published" ? "News wurde veröffentlicht." : "Entwurf wurde gespeichert.");
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Speichern fehlgeschlagen.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function remove(post: NewsPost) {
-    if (!confirm(`„${post.title}“ wirklich löschen?`)) return;
-    const response = await fetch(`/api/news?id=${encodeURIComponent(post.id)}`, { method: "DELETE" });
-    if (!response.ok) {
-      setNotice("Löschen fehlgeschlagen.");
-      return;
-    }
-    setPosts((current) => current.filter((item) => item.id !== post.id));
-    setSelected(emptyPost);
-    setNotice("News wurde gelöscht.");
-  }
-
-  const filtered = useMemo(() => posts.filter((post) =>
-    `${post.title} ${post.category} ${post.status}`.toLowerCase().includes(query.toLowerCase()),
-  ), [posts, query]);
-
-  if (loading) return <div className="admin-loading"><img src="/rascals-logo-transparent-4k.png" alt="" /><b>NEWS WERDEN GELADEN</b></div>;
-
-  return (
-    <div className="news-admin-shell">
-      <aside className="news-sidebar">
-        <div className="news-brand"><img src="/rascals-logo-transparent-4k.png" alt="" /><div><b>RASCALS CMS</b><small>NEWS CONTROL</small></div></div>
-        <a href="/admin">← Dashboard</a>
-        <button className="new-post-button" onClick={() => setSelected(emptyPost)}>＋ Neue News</button>
-        <input className="news-search" placeholder="News durchsuchen…" value={query} onChange={(event) => setQuery(event.target.value)} />
-        <div className="news-list">
-          {filtered.map((post) => (
-            <button key={post.id} className={selected.id === post.id ? "active" : ""} onClick={() => setSelected(post)}>
-              <span>{post.status === "published" ? "LIVE" : "ENTWURF"}</span>
-              <b>{post.title}</b>
-              <small>{post.category} · {new Date(post.updatedAt).toLocaleDateString("de-DE")}</small>
-            </button>
-          ))}
-          {!filtered.length && <p className="news-empty">Noch keine News vorhanden.</p>}
-        </div>
-      </aside>
-
-      <main className="news-editor-area">
-        <header className="news-topbar">
-          <div><small>PHASE 3 · NEWS</small><h1>{selected.id ? "News bearbeiten" : "Neue News erstellen"}</h1></div>
-          <div className="news-top-actions">
-            {selected.id && <button className="ghost-button" onClick={() => void remove(selected)}>Löschen</button>}
-            <button className="ghost-button" disabled={saving} onClick={() => void save("draft")}>Entwurf speichern</button>
-            <button className="publish-button" disabled={saving} onClick={() => void save("published")}>{saving ? "Speichert…" : "Veröffentlichen"}</button>
-          </div>
-        </header>
-
-        {notice && <div className="admin-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
-
-        <section className="news-editor-grid">
-          <div className="news-form-card">
-            <label>Titel<input value={selected.title} onChange={(event) => setSelected({ ...selected, title: event.target.value })} placeholder="Zum Beispiel: Rascals gewinnen Heimspiel" /></label>
-            <div className="news-two-cols">
-              <label>Kategorie<select value={selected.category} onChange={(event) => setSelected({ ...selected, category: event.target.value })}><option>Team</option><option>Gameday</option><option>Verein</option><option>Shop</option><option>Sponsoring</option><option>Jugend</option></select></label>
-              <label>URL-Slug<input value={selected.slug} onChange={(event) => setSelected({ ...selected, slug: event.target.value })} placeholder="wird automatisch erzeugt" /></label>
-            </div>
-            <label>Kurzbeschreibung<textarea rows={3} value={selected.excerpt} onChange={(event) => setSelected({ ...selected, excerpt: event.target.value })} placeholder="Kurze Vorschau für die News-Übersicht" /></label>
-            <label>Artikeltext<textarea className="news-content-input" rows={16} value={selected.content} onChange={(event) => setSelected({ ...selected, content: event.target.value })} placeholder="Schreibe hier den vollständigen Artikel…" /></label>
-          </div>
-
-          <aside className="news-side-panel">
-            <article>
-              <small>TITELBILD</small>
-              <div className="news-image-preview">{selected.image ? <img src={selected.image} alt="" /> : <span>Noch kein Bild ausgewählt</span>}</div>
-              <select value={selected.image} onChange={(event) => setSelected({ ...selected, image: event.target.value })}>
-                <option value="">Kein Bild</option>
-                {media.map((item) => <option key={item.key} value={item.url}>{item.key.split("/").pop()}</option>)}
-              </select>
-            </article>
-            <article>
-              <small>STATUS</small>
-              <div className={`news-status ${selected.status}`}><span />{selected.status === "published" ? "Veröffentlicht" : "Entwurf"}</div>
-              {selected.publishedAt && <p>Veröffentlicht am {new Date(selected.publishedAt).toLocaleString("de-DE")}</p>}
-            </article>
-            <article>
-              <small>LIVE-VORSCHAU</small>
-              <div className="news-preview-card">
-                {selected.image && <img src={selected.image} alt="" />}
-                <div><span>{selected.category}</span><h3>{selected.title || "Dein News-Titel"}</h3><p>{selected.excerpt || "Hier erscheint die Kurzbeschreibung deiner News."}</p></div>
-              </div>
-            </article>
-          </aside>
-        </section>
-      </main>
-    </div>
-  );
+export function NewsManager(){
+ const[posts,setPosts]=useState<NewsPost[]>([]); const[media,setMedia]=useState<MediaItem[]>([]); const[selected,setSelected]=useState<NewsPost>(emptyPost); const[query,setQuery]=useState(""); const[statusFilter,setStatusFilter]=useState<"all"|Status>("all"); const[notice,setNotice]=useState(""); const[loading,setLoading]=useState(true); const[saving,setSaving]=useState(false); const[dirty,setDirty]=useState(false); const textRef=useRef<HTMLTextAreaElement|null>(null);
+ useEffect(()=>{void load()},[]);
+ useEffect(()=>{const timer=window.setInterval(()=>{if(dirty&&selected.title.trim())void save(selected.status,true)},30000);return()=>window.clearInterval(timer)},[dirty,selected]);
+ async function load(){setLoading(true);try{const[n,m]=await Promise.all([fetch("/admin/api/news"),fetch("/admin/api/media")]);if(!n.ok||!m.ok)throw new Error("News konnten nicht geladen werden.");const nb=await n.json() as {items:NewsPost[]};const mb=await m.json() as {items:MediaItem[]};setPosts(nb.items);setMedia(mb.items);setSelected(nb.items[0]??emptyPost)}catch(e){setNotice(e instanceof Error?e.message:"Unbekannter Fehler")}finally{setLoading(false)}}
+ function change(patch:Partial<NewsPost>){setSelected(s=>({...s,...patch}));setDirty(true)}
+ async function save(status:Status=selected.status,silent=false){if(!selected.title.trim()){if(!silent)setNotice("Bitte einen Titel eingeben.");return}setSaving(true);try{const payload={...selected,status};const r=await fetch("/admin/api/news",{method:selected.id?"PUT":"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});if(!r.ok){const b=await r.json().catch(()=>({}));throw new Error(b.error??"Speichern fehlgeschlagen.")}const b=await r.json() as {item:NewsPost};setSelected(b.item);setPosts(cur=>selected.id?cur.map(x=>x.id===b.item.id?b.item:x):[b.item,...cur]);setDirty(false);if(!silent)setNotice(status==="published"?"News veröffentlicht.":status==="scheduled"?"Veröffentlichung geplant.":"Entwurf gespeichert.")}catch(e){if(!silent)setNotice(e instanceof Error?e.message:"Speichern fehlgeschlagen.")}finally{setSaving(false)}}
+ function duplicate(){if(!selected.id)return;const copy={...selected,id:"",slug:"",title:`${selected.title} – Kopie`,status:"draft" as Status,publishedAt:null,publishAt:null,createdAt:"",updatedAt:""};setSelected(copy);setDirty(true)}
+ async function remove(){if(!selected.id||!confirm(`„${selected.title}“ wirklich löschen?`))return;const r=await fetch(`/admin/api/news?id=${encodeURIComponent(selected.id)}`,{method:"DELETE"});if(!r.ok){setNotice("Löschen fehlgeschlagen.");return}setPosts(p=>p.filter(x=>x.id!==selected.id));setSelected(emptyPost);setNotice("News gelöscht.")}
+ function insert(prefix:string,suffix=""){const el=textRef.current;if(!el)return;const start=el.selectionStart,end=el.selectionEnd;const value=selected.content;const next=value.slice(0,start)+prefix+value.slice(start,end)+suffix+value.slice(end);change({content:next});requestAnimationFrame(()=>{el.focus();el.setSelectionRange(start+prefix.length,end+prefix.length)})}
+ function addGallery(url:string){if(url&&!selected.gallery.includes(url))change({gallery:[...selected.gallery,url]})}
+ const filtered=useMemo(()=>posts.filter(p=>(statusFilter==="all"||p.status===statusFilter)&&`${p.title} ${p.category} ${p.author}`.toLowerCase().includes(query.toLowerCase())),[posts,query,statusFilter]);
+ const previewUrl=selected.slug?`/news/${selected.slug}`:"/news";
+ return <AdminShell active="news" title="News verwalten" actions={<><a className="cms-button secondary" href={previewUrl} target="_blank">Vorschau ↗</a><button className="cms-button" disabled={saving||loading} onClick={()=>void save(selected.status)}>{saving?"Speichert…":"Speichern"}</button></>}>
+  {notice&&<AdminNotice tone={notice.includes("fehl")?"error":"success"}>{notice}</AdminNotice>}
+  <div className="news-cms-grid">
+   <AdminCard className="news-cms-list"><div className="cms-section-head"><div><small>REDAKTION</small><h2>Beiträge</h2></div><button className="cms-button secondary" onClick={()=>{setSelected(emptyPost);setDirty(false)}}>＋ Neu</button></div><input className="news-cms-search" placeholder="News durchsuchen…" value={query} onChange={e=>setQuery(e.target.value)}/><select className="news-cms-filter" value={statusFilter} onChange={e=>setStatusFilter(e.target.value as typeof statusFilter)}><option value="all">Alle Status</option><option value="draft">Entwurf</option><option value="scheduled">Geplant</option><option value="published">Veröffentlicht</option><option value="archived">Archiviert</option></select><div className="news-cms-items">{filtered.map(p=><button key={p.id} className={selected.id===p.id?"active":""} onClick={()=>{setSelected(p);setDirty(false)}}><span>{p.status.toUpperCase()}</span><b>{p.title}</b><small>{p.category} · {new Date(p.updatedAt).toLocaleDateString("de-DE")}</small></button>)}</div></AdminCard>
+   <div className="news-cms-editor">
+    <AdminCard><div className="cms-section-head"><div><small>ARTIKEL</small><h2>{selected.id?"Beitrag bearbeiten":"Neuer Beitrag"}</h2></div><div className="news-inline-actions">{selected.id&&<button className="cms-button secondary" onClick={duplicate}>Duplizieren</button>}{selected.id&&<button className="cms-button secondary danger" onClick={()=>void remove()}>Löschen</button>}</div></div><div className="cms-grid-2"><label className="cms-field hero-full"><span>Titel</span><input value={selected.title} onChange={e=>change({title:e.target.value})}/></label><label className="cms-field hero-full"><span>Untertitel</span><input value={selected.subtitle} onChange={e=>change({subtitle:e.target.value})}/></label><label className="cms-field"><span>Kategorie</span><select value={selected.category} onChange={e=>change({category:e.target.value})}>{categories.map(c=><option key={c}>{c}</option>)}</select></label><label className="cms-field"><span>Autor</span><input value={selected.author} onChange={e=>change({author:e.target.value})} placeholder="wird automatisch gesetzt"/></label><label className="cms-field hero-full"><span>Kurzbeschreibung</span><textarea rows={3} value={selected.excerpt} onChange={e=>change({excerpt:e.target.value})}/></label></div></AdminCard>
+    <AdminCard><div className="cms-section-head"><div><small>RICH TEXT</small><h2>Artikelinhalt</h2></div><small className="cms-muted">Auto-Save alle 30 Sek.</small></div><div className="news-toolbar"><button onClick={()=>insert("## ")}>H2</button><button onClick={()=>insert("**","**")}><b>B</b></button><button onClick={()=>insert("*","*")}><i>I</i></button><button onClick={()=>insert("- ")}>Liste</button><button onClick={()=>insert("> ")}>Zitat</button><button onClick={()=>insert("[Link](",")")}>Link</button><button onClick={()=>insert("\n---\n")}>Linie</button></div><textarea ref={textRef} className="news-rich-editor" rows={20} value={selected.content} onChange={e=>change({content:e.target.value})} placeholder="Artikel schreiben… Markdown-Formatierung wird unterstützt."/></AdminCard>
+    <AdminCard><div className="cms-grid-2"><label className="cms-field"><span>Titelbild</span><select value={selected.image} onChange={e=>change({image:e.target.value})}><option value="">Kein Bild</option>{media.map(m=><option key={m.key} value={m.url}>{m.key.split("/").pop()}</option>)}</select></label><label className="cms-field"><span>Galerie hinzufügen</span><select value="" onChange={e=>addGallery(e.target.value)}><option value="">Bild auswählen…</option>{media.map(m=><option key={m.key} value={m.url}>{m.key.split("/").pop()}</option>)}</select></label></div><div className="news-gallery-admin">{selected.gallery.map(url=><button key={url} onClick={()=>change({gallery:selected.gallery.filter(x=>x!==url)})}><img src={url} alt=""/><span>×</span></button>)}</div></AdminCard>
+    <AdminCard><div className="cms-section-head"><div><small>VERÖFFENTLICHUNG & SEO</small><h2>Publikation</h2></div></div><div className="cms-grid-2"><label className="cms-field"><span>Status</span><select value={selected.status} onChange={e=>change({status:e.target.value as Status})}><option value="draft">Entwurf</option><option value="scheduled">Geplant</option><option value="published">Veröffentlicht</option><option value="archived">Archiviert</option></select></label><label className="cms-field"><span>Veröffentlichung planen</span><input type="datetime-local" value={toLocal(selected.publishAt)} onChange={e=>change({publishAt:e.target.value?new Date(e.target.value).toISOString():null})}/></label><label className="cms-field"><span>URL-Slug</span><input value={selected.slug} onChange={e=>change({slug:e.target.value})} placeholder="automatisch aus Titel"/></label><label className="cms-field"><span>SEO-Titel</span><input value={selected.seoTitle} onChange={e=>change({seoTitle:e.target.value})}/></label><label className="cms-field hero-full"><span>Meta-Beschreibung</span><textarea rows={3} maxLength={170} value={selected.seoDescription} onChange={e=>change({seoDescription:e.target.value})}/></label><label className="cms-field hero-full"><span>OpenGraph Bild</span><select value={selected.ogImage} onChange={e=>change({ogImage:e.target.value})}><option value="">Titelbild verwenden</option>{media.map(m=><option key={m.key} value={m.url}>{m.key.split("/").pop()}</option>)}</select></label></div><div className="news-publish-actions"><button className="cms-button secondary" onClick={()=>void save("draft")}>Als Entwurf</button><button className="cms-button secondary" onClick={()=>void save("scheduled")}>Planen</button><button className="cms-button" onClick={()=>void save("published")}>Veröffentlichen</button></div></AdminCard>
+   </div>
+  </div>
+ </AdminShell>
 }
+function toLocal(value:string|null){if(!value)return"";const d=new Date(value),offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,16)}
