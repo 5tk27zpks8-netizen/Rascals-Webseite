@@ -21,6 +21,37 @@ export type PerformanceEntry = {
   createdAt: string;
 };
 
+export type DevelopmentSkill = {
+  key: string;
+  label: string;
+  category: string;
+  current: number;
+  target: number;
+  priority: number;
+  note: string;
+  updatedAt: string;
+  updatedBy: string;
+};
+
+export const DEVELOPMENT_SKILLS = [
+  ["tackling", "Tackling", "Defense"],
+  ["movement", "Movement / Footwork", "Athletic"],
+  ["play_recognition", "Spielzug lesen", "Football IQ"],
+  ["assignment", "Assignment / Execution", "Football IQ"],
+  ["pursuit", "Pursuit Angles", "Defense"],
+  ["coverage", "Coverage", "Defense"],
+  ["block_shedding", "Block Shedding", "Defense"],
+  ["route_running", "Route Running", "Offense"],
+  ["blocking", "Blocking", "Offense"],
+  ["ball_security", "Ball Security", "Offense"],
+  ["communication", "Communication", "Team"],
+  ["technique", "Technik", "Fundamentals"],
+  ["speed_agility", "Speed / Agility", "Athletic"],
+  ["strength", "Strength / Physicality", "Athletic"],
+  ["conditioning", "Conditioning", "Athletic"],
+  ["discipline", "Disziplin", "Mental"],
+] as const;
+
 export async function ensurePerformanceSchema() {
   await ensureFootballSchema();
   const { DB } = bindings();
@@ -43,6 +74,21 @@ export async function ensurePerformanceSchema() {
     )`),
     DB.prepare("CREATE INDEX IF NOT EXISTS idx_performance_player ON player_performance_entries(player_id, occurred_at)"),
     DB.prepare("CREATE INDEX IF NOT EXISTS idx_performance_context ON player_performance_entries(context, occurred_at)"),
+    DB.prepare(`CREATE TABLE IF NOT EXISTS player_development_skills (
+      player_id TEXT NOT NULL,
+      skill_key TEXT NOT NULL,
+      skill_label TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT '',
+      current_rating INTEGER NOT NULL DEFAULT 3,
+      target_rating INTEGER NOT NULL DEFAULT 5,
+      priority INTEGER NOT NULL DEFAULT 2,
+      note TEXT NOT NULL DEFAULT '',
+      updated_by TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (player_id, skill_key)
+    )`),
+    DB.prepare("CREATE INDEX IF NOT EXISTS idx_development_skill ON player_development_skills(skill_key, updated_at)"),
+    DB.prepare("CREATE INDEX IF NOT EXISTS idx_development_player ON player_development_skills(player_id, updated_at)"),
   ]);
 }
 
@@ -86,4 +132,9 @@ export function performanceIndex(entry: Pick<PerformanceEntry, "effort" | "execu
   const weight = used.reduce((sum, [, w]) => sum + w, 0);
   if (!weight) return null;
   return Math.round((used.reduce((sum, [value, w]) => sum + Number(value) * w, 0) / weight) * 20);
+}
+
+export function developmentNeedScore(current: number, target: number, priority: number) {
+  const gap = Math.max(0, target - current);
+  return Math.round((gap / 4) * (Math.max(1, Math.min(3, priority)) / 3) * 100);
 }
