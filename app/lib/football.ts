@@ -31,6 +31,23 @@ export type Player = {
   updatedAt: string;
 };
 
+export type PlayerAchievement = {
+  id: string;
+  playerId: string;
+  gameId: string | null;
+  type: string;
+  label: string;
+  quantity: number;
+  note: string;
+  awardedBy: string;
+  awardedAt: string;
+};
+
+export type PlayerStat = {
+  key: string;
+  value: number;
+};
+
 export async function ensureFootballSchema() {
   const { DB } = bindings();
   await DB.batch([
@@ -84,6 +101,18 @@ export async function ensureFootballSchema() {
       awarded_by TEXT NOT NULL DEFAULT '',
       awarded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`),
+    DB.prepare(`CREATE TABLE IF NOT EXISTS player_game_stats (
+      id TEXT PRIMARY KEY,
+      player_id TEXT NOT NULL,
+      game_id TEXT,
+      season INTEGER NOT NULL DEFAULT 2026,
+      stat_key TEXT NOT NULL,
+      stat_value REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`),
+    DB.prepare(`CREATE INDEX IF NOT EXISTS idx_player_stats_player ON player_game_stats(player_id)`),
+    DB.prepare(`CREATE INDEX IF NOT EXISTS idx_player_achievements_player ON player_achievements(player_id)`),
     DB.prepare(`CREATE TABLE IF NOT EXISTS games (
       id TEXT PRIMARY KEY,
       slug TEXT NOT NULL UNIQUE,
@@ -148,4 +177,28 @@ export async function getPlayerBySlug(slug: string) {
   const { DB } = bindings();
   const row = await DB.prepare("SELECT * FROM players WHERE slug=? AND active=1 LIMIT 1").bind(slug).first<Record<string, unknown>>();
   return row ? mapPlayer(row) : null;
+}
+
+export async function listPlayerAchievements(playerId: string) {
+  await ensureFootballSchema();
+  const { DB } = bindings();
+  const result = await DB.prepare(`SELECT * FROM player_achievements WHERE player_id=? ORDER BY awarded_at DESC`).bind(playerId).all<Record<string, unknown>>();
+  return result.results.map((row) => ({
+    id: String(row.id),
+    playerId: String(row.player_id),
+    gameId: row.game_id ? String(row.game_id) : null,
+    type: String(row.type ?? "achievement"),
+    label: String(row.label ?? "Achievement"),
+    quantity: Number(row.quantity ?? 1),
+    note: String(row.note ?? ""),
+    awardedBy: String(row.awarded_by ?? ""),
+    awardedAt: String(row.awarded_at),
+  } satisfies PlayerAchievement));
+}
+
+export async function listPlayerStats(playerId: string, season = 2026) {
+  await ensureFootballSchema();
+  const { DB } = bindings();
+  const result = await DB.prepare(`SELECT stat_key, SUM(stat_value) AS total FROM player_game_stats WHERE player_id=? AND season=? GROUP BY stat_key ORDER BY stat_key`).bind(playerId, season).all<Record<string, unknown>>();
+  return result.results.map((row) => ({ key: String(row.stat_key), value: Number(row.total ?? 0) } satisfies PlayerStat));
 }
