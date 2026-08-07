@@ -13,10 +13,12 @@ type Game = {
   opponentScore: number;
   quarter: string;
   gameClock: string;
+  gamedayAssignee: string;
 };
 
 type Player = { id: string; firstName: string; lastName: string; jerseyNumber: number | null; position: string };
 type Event = { id: string; gameId: string; playerId: string | null; team: string; eventType: string; quarter: string; gameClock: string; text: string; createdAt: string };
+type Actor = { email: string; name: string; role: string };
 
 const eventTypes = [
   ["touchdown", "Touchdown"],
@@ -30,6 +32,7 @@ const eventTypes = [
 export function GamedayManager() {
   const [games, setGames] = useState<Game[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [actor, setActor] = useState<Actor | null>(null);
   const [gameId, setGameId] = useState("");
   const [events, setEvents] = useState<Event[]>([]);
   const [eventType, setEventType] = useState("touchdown");
@@ -43,18 +46,19 @@ export function GamedayManager() {
   const currentGame = useMemo(() => games.find((g) => g.id === gameId) ?? null, [games, gameId]);
 
   useEffect(() => { void loadBase(); }, []);
-  useEffect(() => { if (gameId) void loadEvents(gameId); }, [gameId]);
+  useEffect(() => { if (gameId) void loadEvents(gameId); else setEvents([]); }, [gameId]);
 
   async function loadBase() {
     try {
-      const [gamesRes, playersRes] = await Promise.all([fetch("/admin/api/games"), fetch("/admin/api/players")]);
-      if (!gamesRes.ok) throw new Error("Spiele konnten nicht geladen werden.");
-      const gamesBody = await gamesRes.json() as { items: Game[] };
-      const playersBody = playersRes.ok ? await playersRes.json() as { items: Player[] } : { items: [] };
-      setGames(gamesBody.items);
-      setPlayers(playersBody.items);
+      const response = await fetch("/admin/api/gameday?base=1");
+      if (!response.ok) throw new Error("Gameday-Daten konnten nicht geladen werden.");
+      const body = await response.json() as { games: Game[]; players: Player[]; current: Actor };
+      setGames(body.games);
+      setPlayers(body.players);
+      setActor(body.current);
       const fromUrl = new URLSearchParams(window.location.search).get("game");
-      setGameId(fromUrl && gamesBody.items.some((g) => g.id === fromUrl) ? fromUrl : gamesBody.items.find((g) => g.status === "live")?.id ?? gamesBody.items[0]?.id ?? "");
+      setGameId(fromUrl && body.games.some((g) => g.id === fromUrl) ? fromUrl : body.games.find((g) => g.status === "live")?.id ?? body.games[0]?.id ?? "");
+      if (body.current.role === "gameday" && !body.games.length) setNotice("Dir ist aktuell kein Spiel für den Liveticker zugewiesen.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Fehler beim Laden.");
     }
@@ -62,7 +66,11 @@ export function GamedayManager() {
 
   async function loadEvents(id: string) {
     const response = await fetch(`/admin/api/gameday?game=${encodeURIComponent(id)}`);
-    if (!response.ok) { setNotice("Ticker konnte nicht geladen werden."); return; }
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setNotice(body.error ?? "Ticker konnte nicht geladen werden.");
+      return;
+    }
     const body = await response.json() as { items: Event[] };
     setEvents(body.items);
   }
@@ -91,7 +99,7 @@ export function GamedayManager() {
   async function removeEvent(id: string) {
     if (!confirm("Ticker-Eintrag wirklich löschen?")) return;
     const response = await fetch(`/admin/api/gameday?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (!response.ok) { setNotice("Löschen fehlgeschlagen."); return; }
+    if (!response.ok) { const body = await response.json().catch(() => ({})); setNotice(body.error ?? "Löschen fehlgeschlagen."); return; }
     setEvents((current) => current.filter((e) => e.id !== id));
     setNotice("Ticker-Eintrag gelöscht.");
   }
@@ -101,8 +109,9 @@ export function GamedayManager() {
 
     <div className="gameday-layout">
       <AdminCard>
-        <div className="cms-section-head"><div><small>SPIEL</small><h2>Aktuelles Spiel</h2></div></div>
+        <div className="cms-section-head"><div><small>SPIEL</small><h2>Aktuelles Spiel</h2></div>{actor && <span className="cms-muted">Operator: {actor.name || actor.email}</span>}</div>
         <label className="cms-field"><span>Spiel auswählen</span><select value={gameId} onChange={(e) => setGameId(e.target.value)}><option value="">— Spiel wählen —</option>{games.map((game) => <option key={game.id} value={game.id}>{game.status === "live" ? "LIVE · " : ""}Rascals vs {game.opponent}</option>)}</select></label>
+        {actor?.role === "gameday" && <p className="cms-muted">Du siehst hier nur Spiele, für die du als Liveticker-Verantwortlicher eingeteilt wurdest.</p>}
         {currentGame && <div className="gameday-score"><div><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS</b><strong>{currentGame.rascalsScore}</strong></div><span>{currentGame.quarter || currentGame.status.toUpperCase()}</span><div>{currentGame.opponentLogo ? <img src={currentGame.opponentLogo} alt=""/> : <i>?</i>}<b>{currentGame.opponent}</b><strong>{currentGame.opponentScore}</strong></div></div>}
       </AdminCard>
 
