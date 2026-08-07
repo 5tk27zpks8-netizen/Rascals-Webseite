@@ -1,8 +1,8 @@
 import { getChatGPTUser } from "../chatgpt-auth";
 import { bindings } from "./cms";
 
-export type CmsRole = "admin" | "editor" | "photographer" | "viewer";
-export type CmsPermission = "hero" | "news" | "media" | "sponsors" | "settings" | "users";
+export type CmsRole = "admin" | "editor" | "photographer" | "coach" | "gameday" | "viewer";
+export type CmsPermission = "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "achievements" | "games" | "gameday";
 
 export type CmsActor = {
   email: string;
@@ -11,9 +11,11 @@ export type CmsActor = {
 };
 
 const rolePermissions: Record<CmsRole, CmsPermission[]> = {
-  admin: ["hero", "news", "media", "sponsors", "settings", "users"],
+  admin: ["hero", "news", "media", "sponsors", "settings", "users", "players", "achievements", "games", "gameday"],
   editor: ["hero", "news", "media", "sponsors"],
   photographer: ["media"],
+  coach: ["players", "achievements", "games", "gameday", "media"],
+  gameday: ["games", "gameday"],
   viewer: [],
 };
 
@@ -50,7 +52,7 @@ export async function getCmsActor(): Promise<CmsActor | null> {
 
   if (Number(row.active ?? 1) !== 1) return null;
   const rawRole = String(row.role ?? "viewer");
-  const role: CmsRole = ["admin", "editor", "photographer"].includes(rawRole) ? rawRole as CmsRole : "viewer";
+  const role: CmsRole = ["admin", "editor", "photographer", "coach", "gameday"].includes(rawRole) ? rawRole as CmsRole : "viewer";
   return {
     email: String(row.email ?? identity.email),
     name: String(row.display_name || identity.displayName),
