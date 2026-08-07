@@ -1,50 +1,147 @@
 "use client";
 
-import { ChangeEvent, DragEvent, useEffect, useMemo, useState } from "react";
-import "./admin.css";
+import { useEffect, useState } from "react";
+import { AdminCard, AdminNotice, AdminShell } from "./_components/AdminShell";
+import "./dashboard.css";
 
-type HeroSlide = { id:string; image:string; eyebrow:string; title:string; accent:string; text:string; buttonLabel:string; buttonUrl:string };
-type AdminState = { slides:HeroSlide[]; intervalSeconds:number; transition:"fade"|"slide"; shopUrl:string };
-type MediaItem = { key:string; url:string; size:number; uploaded:string; contentType:string };
-type Section = "dashboard"|"homepage"|"media"|"settings";
+type Game = {
+  id: string;
+  slug: string;
+  opponent: string;
+  opponentLogo: string;
+  venue: string;
+  homeAway: string;
+  kickoff: string | null;
+  status: string;
+  rascalsScore: number;
+  opponentScore: number;
+  quarter: string;
+  gameClock: string;
+};
 
-const defaults:AdminState={intervalSeconds:7,transition:"fade",shopUrl:"https://hellenstein-rascals.myshopify.com",slides:[
-{id:"helmet",image:"/helmet-hero-4k.webp",eyebrow:"American Football · Heidenheim",title:"HART. ECHT.",accent:"RASCALS.",text:"Ein Team. Eine Familie. Bereit für den nächsten Snap.",buttonLabel:"Teil des Teams werden",buttonUrl:"mailto:football@hsb1846.de"},
-{id:"schedule",image:"/team-entry-4k.webp",eyebrow:"Kreisoberliga · Saison 2026",title:"GAME",accent:"SCHEDULE",text:"Alle bestätigten Termine, Gegner und Heimspiele auf einen Blick.",buttonLabel:"Zum Spielplan",buttonUrl:"/#spielplan"}
-]};
+type DashboardData = {
+  current: { email: string; name: string; role: string };
+  metrics: {
+    players: number;
+    coaches: number;
+    sponsors: number;
+    publishedNews: number;
+    games: number;
+    wins: number;
+    losses: number;
+  };
+  liveGame: Game | null;
+  nextGame: Game | null;
+  recentNews: Array<{ id: string; slug: string; title: string; status: string; date: string }>;
+};
 
-const uid=()=>`${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-const formatSize=(bytes:number)=>bytes<1024*1024?`${Math.max(1,Math.round(bytes/1024))} KB`:`${(bytes/1024/1024).toFixed(1)} MB`;
+export function AdminDashboard() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(true);
 
-export function AdminDashboard(){
- const [state,setState]=useState<AdminState>(defaults); const [media,setMedia]=useState<MediaItem[]>([]); const [section,setSection]=useState<Section>("dashboard");
- const [busy,setBusy]=useState(true); const [saving,setSaving]=useState(false); const [uploading,setUploading]=useState(false); const [notice,setNotice]=useState(""); const [query,setQuery]=useState(""); const [dragging,setDragging]=useState(false);
- useEffect(()=>{void bootstrap()},[]);
- async function bootstrap(){setBusy(true);try{const [cmsRes,mediaRes]=await Promise.all([fetch("/api/cms"),fetch("/api/media")]);if(!cmsRes.ok||!mediaRes.ok)throw new Error("CMS konnte nicht geladen werden");const cms=await cmsRes.json() as {state:AdminState};const library=await mediaRes.json() as {items:MediaItem[]};setState(cms.state);setMedia(library.items);}catch(e){setNotice(e instanceof Error?e.message:"Unbekannter Fehler");}finally{setBusy(false)}}
- async function save(){setSaving(true);setNotice("");try{const r=await fetch("/api/cms",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(state)});if(!r.ok)throw new Error("Speichern fehlgeschlagen");setNotice("Änderungen wurden in D1 gespeichert.");}catch(e){setNotice(e instanceof Error?e.message:"Speichern fehlgeschlagen");}finally{setSaving(false)}}
- async function uploadFiles(files:FileList|File[]){const list=Array.from(files);if(!list.length)return;setUploading(true);setNotice("");try{for(const file of list){const data=new FormData();data.append("file",file);const r=await fetch("/api/media",{method:"POST",body:data});if(!r.ok){const body=await r.json().catch(()=>({}));throw new Error(body.error??`Upload fehlgeschlagen: ${file.name}`)}}await refreshMedia();setNotice(`${list.length} Datei(en) hochgeladen.`);}catch(e){setNotice(e instanceof Error?e.message:"Upload fehlgeschlagen");}finally{setUploading(false)}}
- async function refreshMedia(){const r=await fetch("/api/media");if(!r.ok)throw new Error("Medien konnten nicht geladen werden");const body=await r.json() as {items:MediaItem[]};setMedia(body.items)}
- async function deleteMedia(item:MediaItem){if(state.slides.some(s=>s.image===item.url)){setNotice("Dieses Bild wird im Hero verwendet und kann erst nach dem Austausch gelöscht werden.");return;}if(!confirm("Bild wirklich löschen?"))return;const r=await fetch(`/api/media?key=${encodeURIComponent(item.key)}`,{method:"DELETE"});if(!r.ok){setNotice("Löschen fehlgeschlagen");return;}setMedia(m=>m.filter(x=>x.key!==item.key));setNotice("Bild gelöscht.")}
- function updateSlide(id:string,patch:Partial<HeroSlide>){setState(s=>({...s,slides:s.slides.map(x=>x.id===id?{...x,...patch}:x)}))}
- function addSlide(){setState(s=>({...s,slides:[...s.slides,{id:uid(),image:media[0]?.url??"/team-huddle-4k.webp",eyebrow:"Rascals Highlight",title:"NEUER",accent:"SLIDE.",text:"Passe Bild, Text und Button an.",buttonLabel:"Mehr erfahren",buttonUrl:"/"}]}));setSection("homepage")}
- function moveSlide(index:number,direction:-1|1){setState(s=>{const slides=[...s.slides],target=index+direction;if(target<0||target>=slides.length)return s;[slides[index],slides[target]]=[slides[target],slides[index]];return{...s,slides}})}
- const filtered=useMemo(()=>media.filter(m=>m.key.toLowerCase().includes(query.toLowerCase())),[media,query]);
- if(busy)return <div className="admin-loading"><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS CMS WIRD GELADEN</b></div>;
- return <div className="admin-app">
-  <aside className="admin-sidebar"><a className="admin-brand" href="/"><img src="/rascals-logo-transparent-4k.png" alt=""/><span><b>RASCALS</b><small>CONTENT CONTROL</small></span></a><nav>
-   <button className={section==="dashboard"?"active":""} onClick={()=>setSection("dashboard")}><span>⌂</span>Dashboard</button><p>WEBSITE</p>
-   <button className={section==="homepage"?"active":""} onClick={()=>setSection("homepage")}><span>▣</span>Startseite</button>
-   <button className={section==="media"?"active":""} onClick={()=>setSection("media")}><span>◫</span>Medien</button>
-   <button disabled><span>◆</span>News <em>Phase 3</em></button><button disabled><span>◇</span>Sponsoren <em>Phase 3</em></button><p>SYSTEM</p>
-   <button className={section==="settings"?"active":""} onClick={()=>setSection("settings")}><span>⚙</span>Einstellungen</button></nav><div className="admin-user"><span>CG</span><div><b>Christopher</b><small>Administrator</small></div></div></aside>
-  <main className="admin-main"><header className="admin-topbar"><div><small>RASCALS CMS · PHASE 2</small><h1>{section==="dashboard"?"Dashboard":section==="homepage"?"Startseite bearbeiten":section==="media"?"Medienbibliothek":"Einstellungen"}</h1></div><div className="admin-actions"><a href="/" target="_blank">Website öffnen ↗</a><button onClick={()=>void save()} disabled={saving}>{saving?"Speichert…":"Änderungen speichern"}</button></div></header>
-  {notice&&<div className="admin-notice"><span>{notice}</span><button onClick={()=>setNotice("")}>×</button></div>}
-  {section==="dashboard"&&<section className="admin-content"><div className="status-banner"><div><span className="status-dot"/>D1 und R2 verbunden</div><p>Inhalte und Medien werden dauerhaft in Cloudflare gespeichert.</p></div><div className="metric-grid"><article><small>HERO-SLIDES</small><strong>{state.slides.length}</strong><button onClick={()=>setSection("homepage")}>Bearbeiten →</button></article><article><small>R2-MEDIEN</small><strong>{media.length}</strong><button onClick={()=>setSection("media")}>Öffnen →</button></article><article><small>SHOP-ANBINDUNG</small><strong>AKTIV</strong><button onClick={()=>setSection("settings")}>Konfigurieren →</button></article><article><small>CMS-STATUS</small><strong>ONLINE</strong><span>Geschützter Bereich</span></article></div><div className="panel-grid"><article className="admin-panel"><small>SCHNELLAKTIONEN</small><h2>Inhalte verwalten</h2><div className="quick-grid"><button onClick={addSlide}><b>＋</b><span>Hero-Slide hinzufügen<small>Bild, Text und Button</small></span></button><button onClick={()=>setSection("media")}><b>▧</b><span>Medien hochladen<small>Drag & Drop oder Dateiauswahl</small></span></button></div></article><article className="admin-panel preview-panel"><small>LIVE-VORSCHAU</small><h2>Aktueller Hero</h2><HeroPreview slide={state.slides[0]}/></article></div></section>}
-  {section==="homepage"&&<section className="admin-content"><div className="editor-toolbar"><div><small>STARTSEITE</small><h2>Hero-Slider</h2><p>Reihenfolge, Inhalte und Bilder vollständig verwalten.</p></div><button onClick={addSlide}>＋ Slide hinzufügen</button></div><div className="slider-settings admin-panel"><label>Wechselintervall<select value={state.intervalSeconds} onChange={e=>setState({...state,intervalSeconds:Number(e.target.value)})}><option value={4}>4 Sekunden</option><option value={7}>7 Sekunden</option><option value={10}>10 Sekunden</option></select></label><label>Übergang<select value={state.transition} onChange={e=>setState({...state,transition:e.target.value as AdminState["transition"]})}><option value="fade">Sanftes Einblenden</option><option value="slide">Seitlicher Wechsel</option></select></label></div><div className="slide-list">{state.slides.map((slide,index)=><SlideEditor key={slide.id} slide={slide} index={index} total={state.slides.length} media={media} update={updateSlide} move={moveSlide} remove={id=>setState(s=>({...s,slides:s.slides.filter(x=>x.id!==id)}))}/>)}</div></section>}
-  {section==="media"&&<section className="admin-content"><div className="editor-toolbar"><div><small>R2 MEDIEN</small><h2>Medienbibliothek</h2><p>Bilder hochladen, suchen, kopieren, verwenden oder löschen.</p></div><label className="primary-upload">{uploading?"Upload läuft…":"＋ Bilder hochladen"}<input type="file" accept="image/*" multiple onChange={e=>e.target.files&&void uploadFiles(e.target.files)}/></label></div><div className={`drop-zone ${dragging?"dragging":""}`} onDragOver={e=>{e.preventDefault();setDragging(true)}} onDragLeave={()=>setDragging(false)} onDrop={(e:DragEvent)=>{e.preventDefault();setDragging(false);void uploadFiles(e.dataTransfer.files)}}><b>Bilder hier ablegen</b><span>JPG, PNG, WEBP, GIF oder SVG · maximal 15 MB</span></div><div className="media-toolbar"><input placeholder="Medien durchsuchen…" value={query} onChange={e=>setQuery(e.target.value)}/><span>{filtered.length} Dateien</span></div><div className="media-library">{filtered.map(item=><article key={item.key}><img src={item.url} alt=""/><div><b>{item.key.split("/").pop()}</b><small>{formatSize(item.size)} · {new Date(item.uploaded).toLocaleDateString("de-DE")}</small><div className="media-actions"><button onClick={()=>void navigator.clipboard.writeText(item.url)}>URL kopieren</button><button onClick={()=>{setState(s=>({...s,slides:s.slides.map((slide,i)=>i===0?{...slide,image:item.url}:slide)}));setSection("homepage")}}>Als Hero 1</button><button className="danger" onClick={()=>void deleteMedia(item)}>Löschen</button></div></div></article>)}</div>{!filtered.length&&<div className="empty-state">Keine Medien gefunden.</div>}</section>}
-  {section==="settings"&&<section className="admin-content narrow-content"><article className="admin-panel settings-panel"><small>SHOPIFY</small><h2>Shop-Anbindung</h2><p>Der Shop bleibt separat und wird über diesen Link geöffnet.</p><label>Shop-URL<input value={state.shopUrl} onChange={e=>setState({...state,shopUrl:e.target.value})}/></label></article><article className="admin-panel settings-panel"><small>SPEICHER</small><h2>Cloudflare Infrastruktur</h2><p>D1 speichert die Website-Konfiguration. R2 speichert alle hochgeladenen Medien. Änderungen werden über die geschützten API-Routen verarbeitet.</p></article></section>}
-  </main></div>
+  useEffect(() => { void load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    setNotice("");
+    try {
+      const response = await fetch("/admin/api/dashboard");
+      if (!response.ok) throw new Error("Dashboard konnte nicht geladen werden.");
+      setData(await response.json() as DashboardData);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Fehler beim Laden.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return <AdminShell active="dashboard" title="Dashboard" eyebrow="RASCALS CMS · PHASE 4">
+    {notice && <AdminNotice tone="error">{notice}</AdminNotice>}
+    {loading && <div className="dashboard-loading">Dashboard wird geladen…</div>}
+    {!loading && data && <div className="dashboard-v2">
+      <section className="dashboard-welcome">
+        <div>
+          <small>WELCOME BACK</small>
+          <h2>{data.current.name || data.current.email}</h2>
+          <p>{roleLabel(data.current.role)} · Rascals Content Control</p>
+        </div>
+        <div className="dashboard-record"><span>SAISON 2026</span><b>{data.metrics.wins}-{data.metrics.losses}</b><small>W / L</small></div>
+      </section>
+
+      <section className="dashboard-metrics">
+        <Metric label="SPIELER" value={data.metrics.players} href="/admin/players" />
+        <Metric label="COACHES" value={data.metrics.coaches} href="/admin/coaches" />
+        <Metric label="SPIELE" value={data.metrics.games} href="/admin/games" />
+        <Metric label="NEWS LIVE" value={data.metrics.publishedNews} href="/admin/news" />
+        <Metric label="SPONSOREN" value={data.metrics.sponsors} href="/admin/sponsors" />
+      </section>
+
+      {data.liveGame ? <section className="dashboard-live-card">
+        <div className="dashboard-live-head"><span>● LIVE</span><b>{data.liveGame.quarter || "GAME"}{data.liveGame.gameClock ? ` · ${data.liveGame.gameClock}` : ""}</b></div>
+        <div className="dashboard-live-score">
+          <div><img src="/rascals-logo-transparent-4k.png" alt=""/><span>RASCALS</span><strong>{data.liveGame.rascalsScore}</strong></div>
+          <em>:</em>
+          <div>{data.liveGame.opponentLogo ? <img src={data.liveGame.opponentLogo} alt=""/> : <i>?</i>}<span>{data.liveGame.opponent}</span><strong>{data.liveGame.opponentScore}</strong></div>
+        </div>
+        <div className="dashboard-live-actions"><a href={`/admin/gameday?game=${data.liveGame.id}`}>Gameday öffnen →</a><a href={`/spielplan/${data.liveGame.slug}`} target="_blank">Öffentliche Seite ↗</a></div>
+      </section> : data.nextGame && <section className="dashboard-next-card">
+        <div><small>NÄCHSTES SPIEL</small><h3>{data.nextGame.homeAway === "home" ? "RASCALS VS" : "RASCALS @"} {data.nextGame.opponent}</h3><p>{formatDate(data.nextGame.kickoff)} · {data.nextGame.venue || (data.nextGame.homeAway === "home" ? "Heimspiel" : "Auswärtsspiel")}</p></div>
+        <div className="dashboard-next-logos"><img src="/rascals-logo-transparent-4k.png" alt=""/>{data.nextGame.opponentLogo ? <img src={data.nextGame.opponentLogo} alt=""/> : <i>?</i>}</div>
+        <a href={`/admin/games`}>Spiel bearbeiten →</a>
+      </section>}
+
+      <section className="dashboard-columns">
+        <AdminCard>
+          <div className="cms-section-head"><div><small>SCHNELLAKTIONEN</small><h2>Direkt öffnen</h2></div></div>
+          <div className="dashboard-quick-grid">
+            <Quick href="/admin/players" icon="#" title="Spieler" text="Roster, Bilder, Rollen" />
+            <Quick href="/admin/coaches" icon="C" title="Coaches" text="Staff verwalten" />
+            <Quick href="/admin/games" icon="◎" title="Spielplan" text="Games & Ergebnisse" />
+            <Quick href="/admin/gameday" icon="⚡" title="Gameday" text="Live-Ticker führen" />
+            <Quick href="/admin/news" icon="◆" title="News" text="Beiträge veröffentlichen" />
+            <Quick href="/admin/media" icon="◫" title="Medien" text="Bilder hochladen" />
+          </div>
+        </AdminCard>
+
+        <AdminCard>
+          <div className="cms-section-head"><div><small>LETZTE INHALTE</small><h2>News</h2></div><a className="dashboard-small-link" href="/admin/news">Alle →</a></div>
+          <div className="dashboard-news-list">
+            {data.recentNews.map((item) => <a key={item.id} href="/admin/news"><span><b>{item.title}</b><small>{statusLabel(item.status)} · {formatShortDate(item.date)}</small></span><em>→</em></a>)}
+            {!data.recentNews.length && <p className="cms-muted">Noch keine News-Beiträge vorhanden.</p>}
+          </div>
+        </AdminCard>
+      </section>
+    </div>}
+  </AdminShell>;
 }
 
-function HeroPreview({slide}:{slide?:HeroSlide}){if(!slide)return <div className="empty-state">Kein Slide vorhanden.</div>;return <div className="hero-preview"><img src={slide.image} alt=""/><div className="hero-preview-shade"/><div className="hero-preview-copy"><small>{slide.eyebrow}</small><h3>{slide.title}<br/><i>{slide.accent}</i></h3><p>{slide.text}</p><span>{slide.buttonLabel} →</span></div></div>}
-function SlideEditor({slide,index,total,media,update,move,remove}:{slide:HeroSlide;index:number;total:number;media:MediaItem[];update:(id:string,p:Partial<HeroSlide>)=>void;move:(i:number,d:-1|1)=>void;remove:(id:string)=>void}){const[open,setOpen]=useState(index===0);return <article className="slide-editor admin-panel"><header><div className="slide-thumb"><img src={slide.image} alt=""/><span>{index+1}</span></div><div><small>SLIDE {index+1}</small><h3>{slide.title} <i>{slide.accent}</i></h3></div><div className="slide-controls"><button disabled={index===0} onClick={()=>move(index,-1)}>↑</button><button disabled={index===total-1} onClick={()=>move(index,1)}>↓</button><button onClick={()=>setOpen(!open)}>{open?"Schließen":"Bearbeiten"}</button></div></header>{open&&<div className="slide-form"><div className="image-editor"><HeroPreview slide={slide}/><label>Bild aus Medienbibliothek<select value={slide.image} onChange={e=>update(slide.id,{image:e.target.value})}><option value={slide.image}>Aktuelles Bild</option>{media.map(m=><option key={m.key} value={m.url}>{m.key.split("/").pop()}</option>)}</select></label></div><div className="field-grid"><label>Eyebrow<input value={slide.eyebrow} onChange={e=>update(slide.id,{eyebrow:e.target.value})}/></label><label>Haupttitel<input value={slide.title} onChange={e=>update(slide.id,{title:e.target.value})}/></label><label>Akzenttitel<input value={slide.accent} onChange={e=>update(slide.id,{accent:e.target.value})}/></label><label className="full-field">Beschreibung<textarea rows={3} value={slide.text} onChange={e=>update(slide.id,{text:e.target.value})}/></label><label>Button-Text<input value={slide.buttonLabel} onChange={e=>update(slide.id,{buttonLabel:e.target.value})}/></label><label>Button-Link<input value={slide.buttonUrl} onChange={e=>update(slide.id,{buttonUrl:e.target.value})}/></label><button className="danger-button" disabled={total<=1} onClick={()=>remove(slide.id)}>Slide entfernen</button></div></div>}</article>}
+function Metric({ label, value, href }: { label: string; value: number; href: string }) {
+  return <a className="dashboard-metric" href={href}><small>{label}</small><strong>{value}</strong><span>Öffnen →</span></a>;
+}
+
+function Quick({ href, icon, title, text }: { href: string; icon: string; title: string; text: string }) {
+  return <a className="dashboard-quick" href={href}><b>{icon}</b><span><strong>{title}</strong><small>{text}</small></span></a>;
+}
+
+function roleLabel(role: string) {
+  return ({ admin: "Administrator", editor: "Redakteur", photographer: "Fotograf", coach: "Coach", gameday: "Gameday", viewer: "Nur Lesen" } as Record<string,string>)[role] || role;
+}
+
+function statusLabel(status: string) {
+  return ({ draft: "ENTWURF", scheduled: "GEPLANT", published: "VERÖFFENTLICHT", archived: "ARCHIV" } as Record<string,string>)[status] || status.toUpperCase();
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "Termin offen";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+function formatShortDate(value: string) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+}
