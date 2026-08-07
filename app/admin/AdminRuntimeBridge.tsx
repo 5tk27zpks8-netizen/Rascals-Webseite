@@ -19,41 +19,35 @@ function rewriteUrl(input: string) {
   return input;
 }
 
+function activateSidebarLink(label: string, href: string) {
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".admin-sidebar nav button"));
+  const button = buttons.find((item) => item.textContent?.includes(label));
+  if (!button) return;
+  button.disabled = false;
+  button.style.cursor = "pointer";
+  button.onclick = () => { window.location.href = href; };
+  const phase = button.querySelector("em");
+  if (phase) phase.textContent = "LIVE";
+}
+
 export function AdminRuntimeBridge() {
   useEffect(() => {
     const nativeFetch = window.fetch.bind(window);
 
     window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
-      if (typeof input === "string") {
-        return nativeFetch(rewriteUrl(input), init);
-      }
-
-      if (input instanceof URL) {
-        return nativeFetch(new URL(rewriteUrl(input.toString()), window.location.origin), init);
-      }
-
+      if (typeof input === "string") return nativeFetch(rewriteUrl(input), init);
+      if (input instanceof URL) return nativeFetch(new URL(rewriteUrl(input.toString()), window.location.origin), init);
       if (input instanceof Request) {
         const rewritten = rewriteUrl(input.url);
-        if (rewritten !== input.url) {
-          return nativeFetch(new Request(rewritten, input), init);
-        }
+        if (rewritten !== input.url) return nativeFetch(new Request(rewritten, input), init);
       }
-
       return nativeFetch(input, init);
     }) as typeof window.fetch;
 
-    const activateNewsLink = () => {
-      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".admin-sidebar nav button"));
-      const newsButton = buttons.find((button) => button.textContent?.includes("News"));
-      if (!newsButton) return;
-      newsButton.disabled = false;
-      newsButton.style.cursor = "pointer";
-      newsButton.onclick = () => { window.location.href = "/admin/news"; };
-      const phase = newsButton.querySelector("em");
-      if (phase) phase.textContent = "LIVE";
-    };
-
-    const frame = window.requestAnimationFrame(activateNewsLink);
+    const frame = window.requestAnimationFrame(() => {
+      activateSidebarLink("News", "/admin/news");
+      activateSidebarLink("Sponsoren", "/admin/sponsors");
+    });
 
     return () => {
       window.cancelAnimationFrame(frame);
