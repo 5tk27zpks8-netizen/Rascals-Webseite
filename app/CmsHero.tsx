@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+type HeroButtonStyle = "red" | "ghost" | "light";
+type HeroTransition = "fade" | "slide" | "zoom" | "parallax";
+
 type HeroSlide = {
   id: string;
   image: string;
@@ -11,6 +14,10 @@ type HeroSlide = {
   text: string;
   buttonLabel: string;
   buttonUrl: string;
+  buttonStyle?: HeroButtonStyle;
+  secondaryButtonLabel?: string;
+  secondaryButtonUrl?: string;
+  secondaryButtonStyle?: HeroButtonStyle;
   active?: boolean;
   startsAt?: string | null;
   endsAt?: string | null;
@@ -19,7 +26,7 @@ type HeroSlide = {
 type CmsState = {
   slides: HeroSlide[];
   intervalSeconds: number;
-  transition: "fade" | "slide";
+  transition: HeroTransition;
 };
 
 const fallback: CmsState = {
@@ -35,6 +42,10 @@ const fallback: CmsState = {
       text: "Ein Team. Eine Familie. Bereit für den nächsten Snap.",
       buttonLabel: "Teil des Teams werden",
       buttonUrl: "mailto:football@hsb1846.de",
+      buttonStyle: "red",
+      secondaryButtonLabel: "Spielplan 2026",
+      secondaryButtonUrl: "/#spielplan",
+      secondaryButtonStyle: "ghost",
       active: true,
     },
   ],
@@ -47,6 +58,12 @@ function isVisible(slide: HeroSlide, now: number) {
   if (!Number.isNaN(starts) && now < starts) return false;
   if (!Number.isNaN(ends) && now > ends) return false;
   return true;
+}
+
+function buttonClass(style?: HeroButtonStyle) {
+  if (style === "ghost") return "button ghost";
+  if (style === "light") return "button light";
+  return "button red";
 }
 
 export function CmsHero() {
@@ -96,7 +113,17 @@ export function CmsHero() {
 
   return (
     <>
-      <style>{`.site-main > .hero:not(.cms-hero), main > .hero:not(.cms-hero){display:none!important}`}</style>
+      <style>{`
+        .site-main > .hero:not(.cms-hero), main > .hero:not(.cms-hero){display:none!important}
+        .cms-hero .cms-hero-slide{opacity:0;pointer-events:none;transition:opacity .75s ease,transform .85s ease}
+        .cms-hero .cms-hero-slide.visible{opacity:1;pointer-events:auto}
+        .cms-hero.cms-slide .cms-hero-slide{transform:translateX(7%)}
+        .cms-hero.cms-slide .cms-hero-slide.visible{transform:translateX(0)}
+        .cms-hero.cms-zoom .cms-hero-slide img{transform:scale(1.08);transition:transform 6s ease}
+        .cms-hero.cms-zoom .cms-hero-slide.visible img{transform:scale(1)}
+        .cms-hero.cms-parallax .cms-hero-slide img{transform:scale(1.06) translateX(2%);transition:transform 7s ease}
+        .cms-hero.cms-parallax .cms-hero-slide.visible img{transform:scale(1.06) translateX(-2%)}
+      `}</style>
       <section className={`hero cms-hero cms-${cms.transition}`} aria-roledescription="Karussell" aria-label="Rascals Highlights">
         {slides.map((slide, index) => (
           <div key={slide.id} className={`hero-slide cms-hero-slide ${index === active ? "visible" : ""}`} aria-hidden={index !== active}>
@@ -107,7 +134,8 @@ export function CmsHero() {
               <h1>{slide.title}<br /><i>{slide.accent}</i></h1>
               <p>{slide.text}</p>
               <div className="button-row">
-                <a className="button red" href={slide.buttonUrl}>{slide.buttonLabel} <span>→</span></a>
+                {slide.buttonLabel && slide.buttonUrl && <a className={buttonClass(slide.buttonStyle)} href={slide.buttonUrl}>{slide.buttonLabel} <span>→</span></a>}
+                {slide.secondaryButtonLabel && slide.secondaryButtonUrl && <a className={buttonClass(slide.secondaryButtonStyle)} href={slide.secondaryButtonUrl}>{slide.secondaryButtonLabel} <span>→</span></a>}
               </div>
             </div>
           </div>
