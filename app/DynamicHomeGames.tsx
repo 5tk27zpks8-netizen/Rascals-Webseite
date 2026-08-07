@@ -51,16 +51,18 @@ export function DynamicHomeGames() {
     {fixtureTarget && createPortal(
       <>
         {visible.map((game, index) => (
-          <a className="home-game-row" href={`/spielplan/${game.slug}`} key={game.id}>
-            <span className="game-number">{String(index + 1).padStart(2, "0")}</span>
-            <time>{dateDay(game.kickoff)}<small>{dateYear(game.kickoff)}</small></time>
-            <div className="matchup">
-              <strong>RASCALS</strong><b>{game.homeAway === "home" ? "VS" : "@"}</b><strong>{game.opponent.toUpperCase()}</strong>
-            </div>
-            <span className="place">{statusText(game)} · {game.venue || (game.homeAway === "home" ? "Heimspiel" : "Auswärts")}</span>
+          <a href={`/spielplan/${game.slug}`} key={game.id}>
+            <article>
+              <span className="game-number">{String(index + 1).padStart(2, "0")}</span>
+              <time>{dateDay(game.kickoff)}<small>{dateYear(game.kickoff)}</small></time>
+              <div className="matchup">
+                <strong>RASCALS</strong><b>{game.homeAway === "home" ? "VS" : "@"}</b><strong>{game.opponent.toUpperCase()}</strong>
+              </div>
+              <span className="place">{statusText(game)} · {game.venue || (game.homeAway === "home" ? "Heimspiel" : "Auswärts")}</span>
+            </article>
           </a>
         ))}
-        {!visible.length && <div className="home-games-empty">Noch keine Spiele im CMS angelegt.</div>}
+        {!visible.length && <article><span className="game-number">—</span><time>TBD<small>2026</small></time><div className="matchup"><strong>NOCH KEINE SPIELE</strong></div><span className="place">Im CMS anlegen</span></article>}
       </>,
       fixtureTarget,
     )}
@@ -68,12 +70,12 @@ export function DynamicHomeGames() {
     {miniTarget && createPortal(
       <>
         {mini.map((game) => (
-          <a href={`/spielplan/${game.slug}`} key={game.id}>
+          <div key={game.id}>
             <b>{dateShort(game.kickoff)}</b>
-            <span>{game.opponent}<small>{statusText(game)}</small></span>
-          </a>
+            <a href={`/spielplan/${game.slug}`}><span>{game.opponent}<small>{statusText(game)}</small></span></a>
+          </div>
         ))}
-        {!mini.length && <a href="/spielplan"><b>2026</b><span>Spielplan öffnen<small>Alle Begegnungen ansehen</small></span></a>}
+        {!mini.length && <div><b>2026</b><a href="/spielplan"><span>Spielplan öffnen<small>Alle Begegnungen ansehen</small></span></a></div>}
       </>,
       miniTarget,
     )}
