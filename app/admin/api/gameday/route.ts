@@ -13,6 +13,13 @@ type EventBody = {
   team?: "rascals" | "opponent";
 };
 
+const AUTO_STAT_BY_EVENT: Record<string, string> = {
+  touchdown: "touchdowns",
+  interception: "interceptions",
+  sack: "sacks",
+  forced_fumble: "forced_fumbles",
+};
+
 async function authorize() {
   return requireCmsPermission("gameday");
 }
@@ -100,13 +107,27 @@ export async function POST(request: Request) {
     const assigned = await DB.prepare("SELECT 1 FROM game_gameday_assignments WHERE game_id=? AND lower(user_email)=lower(?) LIMIT 1").bind(body.gameId, actor.email).first();
     if (!assigned) return Response.json({ error: "Dieses Spiel ist dir nicht als Liveticker zugewiesen." }, { status: 403 });
   }
+
   const id = crypto.randomUUID();
-  await DB.prepare(`INSERT INTO game_events (id,game_id,player_id,team,event_type,points,quarter,game_clock,text,created_by)
-    VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(
-      id, body.gameId, body.playerId ?? null, body.team ?? "rascals", body.eventType, Number(body.points ?? 0), body.quarter ?? "", body.gameClock ?? "", body.text ?? "", actor.email
-    ).run();
+  const team = body.team ?? "rascals";
+  const statements = [
+    DB.prepare(`INSERT INTO game_events (id,game_id,player_id,team,event_type,points,quarter,game_clock,text,created_by)
+      VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(
+        id, body.gameId, body.playerId ?? null, team, body.eventType, Number(body.points ?? 0), body.quarter ?? "", body.gameClock ?? "", body.text ?? "", actor.email
+      ),
+  ];
+
+  const statKey = team === "rascals" && body.playerId ? AUTO_STAT_BY_EVENT[body.eventType] : undefined;
+  if (statKey) {
+    statements.push(
+      DB.prepare(`INSERT INTO player_game_stats (id,player_id,game_id,season,stat_key,stat_value)
+        VALUES (?,?,?,?,?,?)`).bind(`gameday:${id}`, body.playerId, body.gameId, 2026, statKey, 1),
+    );
+  }
+
+  await DB.batch(statements);
   const row = await DB.prepare("SELECT * FROM game_events WHERE id=?").bind(id).first<Record<string, unknown>>();
-  return Response.json({ item: mapEvent(row!) }, { status: 201 });
+  return Response.json({ item: mapEvent(row!), autoStat: statKey ?? null }, { status: 201 });
 }
 
 export async function DELETE(request: Request) {
@@ -123,6 +144,10 @@ export async function DELETE(request: Request) {
     const assigned = await DB.prepare("SELECT 1 FROM game_gameday_assignments WHERE game_id=? AND lower(user_email)=lower(?) LIMIT 1").bind(event.game_id, actor.email).first();
     if (!assigned) return Response.json({ error: "Dieses Spiel ist dir nicht als Liveticker zugewiesen." }, { status: 403 });
   }
-  await DB.prepare("DELETE FROM game_events WHERE id=?").bind(id).run();
+
+  await DB.batch([
+    DB.prepare("DELETE FROM player_game_stats WHERE id=?").bind(`gameday:${id}`),
+    DB.prepare("DELETE FROM game_events WHERE id=?").bind(id),
+  ]);
   return Response.json({ ok: true });
 }
