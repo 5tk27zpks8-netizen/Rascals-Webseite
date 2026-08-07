@@ -3,8 +3,10 @@
 import type { ReactNode } from "react";
 import "./admin-shell.css";
 
+type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users";
+
 type AdminShellProps = {
-  active: "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings";
+  active: AdminSection;
   title: string;
   eyebrow?: string;
   actions?: ReactNode;
@@ -15,8 +17,9 @@ const nav = [
   { key: "dashboard", label: "Dashboard", href: "/admin/dashboard", icon: "⌂" },
   { key: "hero", label: "Hero", href: "/admin/hero", icon: "▣" },
   { key: "news", label: "News", href: "/admin/news", icon: "◆" },
-  { key: "media", label: "Medien", href: "/admin/dashboard?section=media", icon: "◫" },
+  { key: "media", label: "Medien", href: "/admin/media", icon: "◫" },
   { key: "sponsors", label: "Sponsoren", href: "/admin/sponsors", icon: "◇" },
+  { key: "users", label: "Benutzer", href: "/admin/users", icon: "◎" },
   { key: "settings", label: "Einstellungen", href: "/admin/dashboard?section=settings", icon: "⚙" },
 ] as const;
 
@@ -30,13 +33,13 @@ export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 3", 
         </a>
         <nav>
           <p>ÜBERSICHT</p>
-          {nav.slice(0, 1).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          <NavItem item={nav[0]} active={active === nav[0].key} />
           <p>INHALTE</p>
           {nav.slice(1, 5).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
           <p>SYSTEM</p>
           {nav.slice(5).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
         </nav>
-        <div className="cms-user"><span>CG</span><div><b>Administrator</b><small>Cloudflare Access</small></div></div>
+        <div className="cms-user"><span>CG</span><div><b>CMS Zugriff</b><small>Cloudflare Access + Rollen</small></div></div>
       </aside>
 
       <main className="cms-main">
