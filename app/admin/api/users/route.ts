@@ -1,7 +1,7 @@
 import { bindings } from "../../../lib/cms";
 import { ensureCmsUsersSchema, requireCmsPermission, type CmsRole } from "../../../lib/permissions";
 
-const roles = new Set<CmsRole>(["admin", "editor", "photographer", "viewer"]);
+const roles = new Set<CmsRole>(["admin", "editor", "photographer", "coach", "gameday", "viewer"]);
 
 export async function GET() {
   const actor = await requireCmsPermission("users");
