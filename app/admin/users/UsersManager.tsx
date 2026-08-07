@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AdminCard, AdminNotice, AdminShell } from "../_components/AdminShell";
 import "./users.css";
 
-type Role = "admin" | "editor" | "photographer" | "viewer";
+type Role = "admin" | "editor" | "photographer" | "coach" | "gameday" | "viewer";
 type CmsUser = { email: string; display_name: string; role: Role; active: number };
 
 const empty: CmsUser = { email: "", display_name: "", role: "viewer", active: 1 };
@@ -56,11 +56,11 @@ export function UsersManager() {
         <div className="users-form">
           <label className="cms-field"><span>E-Mail</span><input value={selected.email} onChange={(e) => setSelected({ ...selected, email: e.target.value })} disabled={Boolean(selected.email && items.some((x) => x.email === selected.email))} /></label>
           <label className="cms-field"><span>Name</span><input value={selected.display_name} onChange={(e) => setSelected({ ...selected, display_name: e.target.value })} /></label>
-          <label className="cms-field"><span>Rolle</span><select value={selected.role} onChange={(e) => setSelected({ ...selected, role: e.target.value as Role })}><option value="admin">Administrator</option><option value="editor">Redakteur</option><option value="photographer">Fotograf</option><option value="viewer">Nur Lesen</option></select></label>
+          <label className="cms-field"><span>Rolle</span><select value={selected.role} onChange={(e) => setSelected({ ...selected, role: e.target.value as Role })}><option value="admin">Administrator</option><option value="editor">Redakteur</option><option value="photographer">Fotograf</option><option value="coach">Coach</option><option value="gameday">Gameday / Liveticker</option><option value="viewer">Nur Lesen</option></select></label>
           <label className="users-active"><input type="checkbox" checked={selected.active === 1} onChange={(e) => setSelected({ ...selected, active: e.target.checked ? 1 : 0 })} /> Zugang aktiv</label>
           <div className="users-actions"><button className="cms-button" onClick={() => void save()}>Speichern</button>{selected.email && <button className="cms-button secondary danger" onClick={() => void remove()}>Entfernen</button>}</div>
         </div>
-        <div className="roles-help"><h3>Rechte</h3><p><b>Administrator:</b> Vollzugriff inklusive Benutzerverwaltung.</p><p><b>Redakteur:</b> Hero, News, Medien und Sponsoren.</p><p><b>Fotograf:</b> Medienbibliothek.</p><p><b>Nur Lesen:</b> Anmeldung möglich, keine Änderungen.</p></div>
+        <div className="roles-help"><h3>Rechte</h3><p><b>Administrator:</b> Vollzugriff inklusive Benutzerverwaltung.</p><p><b>Redakteur:</b> Hero, News, Medien und Sponsoren.</p><p><b>Fotograf:</b> Medienbibliothek.</p><p><b>Coach:</b> Spieler, Stats, Spiele und Gameday.</p><p><b>Gameday:</b> Spielplan und Liveticker – ideal für einen Spieler, der an diesem Spieltag nicht spielt.</p><p><b>Nur Lesen:</b> Anmeldung möglich, keine Änderungen.</p></div>
       </AdminCard>
     </div>
   </AdminShell>;
