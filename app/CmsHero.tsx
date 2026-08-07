@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type HeroSlide = {
   id: string;
@@ -11,6 +11,9 @@ type HeroSlide = {
   text: string;
   buttonLabel: string;
   buttonUrl: string;
+  active?: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
 };
 
 type CmsState = {
@@ -32,13 +35,24 @@ const fallback: CmsState = {
       text: "Ein Team. Eine Familie. Bereit für den nächsten Snap.",
       buttonLabel: "Teil des Teams werden",
       buttonUrl: "mailto:football@hsb1846.de",
+      active: true,
     },
   ],
 };
 
+function isVisible(slide: HeroSlide, now: number) {
+  if (slide.active === false) return false;
+  const starts = slide.startsAt ? Date.parse(slide.startsAt) : Number.NaN;
+  const ends = slide.endsAt ? Date.parse(slide.endsAt) : Number.NaN;
+  if (!Number.isNaN(starts) && now < starts) return false;
+  if (!Number.isNaN(ends) && now > ends) return false;
+  return true;
+}
+
 export function CmsHero() {
   const [cms, setCms] = useState<CmsState>(fallback);
   const [active, setActive] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     let cancelled = false;
@@ -58,19 +72,33 @@ export function CmsHero() {
   }, []);
 
   useEffect(() => {
-    if (cms.slides.length < 2) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const slides = useMemo(() => {
+    const visible = cms.slides.filter((slide) => isVisible(slide, now));
+    return visible.length ? visible : fallback.slides;
+  }, [cms.slides, now]);
+
+  useEffect(() => {
+    if (active >= slides.length) setActive(0);
+  }, [active, slides.length]);
+
+  useEffect(() => {
+    if (slides.length < 2) return;
     const timer = window.setInterval(
-      () => setActive((current) => (current + 1) % cms.slides.length),
+      () => setActive((current) => (current + 1) % slides.length),
       Math.max(3, cms.intervalSeconds || 7) * 1000,
     );
     return () => window.clearInterval(timer);
-  }, [cms.intervalSeconds, cms.slides.length]);
+  }, [cms.intervalSeconds, slides.length]);
 
   return (
     <>
       <style>{`.site-main > .hero:not(.cms-hero), main > .hero:not(.cms-hero){display:none!important}`}</style>
       <section className={`hero cms-hero cms-${cms.transition}`} aria-roledescription="Karussell" aria-label="Rascals Highlights">
-        {cms.slides.map((slide, index) => (
+        {slides.map((slide, index) => (
           <div key={slide.id} className={`hero-slide cms-hero-slide ${index === active ? "visible" : ""}`} aria-hidden={index !== active}>
             <img src={slide.image} alt={slide.title ? `${slide.title} ${slide.accent}` : "Rascals Highlight"} />
             <div className="hero-shade" />
@@ -84,9 +112,9 @@ export function CmsHero() {
             </div>
           </div>
         ))}
-        {cms.slides.length > 1 && (
+        {slides.length > 1 && (
           <div className="hero-controls" aria-label="Motiv auswählen">
-            {cms.slides.map((slide, index) => (
+            {slides.map((slide, index) => (
               <button key={slide.id} onClick={() => setActive(index)} aria-label={`Motiv ${index + 1}`} className={index === active ? "active" : ""} />
             ))}
           </div>
