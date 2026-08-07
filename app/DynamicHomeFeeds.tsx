@@ -20,15 +20,33 @@ type SponsorItem = {
   url: string;
 };
 
+type GameItem = {
+  id: string;
+  slug: string;
+  opponent: string;
+  opponentLogo: string;
+  venue: string;
+  homeAway: string;
+  kickoff: string | null;
+  status: string;
+  rascalsScore: number;
+  opponentScore: number;
+  quarter: string;
+};
+
 export function DynamicHomeFeeds() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [sponsors, setSponsors] = useState<SponsorItem[]>([]);
+  const [games, setGames] = useState<GameItem[]>([]);
   const [newsTarget, setNewsTarget] = useState<Element | null>(null);
   const [sponsorTarget, setSponsorTarget] = useState<Element | null>(null);
+  const [gamesTarget, setGamesTarget] = useState<Element | null>(null);
 
   useEffect(() => {
     const newsGrid = document.querySelector(".news-preview .news-grid");
     const sponsorTrack = document.querySelector(".sponsor-strip .ticker-track");
+    const fixtureList = document.querySelector(".fixtures-section .fixture-list");
+
     if (newsGrid) {
       newsGrid.innerHTML = "";
       setNewsTarget(newsGrid);
@@ -37,18 +55,58 @@ export function DynamicHomeFeeds() {
       sponsorTrack.innerHTML = "";
       setSponsorTarget(sponsorTrack);
     }
+    if (fixtureList) {
+      fixtureList.innerHTML = "";
+      setGamesTarget(fixtureList);
+    }
 
     Promise.all([
       fetch("/api/public/news").then((r) => r.ok ? r.json() : { items: [] }),
       fetch("/api/public/sponsors").then((r) => r.ok ? r.json() : { items: [] }),
-    ]).then(([newsData, sponsorData]) => {
+      fetch("/api/public/games").then((r) => r.ok ? r.json() : { items: [] }),
+    ]).then(([newsData, sponsorData, gameData]) => {
       setNews(newsData.items ?? []);
       setSponsors(sponsorData.items ?? []);
+      setGames(gameData.items ?? []);
     }).catch(() => undefined);
   }, []);
 
   return (
     <>
+      {gamesTarget && createPortal(
+        <>
+          {games.map((game, index) => {
+            const date = game.kickoff ? new Date(game.kickoff) : null;
+            const dateLabel = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) : "TBD";
+            const yearLabel = date && !Number.isNaN(date.getTime()) ? String(date.getFullYear()) : "2026";
+            const place = game.homeAway === "home" ? `Heimspiel${game.venue ? ` · ${game.venue}` : ""}` : `Auswärts${game.venue ? ` · ${game.venue}` : ""}`;
+            const showScore = game.status === "live" || game.status === "final";
+
+            return (
+              <article key={game.id}>
+                <span className="game-number">{String(index + 1).padStart(2, "0")}</span>
+                <time>{dateLabel}<small>{yearLabel}</small></time>
+                <div className="matchup">
+                  <strong>RASCALS</strong>
+                  <b>{showScore ? `${game.rascalsScore}:${game.opponentScore}` : game.homeAway === "home" ? "VS" : "@"}</b>
+                  <strong>{game.opponent.toUpperCase()}</strong>
+                </div>
+                <span className="place">{game.status === "live" ? `LIVE${game.quarter ? ` · ${game.quarter}` : ""}` : place}</span>
+              </article>
+            );
+          })}
+          {!games.length && (
+            <article>
+              <span className="game-number">01</span>
+              <time>TBD<small>2026</small></time>
+              <div className="matchup"><strong>RASCALS</strong><b>VS</b><strong>GEGNER</strong></div>
+              <span className="place">Noch keine Spiele im CMS angelegt</span>
+            </article>
+          )}
+        </>,
+        gamesTarget,
+      )}
+
       {newsTarget && createPortal(
         <>
           {news.map((item, index) => (
