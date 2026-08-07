@@ -43,9 +43,38 @@ export type PlayerAchievement = {
   awardedAt: string;
 };
 
-export type PlayerStat = {
-  key: string;
-  value: number;
+export type PlayerStat = { key: string; value: number };
+
+export type Game = {
+  id: string;
+  slug: string;
+  opponent: string;
+  opponentLogo: string;
+  venue: string;
+  homeAway: "home" | "away";
+  kickoff: string | null;
+  status: "upcoming" | "live" | "final" | "postponed" | "cancelled";
+  rascalsScore: number;
+  opponentScore: number;
+  quarter: string;
+  gameClock: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GameEvent = {
+  id: string;
+  gameId: string;
+  playerId: string | null;
+  playerName: string;
+  playerNumber: number | null;
+  team: string;
+  eventType: string;
+  points: number;
+  quarter: string;
+  gameClock: string;
+  text: string;
+  createdAt: string;
 };
 
 export async function ensureFootballSchema() {
@@ -165,6 +194,17 @@ export function mapPlayer(row: Record<string, unknown>): Player {
   };
 }
 
+export function mapGame(row: Record<string, unknown>): Game {
+  const rawStatus = String(row.status ?? "upcoming");
+  const status = ["upcoming", "live", "final", "postponed", "cancelled"].includes(rawStatus) ? rawStatus as Game["status"] : "upcoming";
+  return {
+    id: String(row.id), slug: String(row.slug), opponent: String(row.opponent ?? ""), opponentLogo: String(row.opponent_logo ?? ""), venue: String(row.venue ?? ""),
+    homeAway: String(row.home_away) === "away" ? "away" : "home", kickoff: row.kickoff ? String(row.kickoff) : null, status,
+    rascalsScore: Number(row.rascals_score ?? 0), opponentScore: Number(row.opponent_score ?? 0), quarter: String(row.quarter ?? ""), gameClock: String(row.game_clock ?? ""),
+    createdAt: String(row.created_at ?? ""), updatedAt: String(row.updated_at ?? ""),
+  };
+}
+
 export async function listActivePlayers() {
   await ensureFootballSchema();
   const { DB } = bindings();
@@ -184,15 +224,8 @@ export async function listPlayerAchievements(playerId: string) {
   const { DB } = bindings();
   const result = await DB.prepare(`SELECT * FROM player_achievements WHERE player_id=? ORDER BY awarded_at DESC`).bind(playerId).all<Record<string, unknown>>();
   return result.results.map((row) => ({
-    id: String(row.id),
-    playerId: String(row.player_id),
-    gameId: row.game_id ? String(row.game_id) : null,
-    type: String(row.type ?? "achievement"),
-    label: String(row.label ?? "Achievement"),
-    quantity: Number(row.quantity ?? 1),
-    note: String(row.note ?? ""),
-    awardedBy: String(row.awarded_by ?? ""),
-    awardedAt: String(row.awarded_at),
+    id: String(row.id), playerId: String(row.player_id), gameId: row.game_id ? String(row.game_id) : null, type: String(row.type ?? "achievement"),
+    label: String(row.label ?? "Achievement"), quantity: Number(row.quantity ?? 1), note: String(row.note ?? ""), awardedBy: String(row.awarded_by ?? ""), awardedAt: String(row.awarded_at),
   } satisfies PlayerAchievement));
 }
 
@@ -201,4 +234,32 @@ export async function listPlayerStats(playerId: string, season = 2026) {
   const { DB } = bindings();
   const result = await DB.prepare(`SELECT stat_key, SUM(stat_value) AS total FROM player_game_stats WHERE player_id=? AND season=? GROUP BY stat_key ORDER BY stat_key`).bind(playerId, season).all<Record<string, unknown>>();
   return result.results.map((row) => ({ key: String(row.stat_key), value: Number(row.total ?? 0) } satisfies PlayerStat));
+}
+
+export async function listGames() {
+  await ensureFootballSchema();
+  const { DB } = bindings();
+  const result = await DB.prepare("SELECT * FROM games ORDER BY CASE status WHEN 'live' THEN 0 WHEN 'upcoming' THEN 1 ELSE 2 END, COALESCE(kickoff,'9999-12-31') ASC").all<Record<string, unknown>>();
+  return result.results.map(mapGame);
+}
+
+export async function getGameBySlug(slug: string) {
+  await ensureFootballSchema();
+  const { DB } = bindings();
+  const row = await DB.prepare("SELECT * FROM games WHERE slug=? LIMIT 1").bind(slug).first<Record<string, unknown>>();
+  return row ? mapGame(row) : null;
+}
+
+export async function listGameEvents(gameId: string, limit = 30) {
+  await ensureFootballSchema();
+  const { DB } = bindings();
+  const result = await DB.prepare(`SELECT e.*, p.first_name, p.last_name, p.jersey_number
+    FROM game_events e LEFT JOIN players p ON p.id=e.player_id
+    WHERE e.game_id=? ORDER BY e.created_at DESC LIMIT ?`).bind(gameId, limit).all<Record<string, unknown>>();
+  return result.results.map((row) => ({
+    id: String(row.id), gameId: String(row.game_id), playerId: row.player_id ? String(row.player_id) : null,
+    playerName: [String(row.first_name ?? ""), String(row.last_name ?? "")].join(" ").trim(), playerNumber: row.jersey_number == null ? null : Number(row.jersey_number),
+    team: String(row.team ?? "rascals"), eventType: String(row.event_type ?? "update"), points: Number(row.points ?? 0), quarter: String(row.quarter ?? ""),
+    gameClock: String(row.game_clock ?? ""), text: String(row.text ?? ""), createdAt: String(row.created_at ?? ""),
+  } satisfies GameEvent));
 }
