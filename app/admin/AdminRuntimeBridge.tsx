@@ -6,6 +6,7 @@ const protectedApiMap: Record<string, string> = {
   "/api/cms": "/admin/api/cms",
   "/api/media": "/admin/api/media",
   "/api/news": "/admin/api/news",
+  "/api/sponsors": "/admin/api/sponsors",
 };
 
 function rewriteUrl(input: string) {
@@ -22,12 +23,17 @@ function rewriteUrl(input: string) {
 function activateSidebarLink(label: string, href: string) {
   const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".admin-sidebar nav button"));
   const button = buttons.find((item) => item.textContent?.includes(label));
-  if (!button) return;
+  if (!button) return false;
+
   button.disabled = false;
+  button.removeAttribute("disabled");
   button.style.cursor = "pointer";
+  button.style.opacity = "1";
   button.onclick = () => { window.location.href = href; };
+
   const phase = button.querySelector("em");
   if (phase) phase.textContent = "LIVE";
+  return true;
 }
 
 export function AdminRuntimeBridge() {
@@ -44,13 +50,21 @@ export function AdminRuntimeBridge() {
       return nativeFetch(input, init);
     }) as typeof window.fetch;
 
-    const frame = window.requestAnimationFrame(() => {
-      activateSidebarLink("News", "/admin/news");
-      activateSidebarLink("Sponsoren", "/admin/sponsors");
-    });
+    let attempts = 0;
+    const activate = () => {
+      const newsReady = activateSidebarLink("News", "/admin/news");
+      const sponsorsReady = activateSidebarLink("Sponsoren", "/admin/sponsors");
+      attempts += 1;
+      if ((newsReady && sponsorsReady) || attempts >= 20) {
+        window.clearInterval(timer);
+      }
+    };
+
+    activate();
+    const timer = window.setInterval(activate, 250);
 
     return () => {
-      window.cancelAnimationFrame(frame);
+      window.clearInterval(timer);
       window.fetch = nativeFetch;
     };
   }, []);
