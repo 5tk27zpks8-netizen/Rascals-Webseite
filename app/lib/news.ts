@@ -1,63 +1,15 @@
 import { bindings } from "./cms";
 
 export type PublicNewsPost = {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  image: string;
-  category: string;
-  publishedAt: string | null;
+  id:string; slug:string; title:string; subtitle:string; excerpt:string; content:string; image:string; gallery:string[]; category:string; author:string; publishedAt:string|null; seoTitle:string; seoDescription:string; ogImage:string;
 };
 
-export async function ensureNewsSchema() {
-  const { DB } = bindings();
-  await DB.prepare(`CREATE TABLE IF NOT EXISTS news_posts (
-    id TEXT PRIMARY KEY,
-    slug TEXT NOT NULL UNIQUE,
-    title TEXT NOT NULL,
-    excerpt TEXT NOT NULL DEFAULT '',
-    content TEXT NOT NULL DEFAULT '',
-    image TEXT NOT NULL DEFAULT '',
-    category TEXT NOT NULL DEFAULT 'Team',
-    status TEXT NOT NULL DEFAULT 'draft',
-    published_at TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-}
-
-function mapPost(row: Record<string, unknown>): PublicNewsPost {
-  return {
-    id: String(row.id),
-    slug: String(row.slug),
-    title: String(row.title),
-    excerpt: String(row.excerpt ?? ""),
-    content: String(row.content ?? ""),
-    image: String(row.image ?? ""),
-    category: String(row.category ?? "Team"),
-    publishedAt: row.published_at ? String(row.published_at) : null,
-  };
-}
-
-export async function listPublishedNews(limit = 100): Promise<PublicNewsPost[]> {
-  await ensureNewsSchema();
-  const { DB } = bindings();
-  const result = await DB.prepare(`SELECT id, slug, title, excerpt, content, image, category, published_at
-    FROM news_posts
-    WHERE status = 'published'
-    ORDER BY published_at DESC
-    LIMIT ?`).bind(limit).all();
-  return result.results.map((row) => mapPost(row as Record<string, unknown>));
-}
-
-export async function getPublishedNewsBySlug(slug: string): Promise<PublicNewsPost | null> {
-  await ensureNewsSchema();
-  const { DB } = bindings();
-  const row = await DB.prepare(`SELECT id, slug, title, excerpt, content, image, category, published_at
-    FROM news_posts
-    WHERE slug = ? AND status = 'published'
-    LIMIT 1`).bind(slug).first();
-  return row ? mapPost(row as Record<string, unknown>) : null;
-}
+async function ensureColumn(name:string,definition:string){const{DB}=bindings();const info=await DB.prepare("PRAGMA table_info(news_posts)").all<Record<string,unknown>>();if(!info.results.some(r=>String(r.name)===name))await DB.prepare(`ALTER TABLE news_posts ADD COLUMN ${name} ${definition}`).run()}
+export async function ensureNewsSchema(){const{DB}=bindings();await DB.prepare(`CREATE TABLE IF NOT EXISTS news_posts (id TEXT PRIMARY KEY,slug TEXT NOT NULL UNIQUE,title TEXT NOT NULL,subtitle TEXT NOT NULL DEFAULT '',excerpt TEXT NOT NULL DEFAULT '',content TEXT NOT NULL DEFAULT '',image TEXT NOT NULL DEFAULT '',gallery TEXT NOT NULL DEFAULT '[]',category TEXT NOT NULL DEFAULT 'Team',author TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'draft',publish_at TEXT,published_at TEXT,seo_title TEXT NOT NULL DEFAULT '',seo_description TEXT NOT NULL DEFAULT '',og_image TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`).run();await ensureColumn("subtitle","TEXT NOT NULL DEFAULT ''");await ensureColumn("gallery","TEXT NOT NULL DEFAULT '[]'");await ensureColumn("author","TEXT NOT NULL DEFAULT ''");await ensureColumn("publish_at","TEXT");await ensureColumn("seo_title","TEXT NOT NULL DEFAULT ''");await ensureColumn("seo_description","TEXT NOT NULL DEFAULT ''");await ensureColumn("og_image","TEXT NOT NULL DEFAULT ''")}
+function mapPost(row:Record<string,unknown>):PublicNewsPost{let gallery:string[]=[];try{gallery=JSON.parse(String(row.gallery??"[]"))}catch{}return{id:String(row.id),slug:String(row.slug),title:String(row.title),subtitle:String(row.subtitle??""),excerpt:String(row.excerpt??""),content:String(row.content??""),image:String(row.image??""),gallery,category:String(row.category??"Team"),author:String(row.author??""),publishedAt:row.published_at?String(row.published_at):row.publish_at?String(row.publish_at):null,seoTitle:String(row.seo_title??""),seoDescription:String(row.seo_description??""),ogImage:String(row.og_image??"")}}
+const visibility=`(status='published' OR (status='scheduled' AND publish_at IS NOT NULL AND datetime(publish_at)<=datetime('now')))`;
+export async function listPublishedNews(limit=100,offset=0,category="",query=""):Promise<PublicNewsPost[]>{await ensureNewsSchema();const{DB}=bindings();const conditions=[visibility];const args:(string|number)[]=[];if(category){conditions.push("category = ?");args.push(category)}if(query){conditions.push("(lower(title) LIKE ? OR lower(excerpt) LIKE ? OR lower(content) LIKE ?)");const q=`%${query.toLowerCase()}%`;args.push(q,q,q)}args.push(limit,offset);const result=await DB.prepare(`SELECT * FROM news_posts WHERE ${conditions.join(" AND ")} ORDER BY COALESCE(published_at,publish_at,created_at) DESC LIMIT ? OFFSET ?`).bind(...args).all();return result.results.map(r=>mapPost(r as Record<string,unknown>))}
+export async function countPublishedNews(category="",query=""){await ensureNewsSchema();const{DB}=bindings();const conditions=[visibility];const args:string[]=[];if(category){conditions.push("category = ?");args.push(category)}if(query){conditions.push("(lower(title) LIKE ? OR lower(excerpt) LIKE ? OR lower(content) LIKE ?)");const q=`%${query.toLowerCase()}%`;args.push(q,q,q)}const row=await DB.prepare(`SELECT COUNT(*) AS total FROM news_posts WHERE ${conditions.join(" AND ")}`).bind(...args).first<{total:number}>();return Number(row?.total??0)}
+export async function listNewsCategories(){await ensureNewsSchema();const{DB}=bindings();const r=await DB.prepare(`SELECT DISTINCT category FROM news_posts WHERE ${visibility} ORDER BY category`).all<Record<string,unknown>>();return r.results.map(x=>String(x.category)).filter(Boolean)}
+export async function getPublishedNewsBySlug(slug:string):Promise<PublicNewsPost|null>{await ensureNewsSchema();const{DB}=bindings();const row=await DB.prepare(`SELECT * FROM news_posts WHERE slug=? AND ${visibility} LIMIT 1`).bind(slug).first<Record<string,unknown>>();return row?mapPost(row):null}
+export async function listRelatedNews(post:PublicNewsPost,limit=3){await ensureNewsSchema();const{DB}=bindings();const r=await DB.prepare(`SELECT * FROM news_posts WHERE id<>? AND category=? AND ${visibility} ORDER BY COALESCE(published_at,publish_at,created_at) DESC LIMIT ?`).bind(post.id,post.category,limit).all();return r.results.map(x=>mapPost(x as Record<string,unknown>))}
