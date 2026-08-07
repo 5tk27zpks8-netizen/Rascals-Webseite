@@ -14,19 +14,29 @@ export default async function TeamPage(){
    {units.map(unit=>{const group=players.filter(p=>p.unit===unit);if(!group.length)return null;return <section key={unit} className="team-unit">
     <div className="team-unit-title"><small>2026 ROSTER</small><h2>{unitLabels[unit]}</h2></div>
     <div className="team-roster-grid">{group.map(p=>{
-      const badges=[p.starter?"STARTER":"",p.captain?"CAPTAIN":"",p.rookie?"ROOKIE":""].filter(Boolean);
-      return <a href={`/team/${p.slug}`} className="player-card" key={p.id} aria-label={`${p.firstName} ${p.lastName}, ${p.position}`}>
-       <div className="player-card-topmark"><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS</b></div>
-       <img className="player-card-ghost-logo" src="/rascals-logo-transparent-4k.png" alt="" aria-hidden="true"/>
-       <div className="player-card-image">
-        {p.portrait?<img src={p.portrait} alt={`${p.firstName} ${p.lastName}`}/>:<div className="player-card-placeholder"><span>#{p.jerseyNumber??"00"}</span><small>PLAYER PHOTO</small></div>}
-       </div>
-       <div className="player-card-gradient"/>
-       <div className="player-card-content">
-        <strong className="player-card-number">{String(p.jerseyNumber??0).padStart(2,"0")}</strong>
-        <div className="player-card-identity"><p>{p.position}{p.secondaryPosition?` / ${p.secondaryPosition}`:""}</p><h3>{p.firstName} {p.lastName}</h3></div>
-        {badges.length>0&&<div className={`player-card-badges count-${badges.length}`}>{badges.map(b=><span key={b}>{b}</span>)}</div>}
-       </div>
+      const badges=[
+        p.starter?{type:"starter",icon:"☆",label:"STARTER"}:null,
+        p.captain?{type:"captain",icon:"C",label:"CAPTAIN"}:null,
+        p.rookie?{type:"rookie",icon:"R",label:"ROOKIE"}:null,
+      ].filter(Boolean) as {type:string;icon:string;label:string}[];
+      const number=String(p.jerseyNumber??0).padStart(2,"0");
+      return <a href={`/team/${p.slug}`} className="player-card-premium" key={p.id} aria-label={`${p.firstName} ${p.lastName}, ${p.position}`}>
+        <div className="pc-frame-corner pc-tl"/><div className="pc-frame-corner pc-tr"/><div className="pc-frame-corner pc-bl"/><div className="pc-frame-corner pc-br"/>
+        <div className="pc-header"><span/><div><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS</b></div><span/></div>
+        <img className="pc-ghost-logo" src="/rascals-logo-transparent-4k.png" alt="" aria-hidden="true"/>
+        <div className="pc-smoke pc-smoke-left"/><div className="pc-smoke pc-smoke-right"/>
+        <div className="pc-photo-wrap">
+          {p.portrait?<img className="pc-photo" src={p.portrait} alt={`${p.firstName} ${p.lastName}`}/>:<div className="pc-photo-placeholder"><span>#{number}</span><small>SPIELERFOTO</small></div>}
+        </div>
+        <div className="pc-photo-shade"/>
+        <div className="pc-info">
+          <div className="pc-number">{number}</div>
+          <div className="pc-meta">
+            <p>{p.position}{p.secondaryPosition?` / ${p.secondaryPosition}`:""}</p>
+            <h3>{p.firstName} {p.lastName}</h3>
+            {badges.length>0&&<div className={`pc-badges pc-badges-${badges.length}`}>{badges.map(b=><span className={`pc-badge ${b.type}`} key={b.type}><i>{b.icon}</i><b>{b.label}</b></span>)}</div>}
+          </div>
+        </div>
       </a>
     })}</div>
    </section>})}
