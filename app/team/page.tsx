@@ -2,6 +2,7 @@ import { listActivePlayers } from "../lib/football";
 import { listActiveCoaches } from "../lib/coaches";
 import { RascalsPlayerCard } from "./RascalsPlayerCard";
 import "./team.css";
+import "./coaches-public.css";
 
 export const metadata = {
   title: "Team · Hellenstein Rascals",
