@@ -21,7 +21,11 @@ type Game = {
   updatedAt: string;
 };
 
-type MediaItem = { key: string; url: string };
+type MediaItem = {
+  key: string;
+  url: string;
+  originalName?: string;
+};
 
 const emptyGame: Game = {
   id: "",
@@ -48,6 +52,7 @@ export function GamesManager() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => { void load(); }, []);
 
@@ -65,6 +70,39 @@ export function GamesManager() {
       setNotice(error instanceof Error ? error.message : "Unbekannter Fehler");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function refreshMedia() {
+    const response = await fetch("/admin/api/media");
+    if (!response.ok) return [] as MediaItem[];
+    const body = await response.json() as { items: MediaItem[] };
+    setMedia(body.items);
+    return body.items;
+  }
+
+  async function uploadOpponentLogo(file: File) {
+    setUploadingLogo(true);
+    setNotice("");
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      const response = await fetch("/admin/api/media", { method: "POST", body: data });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error ?? "Logo-Upload fehlgeschlagen.");
+      }
+
+      const newMedia = await refreshMedia();
+      const uploaded = newMedia.find((item) => item.originalName === file.name) ?? newMedia[0];
+      if (!uploaded) throw new Error("Logo wurde hochgeladen, konnte aber nicht automatisch ausgewählt werden.");
+
+      setSelected((current) => ({ ...current, opponentLogo: uploaded.url }));
+      setNotice("Gegnerlogo hochgeladen und ausgewählt. Spiel bitte noch speichern.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Logo-Upload fehlgeschlagen.");
+    } finally {
+      setUploadingLogo(false);
     }
   }
 
@@ -113,7 +151,7 @@ export function GamesManager() {
 
   return (
     <AdminShell active="games" title="Spielplan & Ergebnisse" actions={<button className="cms-button" disabled={saving || loading} onClick={() => void save()}>{saving ? "Speichert…" : "Spiel speichern"}</button>}>
-      {notice && <AdminNotice tone={notice.includes("gespeichert") || notice.includes("gelöscht") ? "success" : "error"}>{notice}</AdminNotice>}
+      {notice && <AdminNotice tone={notice.includes("gespeichert") || notice.includes("gelöscht") || notice.includes("hochgeladen") ? "success" : "error"}>{notice}</AdminNotice>}
       <div className="games-layout">
         <AdminCard className="games-list">
           <div className="cms-section-head"><div><small>SAISON 2026</small><h2>{items.length} Spiele</h2></div><button className="cms-button secondary" onClick={() => setSelected(emptyGame)}>＋ Spiel</button></div>
@@ -142,7 +180,34 @@ export function GamesManager() {
           <AdminCard>
             <div className="cms-grid-2">
               <label className="cms-field"><span>Gegner</span><input value={selected.opponent} onChange={(event) => setSelected({ ...selected, opponent: event.target.value })} /></label>
-              <label className="cms-field"><span>Gegnerlogo</span><select value={selected.opponentLogo} onChange={(event) => setSelected({ ...selected, opponentLogo: event.target.value })}><option value="">Kein Logo</option>{media.map((item) => <option key={item.key} value={item.url}>{item.key.split("/").pop()}</option>)}</select></label>
+
+              <div className="cms-field opponent-logo-field">
+                <span>Gegnerlogo</span>
+                <div className="opponent-logo-controls">
+                  <label className={`cms-button secondary opponent-logo-upload ${uploadingLogo ? "disabled" : ""}`}>
+                    {uploadingLogo ? "Upload läuft…" : "＋ Logo hochladen"}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      disabled={uploadingLogo}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void uploadOpponentLogo(file);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                  <select value={selected.opponentLogo} onChange={(event) => setSelected({ ...selected, opponentLogo: event.target.value })}>
+                    <option value="">Kein Logo</option>
+                    {media.map((item) => <option key={item.key} value={item.url}>{item.originalName || item.key.split("/").pop()}</option>)}
+                  </select>
+                </div>
+                <div className="opponent-logo-preview">
+                  {selected.opponentLogo ? <img src={selected.opponentLogo} alt="Vorschau Gegnerlogo" /> : <div className="game-logo-placeholder">?</div>}
+                  <small>{selected.opponentLogo ? "Aktuell ausgewähltes Gegnerlogo" : "Noch kein Gegnerlogo ausgewählt"}</small>
+                </div>
+              </div>
+
               <label className="cms-field"><span>Heim / Auswärts</span><select value={selected.homeAway} onChange={(event) => setSelected({ ...selected, homeAway: event.target.value as Game["homeAway"] })}><option value="home">Heimspiel</option><option value="away">Auswärtsspiel</option></select></label>
               <label className="cms-field"><span>Datum & Kickoff</span><input type="datetime-local" value={toLocalInput(selected.kickoff)} onChange={(event) => setSelected({ ...selected, kickoff: event.target.value || null })} /></label>
               <label className="cms-field hero-full"><span>Ort / Stadion</span><input value={selected.venue} onChange={(event) => setSelected({ ...selected, venue: event.target.value })} placeholder="z. B. Heidenheim" /></label>
