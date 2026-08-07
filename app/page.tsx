@@ -1,4 +1,5 @@
 import { CmsHero } from "./CmsHero";
+import { DynamicHomeFeeds } from "./DynamicHomeFeeds";
 import { SiteShell } from "./SiteShell";
 
 export default function Home() {
@@ -6,6 +7,7 @@ export default function Home() {
     <>
       <CmsHero />
       <SiteShell page="home" />
+      <DynamicHomeFeeds />
     </>
   );
 }
