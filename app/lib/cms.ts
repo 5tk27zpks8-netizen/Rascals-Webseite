@@ -1,5 +1,8 @@
 import { env } from "cloudflare:workers";
 
+export type HeroButtonStyle = "red" | "ghost" | "light";
+export type HeroTransition = "fade" | "slide" | "zoom" | "parallax";
+
 export type HeroSlide = {
   id: string;
   image: string;
@@ -9,6 +12,10 @@ export type HeroSlide = {
   text: string;
   buttonLabel: string;
   buttonUrl: string;
+  buttonStyle?: HeroButtonStyle;
+  secondaryButtonLabel?: string;
+  secondaryButtonUrl?: string;
+  secondaryButtonStyle?: HeroButtonStyle;
   active?: boolean;
   startsAt?: string | null;
   endsAt?: string | null;
@@ -17,7 +24,7 @@ export type HeroSlide = {
 export type CmsState = {
   slides: HeroSlide[];
   intervalSeconds: number;
-  transition: "fade" | "slide";
+  transition: HeroTransition;
   shopUrl: string;
 };
 
@@ -44,6 +51,10 @@ export const defaultCmsState: CmsState = {
       text: "Ein Team. Eine Familie. Bereit für den nächsten Snap.",
       buttonLabel: "Teil des Teams werden",
       buttonUrl: "mailto:football@hsb1846.de",
+      buttonStyle: "red",
+      secondaryButtonLabel: "Spielplan 2026",
+      secondaryButtonUrl: "/#spielplan",
+      secondaryButtonStyle: "ghost",
       active: true,
       startsAt: null,
       endsAt: null,
@@ -57,6 +68,10 @@ export const defaultCmsState: CmsState = {
       text: "Alle bestätigten Termine, Gegner und Heimspiele auf einen Blick.",
       buttonLabel: "Zum Spielplan",
       buttonUrl: "/#spielplan",
+      buttonStyle: "red",
+      secondaryButtonLabel: "",
+      secondaryButtonUrl: "",
+      secondaryButtonStyle: "ghost",
       active: true,
       startsAt: null,
       endsAt: null,
@@ -73,16 +88,22 @@ export async function ensureCmsSchema() {
   )`).run();
 }
 
-function normalizeCmsState(value: CmsState): CmsState {
+function normalizeState(value: CmsState): CmsState {
+  const transitions: HeroTransition[] = ["fade", "slide", "zoom", "parallax"];
   return {
     ...defaultCmsState,
     ...value,
-    slides: Array.isArray(value.slides)
+    transition: transitions.includes(value.transition) ? value.transition : "fade",
+    slides: Array.isArray(value.slides) && value.slides.length
       ? value.slides.map((slide) => ({
+          buttonStyle: "red",
+          secondaryButtonLabel: "",
+          secondaryButtonUrl: "",
+          secondaryButtonStyle: "ghost",
+          active: true,
+          startsAt: null,
+          endsAt: null,
           ...slide,
-          active: slide.active !== false,
-          startsAt: slide.startsAt ?? null,
-          endsAt: slide.endsAt ?? null,
         }))
       : defaultCmsState.slides,
   };
@@ -96,7 +117,7 @@ export async function readCmsState(): Promise<CmsState> {
     .first<{ value: string }>();
   if (!row) return defaultCmsState;
   try {
-    return normalizeCmsState(JSON.parse(row.value) as CmsState);
+    return normalizeState(JSON.parse(row.value) as CmsState);
   } catch {
     return defaultCmsState;
   }
@@ -105,10 +126,9 @@ export async function readCmsState(): Promise<CmsState> {
 export async function writeCmsState(state: CmsState) {
   await ensureCmsSchema();
   const { DB } = bindings();
-  const normalized = normalizeCmsState(state);
   await DB.prepare(`INSERT INTO cms_settings (key, value, updated_at)
     VALUES (?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP`)
-    .bind("site", JSON.stringify(normalized))
+    .bind("site", JSON.stringify(normalizeState(state)))
     .run();
 }
