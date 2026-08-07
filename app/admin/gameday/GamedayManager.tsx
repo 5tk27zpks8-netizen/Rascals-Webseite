@@ -24,10 +24,18 @@ const eventTypes = [
   ["touchdown", "Touchdown"],
   ["interception", "Interception"],
   ["sack", "Sack"],
+  ["forced_fumble", "Forced Fumble"],
   ["halftime", "Halbzeit"],
   ["final", "Spielende"],
   ["custom", "Freitext"],
 ] as const;
+
+const statLabels: Record<string, string> = {
+  touchdowns: "Touchdowns",
+  interceptions: "Interceptions",
+  sacks: "Sacks",
+  forced_fumbles: "Forced Fumbles",
+};
 
 export function GamedayManager() {
   const [games, setGames] = useState<Game[]>([]);
@@ -88,20 +96,21 @@ export function GamedayManager() {
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error ?? "Ticker-Eintrag konnte nicht gespeichert werden.");
       }
+      const body = await response.json() as { autoStat?: string | null };
       setText(""); setPlayerId("");
       await loadEvents(gameId);
-      setNotice("Ticker-Eintrag veröffentlicht.");
+      setNotice(body.autoStat ? `Ticker-Eintrag veröffentlicht · ${statLabels[body.autoStat] ?? body.autoStat} +1 automatisch beim Spieler.` : "Ticker-Eintrag veröffentlicht.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Speichern fehlgeschlagen.");
     } finally { setSaving(false); }
   }
 
   async function removeEvent(id: string) {
-    if (!confirm("Ticker-Eintrag wirklich löschen?")) return;
+    if (!confirm("Ticker-Eintrag wirklich löschen? Eine automatisch erzeugte Spielerstatistik wird ebenfalls entfernt.")) return;
     const response = await fetch(`/admin/api/gameday?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     if (!response.ok) { const body = await response.json().catch(() => ({})); setNotice(body.error ?? "Löschen fehlgeschlagen."); return; }
     setEvents((current) => current.filter((e) => e.id !== id));
-    setNotice("Ticker-Eintrag gelöscht.");
+    setNotice("Ticker-Eintrag gelöscht. Verknüpfte Auto-Stat wurde ebenfalls entfernt.");
   }
 
   return <AdminShell active="gameday" title="Gameday Live-Ticker">
@@ -118,6 +127,7 @@ export function GamedayManager() {
       <AdminCard>
         <div className="cms-section-head"><div><small>NEUER EINTRAG</small><h2>Wichtiges Ereignis</h2></div></div>
         <div className="gameday-event-buttons">{eventTypes.map(([key, label]) => <button key={key} className={eventType === key ? "active" : ""} onClick={() => setEventType(key)}>{label}</button>)}</div>
+        <p className="cms-muted">Touchdown, Interception, Sack und Forced Fumble werden bei ausgewähltem Spieler automatisch als Saisonstatistik mitgezählt.</p>
         <div className="cms-grid-2 gameday-form">
           <label className="cms-field"><span>Spieler (optional)</span><select value={playerId} onChange={(e) => setPlayerId(e.target.value)}><option value="">Kein Spieler</option>{players.map((p) => <option key={p.id} value={p.id}>#{p.jerseyNumber ?? "—"} {p.firstName} {p.lastName} · {p.position}</option>)}</select></label>
           <label className="cms-field"><span>Quarter</span><select value={quarter} onChange={(e) => setQuarter(e.target.value)}><option value="">—</option><option>Q1</option><option>Q2</option><option>HALFTIME</option><option>Q3</option><option>Q4</option><option>OT</option><option>FINAL</option></select></label>
