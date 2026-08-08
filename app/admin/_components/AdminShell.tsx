@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import "./admin-shell.css";
 
-type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "coaches" | "performance" | "development" | "games" | "gameday";
+type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "coaches" | "performance" | "development" | "games" | "gameday" | "trash";
 
 type AdminShellProps = {
   active: AdminSection;
@@ -25,6 +25,7 @@ const nav = [
   { key: "development", label: "Entwicklung", href: "/admin/development", icon: "◎" },
   { key: "games", label: "Spielplan", href: "/admin/games", icon: "◉" },
   { key: "gameday", label: "Gameday", href: "/admin/gameday", icon: "⚡" },
+  { key: "trash", label: "Papierkorb", href: "/admin/trash", icon: "⌫" },
   { key: "users", label: "Benutzer", href: "/admin/users", icon: "●" },
   { key: "settings", label: "Einstellungen", href: "/admin/dashboard?section=settings", icon: "⚙" },
 ] as const;
