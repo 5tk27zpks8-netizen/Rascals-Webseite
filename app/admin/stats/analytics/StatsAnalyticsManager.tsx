@@ -14,7 +14,7 @@ type PlayerAggregate = { playerId:string; firstName:string; lastName:string; jer
 type TeamAggregate = { totals:Record<string,number>; derived:Derived[] };
 type Payload = {
   officialOnly:boolean;
-  season:Season;
+  selectedSeason:Season;
   seasons:Season[];
   games:Game[];
   selectedGameId:string;
@@ -22,7 +22,7 @@ type Payload = {
   selectedPlayerId:string;
   definitions:Definition[];
   boxScore:null|{ game:Game; statusCounts:{provisional:number;reviewed:number;official:number}; players:PlayerAggregate[]; team:TeamAggregate };
-  season:{ players:PlayerAggregate[]; team:TeamAggregate };
+  seasonAggregate:{ players:PlayerAggregate[]; team:TeamAggregate };
   playerAnalytics:null|{
     player:Player;
     season:{ totals:Record<string,number>; derived:Derived[] };
@@ -43,7 +43,10 @@ export function StatsAnalyticsManager(){
 
   async function boot(){
     const params=new URLSearchParams(window.location.search);
-    await load(params.get("season")||undefined,params.get("game")||undefined,params.get("player")||undefined,category);
+    const rawCategory=params.get("category")||"all";
+    const initialCategory:Category=["offense","defense","special-teams"].includes(rawCategory)?rawCategory as Category:"all";
+    setCategory(initialCategory);
+    await load(params.get("season")||undefined,params.get("game")||undefined,params.get("player")||undefined,initialCategory);
   }
 
   async function load(nextSeason?:string,nextGame?:string,nextPlayer?:string,nextCategory:Category=category){
@@ -57,7 +60,7 @@ export function StatsAnalyticsManager(){
       const response=await fetch(`/admin/api/stats-analytics?${params.toString()}`);
       if(!response.ok){const body=await response.json().catch(()=>({}));throw new Error(body.error??"Stats Analytics konnten nicht geladen werden.")}
       const body=await response.json() as Payload;
-      setData(body);setSeasonId(body.season.id);setGameId(body.selectedGameId);setPlayerId(body.selectedPlayerId);
+      setData(body);setSeasonId(body.selectedSeason.id);setGameId(body.selectedGameId);setPlayerId(body.selectedPlayerId);
     }catch(error){setNotice(error instanceof Error?error.message:"Fehler beim Laden.")}finally{setLoading(false)}
   }
 
@@ -76,7 +79,7 @@ export function StatsAnalyticsManager(){
   async function changeCategory(value:Category){setCategory(value);updateUrl(seasonId,gameId,playerId,value);await load(seasonId,gameId,playerId,value)}
 
   const reviewOpen=(data?.boxScore?.statusCounts.provisional??0)+(data?.boxScore?.statusCounts.reviewed??0);
-  const seasonPlayers=data?.season.players??[];
+  const seasonPlayers=data?.seasonAggregate.players??[];
   const leaders=useMemo(()=>buildLeaders(seasonPlayers,data?.definitions??[]),[seasonPlayers,data?.definitions]);
 
   return <AdminShell active="stats" title="Stats Analytics" eyebrow="RASCALS OS · OFFICIAL FOOTBALL ANALYTICS" actions={<><a className="cms-button secondary" href="/admin/stats">Stats Review</a><a className="cms-button secondary" href="/admin/performance">Performance</a></>}>
@@ -105,8 +108,8 @@ export function StatsAnalyticsManager(){
 
     <div className="sa-two-col">
       <AdminCard>
-        <div className="cms-section-head"><div><small>SEASON AGGREGATION</small><h2>{data?.season.name??"Saison"} · Team Output</h2></div></div>
-        <AggregateSummary title="Official Season Totals" aggregate={data?.season.team??{totals:{},derived:[]}} definitions={data?.definitions??[]}/>
+        <div className="cms-section-head"><div><small>SEASON AGGREGATION</small><h2>{data?.selectedSeason.name??"Saison"} · Team Output</h2></div></div>
+        <AggregateSummary title="Official Season Totals" aggregate={data?.seasonAggregate.team??{totals:{},derived:[]}} definitions={data?.definitions??[]}/>
       </AdminCard>
       <AdminCard>
         <div className="cms-section-head"><div><small>SEASON LEADERS</small><h2>Official Leaders</h2></div></div>
@@ -117,10 +120,10 @@ export function StatsAnalyticsManager(){
     {data?.playerAnalytics&&<AdminCard className="sa-player-card">
       <div className="cms-section-head"><div><small>PLAYER AGGREGATION</small><h2>#{data.playerAnalytics.player.jerseyNumber??"–"} {data.playerAnalytics.player.firstName} {data.playerAnalytics.player.lastName}</h2><p className="cms-muted">{data.playerAnalytics.player.position||"–"} · Season vs. Career</p></div></div>
       <div className="sa-player-grid">
-        <section><h3>{data.season.name}</h3><AggregateSummary title="Season" aggregate={data.playerAnalytics.season} definitions={data.definitions}/></section>
+        <section><h3>{data.selectedSeason.name}</h3><AggregateSummary title="Season" aggregate={data.playerAnalytics.season} definitions={data.definitions}/></section>
         <section><h3>Career</h3><AggregateSummary title="Career" aggregate={data.playerAnalytics.career} definitions={data.definitions}/></section>
       </div>
-      <div className="sa-career-history"><h3>Career by Season</h3><table><thead><tr><th>Saison</th>{careerColumns(data.playerAnalytics.career.bySeason,data.definitions).map(column=><th key={column.key}>{column.shortLabel}</th>)}</tr></thead><tbody>{data.playerAnalytics.career.bySeason.map(season=>{const columns=careerColumns(data.playerAnalytics!.career.bySeason,data.definitions);return <tr key={`${season.seasonId??"legacy"}-${season.season}`}><td><b>{season.season||"–"}</b></td>{columns.map(column=><td key={column.key}>{metricValue(season,column.key,column.valueType)}</td>)}</tr>})}</tbody></table>{!data.playerAnalytics.career.bySeason.length&&<p className="cms-muted">Noch keine Official Career Stats vorhanden.</p>}</div>
+      <CareerHistory rows={data.playerAnalytics.career.bySeason} definitions={data.definitions}/>
     </AdminCard>}
   </AdminShell>
 }
@@ -136,6 +139,12 @@ function AggregateSummary({title,aggregate,definitions}:{title:string;aggregate:
   const derived=aggregate.derived.slice(0,8).map(metric=>({key:metric.key,label:metric.label,shortLabel:metric.shortLabel,value:metric.value,valueType:metric.valueType}));
   const values=[...base,...derived];
   return <div className="sa-summary"><small>{title}</small><div>{values.map(item=><span key={item.key}><b>{formatValue(item.value,item.valueType)}</b><em>{item.shortLabel}</em></span>)}{!values.length&&<p className="cms-muted">Noch keine Official Stats vorhanden.</p>}</div></div>
+}
+
+function CareerHistory({rows,definitions}:{rows:Array<{seasonId:string|null;season:number;totals:Record<string,number>;derived:Derived[]}>;definitions:Definition[]}){
+  const columns=careerColumns(rows,definitions);
+  if(!rows.length)return <div className="sa-career-history"><h3>Career by Season</h3><p className="cms-muted">Noch keine Official Career Stats vorhanden.</p></div>;
+  return <div className="sa-career-history"><h3>Career by Season</h3><table><thead><tr><th>Saison</th>{columns.map(column=><th key={column.key}>{column.shortLabel}</th>)}</tr></thead><tbody>{rows.map(row=><tr key={`${row.seasonId??"legacy"}-${row.season}`}><td><b>{row.season||"–"}</b></td>{columns.map(column=><td key={column.key}>{metricValue(row,column.key,column.valueType)}</td>)}</tr>)}</tbody></table></div>
 }
 
 type Column={key:string;label:string;shortLabel:string;valueType:string};
