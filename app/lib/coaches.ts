@@ -13,6 +13,14 @@ export type Coach = {
   updatedAt: string;
 };
 
+async function ensureColumn(name: string, definition: string) {
+  const { DB } = bindings();
+  const info = await DB.prepare("PRAGMA table_info(coaches)").all<Record<string, unknown>>();
+  if (!info.results.some((row) => String(row.name) === name)) {
+    await DB.prepare(`ALTER TABLE coaches ADD COLUMN ${name} ${definition}`).run();
+  }
+}
+
 export async function ensureCoachesSchema() {
   const { DB } = bindings();
   await DB.prepare(`CREATE TABLE IF NOT EXISTS coaches (
@@ -25,8 +33,12 @@ export async function ensureCoachesSchema() {
     sort_order INTEGER NOT NULL DEFAULT 0,
     active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TEXT,
+    deleted_by TEXT
   )`).run();
+  await ensureColumn("deleted_at", "TEXT");
+  await ensureColumn("deleted_by", "TEXT");
 }
 
 export function mapCoach(row: Record<string, unknown>): Coach {
@@ -47,6 +59,6 @@ export function mapCoach(row: Record<string, unknown>): Coach {
 export async function listActiveCoaches() {
   await ensureCoachesSchema();
   const { DB } = bindings();
-  const result = await DB.prepare("SELECT * FROM coaches WHERE active=1 ORDER BY sort_order ASC, last_name ASC").all<Record<string, unknown>>();
+  const result = await DB.prepare("SELECT * FROM coaches WHERE active=1 AND deleted_at IS NULL ORDER BY sort_order ASC, last_name ASC").all<Record<string, unknown>>();
   return result.results.map(mapCoach);
 }
