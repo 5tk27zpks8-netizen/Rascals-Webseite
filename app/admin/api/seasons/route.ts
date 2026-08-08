@@ -5,7 +5,7 @@ import { ensureRosterFoundation, mapSeason, type SeasonStatus } from "../../../l
 type SeasonBody = { id?: string; year?: number; name?: string; status?: SeasonStatus; startsAt?: string | null; endsAt?: string | null; isCurrent?: boolean };
 
 export async function GET() {
-  const actor = await requireCmsPermission("players");
+  const actor = await requireCmsPermission("roster");
   if (actor instanceof Response) return actor;
   await ensureRosterFoundation();
   const { DB } = bindings();
@@ -14,7 +14,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const actor = await requireCmsPermission("players");
+  const actor = await requireCmsPermission("roster");
   if (actor instanceof Response) return actor;
   await ensureRosterFoundation();
   const body = await request.json() as SeasonBody;
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const actor = await requireCmsPermission("players");
+  const actor = await requireCmsPermission("roster");
   if (actor instanceof Response) return actor;
   await ensureRosterFoundation();
   const body = await request.json() as SeasonBody;
