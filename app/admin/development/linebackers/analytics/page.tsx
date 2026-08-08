@@ -1,4 +1,4 @@
-import { requireChatGPTUser } from "../../../chatgpt-auth";
+import { requireChatGPTUser } from "../../../../chatgpt-auth";
 import { LinebackerAnalyticsManager } from "./LinebackerAnalyticsManager";
 
 export const metadata = {
