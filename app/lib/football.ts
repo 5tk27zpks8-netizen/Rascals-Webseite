@@ -232,7 +232,11 @@ export async function listPlayerAchievements(playerId: string) {
 export async function listPlayerStats(playerId: string, season = 2026) {
   await ensureFootballSchema();
   const { DB } = bindings();
-  const result = await DB.prepare(`SELECT stat_key, SUM(stat_value) AS total FROM player_game_stats WHERE player_id=? AND season=? GROUP BY stat_key ORDER BY stat_key`).bind(playerId, season).all<Record<string, unknown>>();
+  const info = await DB.prepare("PRAGMA table_info(player_game_stats)").all<Record<string, unknown>>();
+  const hasStatus = info.results.some((row) => String(row.name) === "status");
+  const result = await DB.prepare(`SELECT stat_key, SUM(stat_value) AS total FROM player_game_stats
+    WHERE player_id=? AND season=? ${hasStatus ? "AND status='official'" : ""}
+    GROUP BY stat_key ORDER BY stat_key`).bind(playerId, season).all<Record<string, unknown>>();
   return result.results.map((row) => ({ key: String(row.stat_key), value: Number(row.total ?? 0) } satisfies PlayerStat));
 }
 
