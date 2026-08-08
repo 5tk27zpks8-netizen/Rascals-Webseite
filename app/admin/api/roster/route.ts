@@ -1,6 +1,6 @@
 import { bindings } from "../../../lib/cms";
 import { requireCmsPermission } from "../../../lib/permissions";
-import { ensureRosterFoundation, mapRosterMembership, type AvailabilityStatus, type RosterStatus } from "../../../lib/roster";
+import { ensureRosterFoundation, mapRosterMembership, type AvailabilityStatus, type PlanningStatus, type RosterStatus } from "../../../lib/roster";
 
 type RosterBody = {
   id?: string;
@@ -13,6 +13,7 @@ type RosterBody = {
   unit?: "offense" | "defense" | "special-teams";
   rosterStatus?: RosterStatus;
   availability?: AvailabilityStatus;
+  planningStatus?: PlanningStatus;
   starter?: boolean;
   captain?: boolean;
   rookie?: boolean;
@@ -52,10 +53,11 @@ export async function POST(request: Request) {
   }
   const id = body.id || crypto.randomUUID();
   try {
-    await DB.prepare(`INSERT INTO roster_memberships (id,season_id,team_id,player_id,jersey_number,primary_position,secondary_position,unit,roster_status,availability,starter,captain,rookie,leadership_role,joined_at,left_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
+    await DB.prepare(`INSERT INTO roster_memberships (id,season_id,team_id,player_id,jersey_number,primary_position,secondary_position,unit,roster_status,availability,planning_status,starter,captain,rookie,leadership_role,joined_at,left_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
         id, body.seasonId, body.teamId ?? "mens", body.playerId, body.jerseyNumber ?? null, body.primaryPosition ?? "", body.secondaryPosition ?? "", body.unit ?? "defense",
-        body.rosterStatus ?? "active", body.availability ?? "full", body.starter ? 1 : 0, body.captain ? 1 : 0, body.rookie ? 1 : 0, body.leadershipRole ?? "", body.joinedAt ?? null, body.leftAt ?? null,
+        body.rosterStatus ?? "active", body.availability ?? "full", body.planningStatus ?? "unknown", body.starter ? 1 : 0, body.captain ? 1 : 0, body.rookie ? 1 : 0,
+        body.leadershipRole ?? "", body.joinedAt ?? null, body.leftAt ?? null,
       ).run();
   } catch {
     return Response.json({ error: "Spieler ist bereits in diesem Saisonkader enthalten." }, { status: 409 });
@@ -82,13 +84,13 @@ export async function PUT(request: Request) {
       .bind(seasonId, teamId, jerseyNumber, body.id).first<{ player_id: string }>();
     if (duplicate) return Response.json({ error: `Trikotnummer #${jerseyNumber} ist in diesem Saisonkader bereits vergeben.` }, { status: 409 });
   }
-  await DB.prepare(`UPDATE roster_memberships SET season_id=?,team_id=?,player_id=?,jersey_number=?,primary_position=?,secondary_position=?,unit=?,roster_status=?,availability=?,starter=?,captain=?,rookie=?,leadership_role=?,joined_at=?,left_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(
+  await DB.prepare(`UPDATE roster_memberships SET season_id=?,team_id=?,player_id=?,jersey_number=?,primary_position=?,secondary_position=?,unit=?,roster_status=?,availability=?,planning_status=?,starter=?,captain=?,rookie=?,leadership_role=?,joined_at=?,left_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(
     seasonId, teamId, playerId, jerseyNumber, body.primaryPosition ?? String(existing.primary_position ?? ""), body.secondaryPosition ?? String(existing.secondary_position ?? ""),
     body.unit ?? String(existing.unit ?? "defense"), body.rosterStatus ?? String(existing.roster_status ?? "active"), body.availability ?? String(existing.availability ?? "full"),
-    body.starter === undefined ? Number(existing.starter ?? 0) : (body.starter ? 1 : 0), body.captain === undefined ? Number(existing.captain ?? 0) : (body.captain ? 1 : 0),
-    body.rookie === undefined ? Number(existing.rookie ?? 0) : (body.rookie ? 1 : 0), body.leadershipRole ?? String(existing.leadership_role ?? ""),
-    body.joinedAt === undefined ? (existing.joined_at ? String(existing.joined_at) : null) : body.joinedAt, body.leftAt === undefined ? (existing.left_at ? String(existing.left_at) : null) : body.leftAt,
-    body.id,
+    body.planningStatus ?? String(existing.planning_status ?? "unknown"), body.starter === undefined ? Number(existing.starter ?? 0) : (body.starter ? 1 : 0),
+    body.captain === undefined ? Number(existing.captain ?? 0) : (body.captain ? 1 : 0), body.rookie === undefined ? Number(existing.rookie ?? 0) : (body.rookie ? 1 : 0),
+    body.leadershipRole ?? String(existing.leadership_role ?? ""), body.joinedAt === undefined ? (existing.joined_at ? String(existing.joined_at) : null) : body.joinedAt,
+    body.leftAt === undefined ? (existing.left_at ? String(existing.left_at) : null) : body.leftAt, body.id,
   ).run();
   const row = await DB.prepare("SELECT * FROM roster_memberships WHERE id=?").bind(body.id).first<Record<string, unknown>>();
   return Response.json({ item: mapRosterMembership(row!) });
