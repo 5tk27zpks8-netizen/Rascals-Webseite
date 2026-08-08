@@ -2,6 +2,7 @@ import { bindings } from "../../../lib/cms";
 import { ensureFootballSchema } from "../../../lib/football";
 import { ensureGamedayRosterSchema, getActiveGamedayPlayers, getGameSeason } from "../../../lib/gameday-roster";
 import { requireCmsPermission } from "../../../lib/permissions";
+import { ensureStatsSchema } from "../../../lib/stats";
 
 type EventBody = {
   gameId?: string;
@@ -66,6 +67,7 @@ export async function GET(request: Request) {
   await ensureFootballSchema();
   await ensureAssignments();
   await ensureGamedayRosterSchema();
+  await ensureStatsSchema();
   const url = new URL(request.url);
   const { DB } = bindings();
 
@@ -108,6 +110,7 @@ export async function POST(request: Request) {
   await ensureFootballSchema();
   await ensureAssignments();
   await ensureGamedayRosterSchema();
+  await ensureStatsSchema();
   const body = await request.json() as EventBody;
   if (!body.gameId || !body.eventType) return Response.json({ error: "Spiel und Ereignis sind erforderlich." }, { status: 400 });
   const { DB } = bindings();
@@ -137,15 +140,19 @@ export async function POST(request: Request) {
   if (statKey) {
     const season = await getGameSeason(body.gameId);
     const seasonYear = Number(season?.year ?? 2026);
+    const seasonId = String(season?.season_id ?? "");
     statements.push(
-      DB.prepare(`INSERT INTO player_game_stats (id,player_id,game_id,season,stat_key,stat_value)
-        VALUES (?,?,?,?,?,?)`).bind(`gameday:${id}`, body.playerId, body.gameId, seasonYear, statKey, 1),
+      DB.prepare(`INSERT INTO player_game_stats
+        (id,player_id,game_id,season,season_id,stat_key,stat_value,status,source,source_event_id,note,created_by)
+        VALUES (?,?,?,?,?,?,1,'provisional','gameday',?,?,?)`).bind(
+          `gameday:${id}`, body.playerId, body.gameId, seasonYear, seasonId || null, statKey, id, body.text ?? "", actor.email,
+        ),
     );
   }
 
   await DB.batch(statements);
   const row = await DB.prepare("SELECT * FROM game_events WHERE id=?").bind(id).first<Record<string, unknown>>();
-  return Response.json({ item: mapEvent(row!), autoStat: statKey ?? null }, { status: 201 });
+  return Response.json({ item: mapEvent(row!), autoStat: statKey ?? null, autoStatStatus: statKey ? "provisional" : null }, { status: 201 });
 }
 
 export async function DELETE(request: Request) {
@@ -153,6 +160,7 @@ export async function DELETE(request: Request) {
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensureAssignments();
+  await ensureStatsSchema();
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return Response.json({ error: "ID fehlt." }, { status: 400 });
   const { DB } = bindings();
@@ -163,8 +171,13 @@ export async function DELETE(request: Request) {
     if (!assigned) return Response.json({ error: "Dieses Spiel ist dir nicht als Liveticker zugewiesen." }, { status: 403 });
   }
 
+  const linkedStat = await DB.prepare("SELECT status FROM player_game_stats WHERE id=? LIMIT 1").bind(`gameday:${id}`).first<{ status: string }>();
+  if (linkedStat && linkedStat.status !== "provisional") {
+    return Response.json({ error: "Dieser Ticker-Eintrag besitzt bereits eine reviewed/official Statistik. Status im Stats Review zuerst auf Provisional zurücksetzen." }, { status: 423 });
+  }
+
   await DB.batch([
-    DB.prepare("DELETE FROM player_game_stats WHERE id=?").bind(`gameday:${id}`),
+    DB.prepare("DELETE FROM player_game_stats WHERE id=? AND status='provisional'").bind(`gameday:${id}`),
     DB.prepare("DELETE FROM game_events WHERE id=?").bind(id),
   ]);
   return Response.json({ ok: true });
