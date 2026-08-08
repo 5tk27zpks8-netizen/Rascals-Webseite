@@ -11,16 +11,19 @@ type CoachBody = {
   bio?: string;
   sortOrder?: number;
   active?: boolean;
+  restore?: boolean;
 };
 
 async function authorize() { return requireCmsPermission("coaches"); }
 
-export async function GET() {
+export async function GET(request: Request) {
   const actor = await authorize();
   if (actor instanceof Response) return actor;
   await ensureCoachesSchema();
   const { DB } = bindings();
-  const result = await DB.prepare("SELECT * FROM coaches ORDER BY sort_order ASC, last_name ASC").all<Record<string, unknown>>();
+  const includeDeleted = new URL(request.url).searchParams.get("deleted") === "1";
+  const where = includeDeleted ? "deleted_at IS NOT NULL" : "deleted_at IS NULL";
+  const result = await DB.prepare(`SELECT * FROM coaches WHERE ${where} ORDER BY sort_order ASC, last_name ASC`).all<Record<string, unknown>>();
   return Response.json({ items: result.results.map(mapCoach) });
 }
 
@@ -44,9 +47,18 @@ export async function PUT(request: Request) {
   if (actor instanceof Response) return actor;
   await ensureCoachesSchema();
   const body = await request.json() as CoachBody;
-  if (!body.id || !body.firstName?.trim() || !body.lastName?.trim()) return Response.json({ error: "ID, Vor- und Nachname sind erforderlich." }, { status: 400 });
+  if (!body.id) return Response.json({ error: "ID ist erforderlich." }, { status: 400 });
   const { DB } = bindings();
-  await DB.prepare(`UPDATE coaches SET first_name=?,last_name=?,role=?,photo=?,bio=?,sort_order=?,active=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(
+
+  if (body.restore) {
+    await DB.prepare("UPDATE coaches SET deleted_at=NULL, deleted_by=NULL, active=1, updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(body.id).run();
+    const restored = await DB.prepare("SELECT * FROM coaches WHERE id=?").bind(body.id).first<Record<string, unknown>>();
+    if (!restored) return Response.json({ error: "Coach nicht gefunden." }, { status: 404 });
+    return Response.json({ item: mapCoach(restored) });
+  }
+
+  if (!body.firstName?.trim() || !body.lastName?.trim()) return Response.json({ error: "Vor- und Nachname sind erforderlich." }, { status: 400 });
+  await DB.prepare(`UPDATE coaches SET first_name=?,last_name=?,role=?,photo=?,bio=?,sort_order=?,active=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL`).bind(
     body.firstName.trim(), body.lastName.trim(), body.role?.trim() ?? "", body.photo ?? "", body.bio ?? "", Number(body.sortOrder ?? 0), body.active === false ? 0 : 1, body.id
   ).run();
   const row = await DB.prepare("SELECT * FROM coaches WHERE id=?").bind(body.id).first<Record<string, unknown>>();
@@ -61,6 +73,6 @@ export async function DELETE(request: Request) {
   if (!id) return Response.json({ error: "ID fehlt." }, { status: 400 });
   await ensureCoachesSchema();
   const { DB } = bindings();
-  await DB.prepare("DELETE FROM coaches WHERE id=?").bind(id).run();
+  await DB.prepare("UPDATE coaches SET deleted_at=CURRENT_TIMESTAMP, deleted_by=?, active=0, updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL").bind(actor.email, id).run();
   return Response.json({ ok: true });
 }
