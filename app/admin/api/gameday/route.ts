@@ -1,5 +1,6 @@
 import { bindings } from "../../../lib/cms";
 import { ensureFootballSchema } from "../../../lib/football";
+import { ensureGamedayRosterSchema, getActiveGamedayPlayers, getGameSeason } from "../../../lib/gameday-roster";
 import { requireCmsPermission } from "../../../lib/permissions";
 
 type EventBody = {
@@ -49,11 +50,22 @@ function mapEvent(row: Record<string, unknown>) {
   };
 }
 
+async function fallbackPlayers() {
+  const { DB } = bindings();
+  const result = await DB.prepare(`SELECT id, first_name, last_name, jersey_number, position
+    FROM players WHERE active=1 ORDER BY jersey_number, last_name`).all<Record<string, unknown>>();
+  return result.results.map((row) => ({
+    id: String(row.id), firstName: String(row.first_name ?? ""), lastName: String(row.last_name ?? ""),
+    jerseyNumber: row.jersey_number == null ? null : Number(row.jersey_number), position: String(row.position ?? ""),
+  }));
+}
+
 export async function GET(request: Request) {
   const actor = await authorize();
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensureAssignments();
+  await ensureGamedayRosterSchema();
   const url = new URL(request.url);
   const { DB } = bindings();
 
@@ -68,9 +80,6 @@ export async function GET(request: Request) {
           FROM games g LEFT JOIN game_gameday_assignments a ON a.game_id=g.id
           ORDER BY CASE g.status WHEN 'live' THEN 0 WHEN 'upcoming' THEN 1 ELSE 2 END, COALESCE(g.kickoff,'9999-12-31')`).all<Record<string, unknown>>();
 
-    const playersResult = await DB.prepare(`SELECT id, first_name, last_name, jersey_number, position
-      FROM players WHERE active=1 ORDER BY jersey_number, last_name`).all<Record<string, unknown>>();
-
     return Response.json({
       current: actor,
       games: gamesResult.results.map((row) => ({
@@ -78,10 +87,7 @@ export async function GET(request: Request) {
         status: String(row.status ?? "upcoming"), rascalsScore: Number(row.rascals_score ?? 0), opponentScore: Number(row.opponent_score ?? 0),
         quarter: String(row.quarter ?? ""), gameClock: String(row.game_clock ?? ""), gamedayAssignee: String(row.gameday_assignee ?? ""),
       })),
-      players: playersResult.results.map((row) => ({
-        id: String(row.id), firstName: String(row.first_name ?? ""), lastName: String(row.last_name ?? ""),
-        jerseyNumber: row.jersey_number == null ? null : Number(row.jersey_number), position: String(row.position ?? ""),
-      })),
+      players: await fallbackPlayers(),
     });
   }
 
@@ -92,7 +98,8 @@ export async function GET(request: Request) {
     if (!assigned) return Response.json({ error: "Dieses Spiel ist dir nicht als Liveticker zugewiesen." }, { status: 403 });
   }
   const result = await DB.prepare("SELECT * FROM game_events WHERE game_id=? ORDER BY created_at DESC").bind(gameId).all<Record<string, unknown>>();
-  return Response.json({ items: result.results.map(mapEvent) });
+  const gamedayPlayers = await getActiveGamedayPlayers(gameId);
+  return Response.json({ items: result.results.map(mapEvent), players: gamedayPlayers.length ? gamedayPlayers : await fallbackPlayers(), rosterApplied: gamedayPlayers.length > 0 });
 }
 
 export async function POST(request: Request) {
@@ -100,12 +107,21 @@ export async function POST(request: Request) {
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensureAssignments();
+  await ensureGamedayRosterSchema();
   const body = await request.json() as EventBody;
   if (!body.gameId || !body.eventType) return Response.json({ error: "Spiel und Ereignis sind erforderlich." }, { status: 400 });
   const { DB } = bindings();
   if (actor.role === "gameday") {
     const assigned = await DB.prepare("SELECT 1 FROM game_gameday_assignments WHERE game_id=? AND lower(user_email)=lower(?) LIMIT 1").bind(body.gameId, actor.email).first();
     if (!assigned) return Response.json({ error: "Dieses Spiel ist dir nicht als Liveticker zugewiesen." }, { status: 403 });
+  }
+
+  if (body.playerId) {
+    const rosterControl = await DB.prepare("SELECT status FROM gameday_roster_control WHERE game_id=? LIMIT 1").bind(body.gameId).first<{ status: string }>();
+    if (rosterControl) {
+      const active = await DB.prepare("SELECT 1 FROM gameday_roster_entries WHERE game_id=? AND player_id=? AND status='active' LIMIT 1").bind(body.gameId, body.playerId).first();
+      if (!active) return Response.json({ error: "Dieser Spieler steht für dieses Spiel nicht auf dem aktiven Gameday-Roster." }, { status: 409 });
+    }
   }
 
   const id = crypto.randomUUID();
@@ -119,9 +135,11 @@ export async function POST(request: Request) {
 
   const statKey = team === "rascals" && body.playerId ? AUTO_STAT_BY_EVENT[body.eventType] : undefined;
   if (statKey) {
+    const season = await getGameSeason(body.gameId);
+    const seasonYear = Number(season?.year ?? 2026);
     statements.push(
       DB.prepare(`INSERT INTO player_game_stats (id,player_id,game_id,season,stat_key,stat_value)
-        VALUES (?,?,?,?,?,?)`).bind(`gameday:${id}`, body.playerId, body.gameId, 2026, statKey, 1),
+        VALUES (?,?,?,?,?,?)`).bind(`gameday:${id}`, body.playerId, body.gameId, seasonYear, statKey, 1),
     );
   }
 
