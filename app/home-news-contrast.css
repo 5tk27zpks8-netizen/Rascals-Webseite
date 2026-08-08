@@ -1,0 +1,73 @@
+.news-preview .featured-news::after,
+.news-preview .compact-news::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(2,10,21,.08) 0%, rgba(2,10,21,.20) 34%, rgba(2,10,21,.78) 68%, rgba(2,10,21,.98) 100%),
+    linear-gradient(90deg, rgba(2,10,21,.28) 0%, transparent 60%);
+}
+
+.news-preview .featured-news > div,
+.news-preview .compact-news > div {
+  z-index: 2;
+}
+
+.news-preview .featured-news > div {
+  padding: 6.5rem 2.3rem 2.1rem;
+  background: linear-gradient(0deg, rgba(2,10,21,.99) 0%, rgba(2,10,21,.92) 42%, rgba(2,10,21,.42) 76%, transparent 100%);
+}
+
+.news-preview .featured-news h3 {
+  max-width: 760px;
+  margin: .55rem 0 .7rem;
+  font-size: clamp(1.65rem, 2.3vw, 2.35rem);
+  line-height: .98;
+  text-shadow: 0 2px 12px rgba(0,0,0,.55);
+}
+
+.news-preview .featured-news p,
+.news-preview .compact-news p {
+  color: rgba(255,255,255,.9);
+  text-shadow: 0 1px 8px rgba(0,0,0,.65);
+}
+
+.news-preview .featured-news p {
+  max-width: 760px;
+  margin-bottom: .95rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.news-preview .featured-news a,
+.news-preview .compact-news a {
+  display: inline-flex;
+  width: fit-content;
+  padding-bottom: .24rem;
+  border-bottom: 2px solid var(--red);
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0,0,0,.7);
+}
+
+.news-preview .featured-news div > span,
+.news-preview .compact-news div > span {
+  display: inline-flex;
+  width: fit-content;
+  padding: .34rem .5rem;
+  background: rgba(2,10,21,.72);
+  border-left: 3px solid var(--red);
+  color: #fff;
+}
+
+.news-preview .compact-news > div {
+  background: linear-gradient(0deg, rgba(3,13,26,.99) 0%, rgba(3,13,26,.92) 50%, rgba(3,13,26,.38) 82%, transparent 100%);
+}
+
+@media (max-width: 720px) {
+  .news-preview .featured-news > div { padding: 7rem 1.35rem 1.35rem; }
+  .news-preview .featured-news h3 { font-size: 1.55rem; }
+  .news-preview .featured-news p { -webkit-line-clamp: 2; font-size: .84rem; }
+}
