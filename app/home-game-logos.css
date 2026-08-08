@@ -1,0 +1,74 @@
+.home-game-matchup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.home-game-team {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+}
+
+.home-game-team:last-child {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.home-game-logo {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  object-fit: contain;
+}
+
+.home-game-logo-placeholder {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border: 1px solid rgba(7, 23, 43, .16);
+  background: rgba(255, 255, 255, .7);
+  color: #07172b;
+  font-size: .68rem;
+  font-weight: 900;
+}
+
+.home-game-team strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-game-versus {
+  color: var(--red);
+  font-size: .72rem;
+  font-style: italic;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .home-game-matchup {
+    gap: .55rem;
+  }
+
+  .home-game-team {
+    gap: .45rem;
+  }
+
+  .home-game-logo,
+  .home-game-logo-placeholder {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .home-game-team strong {
+    font-size: .78rem;
+  }
+}
