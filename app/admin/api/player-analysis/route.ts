@@ -1,6 +1,6 @@
 import { bindings } from "../../../lib/cms";
 import { ensurePerformanceSchema, mapPerformanceEntry, performanceIndex } from "../../../lib/performance";
-import { ensurePositionDevelopmentSchema, getPositionGroup, matchesPositionGroup } from "../../../lib/position-development";
+import { ensurePositionDevelopmentSchema, POSITION_GROUPS } from "../../../lib/position-development";
 import { ensureRosterFoundation } from "../../../lib/roster";
 import { ensureStatsSchema } from "../../../lib/stats";
 import { requireCmsPermission } from "../../../lib/permissions";
@@ -9,6 +9,7 @@ type Row = Record<string, unknown>;
 
 function avg(values: number[]) { return values.length ? values.reduce((a,b)=>a+b,0)/values.length : 0; }
 function round1(value:number){ return Math.round(value*10)/10; }
+function groupFor(primary:string, secondary:string){const positions=[primary,secondary].map(v=>v.trim().toUpperCase()).filter(Boolean);return POSITION_GROUPS.find(g=>positions.some(p=>g.aliases.includes(p))) ?? POSITION_GROUPS[0];}
 
 export async function GET(request: Request) {
   const actor = await requireCmsPermission("performance");
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
   for(const r of careerRows.results){const year=Number(r.year);if(!careerByYear.has(year))careerByYear.set(year,[]);careerByYear.get(year)!.push({key:String(r.stat_key),shortLabel:String(r.short_label??r.stat_key),label:String(r.label??r.stat_key),value:Number(r.total??0)});}
   const career = [...careerByYear.entries()].map(([year,items])=>({year,items})).sort((a,b)=>b.year-a.year);
 
-  const group = getPositionGroup(selected.primaryPosition || selected.secondaryPosition || "LB");
+  const group = groupFor(selected.primaryPosition, selected.secondaryPosition);
   const skillDefs = await DB.prepare("SELECT skill_key,label,category,description,sort_order FROM development_skill_definitions WHERE position_group=? AND active=1 ORDER BY sort_order,skill_key").bind(group.key).all<Row>();
   const skillKeys = new Set(skillDefs.results.map(r=>String(r.skill_key)));
   const evaluationRows = await DB.prepare("SELECT * FROM player_skill_evaluations WHERE player_id=? AND season_id=? ORDER BY evaluated_at DESC,created_at DESC")
