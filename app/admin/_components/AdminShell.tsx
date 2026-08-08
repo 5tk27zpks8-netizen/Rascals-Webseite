@@ -3,7 +3,12 @@
 import type { ReactNode } from "react";
 import "./admin-shell.css";
 
-type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches" | "performance" | "stats" | "development" | "teamdev" | "positiondev" | "lblab" | "lbanalytics" | "games" | "gameday" | "trash";
+type AdminSection =
+  | "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "trash"
+  | "playeranalysis" | "teammanagement" | "gameoperations"
+  | "players" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches"
+  | "performance" | "stats" | "development" | "teamdev" | "positiondev" | "lblab" | "lbanalytics"
+  | "games" | "gameday";
 
 type AdminShellProps = {
   active: AdminSection;
@@ -13,31 +18,41 @@ type AdminShellProps = {
   children: ReactNode;
 };
 
-const nav = [
+type NavItemType = { key: AdminSection; label: string; href: string; icon: string };
+
+const overview: NavItemType[] = [
   { key: "dashboard", label: "Dashboard", href: "/admin/dashboard", icon: "⌂" },
+];
+
+const content: NavItemType[] = [
   { key: "hero", label: "Hero", href: "/admin/hero", icon: "▣" },
   { key: "news", label: "News", href: "/admin/news", icon: "◆" },
   { key: "media", label: "Medien", href: "/admin/media", icon: "◫" },
   { key: "sponsors", label: "Sponsoren", href: "/admin/sponsors", icon: "◇" },
-  { key: "players", label: "Spieler", href: "/admin/players", icon: "#" },
-  { key: "roster", label: "Season Roster", href: "/admin/roster", icon: "R" },
-  { key: "depthchart", label: "Depth Chart", href: "/admin/depth-chart", icon: "D" },
-  { key: "gamedayroster", label: "Gameday Roster", href: "/admin/gameday-roster", icon: "G" },
-  { key: "rosterhealth", label: "Roster Health", href: "/admin/roster-health", icon: "H" },
-  { key: "coaches", label: "Coaches", href: "/admin/coaches", icon: "C" },
-  { key: "performance", label: "Performance", href: "/admin/performance", icon: "↗" },
-  { key: "stats", label: "Stats Review", href: "/admin/stats", icon: "Σ" },
-  { key: "development", label: "Entwicklung", href: "/admin/development", icon: "◎" },
-  { key: "teamdev", label: "Team Development", href: "/admin/development/team", icon: "T" },
-  { key: "positiondev", label: "Position Development", href: "/admin/development/positions", icon: "P" },
-  { key: "lblab", label: "LB Lab", href: "/admin/development/linebackers", icon: "L" },
-  { key: "lbanalytics", label: "LB Position Room", href: "/admin/development/linebackers/analytics", icon: "▥" },
-  { key: "games", label: "Spielplan", href: "/admin/games", icon: "◉" },
-  { key: "gameday", label: "Gameday", href: "/admin/gameday", icon: "⚡" },
+];
+
+const football: NavItemType[] = [
+  { key: "teammanagement", label: "Team & Kader", href: "/admin/team-management", icon: "R" },
+  { key: "playeranalysis", label: "Spieler & Analyse", href: "/admin/player-analysis", icon: "◎" },
+  { key: "gameoperations", label: "Spielbetrieb", href: "/admin/game-operations", icon: "⚡" },
+];
+
+const system: NavItemType[] = [
   { key: "trash", label: "Papierkorb", href: "/admin/trash", icon: "⌫" },
   { key: "users", label: "Benutzer", href: "/admin/users", icon: "●" },
   { key: "settings", label: "Einstellungen", href: "/admin/dashboard?section=settings", icon: "⚙" },
-] as const;
+];
+
+const teamSections: AdminSection[] = ["teammanagement", "players", "roster", "depthchart", "rosterhealth", "coaches"];
+const analysisSections: AdminSection[] = ["playeranalysis", "performance", "stats", "development", "teamdev", "positiondev", "lblab", "lbanalytics"];
+const gameSections: AdminSection[] = ["gameoperations", "games", "gamedayroster", "gameday"];
+
+function isNavActive(item: NavItemType, active: AdminSection) {
+  if (item.key === "teammanagement") return teamSections.includes(active);
+  if (item.key === "playeranalysis") return analysisSections.includes(active);
+  if (item.key === "gameoperations") return gameSections.includes(active);
+  return item.key === active;
+}
 
 export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 4", actions, children }: AdminShellProps) {
   return (
@@ -49,13 +64,13 @@ export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 4", 
         </a>
         <nav>
           <p>ÜBERSICHT</p>
-          <NavItem item={nav[0]} active={active === nav[0].key} />
+          {overview.map(item => <NavItem key={item.key} item={item} active={isNavActive(item, active)} />)}
           <p>INHALTE</p>
-          {nav.slice(1, 5).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          {content.map(item => <NavItem key={item.key} item={item} active={isNavActive(item, active)} />)}
           <p>FOOTBALL</p>
-          {nav.slice(5, 20).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          {football.map(item => <NavItem key={item.key} item={item} active={isNavActive(item, active)} />)}
           <p>SYSTEM</p>
-          {nav.slice(20).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          {system.map(item => <NavItem key={item.key} item={item} active={isNavActive(item, active)} />)}
         </nav>
         <div className="cms-user"><span>CG</span><div><b>CMS Zugriff</b><small>Cloudflare Access + Rollen</small></div></div>
       </aside>
@@ -71,7 +86,7 @@ export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 4", 
   );
 }
 
-function NavItem({ item, active }: { item: (typeof nav)[number]; active: boolean }) {
+function NavItem({ item, active }: { item: NavItemType; active: boolean }) {
   return <a className={active ? "active" : ""} href={item.href}><span>{item.icon}</span>{item.label}</a>;
 }
 
