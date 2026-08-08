@@ -26,7 +26,7 @@ export function RosterManager(){
   const filtered=useMemo(()=>items.filter(x=>`${x.firstName} ${x.lastName} ${x.primaryPosition} ${x.secondaryPosition} ${x.jerseyNumber??""} ${x.rosterStatus}`.toLowerCase().includes(query.toLowerCase())),[items,query]);
   const counts=useMemo(()=>({total:items.length,active:items.filter(x=>x.rosterStatus==="active").length,full:items.filter(x=>x.availability==="full").length,limited:items.filter(x=>x.availability!=="full").length}),[items]);
 
-  return <AdminShell active={"roster" as never} title="Season Roster" actions={<button className="cms-button" disabled={!selected||saving} onClick={()=>void save()}>{saving?"Speichert…":"Roster speichern"}</button>}>
+  return <AdminShell active="roster" title="Season Roster" actions={<button className="cms-button" disabled={!selected||saving} onClick={()=>void save()}>{saving?"Speichert…":"Roster speichern"}</button>}>
     {notice&&<AdminNotice tone={notice.includes("gespeichert")?"success":"error"}>{notice}</AdminNotice>}
     <div className="roster-topline">
       <label className="cms-field"><span>Saison</span><select value={seasonId} onChange={e=>void changeSeason(e.target.value)}>{seasons.map(s=><option key={s.id} value={s.id}>{s.name}{s.isCurrent?" · AKTUELL":""}</option>)}</select></label>
@@ -52,7 +52,7 @@ export function RosterManager(){
           </div>}
           {selected&&<div className="roster-flags"><label><input type="checkbox" checked={selected.starter} onChange={e=>setSelected({...selected,starter:e.target.checked})}/> Starter</label><label><input type="checkbox" checked={selected.captain} onChange={e=>setSelected({...selected,captain:e.target.checked})}/> Captain</label><label><input type="checkbox" checked={selected.rookie} onChange={e=>setSelected({...selected,rookie:e.target.checked})}/> Rookie</label></div>}
         </AdminCard>
-        <AdminCard><div className="cms-section-head"><div><small>NÄCHSTE AUSBAUSTUFE</small><h2>Depth Chart & Gameday</h2></div></div><p className="cms-muted">Die Datenbasis für historische Depth Charts und separate Gameday-Roster ist bereits vorbereitet. Als Nächstes bauen wir darauf die visuelle Depth-Chart-Steuerung und den Spieltags-Snapshot auf.</p></AdminCard>
+        <AdminCard><div className="cms-section-head"><div><small>FOOTBALL OPERATIONS</small><h2>Depth Chart</h2></div><a className="cms-button secondary" href={`/admin/depth-chart${seasonId?`?season=${encodeURIComponent(seasonId)}`:""}`}>Depth Chart öffnen →</a></div><p className="cms-muted">Starter, Backups und Third String werden versioniert geführt. Jede neue Aufstellung erzeugt einen Snapshot, sodass frühere Depth Charts nicht überschrieben werden.</p></AdminCard>
       </div>
     </div>
   </AdminShell>
