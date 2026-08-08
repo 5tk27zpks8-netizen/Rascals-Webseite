@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import "./home-news-contrast.css";
 
 type NewsItem = {
   id: string;
