@@ -1,6 +1,14 @@
 import { bindings } from "../../../lib/cms";
 import { ensureFootballSchema } from "../../../lib/football";
 
+async function ensureTrashColumn() {
+  const { DB } = bindings();
+  const info = await DB.prepare("PRAGMA table_info(games)").all<Record<string, unknown>>();
+  if (!info.results.some((row) => String(row.name) === "deleted_at")) {
+    await DB.prepare("ALTER TABLE games ADD COLUMN deleted_at TEXT").run();
+  }
+}
+
 function mapGame(row: Record<string, unknown>) {
   return {
     id: String(row.id),
@@ -19,10 +27,11 @@ function mapGame(row: Record<string, unknown>) {
 
 export async function GET() {
   await ensureFootballSchema();
+  await ensureTrashColumn();
   const { DB } = bindings();
   const result = await DB.prepare(`
     SELECT * FROM games
-    WHERE status <> 'cancelled'
+    WHERE status <> 'cancelled' AND deleted_at IS NULL
     ORDER BY COALESCE(kickoff,'9999-12-31') ASC, created_at DESC
   `).all();
 
