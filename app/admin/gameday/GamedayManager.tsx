@@ -50,11 +50,12 @@ export function GamedayManager() {
   const [text, setText] = useState("");
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [rosterApplied, setRosterApplied] = useState(false);
 
   const currentGame = useMemo(() => games.find((g) => g.id === gameId) ?? null, [games, gameId]);
 
   useEffect(() => { void loadBase(); }, []);
-  useEffect(() => { if (gameId) void loadEvents(gameId); else setEvents([]); }, [gameId]);
+  useEffect(() => { if (gameId) void loadEvents(gameId); else { setEvents([]); setRosterApplied(false); } }, [gameId]);
 
   async function loadBase() {
     try {
@@ -79,8 +80,11 @@ export function GamedayManager() {
       setNotice(body.error ?? "Ticker konnte nicht geladen werden.");
       return;
     }
-    const body = await response.json() as { items: Event[] };
+    const body = await response.json() as { items: Event[]; players?: Player[]; rosterApplied?: boolean };
     setEvents(body.items);
+    if (body.players) setPlayers(body.players);
+    setRosterApplied(Boolean(body.rosterApplied));
+    setPlayerId("");
   }
 
   async function addEvent() {
@@ -113,7 +117,7 @@ export function GamedayManager() {
     setNotice("Ticker-Eintrag gelöscht. Verknüpfte Auto-Stat wurde ebenfalls entfernt.");
   }
 
-  return <AdminShell active="gameday" title="Gameday Live-Ticker">
+  return <AdminShell active="gameday" title="Gameday Live-Ticker" actions={gameId ? <a className="cms-button secondary" href={`/admin/gameday-roster?game=${encodeURIComponent(gameId)}`}>Gameday Roster →</a> : undefined}>
     {notice && <AdminNotice tone={notice.includes("veröffentlicht") || notice.includes("gelöscht") ? "success" : "error"}>{notice}</AdminNotice>}
 
     <div className="gameday-layout">
@@ -125,9 +129,9 @@ export function GamedayManager() {
       </AdminCard>
 
       <AdminCard>
-        <div className="cms-section-head"><div><small>NEUER EINTRAG</small><h2>Wichtiges Ereignis</h2></div></div>
+        <div className="cms-section-head"><div><small>NEUER EINTRAG</small><h2>Wichtiges Ereignis</h2></div>{rosterApplied&&<span className="cms-muted">✓ Aktiver Gameday-Roster angewendet</span>}</div>
         <div className="gameday-event-buttons">{eventTypes.map(([key, label]) => <button key={key} className={eventType === key ? "active" : ""} onClick={() => setEventType(key)}>{label}</button>)}</div>
-        <p className="cms-muted">Touchdown, Interception, Sack und Forced Fumble werden bei ausgewähltem Spieler automatisch als Saisonstatistik mitgezählt.</p>
+        <p className="cms-muted">Touchdown, Interception, Sack und Forced Fumble werden bei ausgewähltem Spieler automatisch als Saisonstatistik mitgezählt. Sobald ein Gameday-Roster vorhanden ist, können hier nur ACTIVE-Spieler ausgewählt werden.</p>
         <div className="cms-grid-2 gameday-form">
           <label className="cms-field"><span>Spieler (optional)</span><select value={playerId} onChange={(e) => setPlayerId(e.target.value)}><option value="">Kein Spieler</option>{players.map((p) => <option key={p.id} value={p.id}>#{p.jerseyNumber ?? "—"} {p.firstName} {p.lastName} · {p.position}</option>)}</select></label>
           <label className="cms-field"><span>Quarter</span><select value={quarter} onChange={(e) => setQuarter(e.target.value)}><option value="">—</option><option>Q1</option><option>Q2</option><option>HALFTIME</option><option>Q3</option><option>Q4</option><option>OT</option><option>FINAL</option></select></label>
