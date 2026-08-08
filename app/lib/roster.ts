@@ -4,6 +4,7 @@ import { ensureFootballSchema } from "./football";
 export type SeasonStatus = "planning" | "active" | "completed" | "archived";
 export type RosterStatus = "active" | "practice-squad" | "reserve" | "injured" | "suspended" | "left" | "alumni";
 export type AvailabilityStatus = "full" | "limited" | "questionable" | "out" | "return-to-play";
+export type PlanningStatus = "unknown" | "returning" | "unsure" | "leaving";
 
 export type Season = {
   id: string;
@@ -28,6 +29,7 @@ export type RosterMembership = {
   unit: "offense" | "defense" | "special-teams";
   rosterStatus: RosterStatus;
   availability: AvailabilityStatus;
+  planningStatus: PlanningStatus;
   starter: boolean;
   captain: boolean;
   rookie: boolean;
@@ -42,6 +44,12 @@ async function tableColumns(table: string) {
   const { DB } = bindings();
   const info = await DB.prepare(`PRAGMA table_info(${table})`).all<Record<string, unknown>>();
   return new Set(info.results.map((row) => String(row.name)));
+}
+
+async function ensureColumn(table: string, column: string, definition: string) {
+  const { DB } = bindings();
+  const columns = await tableColumns(table);
+  if (!columns.has(column)) await DB.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
 }
 
 export async function ensureRosterFoundation() {
@@ -71,6 +79,7 @@ export async function ensureRosterFoundation() {
       unit TEXT NOT NULL DEFAULT 'defense',
       roster_status TEXT NOT NULL DEFAULT 'active',
       availability TEXT NOT NULL DEFAULT 'full',
+      planning_status TEXT NOT NULL DEFAULT 'unknown',
       starter INTEGER NOT NULL DEFAULT 0,
       captain INTEGER NOT NULL DEFAULT 0,
       rookie INTEGER NOT NULL DEFAULT 0,
@@ -113,6 +122,8 @@ export async function ensureRosterFoundation() {
     DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_gameday_roster_unique ON gameday_roster_entries(game_id,player_id)`),
   ]);
 
+  await ensureColumn("roster_memberships", "planning_status", "TEXT NOT NULL DEFAULT 'unknown'");
+
   await DB.prepare(`INSERT OR IGNORE INTO seasons (id,year,name,status,is_current)
     VALUES ('season-2026',2026,'Saison 2026','active',1)`).run();
 
@@ -149,10 +160,12 @@ export function mapRosterMembership(row: Record<string, unknown>): RosterMembers
   const rosterStatus: RosterStatus = ["practice-squad", "reserve", "injured", "suspended", "left", "alumni"].includes(rawRosterStatus) ? rawRosterStatus as RosterStatus : "active";
   const rawAvailability = String(row.availability ?? "full");
   const availability: AvailabilityStatus = ["limited", "questionable", "out", "return-to-play"].includes(rawAvailability) ? rawAvailability as AvailabilityStatus : "full";
+  const rawPlanning = String(row.planning_status ?? "unknown");
+  const planningStatus: PlanningStatus = ["returning", "unsure", "leaving"].includes(rawPlanning) ? rawPlanning as PlanningStatus : "unknown";
   return {
     id: String(row.id), seasonId: String(row.season_id), teamId: String(row.team_id), playerId: String(row.player_id),
     jerseyNumber: row.jersey_number == null ? null : Number(row.jersey_number), primaryPosition: String(row.primary_position ?? ""), secondaryPosition: String(row.secondary_position ?? ""), unit,
-    rosterStatus, availability, starter: Number(row.starter ?? 0) === 1, captain: Number(row.captain ?? 0) === 1, rookie: Number(row.rookie ?? 0) === 1,
+    rosterStatus, availability, planningStatus, starter: Number(row.starter ?? 0) === 1, captain: Number(row.captain ?? 0) === 1, rookie: Number(row.rookie ?? 0) === 1,
     leadershipRole: String(row.leadership_role ?? ""), joinedAt: row.joined_at ? String(row.joined_at) : null, leftAt: row.left_at ? String(row.left_at) : null,
     createdAt: String(row.created_at ?? ""), updatedAt: String(row.updated_at ?? ""),
   };
