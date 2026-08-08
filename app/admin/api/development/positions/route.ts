@@ -1,5 +1,6 @@
 import { bindings } from "../../../../lib/cms";
-import { developmentNeedScore, ensurePositionDevelopmentSchema, getGroupSkills, getPositionGroup, matchesPositionGroup, POSITION_GROUPS, type PositionGroupKey } from "../../../../lib/position-development";
+import { developmentNeedScore, getGroupSkills, getPositionGroup, matchesPositionGroup, POSITION_GROUPS, type PositionGroupKey } from "../../../../lib/position-development";
+import { ensurePositionDrills } from "../../../../lib/position-drills";
 import { requireCmsPermission } from "../../../../lib/permissions";
 
 type Row = Record<string, unknown>;
@@ -47,7 +48,7 @@ function mapEvaluation(row: Row) {
 export async function GET(request: Request) {
   const actor = await requireCmsPermission("performance");
   if (actor instanceof Response) return actor;
-  await ensurePositionDevelopmentSchema();
+  await ensurePositionDrills();
   const { DB } = bindings();
   const url = new URL(request.url);
   const group = getPositionGroup(url.searchParams.get("group"));
@@ -81,6 +82,16 @@ export async function GET(request: Request) {
     else if (!previous.has(key)) previous.set(key, entry);
   }
 
+  const drillResult = await DB.prepare(`SELECT l.skill_key,d.id,d.title,d.phase,d.intensity,d.min_minutes,d.max_minutes,d.description,d.coaching_points,l.relevance
+    FROM development_skill_drills l JOIN development_drills d ON d.id=l.drill_id
+    WHERE d.position_group=? AND d.active=1 ORDER BY l.skill_key,l.relevance DESC,d.title`).bind(group.key).all<Row>();
+  const drillsBySkill = new Map<string, Array<Record<string, unknown>>>();
+  for (const row of drillResult.results) {
+    const skillKey = String(row.skill_key);
+    if (!drillsBySkill.has(skillKey)) drillsBySkill.set(skillKey, []);
+    drillsBySkill.get(skillKey)!.push({ id: String(row.id), title: String(row.title ?? ""), phase: String(row.phase ?? "indy"), intensity: String(row.intensity ?? "medium"), minMinutes: Number(row.min_minutes ?? 8), maxMinutes: Number(row.max_minutes ?? 15), description: String(row.description ?? ""), coachingPoints: String(row.coaching_points ?? ""), relevance: Number(row.relevance ?? 100) });
+  }
+
   const groupNeeds = skills.map((skill) => {
     const rows = players.map((player) => latest.get(`${player.id}|${skill.key}`)).filter((entry): entry is ReturnType<typeof mapEvaluation> => Boolean(entry));
     const current = avg(rows.map((entry) => entry.current));
@@ -99,6 +110,7 @@ export async function GET(request: Request) {
       ...skill, count: rows.length, current: round1(current), target: round1(target), priority: round1(priority), confidence: round1(confidence), needScore,
       coveragePct, trainingScore, trend: trendRows.length ? round1(avg(trendRows)) : null,
       state: coveragePct < 40 ? "evaluate-first" : trainingScore >= 50 ? "focus" : trainingScore >= 25 ? "improve" : "maintain",
+      drills: (drillsBySkill.get(skill.key) ?? []).slice(0, 3),
     };
   }).sort((a, b) => b.trainingScore - a.trainingScore || b.needScore - a.needScore || a.sortOrder - b.sortOrder);
 
@@ -118,6 +130,7 @@ export async function GET(request: Request) {
         needScore: developmentNeedScore(currentRating, targetRating, priority), delta: before ? round1(currentRating - before.current) : null,
         lastEvaluatedAt: current?.evaluatedAt ?? null, lastEvaluatedBy: current?.evaluatedBy ?? "",
         history: playerEvaluations.filter((entry) => entry.skillKey === skill.key).slice(0, 10),
+        drills: (drillsBySkill.get(skill.key) ?? []).slice(0, 3),
       };
     });
     const goalsResult = await DB.prepare(`SELECT * FROM development_goals WHERE player_id=? AND season_id=?
@@ -185,7 +198,7 @@ async function validateMembership(DB: ReturnType<typeof bindings>["DB"], playerI
 export async function POST(request: Request) {
   const actor = await requireCmsPermission("performance");
   if (actor instanceof Response) return actor;
-  await ensurePositionDevelopmentSchema();
+  await ensurePositionDrills();
   const body = await request.json() as Body;
   const { DB } = bindings();
   const group = getPositionGroup(body.group);
@@ -227,7 +240,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   const actor = await requireCmsPermission("performance");
   if (actor instanceof Response) return actor;
-  await ensurePositionDevelopmentSchema();
+  await ensurePositionDrills();
   const body = await request.json() as Body;
   const { DB } = bindings();
 
