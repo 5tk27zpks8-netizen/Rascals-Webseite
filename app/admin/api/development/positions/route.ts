@@ -70,8 +70,9 @@ export async function GET(request: Request) {
   const playerIds = new Set(players.map((player) => player.id));
 
   const skills = await getGroupSkills(group.key);
+  const skillKeys = new Set(skills.map((skill) => skill.key));
   const evaluationResult = await DB.prepare(`SELECT * FROM player_skill_evaluations WHERE season_id=? ORDER BY evaluated_at DESC,created_at DESC`).bind(season.id).all<Row>();
-  const evaluations = evaluationResult.results.map(mapEvaluation).filter((entry) => playerIds.has(entry.playerId) && skills.some((skill) => skill.key === entry.skillKey));
+  const evaluations = evaluationResult.results.map(mapEvaluation).filter((entry) => playerIds.has(entry.playerId) && skillKeys.has(entry.skillKey));
   const latest = new Map<string, ReturnType<typeof mapEvaluation>>();
   const previous = new Map<string, ReturnType<typeof mapEvaluation>>();
   for (const entry of evaluations) {
@@ -125,14 +126,13 @@ export async function GET(request: Request) {
     const goals = goalsResult.results.map((row) => ({
       id: String(row.id), skillKey: row.skill_key ? String(row.skill_key) : null, title: String(row.title ?? ""), targetRating: row.target_rating == null ? null : Number(row.target_rating),
       dueDate: row.due_date ? String(row.due_date) : null, status: String(row.status ?? "open"), note: String(row.note ?? ""), updatedAt: String(row.updated_at ?? ""),
-    })).filter((goal) => !goal.skillKey || skills.some((skill) => skill.key === goal.skillKey));
+    })).filter((goal) => !goal.skillKey || skillKeys.has(goal.skillKey));
 
-    const statKeys = group.statKeys;
     let officialStats: Record<string, number> = {};
-    if (statKeys.length) {
+    if (group.statKeys.length) {
       const statsResult = await DB.prepare(`SELECT stat_key,SUM(stat_value) AS total FROM player_game_stats WHERE player_id=? AND season_id=? AND status='official' GROUP BY stat_key ORDER BY stat_key`)
         .bind(selectedPlayer.id, season.id).all<Row>();
-      officialStats = Object.fromEntries(statsResult.results.filter((row) => statKeys.includes(String(row.stat_key))).map((row) => [String(row.stat_key), Number(row.total ?? 0)]));
+      officialStats = Object.fromEntries(statsResult.results.filter((row) => group.statKeys.includes(String(row.stat_key))).map((row) => [String(row.stat_key), Number(row.total ?? 0)]));
     }
 
     const perfResult = await DB.prepare(`SELECT occurred_at,attendance,effort,execution,discipline,impact,overall,context FROM player_performance_entries
@@ -150,7 +150,7 @@ export async function GET(request: Request) {
         totalSkills: skills.length,
         coveragePct: skills.length ? Math.round((ratedSkills.length / skills.length) * 100) : 0,
         currentIndex: ratedSkills.length ? Math.round(avg(ratedSkills.map((skill) => skill.current)) * 20) : null,
-        needIndex: ratedSkills.length ? Math.round(avg(ratedSkills.map((skill) => skill.needScore)) : null,
+        needIndex: ratedSkills.length ? Math.round(avg(ratedSkills.map((skill) => skill.needScore))) : null,
         improved: playerSkills.filter((skill) => skill.delta != null && skill.delta > 0).length,
         declined: playerSkills.filter((skill) => skill.delta != null && skill.delta < 0).length,
         openGoals: goals.filter((goal) => goal.status !== "achieved").length,
@@ -179,7 +179,7 @@ async function validateMembership(DB: ReturnType<typeof bindings>["DB"], playerI
   const group = getPositionGroup(groupKey);
   const row = await DB.prepare(`SELECT primary_position,secondary_position FROM roster_memberships WHERE player_id=? AND season_id=? AND team_id='mens' AND roster_status NOT IN ('left','alumni') LIMIT 1`)
     .bind(playerId, seasonId).first<Row>();
-  return row && matchesPositionGroup(group, String(row.primary_position ?? ""), String(row.secondary_position ?? ""));
+  return Boolean(row && matchesPositionGroup(group, String(row.primary_position ?? ""), String(row.secondary_position ?? "")));
 }
 
 export async function POST(request: Request) {
