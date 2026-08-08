@@ -22,6 +22,7 @@ export type NewsPost = {
   ogImage: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
 };
 
 async function ensureColumn(name: string, definition: string) {
@@ -52,7 +53,9 @@ export async function ensureNewsSchema() {
     seo_description TEXT NOT NULL DEFAULT '',
     og_image TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TEXT,
+    deleted_by TEXT
   )`).run();
   await ensureColumn("subtitle", "TEXT NOT NULL DEFAULT ''");
   await ensureColumn("gallery", "TEXT NOT NULL DEFAULT '[]'");
@@ -61,6 +64,8 @@ export async function ensureNewsSchema() {
   await ensureColumn("seo_title", "TEXT NOT NULL DEFAULT ''");
   await ensureColumn("seo_description", "TEXT NOT NULL DEFAULT ''");
   await ensureColumn("og_image", "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn("deleted_at", "TEXT");
+  await ensureColumn("deleted_by", "TEXT");
 }
 
 function rowToPost(row: Record<string, unknown>): NewsPost {
@@ -76,6 +81,7 @@ function rowToPost(row: Record<string, unknown>): NewsPost {
     publishedAt: row.published_at ? String(row.published_at) : null,
     seoTitle: String(row.seo_title ?? ""), seoDescription: String(row.seo_description ?? ""), ogImage: String(row.og_image ?? ""),
     createdAt: String(row.created_at), updatedAt: String(row.updated_at),
+    deletedAt: row.deleted_at ? String(row.deleted_at) : null,
   };
 }
 
@@ -103,10 +109,13 @@ export async function GET(request: Request) {
   if (actor instanceof Response) return actor;
   await ensureNewsSchema();
   const { DB } = bindings();
-  const query = new URL(request.url).searchParams.get("q")?.trim().toLowerCase() ?? "";
+  const url = new URL(request.url);
+  const query = url.searchParams.get("q")?.trim().toLowerCase() ?? "";
+  const includeDeleted = url.searchParams.get("deleted") === "1";
+  const deletedClause = includeDeleted ? "deleted_at IS NOT NULL" : "deleted_at IS NULL";
   const result = query
-    ? await DB.prepare("SELECT * FROM news_posts WHERE lower(title) LIKE ? OR lower(category) LIKE ? ORDER BY updated_at DESC").bind(`%${query}%`, `%${query}%`).all()
-    : await DB.prepare("SELECT * FROM news_posts ORDER BY updated_at DESC").all();
+    ? await DB.prepare(`SELECT * FROM news_posts WHERE ${deletedClause} AND (lower(title) LIKE ? OR lower(category) LIKE ?) ORDER BY updated_at DESC`).bind(`%${query}%`, `%${query}%`).all()
+    : await DB.prepare(`SELECT * FROM news_posts WHERE ${deletedClause} ORDER BY updated_at DESC`).all();
   return Response.json({ items: result.results.map((row) => rowToPost(row as Record<string, unknown>)), user: actor });
 }
 
@@ -137,14 +146,23 @@ export async function PUT(request: Request) {
   const actor = await requireCmsPermission("news");
   if (actor instanceof Response) return actor;
   await ensureNewsSchema();
-  const body = await request.json() as Partial<NewsPost>;
-  if (!body.id || !body.title?.trim()) return Response.json({ error: "ID and title are required" }, { status: 400 });
+  const body = await request.json() as Partial<NewsPost> & { restore?: boolean };
+  if (!body.id) return Response.json({ error: "ID is required" }, { status: 400 });
+  const { DB } = bindings();
+
+  if (body.restore) {
+    await DB.prepare("UPDATE news_posts SET deleted_at=NULL, deleted_by=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(body.id).run();
+    const restored = await DB.prepare("SELECT * FROM news_posts WHERE id=?").bind(body.id).first<Record<string, unknown>>();
+    if (!restored) return Response.json({ error: "Not found" }, { status: 404 });
+    return Response.json({ item: rowToPost(restored) });
+  }
+
+  if (!body.title?.trim()) return Response.json({ error: "Title is required" }, { status: 400 });
   const status = normalizeStatus(body.status);
   const slug = await uniqueSlug(slugify(body.slug || body.title), body.id);
   const publishAt = status === "scheduled" ? (body.publishAt || new Date().toISOString()) : null;
   const publishedAt = status === "published" ? (body.publishedAt || new Date().toISOString()) : body.publishedAt ?? null;
-  const { DB } = bindings();
-  await DB.prepare(`UPDATE news_posts SET slug=?,title=?,subtitle=?,excerpt=?,content=?,image=?,gallery=?,category=?,author=?,status=?,publish_at=?,published_at=?,seo_title=?,seo_description=?,og_image=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+  await DB.prepare(`UPDATE news_posts SET slug=?,title=?,subtitle=?,excerpt=?,content=?,image=?,gallery=?,category=?,author=?,status=?,publish_at=?,published_at=?,seo_title=?,seo_description=?,og_image=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL`)
     .bind(slug, body.title.trim(), body.subtitle ?? "", body.excerpt ?? "", body.content ?? "", body.image ?? "", JSON.stringify(body.gallery ?? []), body.category ?? "Team", body.author || actor.name || actor.email, status, publishAt, publishedAt, body.seoTitle ?? "", body.seoDescription ?? "", body.ogImage ?? "", body.id)
     .run();
   const row = await DB.prepare("SELECT * FROM news_posts WHERE id = ?").bind(body.id).first<Record<string, unknown>>();
@@ -159,6 +177,7 @@ export async function DELETE(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return Response.json({ error: "ID is required" }, { status: 400 });
   const { DB } = bindings();
-  await DB.prepare("DELETE FROM news_posts WHERE id = ?").bind(id).run();
+  await DB.prepare("UPDATE news_posts SET deleted_at=CURRENT_TIMESTAMP, deleted_by=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL")
+    .bind(actor.email, id).run();
   return Response.json({ ok: true });
 }
