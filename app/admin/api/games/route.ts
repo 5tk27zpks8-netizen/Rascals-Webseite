@@ -16,6 +16,7 @@ type GameBody = {
   quarter?: string;
   gameClock?: string;
   gamedayAssignee?: string;
+  restore?: boolean;
 };
 
 async function ensureAssignments() {
@@ -25,6 +26,14 @@ async function ensureAssignments() {
     user_email TEXT NOT NULL,
     assigned_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`).run();
+}
+
+async function ensureTrashColumns() {
+  const { DB } = bindings();
+  const info = await DB.prepare("PRAGMA table_info(games)").all<Record<string, unknown>>();
+  const columns = new Set(info.results.map((row) => String(row.name)));
+  if (!columns.has("deleted_at")) await DB.prepare("ALTER TABLE games ADD COLUMN deleted_at TEXT").run();
+  if (!columns.has("deleted_by")) await DB.prepare("ALTER TABLE games ADD COLUMN deleted_by TEXT").run();
 }
 
 function mapGame(row: Record<string, unknown>) {
@@ -71,14 +80,18 @@ async function getGame(id: string) {
     WHERE g.id=? LIMIT 1`).bind(id).first<Record<string, unknown>>();
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const actor = await authorize();
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensureAssignments();
+  await ensureTrashColumns();
   const { DB } = bindings();
+  const includeDeleted = new URL(request.url).searchParams.get("deleted") === "1";
+  const where = includeDeleted ? "g.deleted_at IS NOT NULL" : "g.deleted_at IS NULL";
   const result = await DB.prepare(`SELECT g.*, COALESCE(a.user_email,'') AS gameday_assignee
     FROM games g LEFT JOIN game_gameday_assignments a ON a.game_id=g.id
+    WHERE ${where}
     ORDER BY COALESCE(g.kickoff,'9999-12-31') ASC, g.created_at DESC`).all();
   return Response.json({ items: result.results.map((row) => mapGame(row as Record<string, unknown>)) });
 }
@@ -88,6 +101,7 @@ export async function POST(request: Request) {
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensureAssignments();
+  await ensureTrashColumns();
   const body = await request.json() as GameBody;
   if (!body.opponent?.trim()) return Response.json({ error: "Gegner ist erforderlich." }, { status: 400 });
   const id = crypto.randomUUID();
@@ -108,11 +122,21 @@ export async function PUT(request: Request) {
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensureAssignments();
+  await ensureTrashColumns();
   const body = await request.json() as GameBody;
-  if (!body.id || !body.opponent?.trim()) return Response.json({ error: "ID und Gegner sind erforderlich." }, { status: 400 });
-  const slug = slugify(body.slug || `${body.opponent}-${body.kickoff ?? body.id}`) || body.id;
+  if (!body.id) return Response.json({ error: "ID ist erforderlich." }, { status: 400 });
   const { DB } = bindings();
-  await DB.prepare(`UPDATE games SET slug=?,opponent=?,opponent_logo=?,venue=?,home_away=?,kickoff=?,status=?,rascals_score=?,opponent_score=?,quarter=?,game_clock=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(
+
+  if (body.restore) {
+    await DB.prepare("UPDATE games SET deleted_at=NULL, deleted_by=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(body.id).run();
+    const restored = await getGame(body.id);
+    if (!restored) return Response.json({ error: "Spiel nicht gefunden." }, { status: 404 });
+    return Response.json({ item: mapGame(restored) });
+  }
+
+  if (!body.opponent?.trim()) return Response.json({ error: "Gegner ist erforderlich." }, { status: 400 });
+  const slug = slugify(body.slug || `${body.opponent}-${body.kickoff ?? body.id}`) || body.id;
+  await DB.prepare(`UPDATE games SET slug=?,opponent=?,opponent_logo=?,venue=?,home_away=?,kickoff=?,status=?,rascals_score=?,opponent_score=?,quarter=?,game_clock=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL`).bind(
     slug, body.opponent.trim(), body.opponentLogo ?? "", body.venue ?? "", body.homeAway ?? "home", body.kickoff ?? null,
     body.status ?? "upcoming", Number(body.rascalsScore ?? 0), Number(body.opponentScore ?? 0), body.quarter ?? "", body.gameClock ?? "", body.id
   ).run();
@@ -127,11 +151,10 @@ export async function DELETE(request: Request) {
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensureAssignments();
+  await ensureTrashColumns();
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return Response.json({ error: "ID fehlt." }, { status: 400 });
   const { DB } = bindings();
-  await DB.prepare("DELETE FROM game_gameday_assignments WHERE game_id=?").bind(id).run();
-  await DB.prepare("DELETE FROM game_events WHERE game_id=?").bind(id).run();
-  await DB.prepare("DELETE FROM games WHERE id=?").bind(id).run();
+  await DB.prepare("UPDATE games SET deleted_at=CURRENT_TIMESTAMP, deleted_by=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL").bind(actor.email, id).run();
   return Response.json({ ok: true });
 }
