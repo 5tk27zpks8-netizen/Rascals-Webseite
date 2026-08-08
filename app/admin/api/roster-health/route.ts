@@ -36,7 +36,7 @@ async function ensureHealthSchema() {
 
 function groupForPosition(position: string) {
   const normalized = position.trim().toUpperCase();
-  return POSITION_GROUPS.find((group) => group.positions.includes(normalized as never))?.key ?? "OTHER";
+  return POSITION_GROUPS.find((group) => (group.positions as readonly string[]).includes(normalized))?.key ?? "OTHER";
 }
 
 function seasonMap(row: Record<string, unknown>) {
@@ -171,13 +171,14 @@ export async function PUT(request: Request) {
   const body = await request.json() as { seasonId?: string; teamId?: string; targets?: { positionGroup?: string; targetCount?: number; minimumReady?: number }[] };
   if (!body.seasonId) return Response.json({ error: "Saison ist erforderlich." }, { status: 400 });
   const teamId = body.teamId?.trim() || "mens";
-  const allowed = new Set([...POSITION_GROUPS.map((group) => group.key), "OTHER"]);
+  const allowed = new Set<string>([...POSITION_GROUPS.map((group) => group.key), "OTHER"]);
   const targets = body.targets ?? [];
   for (const target of targets) {
     if (!target.positionGroup || !allowed.has(target.positionGroup)) return Response.json({ error: "Ungültige Positionsgruppe." }, { status: 400 });
     if (!Number.isInteger(target.targetCount) || Number(target.targetCount) < 0 || Number(target.targetCount) > 99) return Response.json({ error: "Ziel-Kaderstärke muss zwischen 0 und 99 liegen." }, { status: 400 });
     if (!Number.isInteger(target.minimumReady) || Number(target.minimumReady) < 0 || Number(target.minimumReady) > Number(target.targetCount)) return Response.json({ error: "Minimum Game Ready muss zwischen 0 und Ziel-Kaderstärke liegen." }, { status: 400 });
   }
+  if (!targets.length) return Response.json({ ok: true, updated: 0 });
   const { DB } = bindings();
   await DB.batch(targets.map((target) => DB.prepare(`INSERT INTO roster_position_targets (season_id,team_id,position_group,target_count,minimum_ready,updated_by,updated_at)
     VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)
