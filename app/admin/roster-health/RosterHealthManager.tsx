@@ -59,6 +59,7 @@ export function RosterHealthManager(){
       targetCount:Number(targets[group.key]?.targetCount||0),
       minimumReady:Number(targets[group.key]?.minimumReady||0),
     }));
+    if(!items.length){setNotice("Noch keine Positions-Zielwerte eingetragen.");return}
     for(const item of items){if(!Number.isInteger(item.targetCount)||item.targetCount<0||!Number.isInteger(item.minimumReady)||item.minimumReady<0||item.minimumReady>item.targetCount){setNotice("Bitte gültige Zielwerte setzen: Minimum Game Ready darf nicht größer als die Ziel-Kaderstärke sein.");return}}
     setSaving(true);setNotice("");
     try{
