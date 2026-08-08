@@ -16,6 +16,15 @@ export type StatDefinition = {
   sortOrder: number;
 };
 
+export type DerivedStatMetric = {
+  key: string;
+  label: string;
+  shortLabel: string;
+  category: StatCategory;
+  value: number;
+  valueType: "percentage" | "average";
+};
+
 const DEFINITIONS: Array<Omit<StatDefinition, "positions"> & { positions: string }> = [
   { key: "pass_attempts", label: "Pass Attempts", shortLabel: "ATT", category: "offense", valueType: "attempts", aggregation: "sum", positions: "QB", active: true, sortOrder: 10 },
   { key: "pass_completions", label: "Pass Completions", shortLabel: "CMP", category: "offense", valueType: "count", aggregation: "sum", positions: "QB", active: true, sortOrder: 20 },
@@ -116,7 +125,6 @@ export async function ensureStatsSchema() {
       aggregation=excluded.aggregation,positions=excluded.positions,active=excluded.active,sort_order=excluded.sort_order,updated_at=CURRENT_TIMESTAMP`)
     .bind(definition.key, definition.label, definition.shortLabel, definition.category, definition.valueType, definition.aggregation, definition.positions, definition.active ? 1 : 0, definition.sortOrder)));
 
-  // Keep legacy season/year data connected to the new season model without deleting or rewriting historical values.
   await DB.prepare(`UPDATE player_game_stats SET season_id=(SELECT s.id FROM seasons s WHERE s.year=player_game_stats.season LIMIT 1)
     WHERE (season_id IS NULL OR season_id='') AND EXISTS (SELECT 1 FROM seasons s WHERE s.year=player_game_stats.season)`).run().catch(() => undefined);
   await DB.prepare(`UPDATE games SET season_id=(SELECT s.id FROM seasons s WHERE s.year=CAST(substr(games.kickoff,1,4) AS INTEGER) LIMIT 1)
@@ -141,4 +149,30 @@ export async function getStatDefinitions() {
   const { DB } = bindings();
   const result = await DB.prepare("SELECT * FROM stat_definitions WHERE active=1 ORDER BY category,sort_order,stat_key").all<Record<string, unknown>>();
   return result.results.map(mapStatDefinition);
+}
+
+export function addStatTotal(totals: Record<string, number>, key: string, value: number) {
+  if (!key || !Number.isFinite(value)) return totals;
+  totals[key] = (totals[key] ?? 0) + value;
+  return totals;
+}
+
+export function deriveStatMetrics(totals: Record<string, number>): DerivedStatMetric[] {
+  const metrics: DerivedStatMetric[] = [];
+  const ratio = (key: string, label: string, shortLabel: string, category: StatCategory, numeratorKey: string, denominatorKey: string, multiplier = 1, valueType: "percentage" | "average" = "average") => {
+    const denominator = totals[denominatorKey] ?? 0;
+    if (denominator <= 0) return;
+    const numerator = totals[numeratorKey] ?? 0;
+    const raw = (numerator / denominator) * multiplier;
+    metrics.push({ key, label, shortLabel, category, value: Math.round(raw * 10) / 10, valueType });
+  };
+
+  ratio("completion_pct", "Completion Percentage", "CMP%", "offense", "pass_completions", "pass_attempts", 100, "percentage");
+  ratio("yards_per_carry", "Yards per Carry", "YPC", "offense", "rushing_yards", "carries");
+  ratio("yards_per_reception", "Yards per Reception", "YPR", "offense", "receiving_yards", "receptions");
+  ratio("catch_pct", "Catch Percentage", "CATCH%", "offense", "receptions", "targets", 100, "percentage");
+  ratio("field_goal_pct", "Field Goal Percentage", "FG%", "special-teams", "field_goals_made", "field_goals_attempted", 100, "percentage");
+  ratio("punt_average", "Punt Average", "PUNT AVG", "special-teams", "punt_yards", "punts");
+
+  return metrics;
 }
