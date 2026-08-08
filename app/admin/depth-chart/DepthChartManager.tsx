@@ -54,7 +54,8 @@ export function DepthChartManager(){
       if(!response.ok)throw new Error("Saisons konnten nicht geladen werden.");
       const body=await response.json() as {items:Season[]};
       setSeasons(body.items);
-      const current=body.items.find(item=>item.isCurrent)??body.items[0];
+      const requestedSeason=new URLSearchParams(window.location.search).get("season");
+      const current=(requestedSeason?body.items.find(item=>item.id===requestedSeason):undefined)??body.items.find(item=>item.isCurrent)??body.items[0];
       if(current){setSeasonId(current.id);await loadDepth(current.id)}
     }catch(error){setNotice(error instanceof Error?error.message:"Depth Chart konnte nicht geladen werden.")}finally{setLoading(false)}
   }
@@ -72,6 +73,7 @@ export function DepthChartManager(){
 
   async function changeSeason(id:string){
     setSeasonId(id);setLoading(true);setNotice("");
+    window.history.replaceState(null,"",`/admin/depth-chart?season=${encodeURIComponent(id)}`);
     try{await loadDepth(id)}catch(error){setNotice(error instanceof Error?error.message:"Roster konnte nicht geladen werden.")}finally{setLoading(false)}
   }
 
