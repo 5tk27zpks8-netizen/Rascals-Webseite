@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import "./admin-shell.css";
 
-type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "roster" | "depthchart" | "coaches" | "performance" | "development" | "games" | "gameday" | "trash";
+type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "roster" | "depthchart" | "gamedayroster" | "coaches" | "performance" | "development" | "games" | "gameday" | "trash";
 
 type AdminShellProps = {
   active: AdminSection;
@@ -22,6 +22,7 @@ const nav = [
   { key: "players", label: "Spieler", href: "/admin/players", icon: "#" },
   { key: "roster", label: "Season Roster", href: "/admin/roster", icon: "R" },
   { key: "depthchart", label: "Depth Chart", href: "/admin/depth-chart", icon: "D" },
+  { key: "gamedayroster", label: "Gameday Roster", href: "/admin/gameday-roster", icon: "G" },
   { key: "coaches", label: "Coaches", href: "/admin/coaches", icon: "C" },
   { key: "performance", label: "Performance", href: "/admin/performance", icon: "↗" },
   { key: "development", label: "Entwicklung", href: "/admin/development", icon: "◎" },
@@ -46,9 +47,9 @@ export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 4", 
           <p>INHALTE</p>
           {nav.slice(1, 5).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
           <p>FOOTBALL</p>
-          {nav.slice(5, 13).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          {nav.slice(5, 14).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
           <p>SYSTEM</p>
-          {nav.slice(13).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          {nav.slice(14).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
         </nav>
         <div className="cms-user"><span>CG</span><div><b>CMS Zugriff</b><small>Cloudflare Access + Rollen</small></div></div>
       </aside>
