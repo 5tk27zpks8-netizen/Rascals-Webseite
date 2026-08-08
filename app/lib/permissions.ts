@@ -2,7 +2,7 @@ import { getChatGPTUser } from "../chatgpt-auth";
 import { bindings } from "./cms";
 
 export type CmsRole = "admin" | "editor" | "photographer" | "coach" | "gameday" | "viewer";
-export type CmsPermission = "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "coaches" | "performance" | "achievements" | "games" | "gameday" | "trash";
+export type CmsPermission = "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "roster" | "coaches" | "performance" | "achievements" | "games" | "gameday" | "trash";
 
 export type CmsActor = {
   email: string;
@@ -11,10 +11,10 @@ export type CmsActor = {
 };
 
 const rolePermissions: Record<CmsRole, CmsPermission[]> = {
-  admin: ["hero", "news", "media", "sponsors", "settings", "users", "players", "coaches", "performance", "achievements", "games", "gameday", "trash"],
+  admin: ["hero", "news", "media", "sponsors", "settings", "users", "players", "roster", "coaches", "performance", "achievements", "games", "gameday", "trash"],
   editor: ["hero", "news", "media", "sponsors"],
   photographer: ["media"],
-  coach: ["players", "coaches", "performance", "achievements", "games", "gameday", "media"],
+  coach: ["players", "roster", "coaches", "performance", "achievements", "games", "gameday", "media"],
   gameday: ["games", "gameday"],
   viewer: [],
 };
