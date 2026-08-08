@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import "./admin-shell.css";
 
-type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches" | "performance" | "stats" | "development" | "lblab" | "games" | "gameday" | "trash";
+type AdminSection = "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "players" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches" | "performance" | "stats" | "development" | "lblab" | "lbanalytics" | "games" | "gameday" | "trash";
 
 type AdminShellProps = {
   active: AdminSection;
@@ -29,6 +29,7 @@ const nav = [
   { key: "stats", label: "Stats Review", href: "/admin/stats", icon: "Σ" },
   { key: "development", label: "Entwicklung", href: "/admin/development", icon: "◎" },
   { key: "lblab", label: "LB Lab", href: "/admin/development/linebackers", icon: "L" },
+  { key: "lbanalytics", label: "LB Position Room", href: "/admin/development/linebackers/analytics", icon: "▥" },
   { key: "games", label: "Spielplan", href: "/admin/games", icon: "◉" },
   { key: "gameday", label: "Gameday", href: "/admin/gameday", icon: "⚡" },
   { key: "trash", label: "Papierkorb", href: "/admin/trash", icon: "⌫" },
@@ -50,9 +51,9 @@ export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 4", 
           <p>INHALTE</p>
           {nav.slice(1, 5).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
           <p>FOOTBALL</p>
-          {nav.slice(5, 17).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          {nav.slice(5, 18).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
           <p>SYSTEM</p>
-          {nav.slice(17).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
+          {nav.slice(18).map((item) => <NavItem key={item.key} item={item} active={active === item.key} />)}
         </nav>
         <div className="cms-user"><span>CG</span><div><b>CMS Zugriff</b><small>Cloudflare Access + Rollen</small></div></div>
       </aside>
