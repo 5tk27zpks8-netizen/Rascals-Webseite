@@ -1,6 +1,7 @@
 import { bindings } from "../../../lib/cms";
 import { ensureFootballSchema } from "../../../lib/football";
 import { ensurePerformanceSchema, mapPerformanceEntry, performanceIndex } from "../../../lib/performance";
+import { ensureStatsSchema } from "../../../lib/stats";
 import { requireCmsPermission } from "../../../lib/permissions";
 
 type EntryBody = {
@@ -47,10 +48,11 @@ function periodLabel(period: string) {
 }
 
 export async function GET(request: Request) {
-  const actor = await requireCmsPermission("performance" as never);
+  const actor = await requireCmsPermission("performance");
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensurePerformanceSchema();
+  await ensureStatsSchema();
   const url = new URL(request.url);
   const playerId = url.searchParams.get("playerId");
   const from = url.searchParams.get("from")?.trim() || "";
@@ -126,7 +128,8 @@ export async function GET(request: Request) {
   const startYear = from ? Number(from.slice(0, 4)) : 0;
   const endYear = to ? Number(to.slice(0, 4)) : 9999;
   const statsResult = await DB.prepare(`SELECT stat_key, SUM(stat_value) AS total FROM player_game_stats
-    WHERE player_id=? AND season>=? AND season<=? GROUP BY stat_key ORDER BY stat_key`).bind(playerId, startYear, endYear).all<Record<string, unknown>>();
+    WHERE player_id=? AND season>=? AND season<=? AND status='official'
+    GROUP BY stat_key ORDER BY stat_key`).bind(playerId, startYear, endYear).all<Record<string, unknown>>();
 
   const availableYears = await DB.prepare(`SELECT DISTINCT substr(occurred_at,1,4) AS year FROM player_performance_entries
     WHERE player_id=? AND occurred_at IS NOT NULL ORDER BY year DESC`).bind(playerId).all<Record<string, unknown>>();
@@ -148,12 +151,13 @@ export async function GET(request: Request) {
     },
     trend,
     monthly,
+    statsSource: "official",
     stats: statsResult.results.map((row) => ({ key: String(row.stat_key), value: Number(row.total ?? 0) })),
   });
 }
 
 export async function POST(request: Request) {
-  const actor = await requireCmsPermission("performance" as never);
+  const actor = await requireCmsPermission("performance");
   if (actor instanceof Response) return actor;
   await ensurePerformanceSchema();
   const body = await request.json() as EntryBody;
@@ -173,7 +177,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const actor = await requireCmsPermission("performance" as never);
+  const actor = await requireCmsPermission("performance");
   if (actor instanceof Response) return actor;
   await ensurePerformanceSchema();
   const id = new URL(request.url).searchParams.get("id");
