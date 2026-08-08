@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import "./home-news-contrast.css";
+import "./home-game-logos.css";
 
 type NewsItem = {
   id: string;
@@ -87,10 +88,20 @@ export function DynamicHomeFeeds() {
               <article key={game.id}>
                 <span className="game-number">{String(index + 1).padStart(2, "0")}</span>
                 <time>{dateLabel}<small>{yearLabel}</small></time>
-                <div className="matchup">
-                  <strong>RASCALS</strong>
-                  <b>{showScore ? `${game.rascalsScore}:${game.opponentScore}` : game.homeAway === "home" ? "VS" : "@"}</b>
-                  <strong>{game.opponent.toUpperCase()}</strong>
+                <div className="matchup home-game-matchup">
+                  <div className="home-game-team">
+                    <img className="home-game-logo" src="/rascals-logo-transparent-4k.png" alt="Hellenstein Rascals Logo" />
+                    <strong>RASCALS</strong>
+                  </div>
+                  <b className="home-game-versus">{showScore ? `${game.rascalsScore}:${game.opponentScore}` : game.homeAway === "home" ? "VS" : "@"}</b>
+                  <div className="home-game-team">
+                    <strong>{game.opponent.toUpperCase()}</strong>
+                    {game.opponentLogo ? (
+                      <img className="home-game-logo" src={game.opponentLogo} alt={`${game.opponent} Logo`} />
+                    ) : (
+                      <span className="home-game-logo-placeholder" aria-label="Kein Gegnerlogo hinterlegt">LOGO</span>
+                    )}
+                  </div>
                 </div>
                 <span className="place">{game.status === "live" ? `LIVE${game.quarter ? ` · ${game.quarter}` : ""}` : place}</span>
               </article>
@@ -100,7 +111,17 @@ export function DynamicHomeFeeds() {
             <article>
               <span className="game-number">01</span>
               <time>TBD<small>2026</small></time>
-              <div className="matchup"><strong>RASCALS</strong><b>VS</b><strong>GEGNER</strong></div>
+              <div className="matchup home-game-matchup">
+                <div className="home-game-team">
+                  <img className="home-game-logo" src="/rascals-logo-transparent-4k.png" alt="Hellenstein Rascals Logo" />
+                  <strong>RASCALS</strong>
+                </div>
+                <b className="home-game-versus">VS</b>
+                <div className="home-game-team">
+                  <strong>GEGNER</strong>
+                  <span className="home-game-logo-placeholder">LOGO</span>
+                </div>
+              </div>
               <span className="place">Noch keine Spiele im CMS angelegt</span>
             </article>
           )}
