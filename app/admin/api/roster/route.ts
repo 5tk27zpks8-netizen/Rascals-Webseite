@@ -22,7 +22,7 @@ type RosterBody = {
 };
 
 export async function GET(request: Request) {
-  const actor = await requireCmsPermission("players");
+  const actor = await requireCmsPermission("roster");
   if (actor instanceof Response) return actor;
   await ensureRosterFoundation();
   const url = new URL(request.url);
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const actor = await requireCmsPermission("players");
+  const actor = await requireCmsPermission("roster");
   if (actor instanceof Response) return actor;
   await ensureRosterFoundation();
   const body = await request.json() as RosterBody;
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const actor = await requireCmsPermission("players");
+  const actor = await requireCmsPermission("roster");
   if (actor instanceof Response) return actor;
   await ensureRosterFoundation();
   const body = await request.json() as RosterBody;
