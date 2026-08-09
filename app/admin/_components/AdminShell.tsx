@@ -5,7 +5,7 @@ import "./admin-shell.css";
 
 type AdminSection =
   | "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "trash"
-  | "playeranalysis" | "teammanagement" | "gameoperations"
+  | "playeranalysis" | "teammanagement" | "gameoperations" | "trainingops"
   | "players" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches"
   | "performance" | "stats" | "development" | "teamdev" | "positiondev" | "lblab" | "lbanalytics"
   | "games" | "gameday";
@@ -34,6 +34,7 @@ const content: NavItemType[] = [
 const football: NavItemType[] = [
   { key: "teammanagement", label: "Team & Kader", href: "/admin/team-management", icon: "R" },
   { key: "playeranalysis", label: "Spieler & Analyse", href: "/admin/player-analysis", icon: "◎" },
+  { key: "trainingops", label: "Training", href: "/admin/training-operations", icon: "△" },
   { key: "gameoperations", label: "Spielbetrieb", href: "/admin/game-operations", icon: "⚡" },
 ];
 
@@ -54,13 +55,13 @@ function isNavActive(item: NavItemType, active: AdminSection) {
   return item.key === active;
 }
 
-export function AdminShell({ active, title, eyebrow = "RASCALS CMS · PHASE 4", actions, children }: AdminShellProps) {
+export function AdminShell({ active, title, eyebrow = "RASCALS OS", actions, children }: AdminShellProps) {
   return (
     <div className="cms-shell">
       <aside className="cms-sidebar">
         <a className="cms-brand" href="/admin/dashboard">
           <img src="/rascals-logo-transparent-4k.png" alt="" />
-          <span><b>RASCALS</b><small>CONTENT CONTROL</small></span>
+          <span><b>RASCALS</b><small>OPERATIONS SYSTEM</small></span>
         </a>
         <nav>
           <p>ÜBERSICHT</p>
