@@ -1,7 +1,7 @@
 import { bindings } from "../../../lib/cms";
 import { ensurePerformanceSchema, mapPerformanceEntry, performanceIndex } from "../../../lib/performance";
 import { ensurePositionDevelopmentSchema, POSITION_GROUPS } from "../../../lib/position-development";
-import { ensureRosterFoundation } from "../../../lib/roster";
+import { ensureRosterFoundation, getCurrentDepthEntries, isActiveRosterStatus } from "../../../lib/roster";
 import { ensureStatsSchema } from "../../../lib/stats";
 import { requireCmsPermission } from "../../../lib/permissions";
 
@@ -28,25 +28,34 @@ export async function GET(request: Request) {
 
   const roster = await DB.prepare(`SELECT rm.*,p.first_name,p.last_name,p.nickname,p.portrait,p.height_cm,p.weight_kg,p.birth_date,p.joined_year,p.bio
     FROM roster_memberships rm JOIN players p ON p.id=rm.player_id
-    WHERE rm.season_id=? AND rm.team_id='mens' AND rm.roster_status NOT IN ('left','alumni') AND p.active=1
+    WHERE rm.season_id=? AND rm.team_id='mens' AND p.active=1
     ORDER BY rm.jersey_number,p.last_name,p.first_name`).bind(season.id).all<Row>();
-  const players = roster.results.map(r=>({
+  const depth = await getCurrentDepthEntries(season.id,"mens");
+  const starterIds = new Set(depth.filter(entry=>entry.rank===1).map(entry=>entry.playerId));
+  const players = roster.results.filter(r=>isActiveRosterStatus(r.roster_status)).map(r=>({
     id:String(r.player_id),firstName:String(r.first_name??""),lastName:String(r.last_name??""),nickname:String(r.nickname??""),portrait:String(r.portrait??""),
     jerseyNumber:r.jersey_number==null?null:Number(r.jersey_number),primaryPosition:String(r.primary_position??""),secondaryPosition:String(r.secondary_position??""),unit:String(r.unit??""),
-    rosterStatus:String(r.roster_status??"active"),availability:String(r.availability??"full"),starter:Number(r.starter??0)===1,captain:Number(r.captain??0)===1,rookie:Number(r.rookie??0)===1,
+    rosterStatus:String(r.roster_status??"active"),availability:String(r.availability??"full"),starter:starterIds.has(String(r.player_id)),captain:Number(r.captain??0)===1,rookie:Number(r.rookie??0)===1,
     leadershipRole:String(r.leadership_role??""),heightCm:r.height_cm==null?null:Number(r.height_cm),weightKg:r.weight_kg==null?null:Number(r.weight_kg),birthDate:r.birth_date?String(r.birth_date):null,joinedYear:r.joined_year==null?null:Number(r.joined_year),bio:String(r.bio??"")
   }));
   const selected = players.find(p=>p.id===url.searchParams.get("playerId")) ?? players[0] ?? null;
   if(!selected) return Response.json({current:actor,seasons,season,players,player:null});
 
-  const performanceRows = await DB.prepare("SELECT * FROM player_performance_entries WHERE player_id=? AND substr(occurred_at,1,4)=? ORDER BY occurred_at DESC,created_at DESC")
-    .bind(selected.id,String(season.year)).all<Row>();
+  // Training and game entries are tied to the selected season through their context records.
+  // Legacy/manual entries without a context id fall back to the season year.
+  const performanceRows = await DB.prepare(`SELECT pe.* FROM player_performance_entries pe
+    WHERE pe.player_id=? AND (
+      (pe.context='training' AND pe.context_id IS NOT NULL AND EXISTS(SELECT 1 FROM training_sessions ts WHERE ts.id=pe.context_id AND ts.season_id=?)) OR
+      (pe.context='game' AND pe.context_id IS NOT NULL AND EXISTS(SELECT 1 FROM games g WHERE g.id=pe.context_id AND g.season_id=?)) OR
+      ((pe.context='review' OR pe.context_id IS NULL) AND substr(pe.occurred_at,1,4)=?)
+    ) ORDER BY pe.occurred_at DESC,pe.created_at DESC`)
+    .bind(selected.id,season.id,season.id,String(season.year)).all<Row>();
   const performance = performanceRows.results.map(mapPerformanceEntry);
   const ratedPerformance = performance.map(e=>({...e,index:performanceIndex(e)}));
   const indices = ratedPerformance.map(e=>e.index).filter((v):v is number=>v!=null);
   const training = ratedPerformance.filter(e=>e.context==="training");
-  const attendanceKnown = training.filter(e=>["present","absent","excused","injured"].includes(e.attendance));
-  const attendancePresent = attendanceKnown.filter(e=>e.attendance==="present").length;
+  const attendanceEligible = training.filter(e=>["present","absent"].includes(e.attendance));
+  const attendancePresent = attendanceEligible.filter(e=>e.attendance==="present").length;
 
   const statsRows = await DB.prepare(`SELECT pgs.stat_key,sd.label,sd.short_label,sd.category,SUM(pgs.stat_value) total
     FROM player_game_stats pgs LEFT JOIN stat_definitions sd ON sd.stat_key=pgs.stat_key
@@ -88,7 +97,8 @@ export async function GET(request: Request) {
 
   return Response.json({
     current:actor,seasons,season,players,player:selected,positionGroup:group,
-    summary:{performanceIndex:indices.length?Math.round(avg(indices)):null,attendancePct:attendanceKnown.length?Math.round(attendancePresent/attendanceKnown.length*100):null,currentSkillIndex:ratedSkills.length?Math.round(avg(ratedSkills.map(s=>Number(s.current)))*20):null,developmentNeedIndex:needValues.length?Math.round(avg(needValues)):null,evaluationCoveragePct:skills.length?Math.round(ratedSkills.length/skills.length*100):0,openGoals:goals.filter(g=>g.status!=="achieved").length,officialStatCategories:new Set(stats.map(s=>s.category)).size,gamesWithStats:games.filter(g=>g.hasOfficialStats).length},
+    depth:{starter:selected.starter,positions:depth.filter(entry=>entry.playerId===selected.id).map(entry=>({position:entry.position,positionGroup:entry.positionGroup,rank:entry.rank,snapshotId:entry.snapshotId}))},
+    summary:{performanceIndex:indices.length?Math.round(avg(indices)):null,attendancePct:attendanceEligible.length?Math.round(attendancePresent/attendanceEligible.length*100):null,currentSkillIndex:ratedSkills.length?Math.round(avg(ratedSkills.map(s=>Number(s.current)))*20):null,developmentNeedIndex:needValues.length?Math.round(avg(needValues)):null,evaluationCoveragePct:skills.length?Math.round(ratedSkills.length/skills.length*100):0,openGoals:goals.filter(g=>g.status!=="achieved").length,officialStatCategories:new Set(stats.map(s=>s.category)).size,gamesWithStats:games.filter(g=>g.hasOfficialStats).length},
     performance:ratedPerformance.slice(0,40),stats,career,skills,goals,games,skillTrend,perfTrend
   });
 }
