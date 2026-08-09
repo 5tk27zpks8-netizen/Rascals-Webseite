@@ -1,8 +1,8 @@
 import {
-  GAMEDAY_BLOCKING_AVAILABILITY,
   GAMEDAY_BLOCKING_ROSTER_STATUSES,
   isActiveRosterStatus,
   isGamedayEligible,
+  type RosterStatus,
 } from "./roster";
 
 export const ACTIVE_ROSTER_STATUSES = ["active", "practice-squad", "reserve", "injured", "suspended"] as const;
@@ -22,12 +22,11 @@ export function isLimitedAvailability(availability: string) {
 }
 
 export function isUnavailable(rosterStatus: string, availability: string) {
-  return GAMEDAY_BLOCKING_ROSTER_STATUSES.includes(rosterStatus as never)
+  return GAMEDAY_BLOCKING_ROSTER_STATUSES.includes(rosterStatus as RosterStatus)
     || availability === "out";
 }
 
 /** Conservative default used when a Gameday roster is initialized automatically. */
 export function shouldInitializeInactive(rosterStatus: string, availability: string) {
-  return !isGamedayEligible(rosterStatus, availability)
-    || GAMEDAY_BLOCKING_AVAILABILITY.includes(availability as never);
+  return !isGamedayEligible(rosterStatus, availability);
 }
