@@ -5,7 +5,7 @@ import "./admin-shell.css";
 
 type AdminSection =
   | "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "trash"
-  | "playeranalysis" | "teammanagement" | "gameoperations" | "trainingops"
+  | "playeranalysis" | "teammanagement" | "gameoperations" | "trainingops" | "playbook"
   | "players" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches"
   | "performance" | "stats" | "development" | "teamdev" | "positiondev" | "lblab" | "lbanalytics"
   | "games" | "gameday";
@@ -34,6 +34,7 @@ const content: NavItemType[] = [
 const football: NavItemType[] = [
   { key: "teammanagement", label: "Team & Kader", href: "/admin/team-management", icon: "R" },
   { key: "playeranalysis", label: "Spieler & Analyse", href: "/admin/player-analysis", icon: "◎" },
+  { key: "playbook", label: "Playbook & Scheme", href: "/admin/playbook", icon: "▤" },
   { key: "trainingops", label: "Training", href: "/admin/training-operations", icon: "△" },
   { key: "gameoperations", label: "Spielbetrieb", href: "/admin/game-operations", icon: "⚡" },
 ];
