@@ -3,6 +3,12 @@ import { ensureRosterFoundation } from "./roster";
 
 export type PlaybookUnit = "offense" | "defense" | "special-teams";
 
+async function ensureColumn(table:string,column:string,ddl:string){
+  const {DB}=bindings();
+  const info=await DB.prepare(`PRAGMA table_info(${table})`).all<Record<string,unknown>>();
+  if(!info.results.some(r=>String(r.name)===column)) await DB.prepare(`ALTER TABLE ${table} ADD COLUMN ${ddl}`).run();
+}
+
 export async function ensurePlaybookSchema(){
   await ensureRosterFoundation();
   const { DB } = bindings();
@@ -71,4 +77,13 @@ export async function ensurePlaybookSchema(){
     DB.prepare("CREATE INDEX IF NOT EXISTS idx_playbook_assignments_play ON playbook_assignments(play_id,sort_order)"),
     DB.prepare("CREATE INDEX IF NOT EXISTS idx_playbook_versions_play ON playbook_versions(play_id,version)"),
   ]);
+
+  await ensureColumn("playbook_plays","strength_call","strength_call TEXT NOT NULL DEFAULT ''");
+  await ensureColumn("playbook_plays","front_call","front_call TEXT NOT NULL DEFAULT ''");
+  await ensureColumn("playbook_plays","coverage_call","coverage_call TEXT NOT NULL DEFAULT ''");
+  await ensureColumn("playbook_plays","checks_alerts","checks_alerts TEXT NOT NULL DEFAULT ''");
+  await ensureColumn("playbook_assignments","path_json","path_json TEXT NOT NULL DEFAULT '[]'");
+  await ensureColumn("playbook_assignments","pre_snap_path_json","pre_snap_path_json TEXT NOT NULL DEFAULT '[]'");
+  await ensureColumn("playbook_assignments","zone_width","zone_width REAL NOT NULL DEFAULT 12");
+  await ensureColumn("playbook_assignments","zone_height","zone_height REAL NOT NULL DEFAULT 12");
 }
