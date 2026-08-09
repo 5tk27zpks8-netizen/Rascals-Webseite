@@ -39,10 +39,42 @@ const LINEBACKER_SKILLS: DevelopmentSkillDefinition[] = [
   { key: "lb_conditioning", label: "Football Conditioning", category: "Athletic", positionGroup: "LB", description: "Repeat high-intensity linebacker reps without meaningful execution drop-off.", sortOrder: 200 },
 ];
 
+async function tableExists(table: string) {
+  const { DB } = bindings();
+  const row = await DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=? LIMIT 1").bind(table).first<{ name: string }>();
+  return Boolean(row?.name);
+}
+
 async function tableColumns(table: string) {
   const { DB } = bindings();
+  if (!(await tableExists(table))) return new Set<string>();
   const info = await DB.prepare(`PRAGMA table_info(${table})`).all<Record<string, unknown>>();
   return new Set(info.results.map((row) => String(row.name)));
+}
+
+async function migrateLegacyDevelopmentSkills() {
+  const { DB } = bindings();
+  if (!(await tableExists("player_development_skills"))) return;
+
+  const legacyColumns = await tableColumns("player_development_skills");
+  if (!legacyColumns.has("season_id")) {
+    await DB.prepare("ALTER TABLE player_development_skills ADD COLUMN season_id TEXT").run();
+  }
+
+  await DB.prepare(`UPDATE player_development_skills
+    SET season_id=(SELECT id FROM seasons WHERE is_current=1 ORDER BY year DESC LIMIT 1)
+    WHERE season_id IS NULL OR season_id=''`).run();
+
+  await DB.prepare(`INSERT INTO player_skill_evaluations
+    (id,player_id,season_id,skill_key,current_rating,target_rating,priority,confidence,note,context,evaluated_at,evaluated_by,created_at)
+    SELECT 'legacy-' || player_id || '-' || skill_key || '-' || COALESCE(season_id,''),
+      player_id,season_id,skill_key,current_rating,target_rating,priority,2,note,'legacy-migration',updated_at,updated_by,updated_at
+    FROM player_development_skills legacy
+    WHERE season_id IS NOT NULL AND season_id<>''
+      AND NOT EXISTS (
+        SELECT 1 FROM player_skill_evaluations current
+        WHERE current.id='legacy-' || legacy.player_id || '-' || legacy.skill_key || '-' || COALESCE(legacy.season_id,'')
+      )`).run();
 }
 
 export async function ensureDevelopmentSchema() {
@@ -105,9 +137,7 @@ export async function ensureDevelopmentSchema() {
       description=excluded.description,sort_order=excluded.sort_order,active=1,updated_at=CURRENT_TIMESTAMP`)
     .bind(skill.key, skill.label, skill.category, skill.positionGroup, skill.description, skill.sortOrder)));
 
-  // Keep old snapshot table compatible with the new evaluation model.
-  const legacyColumns = await tableColumns("player_development_skills");
-  if (!legacyColumns.has("season_id")) await DB.prepare("ALTER TABLE player_development_skills ADD COLUMN season_id TEXT").run();
+  await migrateLegacyDevelopmentSkills();
 }
 
 export function developmentNeedScore(current: number, target: number, priority: number) {
