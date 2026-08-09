@@ -1,6 +1,5 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
 import { TeamManagementManager } from "./TeamManagementManager";
-import "./reference-field.css";
 
 export const metadata = {
   title: "Team & Kader · Rascals OS",
