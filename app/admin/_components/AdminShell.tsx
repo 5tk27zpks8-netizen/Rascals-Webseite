@@ -5,7 +5,7 @@ import "./admin-shell.css";
 
 type AdminSection =
   | "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "trash"
-  | "playeranalysis" | "teammanagement" | "gameoperations" | "trainingops" | "tracking" | "playbook"
+  | "playeranalysis" | "teammanagement" | "gameoperations" | "trainingops" | "tracking" | "athletic" | "playbook"
   | "players" | "newplayer" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches"
   | "performance" | "stats" | "development" | "teamdev" | "positiondev" | "lblab" | "lbanalytics"
   | "games" | "gameday";
@@ -26,6 +26,7 @@ const navGroups: NavGroup[] = [
     { key: "coaches", label: "Coaches", href: "/admin/coaches", icon: "C" },
   ]},
   { label: "ATHLETIC", items: [
+    { key: "athletic", label: "Athletic Übersicht", href: "/admin/athletic", icon: "A", matches: ["athletic", "tracking", "trainingops", "development", "teamdev", "positiondev", "rosterhealth"] },
     { key: "tracking", label: "Tracking", href: "/admin/athletic/tracking", icon: "＋" },
     { key: "trainingops", label: "Training", href: "/admin/training-operations", icon: "△" },
     { key: "development", label: "Development", href: "/admin/development", icon: "↗", matches: ["development", "teamdev", "positiondev"] },
@@ -55,6 +56,15 @@ const navGroups: NavGroup[] = [
   ]},
 ];
 
+const topModules = [
+  { label: "HOME", href: "/admin/dashboard", sections: ["dashboard"] as AdminSection[] },
+  { label: "TEAM", href: "/admin/players", sections: ["players","newplayer","teammanagement","roster","depthchart","coaches"] as AdminSection[] },
+  { label: "ATHLETIC", href: "/admin/athletic", sections: ["athletic","tracking","trainingops","development","teamdev","positiondev","rosterhealth"] as AdminSection[] },
+  { label: "ANALYSIS", href: "/admin/player-analysis", sections: ["playeranalysis","performance","stats","lblab","lbanalytics"] as AdminSection[] },
+  { label: "FOOTBALL", href: "/admin/playbook", sections: ["playbook"] as AdminSection[] },
+  { label: "GAME DAY", href: "/admin/game-operations", sections: ["gameoperations","games","gamedayroster","gameday"] as AdminSection[] },
+];
+
 function isNavActive(item: NavItemType, active: AdminSection) {
   return item.key === active || Boolean(item.matches?.includes(active));
 }
@@ -82,6 +92,9 @@ export function AdminShell({ active, title, eyebrow = "RASCALS OS", actions, chi
           <div><small>{eyebrow}</small><h1>{title}</h1></div>
           <div className="cms-top-actions"><a href="/" target="_blank">Website öffnen ↗</a>{actions}</div>
         </header>
+        <nav className="cms-modulebar" aria-label="Hauptbereiche">
+          {topModules.map(module => <a key={module.label} className={module.sections.includes(active)?"active":""} href={module.href}>{module.label}</a>)}
+        </nav>
         <div className="cms-content">{children}</div>
       </main>
     </div>
