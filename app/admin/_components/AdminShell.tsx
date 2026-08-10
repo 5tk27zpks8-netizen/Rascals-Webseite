@@ -5,7 +5,7 @@ import "./admin-shell.css";
 
 type AdminSection =
   | "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "trash"
-  | "playeranalysis" | "teammanagement" | "gameoperations" | "trainingops" | "playbook"
+  | "playeranalysis" | "teammanagement" | "gameoperations" | "trainingops" | "tracking" | "playbook"
   | "players" | "newplayer" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches"
   | "performance" | "stats" | "development" | "teamdev" | "positiondev" | "lblab" | "lbanalytics"
   | "games" | "gameday";
@@ -21,14 +21,15 @@ const navGroups: NavGroup[] = [
   { label: "TEAM", items: [
     { key: "players", label: "Spieler", href: "/admin/players", icon: "●" },
     { key: "newplayer", label: "+ Spieler anlegen", href: "/admin/players?new=1", icon: "+" },
-    { key: "teammanagement", label: "Kader", href: "/admin/team-management?tab=roster", icon: "R", matches: ["teammanagement", "roster", "rosterhealth"] },
+    { key: "teammanagement", label: "Kader", href: "/admin/team-management?tab=roster", icon: "R", matches: ["teammanagement", "roster"] },
     { key: "depthchart", label: "Depth Chart", href: "/admin/depth-chart", icon: "≡" },
     { key: "coaches", label: "Coaches", href: "/admin/coaches", icon: "C" },
   ]},
   { label: "ATHLETIC", items: [
+    { key: "tracking", label: "Tracking", href: "/admin/athletic/tracking", icon: "＋" },
     { key: "trainingops", label: "Training", href: "/admin/training-operations", icon: "△" },
     { key: "development", label: "Development", href: "/admin/development", icon: "↗", matches: ["development", "teamdev", "positiondev"] },
-    { key: "rosterhealth", label: "Availability", href: "/admin/roster-health", icon: "+" },
+    { key: "rosterhealth", label: "Availability", href: "/admin/roster-health", icon: "✓" },
   ]},
   { label: "ANALYSIS", items: [
     { key: "playeranalysis", label: "Player 360", href: "/admin/player-analysis", icon: "◎", matches: ["playeranalysis", "lblab", "lbanalytics"] },
