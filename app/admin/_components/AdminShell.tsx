@@ -13,6 +13,7 @@ type AdminSection =
 type AdminShellProps = { active: AdminSection; title: string; eyebrow?: string; actions?: ReactNode; children: ReactNode };
 type NavItemType = { key: AdminSection; label: string; href: string; icon: string; matches?: AdminSection[] };
 type NavGroup = { label: string; items: NavItemType[] };
+type TopModule = { label:string; href:string; sections:AdminSection[]; actions:Array<{label:string;href:string}> };
 
 const navGroups: NavGroup[] = [
   { label: "HOME", items: [
@@ -56,13 +57,25 @@ const navGroups: NavGroup[] = [
   ]},
 ];
 
-const topModules = [
-  { label: "HOME", href: "/admin/dashboard", sections: ["dashboard"] as AdminSection[] },
-  { label: "TEAM", href: "/admin/players", sections: ["players","newplayer","teammanagement","roster","depthchart","coaches"] as AdminSection[] },
-  { label: "ATHLETIC", href: "/admin/athletic", sections: ["athletic","tracking","trainingops","development","teamdev","positiondev","rosterhealth"] as AdminSection[] },
-  { label: "ANALYSIS", href: "/admin/player-analysis", sections: ["playeranalysis","performance","stats","lblab","lbanalytics"] as AdminSection[] },
-  { label: "FOOTBALL", href: "/admin/playbook", sections: ["playbook"] as AdminSection[] },
-  { label: "GAME DAY", href: "/admin/game-operations", sections: ["gameoperations","games","gamedayroster","gameday"] as AdminSection[] },
+const topModules: TopModule[] = [
+  { label: "HOME", href: "/admin/dashboard", sections: ["dashboard"], actions: [
+    {label:"Dashboard",href:"/admin/dashboard"},
+  ]},
+  { label: "TEAM", href: "/admin/players", sections: ["players","newplayer","teammanagement","roster","depthchart","coaches"], actions: [
+    {label:"Spieler",href:"/admin/players"},{label:"+ Spieler anlegen",href:"/admin/players?new=1"},{label:"Kader",href:"/admin/team-management?tab=roster"},{label:"Depth Chart",href:"/admin/depth-chart"},{label:"Coaches",href:"/admin/coaches"},
+  ]},
+  { label: "ATHLETIC", href: "/admin/athletic", sections: ["athletic","tracking","trainingops","development","teamdev","positiondev","rosterhealth"], actions: [
+    {label:"Übersicht",href:"/admin/athletic"},{label:"Tracking",href:"/admin/athletic/tracking"},{label:"Training",href:"/admin/training-operations"},{label:"Development",href:"/admin/development"},{label:"Availability",href:"/admin/roster-health"},
+  ]},
+  { label: "ANALYSIS", href: "/admin/player-analysis", sections: ["playeranalysis","performance","stats","lblab","lbanalytics"], actions: [
+    {label:"Player 360",href:"/admin/player-analysis"},{label:"Performance",href:"/admin/performance"},{label:"Stats",href:"/admin/stats"},{label:"Team Analyse",href:"/admin/development/team"},{label:"Position Groups",href:"/admin/development/positions"},
+  ]},
+  { label: "FOOTBALL", href: "/admin/playbook", sections: ["playbook"], actions: [
+    {label:"Playbook",href:"/admin/playbook"},{label:"Formationen",href:"/admin/playbook/formations"},{label:"Aufstellung",href:"/admin/team-management?tab=depth"},{label:"Depth Chart",href:"/admin/depth-chart"},
+  ]},
+  { label: "GAME DAY", href: "/admin/game-operations", sections: ["gameoperations","games","gamedayroster","gameday"], actions: [
+    {label:"Game Center",href:"/admin/game-operations"},{label:"Spielplan",href:"/admin/games"},{label:"Gameday Roster",href:"/admin/gameday-roster"},{label:"Live Command",href:"/admin/gameday"},{label:"Postgame",href:"/admin/game-operations?tab=postgame"},
+  ]},
 ];
 
 function isNavActive(item: NavItemType, active: AdminSection) {
@@ -70,6 +83,7 @@ function isNavActive(item: NavItemType, active: AdminSection) {
 }
 
 export function AdminShell({ active, title, eyebrow = "RASCALS OS", actions, children }: AdminShellProps) {
+  const currentModule = topModules.find(module => module.sections.includes(active)) ?? topModules[0];
   return (
     <div className="cms-shell">
       <aside className="cms-sidebar">
@@ -95,6 +109,12 @@ export function AdminShell({ active, title, eyebrow = "RASCALS OS", actions, chi
         <nav className="cms-modulebar" aria-label="Hauptbereiche">
           {topModules.map(module => <a key={module.label} className={module.sections.includes(active)?"active":""} href={module.href}>{module.label}</a>)}
         </nav>
+        <div className="cms-contextbar">
+          <div className="cms-context-title"><small>{currentModule.label}</small><strong>Funktionen</strong></div>
+          <div className="cms-context-actions">
+            {currentModule.actions.map(item => <a key={item.href+item.label} href={item.href}>{item.label}</a>)}
+          </div>
+        </div>
         <div className="cms-content">{children}</div>
       </main>
     </div>
