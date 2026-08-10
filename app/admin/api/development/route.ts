@@ -1,6 +1,7 @@
 import { bindings } from "../../../lib/cms";
 import { ensureFootballSchema } from "../../../lib/football";
-import { DEVELOPMENT_SKILLS, developmentNeedScore, ensurePerformanceSchema } from "../../../lib/performance";
+import { ensurePerformanceSchema } from "../../../lib/performance";
+import { developmentNeedScore, ensureDevelopmentSchema, getLinebackerSkillDefinitions } from "../../../lib/development";
 import { requireCmsPermission } from "../../../lib/permissions";
 
 type SkillBody = {
@@ -12,6 +13,12 @@ type SkillBody = {
   note?: string;
 };
 
+const DEVELOPMENT_SKILLS = getLinebackerSkillDefinitions().map((skill) => [
+  skill.key,
+  skill.label,
+  skill.category,
+] as const);
+
 function clamp(value: unknown, min: number, max: number, fallback: number) {
   const n = Number(value);
   return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : fallback;
@@ -22,6 +29,7 @@ export async function GET(request: Request) {
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensurePerformanceSchema();
+  await ensureDevelopmentSchema();
   const { DB } = bindings();
   const url = new URL(request.url);
   const playerId = url.searchParams.get("playerId");
@@ -114,6 +122,7 @@ export async function PUT(request: Request) {
   const actor = await requireCmsPermission("performance" as never);
   if (actor instanceof Response) return actor;
   await ensurePerformanceSchema();
+  await ensureDevelopmentSchema();
   const body = await request.json() as SkillBody;
   if (!body.playerId || !body.skillKey) return Response.json({ error: "Spieler und Skill sind erforderlich." }, { status: 400 });
   const definition = DEVELOPMENT_SKILLS.find(([key]) => key === body.skillKey);
