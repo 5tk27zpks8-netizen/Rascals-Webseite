@@ -33,6 +33,7 @@ const content: NavItemType[] = [
 
 const football: NavItemType[] = [
   { key: "teammanagement", label: "Team & Kader", href: "/admin/team-management", icon: "R" },
+  { key: "players", label: "Spieler verwalten", href: "/admin/players", icon: "+" },
   { key: "playeranalysis", label: "Spieler & Analyse", href: "/admin/player-analysis", icon: "◎" },
   { key: "playbook", label: "Playbook & Scheme", href: "/admin/playbook", icon: "▤" },
   { key: "trainingops", label: "Training", href: "/admin/training-operations", icon: "△" },
@@ -45,7 +46,7 @@ const system: NavItemType[] = [
   { key: "settings", label: "Einstellungen", href: "/admin/dashboard?section=settings", icon: "⚙" },
 ];
 
-const teamSections: AdminSection[] = ["teammanagement", "players", "roster", "depthchart", "rosterhealth", "coaches"];
+const teamSections: AdminSection[] = ["teammanagement", "roster", "depthchart", "rosterhealth", "coaches"];
 const analysisSections: AdminSection[] = ["playeranalysis", "performance", "stats", "development", "teamdev", "positiondev", "lblab", "lbanalytics"];
 const gameSections: AdminSection[] = ["gameoperations", "games", "gamedayroster", "gameday"];
 
