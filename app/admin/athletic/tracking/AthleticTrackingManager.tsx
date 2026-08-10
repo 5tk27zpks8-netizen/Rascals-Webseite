@@ -36,7 +36,7 @@ export function AthleticTrackingManager(){
   const player=players.find(p=>p.id===playerId)||null;const metric=metrics.find(m=>m.key===metricKey)!;
   const visible=useMemo(()=>entries.filter(e=>e.playerId===playerId&&(categoryFilter==="all"||e.category===categoryFilter)),[entries,playerId,categoryFilter]);
   const latest=useMemo(()=>{const m=new Map<string,Entry>();for(const e of entries.filter(x=>x.playerId===playerId))if(!m.has(e.metricKey))m.set(e.metricKey,e);return [...m.values()]},[entries,playerId]);
-  return <AdminShell active="trainingops" title="Athletic Tracking" eyebrow="RASCALS OS · ATHLETIC" actions={<a className="cms-button secondary" href="/admin/training-operations">Training öffnen</a>}>
+  return <AdminShell active="tracking" title="Athletic Tracking" eyebrow="RASCALS OS · ATHLETIC" actions={<a className="cms-button secondary" href="/admin/training-operations">Training öffnen</a>}>
     {notice&&<AdminNotice tone={notice.includes("gespeichert")?"success":"error"}>{notice}</AdminNotice>}
     <div className="at-shell">
       <AdminCard className="at-intro"><div><small>COACH WORKSPACE</small><h2>Spieler auswählen. Wert eintragen. Fertig.</h2><p>Speed, Agility, Strength, Power, Conditioning und Körperdaten werden hier zentral erfasst. Analyse und Interpretation bleiben bewusst getrennt.</p></div></AdminCard>
