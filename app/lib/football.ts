@@ -77,6 +77,17 @@ export type GameEvent = {
   createdAt: string;
 };
 
+const INITIAL_PLAYER_NAMES = [
+  "Alex Link","Alexander Helmel","André Kasper","André Reif","Anil Canova","Axel Eberhardt","Ben Bühler","Benjamin Brandner","Bruno Schuster","Chris Schönemann",
+  "Christoph Leger","Christopher Ganesch","Daniel Kovacs","Daniel Schwager","Danny N","David Füchsle","David Marra","Davide Politano","Denis Bauer","Dennis Link",
+  "Justin Bublitz","Justin Liegl","Kevin Klauer","Luca Hartel","Lukas Endlich","Lukas Weihs","Lukes Zeun","Malaika Mangold","Manuel Wolf","Marcello Haase",
+  "Fabian Leopold","Felix Merz","Francesca Rodriguez","Frank Schwarz","Gianluca Politano","James Letcher","Jayson Hafner","Jonas Füchsle","Jonas Müller","Josip Tomic",
+  "Dimitris Dolmas","Dominik Schoeps","Dorian Sittner","Eduard Hihn","Enver Jonuz","Fabian Bück","Fabian Djuric","Fabian Dorschky",
+  "Marvin Bittner","Matthew Grosz","Mert Ucal","Nicolas Dollansky","Nino Adzaj","Noah Vukmirovic","Patrick Rodriguez","Philip Gnaier","Philipp Epple","Sam Füchsle",
+  "Sascha Brand","Sebastian Hihn","Sergej(Sigi) Link","Seymen Thommy Oran","Simon Liegl","Simon Wannenwetsch","Stefan Walter","Thomas Sperr","Tim Berger","Tim Hessling",
+  "Ty Faulks","Ümitcan Yazici","Wilhelm Jakuschewski","Yannick Wehling",
+] as const;
+
 export async function ensureFootballSchema() {
   const { DB } = bindings();
   await DB.batch([
@@ -175,6 +186,18 @@ export async function ensureFootballSchema() {
 
   await DB.prepare(`INSERT OR IGNORE INTO teams (id,name,slug,league,season,description)
     VALUES ('mens','Herren','herren','Kreisoberliga',2026,'Hellenstein Rascals Herrenmannschaft')`).run();
+
+  for (const fullName of INITIAL_PLAYER_NAMES) {
+    const parts = fullName.trim().split(/\s+/);
+    const lastName = parts.pop() ?? "";
+    const firstName = parts.join(" ");
+    const slug = slugify(`${firstName}-${lastName}`);
+    if (!firstName || !lastName || !slug) continue;
+    await DB.prepare(`INSERT OR IGNORE INTO players
+      (id,slug,first_name,last_name,nickname,jersey_number,position,secondary_position,unit,team_id,height_cm,weight_kg,birth_date,joined_year,portrait,bio,instagram,captain,starter,rookie,status,return_date,active)
+      VALUES (?,?,?,?,?,NULL,'','','defense','mens',NULL,NULL,NULL,NULL,'','','',0,0,0,'active',NULL,1)`)
+      .bind(`seed-${slug}`, slug, firstName, lastName, "").run();
+  }
 }
 
 export function slugify(value: string) {
