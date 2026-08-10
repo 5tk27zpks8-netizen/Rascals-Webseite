@@ -6,7 +6,7 @@ import "./admin-shell.css";
 type AdminSection =
   | "dashboard" | "hero" | "news" | "media" | "sponsors" | "settings" | "users" | "trash"
   | "playeranalysis" | "teammanagement" | "gameoperations" | "trainingops" | "playbook"
-  | "players" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches"
+  | "players" | "newplayer" | "roster" | "depthchart" | "gamedayroster" | "rosterhealth" | "coaches"
   | "performance" | "stats" | "development" | "teamdev" | "positiondev" | "lblab" | "lbanalytics"
   | "games" | "gameday";
 
@@ -20,6 +20,7 @@ const navGroups: NavGroup[] = [
   ]},
   { label: "TEAM", items: [
     { key: "players", label: "Spieler", href: "/admin/players", icon: "●" },
+    { key: "newplayer", label: "+ Spieler anlegen", href: "/admin/players?new=1", icon: "+" },
     { key: "teammanagement", label: "Kader", href: "/admin/team-management?tab=roster", icon: "R", matches: ["teammanagement", "roster", "rosterhealth"] },
     { key: "depthchart", label: "Depth Chart", href: "/admin/depth-chart", icon: "≡" },
     { key: "coaches", label: "Coaches", href: "/admin/coaches", icon: "C" },
