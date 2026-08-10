@@ -11,43 +11,50 @@ type AdminSection =
   | "games" | "gameday";
 
 type AdminShellProps = { active: AdminSection; title: string; eyebrow?: string; actions?: ReactNode; children: ReactNode };
-type NavItemType = { key: AdminSection; label: string; href: string; icon: string };
+type NavItemType = { key: AdminSection; label: string; href: string; icon: string; matches?: AdminSection[] };
+type NavGroup = { label: string; items: NavItemType[] };
 
-const overview: NavItemType[] = [
-  { key: "dashboard", label: "Übersicht", href: "/admin/dashboard", icon: "⌂" },
+const navGroups: NavGroup[] = [
+  { label: "HOME", items: [
+    { key: "dashboard", label: "Home", href: "/admin/dashboard", icon: "⌂" },
+  ]},
+  { label: "TEAM", items: [
+    { key: "players", label: "Spieler", href: "/admin/players", icon: "●" },
+    { key: "teammanagement", label: "Kader", href: "/admin/team-management?tab=roster", icon: "R", matches: ["teammanagement", "roster", "rosterhealth"] },
+    { key: "depthchart", label: "Depth Chart", href: "/admin/depth-chart", icon: "≡" },
+    { key: "coaches", label: "Coaches", href: "/admin/coaches", icon: "C" },
+  ]},
+  { label: "ATHLETIC", items: [
+    { key: "trainingops", label: "Training", href: "/admin/training-operations", icon: "△" },
+    { key: "development", label: "Development", href: "/admin/development", icon: "↗", matches: ["development", "teamdev", "positiondev"] },
+    { key: "rosterhealth", label: "Availability", href: "/admin/roster-health", icon: "+" },
+  ]},
+  { label: "ANALYSIS", items: [
+    { key: "playeranalysis", label: "Player 360", href: "/admin/player-analysis", icon: "◎", matches: ["playeranalysis", "lblab", "lbanalytics"] },
+    { key: "performance", label: "Performance", href: "/admin/performance", icon: "⌁" },
+    { key: "stats", label: "Stats", href: "/admin/stats", icon: "▥" },
+  ]},
+  { label: "FOOTBALL", items: [
+    { key: "playbook", label: "Playbook & Lineup", href: "/admin/playbook", icon: "▤" },
+  ]},
+  { label: "GAME DAY", items: [
+    { key: "gameoperations", label: "Game Center", href: "/admin/game-operations", icon: "⚡", matches: ["gameoperations", "games", "gamedayroster", "gameday"] },
+  ]},
+  { label: "WEBSITE", items: [
+    { key: "hero", label: "Startseite", href: "/admin/hero", icon: "▣" },
+    { key: "news", label: "News", href: "/admin/news", icon: "◆" },
+    { key: "media", label: "Medien", href: "/admin/media", icon: "◫" },
+    { key: "sponsors", label: "Sponsoren", href: "/admin/sponsors", icon: "◇" },
+  ]},
+  { label: "SYSTEM", items: [
+    { key: "users", label: "Benutzer", href: "/admin/users", icon: "●" },
+    { key: "settings", label: "Einstellungen", href: "/admin/dashboard?section=settings", icon: "⚙" },
+    { key: "trash", label: "Papierkorb", href: "/admin/trash", icon: "⌫" },
+  ]},
 ];
-
-const football: NavItemType[] = [
-  { key: "players", label: "Spieler", href: "/admin/players", icon: "●" },
-  { key: "teammanagement", label: "Kader & Aufstellung", href: "/admin/team-management?tab=roster", icon: "R" },
-  { key: "playeranalysis", label: "Analyse", href: "/admin/player-analysis", icon: "◎" },
-  { key: "playbook", label: "Playbook", href: "/admin/playbook", icon: "▤" },
-  { key: "trainingops", label: "Training", href: "/admin/training-operations", icon: "△" },
-  { key: "gameoperations", label: "Spielbetrieb", href: "/admin/game-operations", icon: "⚡" },
-];
-
-const content: NavItemType[] = [
-  { key: "news", label: "News", href: "/admin/news", icon: "◆" },
-  { key: "media", label: "Medien", href: "/admin/media", icon: "◫" },
-  { key: "sponsors", label: "Sponsoren", href: "/admin/sponsors", icon: "◇" },
-  { key: "hero", label: "Startseite", href: "/admin/hero", icon: "▣" },
-];
-
-const system: NavItemType[] = [
-  { key: "users", label: "Benutzer", href: "/admin/users", icon: "●" },
-  { key: "trash", label: "Papierkorb", href: "/admin/trash", icon: "⌫" },
-  { key: "settings", label: "Einstellungen", href: "/admin/dashboard?section=settings", icon: "⚙" },
-];
-
-const teamSections: AdminSection[] = ["teammanagement", "roster", "depthchart", "rosterhealth", "coaches"];
-const analysisSections: AdminSection[] = ["playeranalysis", "performance", "stats", "development", "teamdev", "positiondev", "lblab", "lbanalytics"];
-const gameSections: AdminSection[] = ["gameoperations", "games", "gamedayroster", "gameday"];
 
 function isNavActive(item: NavItemType, active: AdminSection) {
-  if (item.key === "teammanagement") return teamSections.includes(active);
-  if (item.key === "playeranalysis") return analysisSections.includes(active);
-  if (item.key === "gameoperations") return gameSections.includes(active);
-  return item.key === active;
+  return item.key === active || Boolean(item.matches?.includes(active));
 }
 
 export function AdminShell({ active, title, eyebrow = "RASCALS OS", actions, children }: AdminShellProps) {
@@ -59,14 +66,12 @@ export function AdminShell({ active, title, eyebrow = "RASCALS OS", actions, chi
           <span><b>RASCALS</b><small>OPERATIONS SYSTEM</small></span>
         </a>
         <nav>
-          <p>START</p>
-          {overview.map(item => <NavItem key={item.key} item={item} active={isNavActive(item, active)} />)}
-          <p>FOOTBALL</p>
-          {football.map(item => <NavItem key={item.key} item={item} active={isNavActive(item, active)} />)}
-          <p>WEBSITE</p>
-          {content.map(item => <NavItem key={item.key} item={item} active={isNavActive(item, active)} />)}
-          <p>SYSTEM</p>
-          {system.map(item => <NavItem key={item.key} item={item} active={isNavActive(item, active)} />)}
+          {navGroups.map(group => (
+            <div className="cms-nav-group" key={group.label}>
+              <p>{group.label}</p>
+              {group.items.map(item => <NavItem key={`${group.label}-${item.key}`} item={item} active={isNavActive(item, active)} />)}
+            </div>
+          ))}
         </nav>
         <div className="cms-user"><span>CG</span><div><b>CMS Zugriff</b><small>Cloudflare Access + Rollen</small></div></div>
       </aside>
