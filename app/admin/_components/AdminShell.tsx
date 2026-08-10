@@ -39,7 +39,7 @@ const navGroups: NavGroup[] = [
     { key: "stats", label: "Stats", href: "/admin/stats", icon: "▥" },
   ]},
   { label: "FOOTBALL", items: [
-    { key: "playbook", label: "Playbook & Lineup", href: "/admin/playbook", icon: "▤" },
+    { key: "playbook", label: "Playbook & Scheme", href: "/admin/playbook", icon: "▤" },
   ]},
   { label: "GAME DAY", items: [
     { key: "gameoperations", label: "Game Center", href: "/admin/game-operations", icon: "⚡", matches: ["gameoperations", "games", "gamedayroster", "gameday"] },
@@ -71,7 +71,7 @@ const topModules: TopModule[] = [
     {label:"Player 360",href:"/admin/player-analysis"},{label:"Performance",href:"/admin/performance"},{label:"Stats",href:"/admin/stats"},{label:"Team Analyse",href:"/admin/development/team"},{label:"Position Groups",href:"/admin/development/positions"},
   ]},
   { label: "FOOTBALL", href: "/admin/playbook", sections: ["playbook"], actions: [
-    {label:"Playbook",href:"/admin/playbook"},{label:"Formationen",href:"/admin/playbook/formations"},{label:"Aufstellung",href:"/admin/team-management?tab=depth"},{label:"Depth Chart",href:"/admin/depth-chart"},
+    {label:"Playbook & Scheme",href:"/admin/playbook"},{label:"Formation Library",href:"/admin/playbook/formations"},{label:"Depth Chart",href:"/admin/depth-chart"},{label:"System Editor",href:"/admin/playbook/system"},
   ]},
   { label: "GAME DAY", href: "/admin/game-operations", sections: ["gameoperations","games","gamedayroster","gameday"], actions: [
     {label:"Game Center",href:"/admin/game-operations"},{label:"Spielplan",href:"/admin/games"},{label:"Gameday Roster",href:"/admin/gameday-roster"},{label:"Live Command",href:"/admin/gameday"},{label:"Postgame",href:"/admin/game-operations?tab=postgame"},
