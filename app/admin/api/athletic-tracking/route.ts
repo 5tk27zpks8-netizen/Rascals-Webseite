@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const playerId = url.searchParams.get("playerId") ?? "";
   const players = await DB.prepare(`SELECT id,first_name,last_name,jersey_number,position,unit,portrait
-    FROM players WHERE active=1 AND deleted_at IS NULL ORDER BY last_name,first_name`).all<Record<string, unknown>>();
+    FROM players WHERE active=1 ORDER BY last_name,first_name`).all<Record<string, unknown>>();
   const entries = playerId
     ? await DB.prepare(`SELECT t.*,p.first_name,p.last_name,p.jersey_number,p.position
         FROM athletic_tracking t JOIN players p ON p.id=t.player_id
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Spieler, Kategorie, Messwert und Wert sind erforderlich." }, { status: 400 });
   }
   const { DB } = bindings();
-  const player = await DB.prepare("SELECT id FROM players WHERE id=? AND active=1 AND deleted_at IS NULL LIMIT 1").bind(body.playerId).first();
+  const player = await DB.prepare("SELECT id FROM players WHERE id=? AND active=1 LIMIT 1").bind(body.playerId).first();
   if (!player) return Response.json({ error: "Spieler wurde nicht gefunden." }, { status: 404 });
   const id = crypto.randomUUID();
   const measuredAt = body.measuredAt?.trim() || new Date().toISOString();
