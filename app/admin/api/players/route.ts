@@ -2,6 +2,16 @@ import { bindings } from "../../../lib/cms";
 import { ensureFootballSchema, mapPlayer, slugify, type Player } from "../../../lib/football";
 import { requireCmsPermission } from "../../../lib/permissions";
 
+const requestedRosterNames = [
+  "Alex Link","Alexander Helmel","André Kasper","André Reif","Anil Canova","Axel Eberhardt","Ben Bühler","Benjamin Brandner","Bruno Schuster","Chris Schönemann",
+  "Christoph Leger","Christopher Ganesch","Daniel Kovacs","Daniel Schwager","Danny N","David Füchsle","David Marra","Davide Politano","Dennis Bauer","Dennis Link",
+  "Justin Bublitz","Justin Liegl","Kevin Klauer","Luca Hartel","Lukas Endlich","Lukas Weihs","Lukes Zeun","Malaika Mangold","Manuel Wolf","Marcello Haase",
+  "Fabian Leopold","Felix Merz","Francesca Rodriguez","Frank Schwarz","Gianluca Politano","James Letcher","Jayson Hafner","Jonas Füchsle","Jonas Müller","Josip Tomic",
+  "Dimitris Dolmas","Dominik Schoeps","Dorian Sittner","Eduard Hihn","Enver Jonuz","Fabian Bück","Fabian Djuric","Fabian Dorschky",
+  "Marvin Bittner","Matthew Grosz","Mert Ucal","Nicolas Dollansky","Nino Adzaj","Noah Vukmirovic","Patrick Rodriguez","Philip Gnaier","Philipp Epple","Sam Füchsle",
+  "Sascha Brand","Sebastian Hihn","Sergej(Sigi) Link","Seymen Thommy Oran","Simon Liegl","Simon Wannenwetsch","Stefan Walter","Thomas Sperr","Tim Berger","Tim Hessling","Ty Faulks","Ümitcan Yazici","Wilhelm Jakuschewski","Yannick Wehling"
+];
+
 async function allowed() {
   const actor = await requireCmsPermission("players" as never);
   return actor instanceof Response ? actor : actor;
@@ -15,15 +25,31 @@ async function ensureTrashColumns() {
   if (!columns.has("deleted_by")) await DB.prepare("ALTER TABLE players ADD COLUMN deleted_by TEXT").run();
 }
 
+async function ensureRequestedRosterProfiles() {
+  const { DB } = bindings();
+  const statements = requestedRosterNames.map((fullName) => {
+    const parts = fullName.trim().split(/\s+/);
+    const lastName = parts.pop() ?? "";
+    const firstName = parts.join(" ");
+    const slug = slugify(fullName);
+    return DB.prepare(`INSERT OR IGNORE INTO players
+      (id,slug,first_name,last_name,nickname,jersey_number,position,secondary_position,unit,team_id,height_cm,weight_kg,birth_date,joined_year,portrait,bio,instagram,captain,starter,rookie,status,return_date,active)
+      VALUES (?,?,?,?,?,NULL,'','','defense','mens',NULL,NULL,NULL,NULL,'','','',0,0,0,'active',NULL,1)`)
+      .bind(crypto.randomUUID(), slug, firstName, lastName, "");
+  });
+  if (statements.length) await DB.batch(statements);
+}
+
 export async function GET(request: Request) {
   const actor = await allowed();
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensureTrashColumns();
+  await ensureRequestedRosterProfiles();
   const { DB } = bindings();
   const includeDeleted = new URL(request.url).searchParams.get("deleted") === "1";
   const where = includeDeleted ? "deleted_at IS NOT NULL" : "deleted_at IS NULL";
-  const result = await DB.prepare(`SELECT * FROM players WHERE ${where} ORDER BY active DESC, unit, position, jersey_number, last_name`).all();
+  const result = await DB.prepare(`SELECT * FROM players WHERE ${where} ORDER BY active DESC, last_name, first_name`).all();
   return Response.json({ items: result.results.map((row) => mapPlayer(row as Record<string, unknown>)) });
 }
 
@@ -37,6 +63,8 @@ export async function POST(request: Request) {
   const id = crypto.randomUUID();
   const slug = slugify(body.slug || `${body.firstName}-${body.lastName}`) || id;
   const { DB } = bindings();
+  const existing = await DB.prepare("SELECT id FROM players WHERE slug=? LIMIT 1").bind(slug).first();
+  if (existing) return Response.json({ error: "Ein Spieler mit diesem Namen existiert bereits." }, { status: 409 });
   await DB.prepare(`INSERT INTO players (id,slug,first_name,last_name,nickname,jersey_number,position,secondary_position,unit,team_id,height_cm,weight_kg,birth_date,joined_year,portrait,bio,instagram,captain,starter,rookie,status,return_date,active)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
       id, slug, body.firstName.trim(), body.lastName.trim(), body.nickname ?? "", body.jerseyNumber ?? null, body.position ?? "", body.secondaryPosition ?? "", body.unit ?? "defense", body.teamId ?? "mens",
@@ -55,14 +83,12 @@ export async function PUT(request: Request) {
   const body = await request.json() as Partial<Player> & { restore?: boolean };
   if (!body.id) return Response.json({ error: "ID ist erforderlich." }, { status: 400 });
   const { DB } = bindings();
-
   if (body.restore) {
     await DB.prepare("UPDATE players SET deleted_at=NULL, deleted_by=NULL, active=1, updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(body.id).run();
     const restored = await DB.prepare("SELECT * FROM players WHERE id=?").bind(body.id).first<Record<string, unknown>>();
     if (!restored) return Response.json({ error: "Spieler nicht gefunden." }, { status: 404 });
     return Response.json({ item: mapPlayer(restored) });
   }
-
   if (!body.firstName?.trim() || !body.lastName?.trim()) return Response.json({ error: "Vor- und Nachname sind erforderlich." }, { status: 400 });
   const slug = slugify(body.slug || `${body.firstName}-${body.lastName}`) || body.id;
   await DB.prepare(`UPDATE players SET slug=?,first_name=?,last_name=?,nickname=?,jersey_number=?,position=?,secondary_position=?,unit=?,team_id=?,height_cm=?,weight_kg=?,birth_date=?,joined_year=?,portrait=?,bio=?,instagram=?,captain=?,starter=?,rookie=?,status=?,return_date=?,active=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL`).bind(
