@@ -3,46 +3,40 @@ import { listActiveCoaches } from "../lib/coaches";
 import { RascalsPlayerCard } from "./RascalsPlayerCard";
 import "./team.css";
 import "./coaches-public.css";
+import "./team-sections.css";
 
 export const metadata = {
   title: "Team · Hellenstein Rascals",
-  description: "Kader und Coaches der Hellenstein Rascals.",
+  description: "Coaches, Offense und Defense der Hellenstein Rascals.",
 };
-
-const unitLabels = {
-  offense: "OFFENSE",
-  defense: "DEFENSE",
-  "special-teams": "SPECIAL TEAMS",
-} as const;
 
 export default async function TeamPage() {
   const [players, coaches] = await Promise.all([listActivePlayers(), listActiveCoaches()]);
-  const units = ["offense", "defense", "special-teams"] as const;
+  const offense = players.filter((player) => player.unit === "offense");
+  const defense = players.filter((player) => player.unit === "defense");
+  const specialTeams = players.filter((player) => player.unit === "special-teams");
 
   return (
-    <main className="team-public">
-      <header className="team-public-head">
+    <main className="team-public team-public-v2">
+      <header className="team-public-head team-public-hero">
         <a href="/">← Startseite</a>
-        <span>HELLENSTEIN RASCALS</span>
-        <h1>MEET THE <i>ROSTER.</i></h1>
-        <p>Spieler, Positionen, Coaches und Profile der Hellenstein Rascals.</p>
+        <span>HELLENSTEIN RASCALS · 2026</span>
+        <h1>ONE TEAM.<br /><i>THREE UNITS.</i></h1>
+        <p>Die Coaches geben die Richtung vor. Offense und Defense bringen sie auf das Feld.</p>
+        <nav className="team-jump-nav" aria-label="Team Bereiche">
+          <a href="#coaches">Coaches</a>
+          <a href="#offense">Offense</a>
+          <a href="#defense">Defense</a>
+        </nav>
       </header>
 
-      <section className="team-public-body">
-        {units.map((unit) => {
-          const group = players.filter((player) => player.unit === unit);
-          if (!group.length) return null;
-          return (
-            <section key={unit} className="team-unit">
-              <div className="team-unit-title"><small>2026 ROSTER</small><h2>{unitLabels[unit]}</h2></div>
-              <div className="team-roster-grid">{group.map((player) => <RascalsPlayerCard key={player.id} player={player} />)}</div>
-            </section>
-          );
-        })}
-
+      <section className="team-public-body team-public-body-v2">
         {coaches.length > 0 && (
-          <section className="team-unit coaches-public-section">
-            <div className="team-unit-title"><small>COACHING STAFF</small><h2>COACHES</h2></div>
+          <section id="coaches" className="team-showcase team-showcase-coaches coaches-public-section">
+            <div className="team-section-head">
+              <div><small>01 · LEADERSHIP</small><h2>COACHES</h2></div>
+              <p>Vision, Vorbereitung und Verantwortung. Unser Coaching Staff setzt den Standard für das Team.</p>
+            </div>
             <div className="coaches-public-grid">
               {coaches.map((coach) => (
                 <article className="coach-public-card" key={coach.id}>
@@ -58,6 +52,33 @@ export default async function TeamPage() {
                 </article>
               ))}
             </div>
+          </section>
+        )}
+
+        {offense.length > 0 && (
+          <section id="offense" className="team-showcase team-showcase-offense">
+            <div className="team-section-head">
+              <div><small>02 · MOVE THE CHAINS</small><h2>OFFENSE</h2></div>
+              <p>Tempo, Präzision und Explosivität. Die Unit, die Raum gewinnt und Punkte auf das Board bringt.</p>
+            </div>
+            <div className="team-roster-grid">{offense.map((player) => <RascalsPlayerCard key={player.id} player={player} />)}</div>
+          </section>
+        )}
+
+        {defense.length > 0 && (
+          <section id="defense" className="team-showcase team-showcase-defense">
+            <div className="team-section-head">
+              <div><small>03 · DEFEND THE STANDARD</small><h2>DEFENSE</h2></div>
+              <p>Pressure, Disziplin und Physicality. Die Unit, die Drives stoppt und Momentum dreht.</p>
+            </div>
+            <div className="team-roster-grid">{defense.map((player) => <RascalsPlayerCard key={player.id} player={player} />)}</div>
+          </section>
+        )}
+
+        {specialTeams.length > 0 && (
+          <section className="team-showcase team-showcase-special">
+            <div className="team-section-head compact"><div><small>04 · FIELD POSITION</small><h2>SPECIAL TEAMS</h2></div></div>
+            <div className="team-roster-grid">{specialTeams.map((player) => <RascalsPlayerCard key={player.id} player={player} />)}</div>
           </section>
         )}
 
