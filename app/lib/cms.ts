@@ -1,134 +1,14 @@
 import { env } from "cloudflare:workers";
-
-export type HeroButtonStyle = "red" | "ghost" | "light";
-export type HeroTransition = "fade" | "slide" | "zoom" | "parallax";
-
-export type HeroSlide = {
-  id: string;
-  image: string;
-  eyebrow: string;
-  title: string;
-  accent: string;
-  text: string;
-  buttonLabel: string;
-  buttonUrl: string;
-  buttonStyle?: HeroButtonStyle;
-  secondaryButtonLabel?: string;
-  secondaryButtonUrl?: string;
-  secondaryButtonStyle?: HeroButtonStyle;
-  active?: boolean;
-  startsAt?: string | null;
-  endsAt?: string | null;
-};
-
-export type CmsState = {
-  slides: HeroSlide[];
-  intervalSeconds: number;
-  transition: HeroTransition;
-  shopUrl: string;
-};
-
-type Bindings = {
-  DB: D1Database;
-  MEDIA: R2Bucket;
-};
-
-export function bindings(): Bindings {
-  return env as unknown as Bindings;
-}
-
-export const defaultCmsState: CmsState = {
-  intervalSeconds: 7,
-  transition: "fade",
-  shopUrl: "https://hellenstein-rascals.myshopify.com",
-  slides: [
-    {
-      id: "helmet",
-      image: "/helmet-hero-4k.webp",
-      eyebrow: "American Football · Heidenheim",
-      title: "HART. ECHT.",
-      accent: "RASCALS.",
-      text: "Ein Team. Eine Familie. Bereit für den nächsten Snap.",
-      buttonLabel: "Teil des Teams werden",
-      buttonUrl: "mailto:football@hsb1846.de",
-      buttonStyle: "red",
-      secondaryButtonLabel: "Spielplan 2026",
-      secondaryButtonUrl: "/#spielplan",
-      secondaryButtonStyle: "ghost",
-      active: true,
-      startsAt: null,
-      endsAt: null,
-    },
-    {
-      id: "schedule",
-      image: "/team-entry-4k.webp",
-      eyebrow: "Kreisoberliga · Saison 2026",
-      title: "GAME",
-      accent: "SCHEDULE",
-      text: "Alle bestätigten Termine, Gegner und Heimspiele auf einen Blick.",
-      buttonLabel: "Zum Spielplan",
-      buttonUrl: "/#spielplan",
-      buttonStyle: "red",
-      secondaryButtonLabel: "",
-      secondaryButtonUrl: "",
-      secondaryButtonStyle: "ghost",
-      active: true,
-      startsAt: null,
-      endsAt: null,
-    },
-  ],
-};
-
-export async function ensureCmsSchema() {
-  const { DB } = bindings();
-  await DB.prepare(`CREATE TABLE IF NOT EXISTS cms_settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-}
-
-function normalizeState(value: CmsState): CmsState {
-  const transitions: HeroTransition[] = ["fade", "slide", "zoom", "parallax"];
-  return {
-    ...defaultCmsState,
-    ...value,
-    transition: transitions.includes(value.transition) ? value.transition : "fade",
-    slides: Array.isArray(value.slides) && value.slides.length
-      ? value.slides.map((slide) => ({
-          buttonStyle: "red",
-          secondaryButtonLabel: "",
-          secondaryButtonUrl: "",
-          secondaryButtonStyle: "ghost",
-          active: true,
-          startsAt: null,
-          endsAt: null,
-          ...slide,
-        }))
-      : defaultCmsState.slides,
-  };
-}
-
-export async function readCmsState(): Promise<CmsState> {
-  await ensureCmsSchema();
-  const { DB } = bindings();
-  const row = await DB.prepare("SELECT value FROM cms_settings WHERE key = ?")
-    .bind("site")
-    .first<{ value: string }>();
-  if (!row) return defaultCmsState;
-  try {
-    return normalizeState(JSON.parse(row.value) as CmsState);
-  } catch {
-    return defaultCmsState;
-  }
-}
-
-export async function writeCmsState(state: CmsState) {
-  await ensureCmsSchema();
-  const { DB } = bindings();
-  await DB.prepare(`INSERT INTO cms_settings (key, value, updated_at)
-    VALUES (?, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP`)
-    .bind("site", JSON.stringify(normalizeState(state)))
-    .run();
-}
+export type HeroButtonStyle="red"|"ghost"|"light";export type HeroTransition="fade"|"slide"|"zoom"|"parallax";
+export type HeroSlide={id:string;image:string;eyebrow:string;title:string;accent:string;text:string;buttonLabel:string;buttonUrl:string;buttonStyle?:HeroButtonStyle;secondaryButtonLabel?:string;secondaryButtonUrl?:string;secondaryButtonStyle?:HeroButtonStyle;active?:boolean;startsAt?:string|null;endsAt?:string|null};
+export type SectionMedia={mode:"image"|"slider";images:string[];intervalSeconds:number;transition:HeroTransition};
+export type HomeSections={join:SectionMedia;story:SectionMedia;newsFeatured:SectionMedia;newsSecondary:SectionMedia};
+export type CmsState={slides:HeroSlide[];intervalSeconds:number;transition:HeroTransition;shopUrl:string;homeSections:HomeSections};
+type Bindings={DB:D1Database;MEDIA:R2Bucket};export function bindings():Bindings{return env as unknown as Bindings}
+const section=(image:string):SectionMedia=>({mode:"image",images:[image],intervalSeconds:7,transition:"fade"});
+export const defaultCmsState:CmsState={intervalSeconds:7,transition:"fade",shopUrl:"https://hellenstein-rascals.myshopify.com",homeSections:{join:section("/team-entry-4k.webp"),story:section("/team-victory-4k.webp"),newsFeatured:section("/team-players-4k.webp"),newsSecondary:section("/dkms-action-4k.webp")},slides:[{id:"helmet",image:"/helmet-hero-4k.webp",eyebrow:"American Football · Heidenheim",title:"HART. ECHT.",accent:"RASCALS.",text:"Ein Team. Eine Familie. Bereit für den nächsten Snap.",buttonLabel:"Teil des Teams werden",buttonUrl:"mailto:football@hsb1846.de",buttonStyle:"red",secondaryButtonLabel:"Spielplan 2026",secondaryButtonUrl:"/#spielplan",secondaryButtonStyle:"ghost",active:true,startsAt:null,endsAt:null},{id:"schedule",image:"/team-entry-4k.webp",eyebrow:"Kreisoberliga · Saison 2026",title:"GAME",accent:"SCHEDULE",text:"Alle bestätigten Termine, Gegner und Heimspiele auf einen Blick.",buttonLabel:"Zum Spielplan",buttonUrl:"/#spielplan",buttonStyle:"red",secondaryButtonLabel:"",secondaryButtonUrl:"",secondaryButtonStyle:"ghost",active:true,startsAt:null,endsAt:null}]};
+export async function ensureCmsSchema(){const{DB}=bindings();await DB.prepare(`CREATE TABLE IF NOT EXISTS cms_settings (key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`).run()}
+function normalizeSection(value:Partial<SectionMedia>|undefined,fallback:SectionMedia):SectionMedia{const transitions:HeroTransition[]=["fade","slide","zoom","parallax"];return{mode:value?.mode==="slider"?"slider":"image",images:Array.isArray(value?.images)&&value!.images!.length?value!.images!.filter(Boolean):fallback.images,intervalSeconds:Math.max(3,Number(value?.intervalSeconds)||7),transition:transitions.includes(value?.transition as HeroTransition)?value!.transition as HeroTransition:"fade"}}
+function normalizeState(value:Partial<CmsState>):CmsState{const transitions:HeroTransition[]=["fade","slide","zoom","parallax"];const hs=value.homeSections;return{...defaultCmsState,...value,transition:transitions.includes(value.transition as HeroTransition)?value.transition as HeroTransition:"fade",homeSections:{join:normalizeSection(hs?.join,defaultCmsState.homeSections.join),story:normalizeSection(hs?.story,defaultCmsState.homeSections.story),newsFeatured:normalizeSection(hs?.newsFeatured,defaultCmsState.homeSections.newsFeatured),newsSecondary:normalizeSection(hs?.newsSecondary,defaultCmsState.homeSections.newsSecondary)},slides:Array.isArray(value.slides)&&value.slides.length?value.slides.map(s=>({buttonStyle:"red" as HeroButtonStyle,secondaryButtonLabel:"",secondaryButtonUrl:"",secondaryButtonStyle:"ghost" as HeroButtonStyle,active:true,startsAt:null,endsAt:null,...s})):defaultCmsState.slides}}
+export async function readCmsState():Promise<CmsState>{await ensureCmsSchema();const{DB}=bindings();const row=await DB.prepare("SELECT value FROM cms_settings WHERE key = ?").bind("site").first<{value:string}>();if(!row)return defaultCmsState;try{return normalizeState(JSON.parse(row.value) as CmsState)}catch{return defaultCmsState}}
+export async function writeCmsState(state:CmsState){await ensureCmsSchema();const{DB}=bindings();await DB.prepare(`INSERT INTO cms_settings (key,value,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP`).bind("site",JSON.stringify(normalizeState(state))).run()}
