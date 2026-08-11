@@ -1,4 +1,4 @@
-import { listActivePlayers } from "../lib/football";
+import { listPublicTeamPlayers } from "../lib/public-team-players";
 import { listActiveCoaches } from "../lib/coaches";
 import { RascalsPlayerCard } from "./RascalsPlayerCard";
 import "./team.css";
@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 export default async function TeamPage() {
-  const [players, coaches] = await Promise.all([listActivePlayers(), listActiveCoaches()]);
+  const [players, coaches] = await Promise.all([listPublicTeamPlayers(), listActiveCoaches()]);
   const offense = players.filter((player) => player.unit === "offense");
   const defense = players.filter((player) => player.unit === "defense");
   const specialTeams = players.filter((player) => player.unit === "special-teams");
