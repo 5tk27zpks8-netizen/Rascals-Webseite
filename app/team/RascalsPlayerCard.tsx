@@ -1,4 +1,5 @@
 import type { Player } from "../lib/football";
+import "./inactive-player-stamp.css";
 
 export const PLAYER_CARD_TEMPLATE = "RASCALS" as const;
 
@@ -17,14 +18,10 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
       : fullName.length > 17
         ? "pc-name pc-name-medium"
         : "pc-name";
+  const inactive = !player.active;
 
-  return (
-    <a
-      href={`/team/${player.slug}`}
-      className="rascals-player-card"
-      aria-label={`${fullName}, ${player.position}`}
-      data-template={PLAYER_CARD_TEMPLATE}
-    >
+  const content = (
+    <>
       <div className="rpc-frame" aria-hidden="true" />
 
       <div className="rpc-brand">
@@ -59,6 +56,12 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
 
       <div className="rpc-vignette" aria-hidden="true" />
 
+      {inactive && (
+        <div className="rpc-inactive-stamp" aria-label="Spieler inaktiv">
+          <span>INAKTIV</span>
+        </div>
+      )}
+
       <div className="rpc-player-info">
         <div className="rpc-number">{number}</div>
         <div className="rpc-identity">
@@ -80,6 +83,29 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
           ))}
         </div>
       )}
+    </>
+  );
+
+  if (inactive) {
+    return (
+      <div
+        className="rascals-player-card is-inactive"
+        aria-label={`${fullName}, ${player.position}, inaktiv`}
+        data-template={PLAYER_CARD_TEMPLATE}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={`/team/${player.slug}`}
+      className="rascals-player-card"
+      aria-label={`${fullName}, ${player.position}`}
+      data-template={PLAYER_CARD_TEMPLATE}
+    >
+      {content}
     </a>
   );
 }
