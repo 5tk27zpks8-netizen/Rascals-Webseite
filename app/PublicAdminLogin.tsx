@@ -15,19 +15,33 @@ export function PublicAdminLogin() {
       return;
     }
 
-    const footerColumns = Array.from(document.querySelectorAll<HTMLElement>("footer > div"));
-    const homeField = footerColumns.find((column) =>
-      column.querySelector(":scope > b")?.textContent?.trim() === "HOME FIELD"
-    );
+    const footerBrand = document.querySelector<HTMLElement>("footer .footer-brand");
+    const logo = footerBrand?.querySelector<HTMLImageElement>(":scope > img");
+    if (!footerBrand || !logo) {
+      setTarget(null);
+      return;
+    }
 
-    setTarget(homeField ?? null);
+    let slot = footerBrand.querySelector<HTMLElement>(":scope > .footer-admin-login-slot");
+    if (!slot) {
+      slot = document.createElement("div");
+      slot.className = "footer-admin-login-slot";
+      logo.insertAdjacentElement("afterend", slot);
+    }
+
+    setTarget(slot);
+
+    return () => {
+      setTarget(null);
+      slot?.remove();
+    };
   }, [pathname]);
 
   if (pathname?.startsWith("/admin") || !target) return null;
 
   return createPortal(
     <a href="/admin" aria-label="Zum Admin Login" className="public-admin-login">
-      Login
+      Anmelden
     </a>,
     target,
   );
