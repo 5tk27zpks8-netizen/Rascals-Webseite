@@ -1,13 +1,13 @@
 import { AboutTimeline } from "../AboutTimeline";
 import { SiteBuilderPage } from "../SiteBuilderPage";
 import { SiteShell, type PageName } from "../SiteShell";
-import { findBuilderPage, readSiteBuilderState } from "../lib/site-builder";
+import { findBuilderPage, readPublishedSiteBuilderState } from "../lib/site-builder";
 
 const legacyPages: PageName[] = ["ueber-uns", "team", "sponsoring", "shop", "news", "galerie"];
 
 export default async function ContentPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const state = await readSiteBuilderState();
+  const state = await readPublishedSiteBuilderState();
   const builderPage = findBuilderPage(state, slug);
 
   if (builderPage?.enabled) {
