@@ -1,10 +1,12 @@
-import { redirect } from "next/navigation";
+import { requireChatGPTUser } from "../chatgpt-auth";
+import { AdminDashboard } from "./AdminDashboard";
 
 export const metadata = {
   title: "Rascals Admin",
   robots: { index: false, follow: false },
 };
 
-export default function AdminEntryPage() {
-  redirect("/admin/dashboard");
+export default async function AdminEntryPage() {
+  await requireChatGPTUser("/admin");
+  return <AdminDashboard />;
 }
