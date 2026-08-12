@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getAdminSessionIdentity, safeAdminReturnTo } from "./lib/admin-auth";
 
 export type ChatGPTUser = {
   userId: string;
@@ -17,30 +18,37 @@ const OAI_USER_FULL_NAME_ENCODING_HEADER = "oai-authenticated-user-full-name-enc
 const PERCENT_ENCODED_UTF8 = "percent-encoded-utf-8";
 
 /**
- * Returns the authenticated CMS user.
- *
- * Production authentication is provided by Cloudflare Access. We still keep
- * support for the original OpenAI preview headers so local/project previews
- * continue to work while the live site uses Cloudflare Access.
+ * CMS authentication is intentionally first-party now: only a valid Rascals
+ * admin session cookie grants access. Cloudflare/OpenAI identity headers are
+ * kept exclusively as a trusted bootstrap/reset signal on the login screen;
+ * they can no longer bypass the password screen and open /admin directly.
  */
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
+  return getAdminSessionIdentity(requestHeaders);
+}
 
+export async function getExternalIdentity(): Promise<ChatGPTUser | null> {
+  return externalIdentityFromHeaders(await headers());
+}
+
+export function externalIdentityFromHeaders(requestHeaders: Headers): ChatGPTUser | null {
   const cloudflareEmail = requestHeaders.get(CF_EMAIL_HEADER);
   const cloudflareJwt = requestHeaders.get(CF_JWT_HEADER);
   if (cloudflareEmail && cloudflareJwt) {
+    const email = cloudflareEmail.trim().toLowerCase();
     return {
-      userId: cloudflareEmail,
-      displayName: cloudflareEmail.split("@")[0] || cloudflareEmail,
-      email: cloudflareEmail,
+      userId: email,
+      displayName: email.split("@")[0] || email,
+      email,
       fullName: null,
     };
   }
 
   const userId = requestHeaders.get(OAI_USER_ID_HEADER);
-  const email = requestHeaders.get(OAI_USER_EMAIL_HEADER);
-  if (!userId || !email) return null;
-
+  const emailHeader = requestHeaders.get(OAI_USER_EMAIL_HEADER);
+  if (!userId || !emailHeader) return null;
+  const email = emailHeader.trim().toLowerCase();
   const encodedFullName = requestHeaders.get(OAI_USER_FULL_NAME_HEADER);
   const fullName =
     encodedFullName &&
@@ -56,37 +64,31 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   };
 }
 
-export async function requireChatGPTUser(
-  _returnTo: string,
-): Promise<ChatGPTUser> {
+export async function requireChatGPTUser(returnTo: string): Promise<ChatGPTUser> {
   const user = await getChatGPTUser();
   if (user) return user;
-
-  // On production Cloudflare Access should intercept unauthenticated requests
-  // before they reach the Worker. This fallback prevents the old
-  // /signin-with-chatgpt redirect from hijacking the live admin routes.
-  redirect("/?admin_access=required");
+  redirect(chatGPTSignInPath(returnTo));
 }
 
 export function chatGPTSignInPath(returnTo: string): string {
-  return safeRelativeReturnPath(returnTo);
+  const safe = safeAdminReturnTo(returnTo, "/admin");
+  return `/admin/login?return_to=${encodeURIComponent(safe)}`;
 }
 
 export function chatGPTSignOutPath(returnTo = "/"): string {
-  return safeRelativeReturnPath(returnTo);
+  const safe = safePublicReturnTo(returnTo);
+  return `/admin/logout?return_to=${encodeURIComponent(safe)}`;
 }
 
-function safeRelativeReturnPath(value: string): string {
+function safePublicReturnTo(value: string): string {
   if (!value.startsWith("/") || value.startsWith("//")) return "/";
-
-  let url: URL;
   try {
-    url = new URL(value, "https://app.local");
+    const url = new URL(value, "https://app.local");
+    if (url.origin !== "https://app.local") return "/";
+    return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return "/";
   }
-  if (url.origin !== "https://app.local") return "/";
-  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 function safeDecodeURIComponent(value: string): string | null {
