@@ -5,6 +5,33 @@ import { findBuilderPage, readPublishedSiteBuilderState } from "../lib/site-buil
 
 const legacyPages: PageName[] = ["ueber-uns", "team", "sponsoring", "shop", "news", "galerie"];
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const state = await readPublishedSiteBuilderState();
+  const page = findBuilderPage(state, slug);
+  if (!page?.enabled) return {};
+  const heroImage = page.sections.find(section => section.visible && section.type === "hero")?.image;
+  const canonical = `/${page.slug}`;
+  return {
+    title: page.title || page.name,
+    description: page.description || undefined,
+    alternates: { canonical },
+    openGraph: {
+      title: page.title || page.name,
+      description: page.description || undefined,
+      url: canonical,
+      images: heroImage ? [{ url: heroImage }] : undefined,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: page.title || page.name,
+      description: page.description || undefined,
+      images: heroImage ? [heroImage] : undefined,
+    },
+  };
+}
+
 export default async function ContentPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const state = await readPublishedSiteBuilderState();
