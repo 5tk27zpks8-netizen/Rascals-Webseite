@@ -1,6 +1,5 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getAdminSessionIdentity, safeAdminReturnTo } from "./lib/admin-auth";
 
 export type ChatGPTUser = {
   userId: string;
@@ -18,14 +17,13 @@ const OAI_USER_FULL_NAME_ENCODING_HEADER = "oai-authenticated-user-full-name-enc
 const PERCENT_ENCODED_UTF8 = "percent-encoded-utf-8";
 
 /**
- * CMS authentication is intentionally first-party now: only a valid Rascals
- * admin session cookie grants access. Cloudflare/OpenAI identity headers are
- * kept exclusively as a trusted bootstrap/reset signal on the login screen;
- * they can no longer bypass the password screen and open /admin directly.
+ * Production CMS authentication is provided by Cloudflare Access.
+ * OpenAI preview headers remain supported for local/project previews.
+ * There is deliberately no second Rascals password/session gate here: Access
+ * is the single authentication boundary for /admin and protected admin APIs.
  */
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
-  const requestHeaders = await headers();
-  return getAdminSessionIdentity(requestHeaders);
+  return externalIdentityFromHeaders(await headers());
 }
 
 export async function getExternalIdentity(): Promise<ChatGPTUser | null> {
@@ -64,23 +62,25 @@ export function externalIdentityFromHeaders(requestHeaders: Headers): ChatGPTUse
   };
 }
 
-export async function requireChatGPTUser(returnTo: string): Promise<ChatGPTUser> {
+export async function requireChatGPTUser(_returnTo: string): Promise<ChatGPTUser> {
   const user = await getChatGPTUser();
   if (user) return user;
-  redirect(chatGPTSignInPath(returnTo));
+
+  // In production, Cloudflare Access intercepts unauthenticated requests before
+  // they reach the Worker. This fallback is only for environments without Access
+  // and must never redirect into another authentication loop.
+  redirect("/?admin_access=required");
 }
 
 export function chatGPTSignInPath(returnTo: string): string {
-  const safe = safeAdminReturnTo(returnTo, "/admin");
-  return `/admin/login?return_to=${encodeURIComponent(safe)}`;
+  return safeRelativeReturnPath(returnTo);
 }
 
 export function chatGPTSignOutPath(returnTo = "/"): string {
-  const safe = safePublicReturnTo(returnTo);
-  return `/admin/logout?return_to=${encodeURIComponent(safe)}`;
+  return safeRelativeReturnPath(returnTo);
 }
 
-function safePublicReturnTo(value: string): string {
+function safeRelativeReturnPath(value: string): string {
   if (!value.startsWith("/") || value.startsWith("//")) return "/";
   try {
     const url = new URL(value, "https://app.local");
