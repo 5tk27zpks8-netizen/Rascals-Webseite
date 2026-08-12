@@ -5,10 +5,10 @@ import { createPortal } from "react-dom";
 import "./about-timeline.css";
 
 const milestones = [
-  { year: "2023", tag: "KICKOFF", league: "AUFBAULIGA", note: "Gründung · Der erste Snap", mark: "01" },
-  { year: "2025", tag: "NEXT DOWN", league: "KREISLIGA", note: "Der nächste Schritt", mark: "02" },
-  { year: "2026", tag: "MOVING THE CHAINS", league: "KREISOBERLIGA", note: "Aufstieg · Weiter nach vorne", mark: "03" },
-  { year: "2027", tag: "NEXT LEVEL", league: "BEZIRKSLIGA", note: "Das nächste Kapitel", mark: "TD" },
+  { year: "2023", tag: "KICKOFF", league: "AUFBAULIGA", note: "Gründung · Der erste Snap", mark: "01", points: "" },
+  { year: "2025", tag: "NEXT DOWN", league: "KREISLIGA", note: "Der nächste Schritt", mark: "02", points: "139 : 137" },
+  { year: "2026", tag: "MOVING THE CHAINS", league: "KREISOBERLIGA", note: "Aufstieg · Weiter nach vorne", mark: "03", points: "170 : 66" },
+  { year: "2027", tag: "NEXT LEVEL", league: "BEZIRKSLIGA", note: "Das nächste Kapitel", mark: "TD", points: "" },
 ];
 
 export function AboutTimeline() {
@@ -47,6 +47,7 @@ export function AboutTimeline() {
             <small>{item.tag}</small>
             <strong>{item.year}</strong>
             <h3>{item.league}</h3>
+            {item.points && <div className="history-points"><span>POINTS</span><b>{item.points}</b></div>}
             <p>{item.note}</p>
           </article>
         ))}
