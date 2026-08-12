@@ -59,7 +59,7 @@ export function DesignManager() {
       body: JSON.stringify(next),
     });
     const body = await response.json().catch(() => ({})) as { error?: string };
-    if (!response.ok) throw new Error(body.error || "Design konnte nicht angewendet werden.");
+    if (!response.ok) throw new Error(body.error || "Design konnte nicht als Entwurf gespeichert werden.");
   }
 
   async function apply(preset: DesignPreset) {
@@ -73,7 +73,7 @@ export function DesignManager() {
     setNotice("");
     try {
       await persistBuilder(next);
-      setNotice(`„${preset.name}“ wurde auf „${page.name}“ angewendet${applyGlobalTheme ? " – inklusive globalem Header und Grundfarben" : ""}.`);
+      setNotice(`„${preset.name}“ wurde als Entwurf auf „${page.name}“ angewendet${applyGlobalTheme ? " – inklusive globalem Header und Grundfarben" : ""}. Veröffentlichen kannst du anschließend im Website Studio.`);
       setStatus("done");
       window.setTimeout(() => setStatus("idle"), 1200);
     } catch (error) {
@@ -93,7 +93,7 @@ export function DesignManager() {
     try {
       await persistBuilder(restore);
       setBeforeState(null);
-      setNotice("Letzte Design-Änderung wurde rückgängig gemacht.");
+      setNotice("Letzte Design-Änderung wurde im Entwurf rückgängig gemacht.");
     } catch (error) {
       if (current) setState(current);
       setNotice(error instanceof Error ? error.message : "Rückgängig konnte nicht gespeichert werden.");
@@ -163,11 +163,11 @@ export function DesignManager() {
         <div>
           <small>DESIGN-BIBLIOTHEK</small>
           <h2>Design auswählen.<br/><span>Inhalte bleiben erhalten.</span></h2>
-          <p>Wähle einen Look für eine Seite oder speichere dein aktuelles Styling als eigenes Design. Texte, Bilder und dynamische Inhalte werden beim Wechsel nicht überschrieben.</p>
+          <p>Wähle einen Look für eine Seite oder speichere dein aktuelles Styling als eigenes Design. Designwechsel werden zuerst als Entwurf gespeichert und verändern die öffentliche Website erst nach „Veröffentlichen“ im Website Studio.</p>
         </div>
         <div className="design-page-picker">
           <label><span>Seite</span><select value={page.id} onChange={event => setPageId(event.target.value)}>{state.pages.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-          <label className="design-global-option"><input type="checkbox" checked={applyGlobalTheme} onChange={event => setApplyGlobalTheme(event.target.checked)}/><span><b>Globales Design übernehmen</b><small>Ändert zusätzlich Header und Grundfarben der gesamten Website.</small></span></label>
+          <label className="design-global-option"><input type="checkbox" checked={applyGlobalTheme} onChange={event => setApplyGlobalTheme(event.target.checked)}/><span><b>Globales Design übernehmen</b><small>Ändert zusätzlich Header und Grundfarben im Entwurf.</small></span></label>
           <button className="design-save-own" onClick={() => { setDesignName(`${page.name} Design`); setDesignDescription(""); setShowSave(true); }}>＋ Eigenes Design speichern</button>
         </div>
       </header>
@@ -191,7 +191,7 @@ export function DesignManager() {
           <div className="design-card-copy">
             <div className="design-card-title"><div><small>{preset.builtin ? "VORLAGE" : "EIGENES DESIGN"}</small><h3>{preset.name}</h3></div>{!preset.builtin && <button className="design-delete" onClick={() => void removeCustom(preset.id)} aria-label={`${preset.name} löschen`}>×</button>}</div>
             <p>{preset.description}</p>
-            <button className="design-apply" disabled={status === "saving"} onClick={() => void apply(preset)}>{status === "saving" ? "Bitte warten…" : `Auf ${page.name} anwenden`} <span>→</span></button>
+            <button className="design-apply" disabled={status === "saving"} onClick={() => void apply(preset)}>{status === "saving" ? "Bitte warten…" : `In ${page.name} übernehmen`} <span>→</span></button>
           </div>
         </article>)}
       </div>
@@ -201,7 +201,7 @@ export function DesignManager() {
 
     {showSave && <div className="design-modal-backdrop" onMouseDown={() => setShowSave(false)}><div className="design-modal" onMouseDown={event => event.stopPropagation()}>
       <div className="design-modal-head"><div><small>EIGENES DESIGN</small><h2>Look speichern</h2></div><button onClick={() => setShowSave(false)}>×</button></div>
-      <p>Gespeichert werden Farben, Abstände und das Styling der Abschnitte von „{page.name}“. Inhalte werden nicht als Vorlage kopiert.</p>
+      <p>Gespeichert werden Farben, Abstände, Layoutvarianten und das Styling der Abschnitte von „{page.name}“. Inhalte werden nicht als Vorlage kopiert.</p>
       <label><span>Name</span><input autoFocus value={designName} onChange={event => setDesignName(event.target.value)} placeholder="z. B. Rascals Playoffs"/></label>
       <label><span>Beschreibung</span><textarea rows={3} value={designDescription} onChange={event => setDesignDescription(event.target.value)} placeholder="Optional"/></label>
       <div className="design-modal-actions"><button onClick={() => setShowSave(false)}>Abbrechen</button><button className="primary" disabled={!designName.trim() || status === "saving"} onClick={() => void saveCurrentDesign()}>Design speichern</button></div>
