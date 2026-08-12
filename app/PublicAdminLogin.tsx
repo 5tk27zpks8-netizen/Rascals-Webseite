@@ -40,11 +40,7 @@ export function PublicAdminLogin() {
   if (pathname?.startsWith("/admin") || !target) return null;
 
   return createPortal(
-    <a
-      href="/admin/login?fresh=1&return_to=%2Fadmin"
-      aria-label="Zum Admin Login"
-      className="public-admin-login"
-    >
+    <a href="/admin" aria-label="Zum Admin Login" className="public-admin-login">
       Anmelden
     </a>,
     target,
