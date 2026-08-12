@@ -1,5 +1,6 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
 import { WebsiteBuilder } from "./WebsiteBuilder";
+import "./website-builder-v3.css";
 
 export const metadata = {
   title: "Website Builder · Rascals CMS",
