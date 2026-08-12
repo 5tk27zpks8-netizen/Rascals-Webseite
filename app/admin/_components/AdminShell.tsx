@@ -12,6 +12,7 @@ const navGroups:NavGroup[]=[
   {label:"HOME",items:[{key:"dashboard",label:"Home",href:"/admin/dashboard",icon:"⌂"}]},
   {label:"WEBSITE",items:[
     {key:"website",label:"Website gestalten",href:"/admin/website",icon:"▦",matches:["hero","sections"]},
+    {key:"preview",label:"Entwurf-Vorschau",href:"/admin/website/preview",icon:"◉"},
     {key:"designs",label:"Designs",href:"/admin/designs",icon:"◈"},
     {key:"news",label:"News",href:"/admin/news",icon:"◆"},
     {key:"media",label:"Medien",href:"/admin/media",icon:"◫"},
@@ -24,7 +25,7 @@ const navGroups:NavGroup[]=[
 
 const topModules:TopModule[]=[
   {label:"HOME",href:"/admin/dashboard",sections:["dashboard"],actions:[{label:"Dashboard",href:"/admin/dashboard"}]},
-  {label:"WEBSITE",href:"/admin/website",sections:["website","designs","hero","sections","news","media","sponsors"],actions:[{label:"Website gestalten",href:"/admin/website"},{label:"Designs",href:"/admin/designs"},{label:"News",href:"/admin/news"},{label:"Medien",href:"/admin/media"},{label:"Sponsoren",href:"/admin/sponsors"}]},
+  {label:"WEBSITE",href:"/admin/website",sections:["website","designs","hero","sections","news","media","sponsors"],actions:[{label:"Website gestalten",href:"/admin/website"},{label:"Entwurf-Vorschau",href:"/admin/website/preview"},{label:"Designs",href:"/admin/designs"},{label:"News",href:"/admin/news"},{label:"Medien",href:"/admin/media"},{label:"Sponsoren",href:"/admin/sponsors"}]},
   {label:"TEAM",href:"/admin/players",sections:["players","newplayer","coaches"],actions:[{label:"Spieler",href:"/admin/players"},{label:"+ Spieler anlegen",href:"/admin/players?new=1"},{label:"Coaches",href:"/admin/coaches"}]},
   {label:"GAME DAY",href:"/admin/game-operations",sections:["gameoperations","games","gamedayroster","gameday"],actions:[{label:"Game Center",href:"/admin/game-operations"},{label:"Spielplan",href:"/admin/games"},{label:"Gameday Roster",href:"/admin/gameday-roster"},{label:"Live-Ticker",href:"/admin/gameday"},{label:"Postgame",href:"/admin/game-operations?tab=postgame"}]},
 ];
