@@ -6,7 +6,7 @@ import { DynamicHomeGames } from "./DynamicHomeGames";
 import type { BuilderPage, BuilderSection, SiteBuilderState } from "./lib/site-builder";
 import "./site-builder.css";
 
-const footballIcon = "https://api.iconify.design/ion/american-football.svg?color=%23ffffff";
+const footballIcon = "https://api.iconify.design/noto/american-football.svg";
 const legacySlugs = new Set(["ueber-uns","team","sponsoring","shop","news","galerie"]);
 
 function sectionVars(section: BuilderSection): CSSProperties {
