@@ -73,6 +73,16 @@ async function saveAssignment(gameId: string, email?: string) {
     .bind(gameId, normalized).run();
 }
 
+async function syncOpponentLogo(opponent: string, logo: string) {
+  const normalizedLogo = logo.trim();
+  if (!normalizedLogo) return;
+  const { DB } = bindings();
+  await DB.prepare(`UPDATE games
+    SET opponent_logo=?, updated_at=CURRENT_TIMESTAMP
+    WHERE lower(trim(opponent))=lower(trim(?)) AND deleted_at IS NULL`)
+    .bind(normalizedLogo, opponent.trim()).run();
+}
+
 async function getGame(id: string) {
   const { DB } = bindings();
   return DB.prepare(`SELECT g.*, COALESCE(a.user_email,'') AS gameday_assignee
@@ -112,6 +122,7 @@ export async function POST(request: Request) {
       id, slug, body.opponent.trim(), body.opponentLogo ?? "", body.venue ?? "", body.homeAway ?? "home", body.kickoff ?? null,
       body.status ?? "upcoming", Number(body.rascalsScore ?? 0), Number(body.opponentScore ?? 0), body.quarter ?? "", body.gameClock ?? ""
     ).run();
+  await syncOpponentLogo(body.opponent, body.opponentLogo ?? "");
   await saveAssignment(id, body.gamedayAssignee);
   const row = await getGame(id);
   return Response.json({ item: mapGame(row!) }, { status: 201 });
@@ -140,6 +151,7 @@ export async function PUT(request: Request) {
     slug, body.opponent.trim(), body.opponentLogo ?? "", body.venue ?? "", body.homeAway ?? "home", body.kickoff ?? null,
     body.status ?? "upcoming", Number(body.rascalsScore ?? 0), Number(body.opponentScore ?? 0), body.quarter ?? "", body.gameClock ?? "", body.id
   ).run();
+  await syncOpponentLogo(body.opponent, body.opponentLogo ?? "");
   await saveAssignment(body.id, body.gamedayAssignee);
   const row = await getGame(body.id);
   if (!row) return Response.json({ error: "Spiel nicht gefunden." }, { status: 404 });
