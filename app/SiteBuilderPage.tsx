@@ -13,10 +13,28 @@ function classVariant(section: BuilderSection) {
   return `sb-variant-${(section.variant || "default").replace(/[^a-z0-9-]/gi,"-").toLowerCase()}`;
 }
 
+function modeClass(section: BuilderSection) {
+  return `sb-bgmode-${section.style.backgroundMode || "color"}`;
+}
+
+function sizeVars(scale:number,prefix:string){
+  return {
+    [`--sb-h1-min${prefix}`]:`${3.5*scale}rem`,
+    [`--sb-h1-fluid${prefix}`]:`${7*scale}vw`,
+    [`--sb-h1-max${prefix}`]:`${8*scale}rem`,
+    [`--sb-h2-min${prefix}`]:`${2.4*scale}rem`,
+    [`--sb-h2-fluid${prefix}`]:`${4.6*scale}vw`,
+    [`--sb-h2-max${prefix}`]:`${5.4*scale}rem`,
+  };
+}
+
 function sectionVars(section: BuilderSection): CSSProperties {
   const tablet=section.style.tablet||{};
   const mobile=section.style.mobile||{};
   const mode=section.style.backgroundMode||"color";
+  const desktopScale=section.style.headingScale??1;
+  const tabletScale=tablet.headingScale??desktopScale*.9;
+  const mobileScale=mobile.headingScale??desktopScale*.72;
   return {
     "--sb-bg": section.style.background || "#050d18",
     "--sb-background": mode==="gradient" ? (section.style.backgroundGradient||section.style.background||"#050d18") : (section.style.background||"#050d18"),
@@ -28,22 +46,22 @@ function sectionVars(section: BuilderSection): CSSProperties {
     "--sb-max": `${section.style.maxWidth ?? 1600}px`,
     "--sb-radius": `${section.style.rounded ?? 0}px`,
     "--sb-border": section.style.border || "transparent",
-    "--sb-scale": String(section.style.headingScale??1),
     "--sb-pt-tablet": `${tablet.paddingTop ?? section.style.paddingTop ?? 64}px`,
     "--sb-pb-tablet": `${tablet.paddingBottom ?? section.style.paddingBottom ?? 64}px`,
     "--sb-min-tablet": `${tablet.minHeight ?? section.style.minHeight ?? 0}px`,
     "--sb-max-tablet": `${tablet.maxWidth ?? section.style.maxWidth ?? 1200}px`,
-    "--sb-scale-tablet": String(tablet.headingScale??section.style.headingScale??.9),
     "--sb-align-tablet": tablet.align||section.style.align||"left",
     "--sb-pt-mobile": `${mobile.paddingTop ?? 40}px`,
     "--sb-pb-mobile": `${mobile.paddingBottom ?? 40}px`,
     "--sb-min-mobile": `${mobile.minHeight ?? 0}px`,
     "--sb-max-mobile": `${mobile.maxWidth ?? 720}px`,
-    "--sb-scale-mobile": String(mobile.headingScale??.72),
     "--sb-align-mobile": mobile.align||section.style.align||"left",
     "--sb-overlay": section.style.overlayColor||"#020812",
     "--sb-overlay-opacity": String(section.style.overlayOpacity??.45),
     "--sb-bg-position": section.style.backgroundPosition||"center",
+    ...sizeVars(desktopScale,""),
+    ...sizeVars(tabletScale,"-tablet"),
+    ...sizeVars(mobileScale,"-mobile"),
     textAlign: section.style.align || "left",
     backgroundAttachment: section.style.backgroundFixed ? "fixed" : "scroll",
   } as CSSProperties;
@@ -66,7 +84,7 @@ function timelineLabel(value?: string) {
   return { tag, league: league.join(" · ") };
 }
 
-function shellClass(section:BuilderSection,extra="") { return `sb-section ${extra} ${classVariant(section)}`.trim(); }
+function shellClass(section:BuilderSection,extra="") { return `sb-section ${extra} ${classVariant(section)} ${modeClass(section)}`.trim(); }
 
 export function BuilderSectionView({ section }: { section: BuilderSection }) {
   if (!section.visible) return null;
@@ -91,11 +109,11 @@ export function BuilderSectionView({ section }: { section: BuilderSection }) {
 
   if (section.type === "cta") return <section className={shellClass(section,"sb-cta")} style={vars}><BackgroundLayer section={section}/>{section.image&&<><img className="sb-cta-image" src={section.image} alt=""/><div className="sb-cta-shade"/></>}<div className="sb-inner"><span className="sb-kicker">{section.eyebrow}</span><h2>{section.title} {section.accent&&<i>{section.accent}</i>}</h2><p>{section.text}</p><LinkButton label={section.buttonLabel} url={section.buttonUrl}/></div></section>;
 
-  if (section.type === "games") return <section id="spielplan" className={`section fixtures-section sb-native-section ${classVariant(section)}`} style={vars}><BackgroundLayer section={section}/><div className="section-heading"><div><span className="eyebrow red-text">{section.eyebrow||"SAISON"}</span><h2>{section.title||"NÄCHSTE GAMES."}</h2></div><p>{section.text}</p></div><div className="fixture-list" /></section>;
+  if (section.type === "games") return <section id="spielplan" className={`section fixtures-section sb-native-section ${classVariant(section)} ${modeClass(section)}`} style={vars}><BackgroundLayer section={section}/><div className="section-heading"><div><span className="eyebrow red-text">{section.eyebrow||"SAISON"}</span><h2>{section.title||"NÄCHSTE GAMES."}</h2></div><p>{section.text}</p></div><div className="fixture-list" /></section>;
 
-  if (section.type === "news") return <section className={`section news-preview sb-native-section ${classVariant(section)}`} style={vars}><BackgroundLayer section={section}/><div className="section-heading"><div><span className="eyebrow red-text">{section.eyebrow||"INSIDE RASCALS"}</span><h2>{section.title||"FROM THE HUDDLE."}</h2></div></div><div className="news-grid" /></section>;
+  if (section.type === "news") return <section className={`section news-preview sb-native-section ${classVariant(section)} ${modeClass(section)}`} style={vars}><BackgroundLayer section={section}/><div className="section-heading"><div><span className="eyebrow red-text">{section.eyebrow||"INSIDE RASCALS"}</span><h2>{section.title||"FROM THE HUDDLE."}</h2></div></div><div className="news-grid" /></section>;
 
-  if (section.type === "sponsors") return <section className={`sponsor-strip sb-native-section ${classVariant(section)}`} style={vars}><BackgroundLayer section={section}/><p>{section.title||"PROUDLY POWERED BY"}</p><div className="ticker-window"><div className="ticker-track" /></div></section>;
+  if (section.type === "sponsors") return <section className={`sponsor-strip sb-native-section ${classVariant(section)} ${modeClass(section)}`} style={vars}><BackgroundLayer section={section}/><p>{section.title||"PROUDLY POWERED BY"}</p><div className="ticker-window"><div className="ticker-track" /></div></section>;
 
   return <section className={shellClass(section,"sb-text-section")} style={vars}><BackgroundLayer section={section}/><div className="sb-inner sb-text"><span className="sb-kicker">{section.eyebrow}</span><h2>{section.title} {section.accent&&<i>{section.accent}</i>}</h2>{section.text&&<p>{section.text}</p>}<LinkButton label={section.buttonLabel} url={section.buttonUrl}/></div></section>;
 }
