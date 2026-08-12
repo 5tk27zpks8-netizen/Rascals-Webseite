@@ -3,13 +3,13 @@ import type { DesignPreset } from "../../../lib/design-presets";
 import { requireCmsPermission } from "../../../lib/permissions";
 
 export async function GET() {
-  const actor = await requireCmsPermission("hero");
+  const actor = await requireCmsPermission("design_manage");
   if (actor instanceof Response) return actor;
   return Response.json({ items: await readCustomDesignPresets() });
 }
 
 export async function PUT(request: Request) {
-  const actor = await requireCmsPermission("hero");
+  const actor = await requireCmsPermission("design_manage");
   if (actor instanceof Response) return actor;
   let body: { items?: DesignPreset[] };
   try {
