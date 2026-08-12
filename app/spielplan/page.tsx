@@ -1,10 +1,11 @@
-import { listGames, listGameEvents } from "../lib/football";
+import { listGameEvents } from "../lib/football";
+import { listVisibleGames } from "../lib/public-games";
 import "./spielplan.css";
 
 export const metadata = { title: "Spielplan · Hellenstein Rascals", description: "Spielplan, Ergebnisse und Live-Updates der Hellenstein Rascals." };
 
 export default async function SpielplanPage() {
-  const games = await listGames();
+  const games = await listVisibleGames();
   const live = games.find((game) => game.status === "live");
   const liveEvents = live ? await listGameEvents(live.id, 6) : [];
   const nextGame = games.find((game) => game.status === "upcoming") ?? null;
@@ -18,105 +19,18 @@ export default async function SpielplanPage() {
   const pointsAgainst = completed.reduce((sum, game) => sum + game.opponentScore, 0);
 
   return <main className="schedule-page">
-    <header className="schedule-hero">
-      <a href="/">← Startseite</a>
-      <span>HELLENSTEIN RASCALS · 2026</span>
-      <h1>SPIELPLAN & <i>ERGEBNISSE.</i></h1>
-      <p>Alle Spiele, Ergebnisse und die wichtigsten Live-Updates vom Gameday – direkt aus dem Rascals CMS.</p>
-    </header>
-
+    <header className="schedule-hero"><a href="/">← Startseite</a><span>HELLENSTEIN RASCALS · 2026</span><h1>SPIELPLAN & <i>ERGEBNISSE.</i></h1><p>Alle Spiele, Ergebnisse und die wichtigsten Live-Updates vom Gameday – direkt aus dem Rascals CMS.</p></header>
     <section className="schedule-body">
-      {live && <section className="live-panel">
-        <div className="live-kicker"><b>● LIVE</b><span>{live.quarter || "GAME"}{live.gameClock ? ` · ${live.gameClock}` : ""}</span></div>
-        <div className="live-score">
-          <div><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS</b><strong>{live.rascalsScore}</strong></div>
-          <span>:</span>
-          <div>{live.opponentLogo ? <img src={live.opponentLogo} alt=""/> : <div className="schedule-logo-placeholder">?</div>}<b>{live.opponent}</b><strong>{live.opponentScore}</strong></div>
-        </div>
-        {liveEvents.length > 0 && <div className="live-feed-mini">
-          {liveEvents.map((event) => <div key={event.id}><span>{event.quarter}{event.gameClock ? ` · ${event.gameClock}` : ""}</span><b>{eventLabel(event.eventType)}</b><p>{event.playerName ? `${event.playerNumber != null ? `#${event.playerNumber} ` : ""}${event.playerName}` : event.text || "Gameday Update"}</p></div>)}
-        </div>}
-        <a className="live-more" href={`/spielplan/${live.slug}`}>Live-Ticker öffnen →</a>
-      </section>}
-
-      {nextGame && <section className="next-game-section">
-        <div className="schedule-section-heading"><div><small>NEXT UP</small><h2>NÄCHSTES <i>SPIEL.</i></h2></div><span>{formatDate(nextGame.kickoff)}</span></div>
-        <a className="next-game-card" href={`/spielplan/${nextGame.slug}`}>
-          <div className="next-team"><img src="/rascals-logo-transparent-4k.png" alt=""/><b>HELLENSTEIN</b><strong>RASCALS</strong></div>
-          <div className="next-center"><span>{nextGame.homeAway === "home" ? "HOME" : "AWAY"}</span><b>{nextGame.homeAway === "home" ? "VS" : "@"}</b><small>{nextGame.venue || (nextGame.homeAway === "home" ? "Heimspiel" : "Auswärtsspiel")}</small></div>
-          <div className="next-team opponent">{nextGame.opponentLogo ? <img src={nextGame.opponentLogo} alt=""/> : <div className="schedule-logo-placeholder">?</div>}<b>GEGNER</b><strong>{nextGame.opponent}</strong></div>
-        </a>
-      </section>}
-
-      {completed.length > 0 && <section className="season-summary">
-        <div><small>SAISON 2026</small><strong>{completed.length}</strong><span>GESPIELT</span></div>
-        <div><strong>{wins}</strong><span>SIEGE</span></div>
-        <div><strong>{losses}</strong><span>NIEDERLAGEN</span></div>
-        {draws > 0 && <div><strong>{draws}</strong><span>UNENTSCHIEDEN</span></div>}
-        <div><strong>{pointsFor}:{pointsAgainst}</strong><span>PUNKTE</span></div>
-        <div><strong>{signed(pointsFor - pointsAgainst)}</strong><span>DIFFERENZ</span></div>
-      </section>}
-
+      {live && <section className="live-panel"><div className="live-kicker"><b>● LIVE</b><span>{live.quarter || "GAME"}{live.gameClock ? ` · ${live.gameClock}` : ""}</span></div><div className="live-score"><div><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS</b><strong>{live.rascalsScore}</strong></div><span>:</span><div>{live.opponentLogo ? <img src={live.opponentLogo} alt=""/> : <div className="schedule-logo-placeholder">?</div>}<b>{live.opponent}</b><strong>{live.opponentScore}</strong></div></div>{liveEvents.length > 0 && <div className="live-feed-mini">{liveEvents.map((event) => <div key={event.id}><span>{event.quarter}{event.gameClock ? ` · ${event.gameClock}` : ""}</span><b>{eventLabel(event.eventType)}</b><p>{event.playerName ? `${event.playerNumber != null ? `#${event.playerNumber} ` : ""}${event.playerName}` : event.text || "Gameday Update"}</p></div>)}</div>}<a className="live-more" href={`/spielplan/${live.slug}`}>Live-Ticker öffnen →</a></section>}
+      {nextGame && <section className="next-game-section"><div className="schedule-section-heading"><div><small>NEXT UP</small><h2>NÄCHSTES <i>SPIEL.</i></h2></div><span>{formatDate(nextGame.kickoff)}</span></div><a className="next-game-card" href={`/spielplan/${nextGame.slug}`}><div className="next-team"><img src="/rascals-logo-transparent-4k.png" alt=""/><b>HELLENSTEIN</b><strong>RASCALS</strong></div><div className="next-center"><span>{nextGame.homeAway === "home" ? "HOME" : "AWAY"}</span><b>{nextGame.homeAway === "home" ? "VS" : "@"}</b><small>{nextGame.venue || (nextGame.homeAway === "home" ? "Heimspiel" : "Auswärtsspiel")}</small></div><div className="next-team opponent">{nextGame.opponentLogo ? <img src={nextGame.opponentLogo} alt=""/> : <div className="schedule-logo-placeholder">?</div>}<b>GEGNER</b><strong>{nextGame.opponent}</strong></div></a></section>}
+      {completed.length > 0 && <section className="season-summary"><div><small>SAISON 2026</small><strong>{completed.length}</strong><span>GESPIELT</span></div><div><strong>{wins}</strong><span>SIEGE</span></div><div><strong>{losses}</strong><span>NIEDERLAGEN</span></div>{draws > 0 && <div><strong>{draws}</strong><span>UNENTSCHIEDEN</span></div>}<div><strong>{pointsFor}:{pointsAgainst}</strong><span>PUNKTE</span></div><div><strong>{signed(pointsFor - pointsAgainst)}</strong><span>DIFFERENZ</span></div></section>}
       {upcoming.length > 0 && <ScheduleGroup title="KOMMENDE SPIELE" kicker="UPCOMING" games={upcoming} />}
       {postponed.length > 0 && <ScheduleGroup title="VERSCHOBENE SPIELE" kicker="STATUS" games={postponed} />}
       {completed.length > 0 && <ScheduleGroup title="ERGEBNISSE" kicker="FINAL" games={completed} results />}
-
       {!games.length && <div className="schedule-empty">Der Spielplan wird hier automatisch angezeigt, sobald Spiele im CMS angelegt wurden.</div>}
     </section>
   </main>;
 }
 
-function ScheduleGroup({ title, kicker, games, results = false }: { title: string; kicker: string; games: Awaited<ReturnType<typeof listGames>>; results?: boolean }) {
-  return <section className="schedule-group">
-    <div className="schedule-section-heading"><div><small>{kicker}</small><h2>{title}</h2></div></div>
-    <div className="schedule-grid">
-      {games.map((game) => <a className={`schedule-card ${game.status}`} key={game.id} href={`/spielplan/${game.slug}`}>
-        <div className="schedule-card-top"><span>{formatDate(game.kickoff)}</span>{results ? <b className={`result-badge ${resultClass(game)}`}>{resultLabel(game)}</b> : <b>{statusLabel(game.status)}</b>}</div>
-        <div className="schedule-matchup">
-          <div><img src="/rascals-logo-transparent-4k.png" alt=""/><strong>RASCALS</strong></div>
-          <span>{game.homeAway === "home" ? "VS" : "@"}</span>
-          <div>{game.opponentLogo ? <img src={game.opponentLogo} alt=""/> : <div className="schedule-logo-placeholder">?</div>}<strong>{game.opponent}</strong></div>
-        </div>
-        {(game.status === "live" || game.status === "final") && <div className="schedule-result"><strong>{game.rascalsScore}</strong><span>:</span><strong>{game.opponentScore}</strong></div>}
-        <div className="schedule-card-bottom"><span>{game.venue || (game.homeAway === "home" ? "Heimspiel" : "Auswärtsspiel")}</span><span>Details →</span></div>
-      </a>)}
-    </div>
-  </section>;
-}
-
-function dateValue(value: string | null) {
-  if (!value) return 0;
-  const parsed = new Date(value).getTime();
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
-function formatDate(value: string | null) {
-  if (!value) return "TERMIN OFFEN";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value.replace("T", " · ");
-  return new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date).toUpperCase();
-}
-
-function statusLabel(status: string) {
-  return ({ upcoming: "KOMMEND", live: "LIVE", final: "FINAL", postponed: "VERSCHOBEN", cancelled: "ABGESAGT" } as Record<string,string>)[status] || status.toUpperCase();
-}
-
-function resultLabel(game: { rascalsScore: number; opponentScore: number }) {
-  if (game.rascalsScore > game.opponentScore) return "W · WIN";
-  if (game.rascalsScore < game.opponentScore) return "L · LOSS";
-  return "D · DRAW";
-}
-
-function resultClass(game: { rascalsScore: number; opponentScore: number }) {
-  if (game.rascalsScore > game.opponentScore) return "win";
-  if (game.rascalsScore < game.opponentScore) return "loss";
-  return "draw";
-}
-
-function signed(value: number) {
-  return value > 0 ? `+${value}` : String(value);
-}
-
-function eventLabel(type: string) {
-  return ({ touchdown: "TOUCHDOWN", interception: "INTERCEPTION", sack: "SACK", forced_fumble: "FORCED FUMBLE", halftime: "HALBZEIT", final: "SPIELENDE", custom: "UPDATE" } as Record<string,string>)[type] || type.toUpperCase();
-}
+function ScheduleGroup({ title, kicker, games, results = false }: { title: string; kicker: string; games: Awaited<ReturnType<typeof listVisibleGames>>; results?: boolean }) {return <section className="schedule-group"><div className="schedule-section-heading"><div><small>{kicker}</small><h2>{title}</h2></div></div><div className="schedule-grid">{games.map((game) => <a className={`schedule-card ${game.status}`} key={game.id} href={`/spielplan/${game.slug}`}><div className="schedule-card-top"><span>{formatDate(game.kickoff)}</span>{results ? <b className={`result-badge ${resultClass(game)}`}>{resultLabel(game)}</b> : <b>{statusLabel(game.status)}</b>}</div><div className="schedule-matchup"><div><img src="/rascals-logo-transparent-4k.png" alt=""/><strong>RASCALS</strong></div><span>{game.homeAway === "home" ? "VS" : "@"}</span><div>{game.opponentLogo ? <img src={game.opponentLogo} alt=""/> : <div className="schedule-logo-placeholder">?</div>}<strong>{game.opponent}</strong></div></div>{(game.status === "live" || game.status === "final") && <div className="schedule-result"><strong>{game.rascalsScore}</strong><span>:</span><strong>{game.opponentScore}</strong></div>}<div className="schedule-card-bottom"><span>{game.venue || (game.homeAway === "home" ? "Heimspiel" : "Auswärtsspiel")}</span><span>Details →</span></div></a>)}</div></section>}
+function dateValue(value:string|null){if(!value)return 0;const parsed=new Date(value).getTime();return Number.isNaN(parsed)?0:parsed}function formatDate(value:string|null){if(!value)return"TERMIN OFFEN";const date=new Date(value);if(Number.isNaN(date.getTime()))return value.replace("T"," · ");return new Intl.DateTimeFormat("de-DE",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(date).toUpperCase()}function statusLabel(status:string){return({upcoming:"KOMMEND",live:"LIVE",final:"FINAL",postponed:"VERSCHOBEN",cancelled:"ABGESAGT"}as Record<string,string>)[status]||status.toUpperCase()}function resultLabel(game:{rascalsScore:number;opponentScore:number}){if(game.rascalsScore>game.opponentScore)return"W · WIN";if(game.rascalsScore<game.opponentScore)return"L · LOSS";return"D · DRAW"}function resultClass(game:{rascalsScore:number;opponentScore:number}){if(game.rascalsScore>game.opponentScore)return"win";if(game.rascalsScore<game.opponentScore)return"loss";return"draw"}function signed(value:number){return value>0?`+${value}`:String(value)}function eventLabel(type:string){return({touchdown:"TOUCHDOWN",interception:"INTERCEPTION",sack:"SACK",forced_fumble:"FORCED FUMBLE",halftime:"HALBZEIT",final:"SPIELENDE",custom:"UPDATE"}as Record<string,string>)[type]||type.toUpperCase()}
