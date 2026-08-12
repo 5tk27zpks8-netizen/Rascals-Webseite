@@ -5,10 +5,10 @@ import { createPortal } from "react-dom";
 import "./about-timeline.css";
 
 const ICONS = {
-  football: "https://api.iconify.design/ion/american-football.svg?color=%23ffffff",
+  football: "https://api.iconify.design/noto/american-football.svg",
   whistle: "https://api.iconify.design/mdi/whistle-outline.svg?color=%23e7192d",
   seasonFootball: "https://api.iconify.design/ion/american-football-outline.svg?color=%23e7192d",
-  helmet: "https://api.iconify.design/lineicons/helmet-safety-1.svg?color=%23e7192d",
+  helmet: "https://api.iconify.design/streamline-ultimate/american-football-helmet.svg?color=%23e7192d",
   trophy: "https://api.iconify.design/bi/trophy.svg?color=%23e7192d",
 };
 
