@@ -23,6 +23,7 @@ export function DesignManager() {
   const [showSave, setShowSave] = useState(false);
   const [designName, setDesignName] = useState("");
   const [designDescription, setDesignDescription] = useState("");
+  const [applyGlobalTheme, setApplyGlobalTheme] = useState(false);
 
   useEffect(() => { void load(); }, []);
 
@@ -64,14 +65,15 @@ export function DesignManager() {
   async function apply(preset: DesignPreset) {
     if (!state || !page || status === "saving") return;
     const previous = state;
-    const next = applyDesignPreset(state, page.id, preset);
+    const styled = applyDesignPreset(state, page.id, preset);
+    const next = applyGlobalTheme ? styled : { ...styled, theme: state.theme };
     setBeforeState(previous);
     setState(next);
     setStatus("saving");
     setNotice("");
     try {
       await persistBuilder(next);
-      setNotice(`„${preset.name}“ wurde auf „${page.name}“ angewendet.`);
+      setNotice(`„${preset.name}“ wurde auf „${page.name}“ angewendet${applyGlobalTheme ? " – inklusive globalem Header und Grundfarben" : ""}.`);
       setStatus("done");
       window.setTimeout(() => setStatus("idle"), 1200);
     } catch (error) {
@@ -165,6 +167,7 @@ export function DesignManager() {
         </div>
         <div className="design-page-picker">
           <label><span>Seite</span><select value={page.id} onChange={event => setPageId(event.target.value)}>{state.pages.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <label className="design-global-option"><input type="checkbox" checked={applyGlobalTheme} onChange={event => setApplyGlobalTheme(event.target.checked)}/><span><b>Globales Design übernehmen</b><small>Ändert zusätzlich Header und Grundfarben der gesamten Website.</small></span></label>
           <button className="design-save-own" onClick={() => { setDesignName(`${page.name} Design`); setDesignDescription(""); setShowSave(true); }}>＋ Eigenes Design speichern</button>
         </div>
       </header>
