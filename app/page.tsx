@@ -4,10 +4,10 @@ import { DynamicHomeGames } from "./DynamicHomeGames";
 import { HomeSectionMedia } from "./HomeSectionMedia";
 import { SiteBuilderPage } from "./SiteBuilderPage";
 import { SiteShell } from "./SiteShell";
-import { findBuilderPage, readSiteBuilderState } from "./lib/site-builder";
+import { findBuilderPage, readPublishedSiteBuilderState } from "./lib/site-builder";
 
 export default async function Home() {
-  const state = await readSiteBuilderState();
+  const state = await readPublishedSiteBuilderState();
   const builderPage = findBuilderPage(state, "");
 
   if (builderPage?.enabled) {
