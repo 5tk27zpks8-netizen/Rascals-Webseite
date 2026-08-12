@@ -11,8 +11,8 @@ type TopModule={label:string;href:string;sections:string[];actions:Array<{label:
 const navGroups:NavGroup[]=[
   {label:"HOME",items:[{key:"dashboard",label:"Home",href:"/admin/dashboard",icon:"⌂"}]},
   {label:"WEBSITE",items:[
-    {key:"website",label:"Website Builder",href:"/admin/website",icon:"▦"},
-    {key:"hero",label:"Hero / Startseite",href:"/admin/hero",icon:"▣"},
+    {key:"website",label:"Startseite & Seiten",href:"/admin/website",icon:"▦"},
+    {key:"hero",label:"Hero-Slider",href:"/admin/hero",icon:"▣"},
     {key:"sections",label:"Bilder & Slider",href:"/admin/sections",icon:"▤"},
     {key:"news",label:"News",href:"/admin/news",icon:"◆"},
     {key:"media",label:"Medien",href:"/admin/media",icon:"◫"},
@@ -25,7 +25,7 @@ const navGroups:NavGroup[]=[
 
 const topModules:TopModule[]=[
   {label:"HOME",href:"/admin/dashboard",sections:["dashboard"],actions:[{label:"Dashboard",href:"/admin/dashboard"}]},
-  {label:"WEBSITE",href:"/admin/website",sections:["website","hero","sections","news","media","sponsors"],actions:[{label:"Website Builder",href:"/admin/website"},{label:"Hero",href:"/admin/hero"},{label:"Bilder & Slider",href:"/admin/sections"},{label:"News",href:"/admin/news"},{label:"Medien",href:"/admin/media"},{label:"Sponsoren",href:"/admin/sponsors"}]},
+  {label:"WEBSITE",href:"/admin/website",sections:["website","hero","sections","news","media","sponsors"],actions:[{label:"Startseite & Seiten",href:"/admin/website"},{label:"Hero-Slider",href:"/admin/hero"},{label:"Bilder & Slider",href:"/admin/sections"},{label:"News",href:"/admin/news"},{label:"Medien",href:"/admin/media"},{label:"Sponsoren",href:"/admin/sponsors"}]},
   {label:"TEAM",href:"/admin/players",sections:["players","newplayer","coaches"],actions:[{label:"Spieler",href:"/admin/players"},{label:"+ Spieler anlegen",href:"/admin/players?new=1"},{label:"Coaches",href:"/admin/coaches"}]},
   {label:"GAME DAY",href:"/admin/game-operations",sections:["gameoperations","games","gamedayroster","gameday"],actions:[{label:"Game Center",href:"/admin/game-operations"},{label:"Spielplan",href:"/admin/games"},{label:"Gameday Roster",href:"/admin/gameday-roster"},{label:"Live-Ticker",href:"/admin/gameday"},{label:"Postgame",href:"/admin/game-operations?tab=postgame"}]},
 ];
