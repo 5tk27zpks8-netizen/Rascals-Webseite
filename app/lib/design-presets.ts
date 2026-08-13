@@ -22,6 +22,26 @@ const darkBase: Partial<BuilderSectionStyle> = {
 
 export const builtInDesignPresets: DesignPreset[] = [
   {
+    id:"rascals-original",name:"Rascals Standard",description:"Das ursprüngliche Rascals Webseiten-Design: dunkler Hero und Spielplan, helle Editorial-Bereiche, Weißraum und klare rote Akzente.",category:"premium",builtin:true,
+    palette:["#050d18","#f4f4f1","#e7192d","#ffffff"],
+    theme:{background:"#ffffff",surface:"#f4f4f1",text:"#071421",muted:"#667386",accent:"#e7192d",headerBackground:"#050d18",headerText:"#ffffff",contentWidth:1600,radius:0,headingWeight:950,headingTracking:-.045,headingTransform:"uppercase",bodyLineHeight:1.65},
+    defaults:{textColor:"#071421",accentColor:"#e7192d",paddingTop:78,paddingBottom:78,maxWidth:1600,rounded:0,border:"",headingScale:1},
+    variants:{hero:"cinematic",text:"editorial",split:"image-left",stats:"strip",cards:"editorial",gallery:"masonry",timeline:"drive",games:"scoreboard",news:"editorial",sponsors:"ticker",cta:"panel"},
+    byType:{
+      hero:{background:"#050d18",textColor:"#ffffff",accentColor:"#e7192d",minHeight:650,paddingTop:92,paddingBottom:92,align:"left"},
+      text:{background:"#ffffff",textColor:"#071421",paddingTop:92,paddingBottom:92},
+      split:{background:"#ffffff",textColor:"#071421",paddingTop:0,paddingBottom:0},
+      stats:{background:"#071421",textColor:"#ffffff",accentColor:"#e7192d",align:"center",paddingTop:54,paddingBottom:54},
+      cards:{background:"#ffffff",textColor:"#071421",paddingTop:86,paddingBottom:86},
+      gallery:{background:"#050d18",textColor:"#ffffff",paddingTop:82,paddingBottom:82},
+      timeline:{background:"#030a13",textColor:"#ffffff",accentColor:"#e7192d",align:"center",paddingTop:82,paddingBottom:96},
+      games:{background:"#050d18",textColor:"#ffffff",accentColor:"#e7192d",paddingTop:76,paddingBottom:76},
+      news:{background:"#f4f4f1",textColor:"#071421",accentColor:"#e7192d",paddingTop:82,paddingBottom:82},
+      sponsors:{background:"#ffffff",textColor:"#071421",align:"center",paddingTop:62,paddingBottom:62},
+      cta:{background:"#071421",textColor:"#ffffff",accentColor:"#e7192d",align:"center",minHeight:390,paddingTop:78,paddingBottom:78},
+    },
+  },
+  {
     id:"rascals-dark",name:"Rascals Dark",description:"Das klare Rascals Standarddesign: Navy, Weiß und Rot mit sportlicher Typografie.",category:"dark",builtin:true,
     palette:["#050d18","#0b1725","#e7192d","#ffffff"],
     theme:{background:"#050d18",surface:"#0b1725",text:"#ffffff",muted:"#9aa7b7",accent:"#e7192d",headerBackground:"#050d18",headerText:"#ffffff",radius:0,headingWeight:950,headingTracking:-.04,headingTransform:"uppercase"},
