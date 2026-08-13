@@ -16,6 +16,14 @@ type EventBody = {
   idempotencyKey?: string;
 };
 
+type ScoreBody = {
+  gameId?: string;
+  rascalsScore?: number;
+  opponentScore?: number;
+  quarter?: string;
+  gameClock?: string;
+};
+
 const AUTO_STAT_BY_EVENT: Record<string, string> = {
   touchdown: "touchdowns",
   interception: "interceptions",
@@ -55,6 +63,13 @@ async function fallbackPlayers() {
   }));
 }
 
+async function ensureAssignedGame(actor: { role: string; email: string }, gameId: string) {
+  if (actor.role !== "gameday") return null;
+  const { DB } = bindings();
+  const assigned = await DB.prepare("SELECT 1 FROM game_gameday_assignments WHERE game_id=? AND lower(user_email)=lower(?) LIMIT 1").bind(gameId, actor.email).first();
+  return assigned ? null : Response.json({ error: "Dieses Spiel ist dir nicht als Liveticker zugewiesen." }, { status: 403 });
+}
+
 export async function GET(request: Request) {
   const actor = await authorize(); if (actor instanceof Response) return actor;
   await ensureFootballSchema(); await ensureAssignments(); await ensureGamedayRosterSchema(); await ensureStatsSchema();
@@ -74,14 +89,35 @@ export async function GET(request: Request) {
   }
 
   const gameId = url.searchParams.get("game"); if (!gameId) return Response.json({ error: "game fehlt." }, { status: 400 });
-  if (actor.role === "gameday") {
-    const assigned = await DB.prepare("SELECT 1 FROM game_gameday_assignments WHERE game_id=? AND lower(user_email)=lower(?) LIMIT 1").bind(gameId, actor.email).first();
-    if (!assigned) return Response.json({ error: "Dieses Spiel ist dir nicht als Liveticker zugewiesen." }, { status: 403 });
-  }
+  const assignmentError = await ensureAssignedGame(actor, gameId); if (assignmentError) return assignmentError;
   const result = await DB.prepare("SELECT * FROM game_events WHERE game_id=? ORDER BY created_at DESC").bind(gameId).all<Record<string, unknown>>();
   const gamedayPlayers = await getActiveGamedayPlayers(gameId);
   return Response.json({ items: result.results.map(mapEvent), players: gamedayPlayers.length ? gamedayPlayers : await fallbackPlayers(), rosterApplied: gamedayPlayers.length > 0,
     rosterSource: gamedayPlayers[0]?.source ?? null, rosterRevisionId: gamedayPlayers[0]?.revisionId ?? null });
+}
+
+export async function PATCH(request: Request) {
+  const actor = await authorize(); if (actor instanceof Response) return actor;
+  await ensureFootballSchema(); await ensureAssignments();
+  const body = await request.json().catch(() => ({})) as ScoreBody;
+  if (!body.gameId) return Response.json({ error: "Spiel fehlt." }, { status: 400 });
+  const assignmentError = await ensureAssignedGame(actor, body.gameId); if (assignmentError) return assignmentError;
+
+  const rascalsScore = Math.trunc(Number(body.rascalsScore));
+  const opponentScore = Math.trunc(Number(body.opponentScore));
+  if (!Number.isFinite(rascalsScore) || !Number.isFinite(opponentScore) || rascalsScore < 0 || opponentScore < 0 || rascalsScore > 999 || opponentScore > 999) {
+    return Response.json({ error: "Punktestände müssen zwischen 0 und 999 liegen." }, { status: 400 });
+  }
+
+  const { DB } = bindings();
+  await DB.prepare(`UPDATE games SET rascals_score=?,opponent_score=?,quarter=?,game_clock=? WHERE id=?`)
+    .bind(rascalsScore, opponentScore, body.quarter ?? "", body.gameClock ?? "", body.gameId).run();
+  const row = await DB.prepare(`SELECT id,opponent,opponent_logo,status,rascals_score,opponent_score,quarter,game_clock FROM games WHERE id=? LIMIT 1`).bind(body.gameId).first<Record<string, unknown>>();
+  if (!row) return Response.json({ error: "Spiel nicht gefunden." }, { status: 404 });
+  return Response.json({ ok: true, game: {
+    id: String(row.id), opponent: String(row.opponent ?? ""), opponentLogo: String(row.opponent_logo ?? ""), status: String(row.status ?? "upcoming"),
+    rascalsScore: Number(row.rascals_score ?? 0), opponentScore: Number(row.opponent_score ?? 0), quarter: String(row.quarter ?? ""), gameClock: String(row.game_clock ?? ""),
+  }});
 }
 
 export async function POST(request: Request) {
@@ -90,10 +126,7 @@ export async function POST(request: Request) {
   const body = await request.json() as EventBody;
   if (!body.gameId || !body.eventType) return Response.json({ error: "Spiel und Ereignis sind erforderlich." }, { status: 400 });
   const { DB } = bindings();
-  if (actor.role === "gameday") {
-    const assigned = await DB.prepare("SELECT 1 FROM game_gameday_assignments WHERE game_id=? AND lower(user_email)=lower(?) LIMIT 1").bind(body.gameId, actor.email).first();
-    if (!assigned) return Response.json({ error: "Dieses Spiel ist dir nicht als Liveticker zugewiesen." }, { status: 403 });
-  }
+  const assignmentError = await ensureAssignedGame(actor, body.gameId); if (assignmentError) return assignmentError;
 
   if (body.playerId) {
     const rosterControl = await DB.prepare("SELECT status FROM gameday_roster_control WHERE game_id=? LIMIT 1").bind(body.gameId).first<{ status: string }>();
@@ -141,8 +174,7 @@ export async function DELETE(request: Request) {
   if (actor.role === "gameday") {
     const event = await DB.prepare("SELECT game_id FROM game_events WHERE id=? LIMIT 1").bind(id).first<{ game_id: string }>();
     if (!event) return Response.json({ error: "Eintrag nicht gefunden." }, { status: 404 });
-    const assigned = await DB.prepare("SELECT 1 FROM game_gameday_assignments WHERE game_id=? AND lower(user_email)=lower(?) LIMIT 1").bind(event.game_id, actor.email).first();
-    if (!assigned) return Response.json({ error: "Dieses Spiel ist dir nicht als Liveticker zugewiesen." }, { status: 403 });
+    const assignmentError = await ensureAssignedGame(actor, event.game_id); if (assignmentError) return assignmentError;
   }
   const linkedStat = await DB.prepare("SELECT status FROM player_game_stats WHERE source='gameday' AND source_event_id=? LIMIT 1").bind(id).first<{ status: string }>();
   if (linkedStat && linkedStat.status !== "provisional") return Response.json({ error: "Dieser Ticker-Eintrag besitzt bereits eine reviewed/official Statistik. Status im Stats Review zuerst auf Provisional zurücksetzen." }, { status: 423 });
