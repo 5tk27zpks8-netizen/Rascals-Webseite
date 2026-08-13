@@ -29,7 +29,16 @@ export async function POST(request: Request) {
   const error = validate(state);
   if (error) return Response.json({ error }, { status: 400 });
 
-  const published = await publishSiteBuilderState(state);
+  // The public homepage only renders the builder when the homepage is enabled.
+  // Older builder drafts were seeded with enabled=false, so clicking Publish could
+  // successfully write the published state while the public site kept rendering
+  // the legacy homepage. Publishing now explicitly activates the builder homepage.
+  const publishable: SiteBuilderState = {
+    ...state,
+    pages: state.pages.map(page => page.slug === "" ? { ...page, enabled: true } : page),
+  };
+
+  const published = await publishSiteBuilderState(publishable);
   await appendSiteBuilderRevision(published, actor, "publish");
   return Response.json({ ok: true, state: published, publishedAt: new Date().toISOString(), publishedBy: actor.email });
 }
