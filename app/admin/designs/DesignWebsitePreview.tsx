@@ -4,8 +4,8 @@ import { BuilderSectionView } from "../../SiteBuilderPage";
 import type { BuilderPage, SiteBuilderState } from "../../lib/site-builder";
 import { applyDesignPreset, type DesignPreset } from "../../lib/design-presets";
 
-export function DesignWebsitePreview({state,page,preset}:{state:SiteBuilderState;page:BuilderPage;preset:DesignPreset}) {
-  const previewState=applyDesignPreset(state,page.id,preset);
+export function DesignWebsitePreview({state,page,preset}:{state:SiteBuilderState;page:BuilderPage;preset?:DesignPreset}) {
+  const previewState=preset?applyDesignPreset(state,page.id,preset):state;
   const previewPage=previewState.pages.find(item=>item.id===page.id)??page;
   const theme=previewState.theme;
   return <div style={{height:250,overflow:"hidden",background:theme.background,position:"relative",pointerEvents:"none"}}>
@@ -15,7 +15,7 @@ export function DesignWebsitePreview({state,page,preset}:{state:SiteBuilderState
         <div style={{display:"flex",alignItems:"center",gap:14,fontWeight:900,fontSize:17}}>{theme.logoUrl&&<img src={theme.logoUrl} alt="" style={{width:44,height:44,objectFit:"contain"}}/>}<span>{theme.brandTop} <i style={{fontStyle:"normal",color:theme.accent}}>{theme.brandBottom}</i></span></div>
         <div style={{display:"flex",gap:24,fontSize:11,fontWeight:800}}>{previewState.pages.filter(item=>item.showInNav).slice(0,5).map(item=><span key={item.id}>{item.navLabel}</span>)}</div>
       </div>
-      {previewPage.sections.filter(section=>section.visible).slice(0,4).map(section=><BuilderSectionView key={section.id} section={section}/>)}
+      {previewPage.sections.filter(section=>section.visible).slice(0,5).map(section=><BuilderSectionView key={section.id} section={section}/>)}
     </div>
     <div style={{position:"absolute",inset:0,boxShadow:"inset 0 0 0 1px rgba(255,255,255,.08)"}}/>
   </div>;
