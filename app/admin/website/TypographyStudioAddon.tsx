@@ -40,7 +40,9 @@ export function TypographyStudioAddon() {
     if (response.ok) window.location.reload();
   }
 
-  return <section className="type-studio">
+  const previewCss = `.wb-canvas{--site-body-font:${theme.bodyFont};--site-heading-font:${theme.headingFont};--builder-body-size:${theme.bodyFontSize ?? 16}px;--builder-body-weight:${theme.bodyFontWeight ?? 400};--builder-body-style:${theme.bodyItalic ? "italic" : "normal"};--builder-body-tracking:${theme.bodyLetterSpacing ?? 0}em;--builder-heading-style:${theme.headingItalic ? "italic" : "normal"}}.wb-canvas .sb-section p,.wb-canvas .sb-native-section p,.wb-canvas .sb-cards p,.wb-canvas .sb-timeline p,.wb-canvas .sb-gallery figcaption span{font-family:var(--site-body-font)!important;font-size:var(--builder-body-size)!important;font-weight:var(--builder-body-weight)!important;font-style:var(--builder-body-style)!important;letter-spacing:var(--builder-body-tracking)!important}.wb-canvas .sb-section h1,.wb-canvas .sb-section h2,.wb-canvas .sb-section h3,.wb-canvas .sb-native-section h1,.wb-canvas .sb-native-section h2,.wb-canvas .sb-native-section h3{font-family:var(--site-heading-font)!important;font-style:var(--builder-heading-style)!important}`;
+
+  return <><style>{previewCss}</style><section className="type-studio">
     <button className="type-studio-toggle" onClick={() => setOpen(!open)}><span><b>Aa · Text & Typografie</b><small>Schriftgröße, Fett, Kursiv und Schriftstile</small></span><em>{open ? "−" : "+"}</em></button>
     {open && <div className="type-studio-body">
       <div className="type-style-grid">{fontStyles.map(item => <button key={item.label} onClick={() => patch({ headingFont: item.heading, bodyFont: item.body })}><b style={{fontFamily:item.heading}}>Aa</b><span>{item.label}</span></button>)}</div>
@@ -52,5 +54,5 @@ export function TypographyStudioAddon() {
       </div>
       <div className="type-studio-footer"><small>Headline-Größe bleibt je Abschnitt und Desktop/Tablet/Mobil separat einstellbar.</small><button onClick={() => void save()} disabled={saving}>{saving?"Speichert…":"Als Entwurf übernehmen"}</button></div>
     </div>}
-  </section>;
+  </section></>;
 }
