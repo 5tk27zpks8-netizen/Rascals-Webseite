@@ -50,12 +50,24 @@ export function GamedayManager() {
   const [text, setText] = useState("");
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [scoreSaving, setScoreSaving] = useState(false);
   const [rosterApplied, setRosterApplied] = useState(false);
+  const [rascalsScore, setRascalsScore] = useState(0);
+  const [opponentScore, setOpponentScore] = useState(0);
+  const [scoreQuarter, setScoreQuarter] = useState("");
+  const [scoreClock, setScoreClock] = useState("");
 
   const currentGame = useMemo(() => games.find((g) => g.id === gameId) ?? null, [games, gameId]);
 
   useEffect(() => { void loadBase(); }, []);
   useEffect(() => { if (gameId) void loadEvents(gameId); else { setEvents([]); setRosterApplied(false); } }, [gameId]);
+  useEffect(() => {
+    if (!currentGame) return;
+    setRascalsScore(currentGame.rascalsScore);
+    setOpponentScore(currentGame.opponentScore);
+    setScoreQuarter(currentGame.quarter || "");
+    setScoreClock(currentGame.gameClock || "");
+  }, [currentGame?.id, currentGame?.rascalsScore, currentGame?.opponentScore, currentGame?.quarter, currentGame?.gameClock]);
 
   async function loadBase() {
     try {
@@ -85,6 +97,29 @@ export function GamedayManager() {
     if (body.players) setPlayers(body.players);
     setRosterApplied(Boolean(body.rosterApplied));
     setPlayerId("");
+  }
+
+  function bumpScore(team: "rascals" | "opponent", points: number) {
+    if (team === "rascals") setRascalsScore((value) => Math.max(0, value + points));
+    else setOpponentScore((value) => Math.max(0, value + points));
+  }
+
+  async function saveScore() {
+    if (!gameId) { setNotice("Bitte zuerst ein Spiel auswählen."); return; }
+    setScoreSaving(true); setNotice("");
+    try {
+      const response = await fetch("/admin/api/gameday", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ gameId, rascalsScore, opponentScore, quarter: scoreQuarter, gameClock: scoreClock }),
+      });
+      const body = await response.json().catch(() => ({})) as { error?: string; game?: Game };
+      if (!response.ok || !body.game) throw new Error(body.error ?? "Punktestand konnte nicht gespeichert werden.");
+      setGames((current) => current.map((game) => game.id === body.game!.id ? { ...game, ...body.game! } : game));
+      setNotice(`Punktestand aktualisiert: Rascals ${body.game.rascalsScore} : ${body.game.opponentScore} ${body.game.opponent}.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Punktestand konnte nicht gespeichert werden.");
+    } finally { setScoreSaving(false); }
   }
 
   async function addEvent() {
@@ -118,14 +153,28 @@ export function GamedayManager() {
   }
 
   return <AdminShell active="gameday" title="Gameday Live-Ticker" actions={gameId ? <a className="cms-button secondary" href={`/admin/gameday-roster?game=${encodeURIComponent(gameId)}`}>Gameday Roster →</a> : undefined}>
-    {notice && <AdminNotice tone={notice.includes("veröffentlicht") || notice.includes("gelöscht") ? "success" : "error"}>{notice}</AdminNotice>}
+    {notice && <AdminNotice tone={notice.includes("aktualisiert") || notice.includes("veröffentlicht") || notice.includes("gelöscht") ? "success" : "error"}>{notice}</AdminNotice>}
 
     <div className="gameday-layout">
       <AdminCard>
         <div className="cms-section-head"><div><small>SPIEL</small><h2>Aktuelles Spiel</h2></div>{actor && <span className="cms-muted">Operator: {actor.name || actor.email}</span>}</div>
         <label className="cms-field"><span>Spiel auswählen</span><select value={gameId} onChange={(e) => setGameId(e.target.value)}><option value="">— Spiel wählen —</option>{games.map((game) => <option key={game.id} value={game.id}>{game.status === "live" ? "LIVE · " : ""}Rascals vs {game.opponent}</option>)}</select></label>
         {actor?.role === "gameday" && <p className="cms-muted">Du siehst hier nur Spiele, für die du als Liveticker-Verantwortlicher eingeteilt wurdest.</p>}
-        {currentGame && <div className="gameday-score"><div><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS</b><strong>{currentGame.rascalsScore}</strong></div><span>{currentGame.quarter || currentGame.status.toUpperCase()}</span><div>{currentGame.opponentLogo ? <img src={currentGame.opponentLogo} alt=""/> : <i>?</i>}<b>{currentGame.opponent}</b><strong>{currentGame.opponentScore}</strong></div></div>}
+        {currentGame && <>
+          <div className="gameday-score"><div><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS</b><strong>{currentGame.rascalsScore}</strong></div><span>{currentGame.quarter || currentGame.status.toUpperCase()}</span><div>{currentGame.opponentLogo ? <img src={currentGame.opponentLogo} alt=""/> : <i>?</i>}<b>{currentGame.opponent}</b><strong>{currentGame.opponentScore}</strong></div></div>
+          <div className="gameday-score-control">
+            <div className="gameday-score-control-head"><div><small>MANUELLER PUNKTESTAND</small><h3>Punkte direkt tickern</h3></div><p>Für Nachträge oder Korrekturen während des Spiels. Der gespeicherte Stand wird direkt für den Live-Score verwendet.</p></div>
+            <div className="gameday-score-edit-grid">
+              <ScoreEditor label="RASCALS" value={rascalsScore} setValue={setRascalsScore} bump={(points) => bumpScore("rascals", points)} />
+              <div className="gameday-score-meta">
+                <label className="cms-field"><span>Quarter</span><select value={scoreQuarter} onChange={(e) => setScoreQuarter(e.target.value)}><option value="">—</option><option>Q1</option><option>Q2</option><option>HALFTIME</option><option>Q3</option><option>Q4</option><option>OT</option><option>FINAL</option></select></label>
+                <label className="cms-field"><span>Spielzeit</span><input value={scoreClock} onChange={(e) => setScoreClock(e.target.value)} placeholder="z. B. 08:24" /></label>
+              </div>
+              <ScoreEditor label={currentGame.opponent.toUpperCase()} value={opponentScore} setValue={setOpponentScore} bump={(points) => bumpScore("opponent", points)} />
+            </div>
+            <button className="cms-button gameday-score-save" disabled={scoreSaving} onClick={() => void saveScore()}>{scoreSaving ? "Speichert…" : "Punktestand aktualisieren"}</button>
+          </div>
+        </>}
       </AdminCard>
 
       <AdminCard>
@@ -151,6 +200,10 @@ export function GamedayManager() {
       </AdminCard>
     </div>
   </AdminShell>;
+}
+
+function ScoreEditor({ label, value, setValue, bump }: { label: string; value: number; setValue: (value: number) => void; bump: (points: number) => void }) {
+  return <div className="gameday-score-editor"><b>{label}</b><div className="gameday-score-number"><button onClick={() => bump(-1)}>−</button><input type="number" min={0} max={999} value={value} onChange={(e) => setValue(Math.max(0, Number(e.target.value) || 0))}/><button onClick={() => bump(1)}>＋</button></div><div className="gameday-score-quick"><button onClick={() => bump(1)}>+1</button><button onClick={() => bump(2)}>+2</button><button onClick={() => bump(3)}>+3</button><button onClick={() => bump(6)}>+6</button></div></div>;
 }
 
 function labelFor(type: string) {
