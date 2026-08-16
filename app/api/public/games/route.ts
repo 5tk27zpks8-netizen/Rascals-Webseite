@@ -1,5 +1,6 @@
 import { bindings } from "../../../lib/cms";
 import { ensureFootballSchema } from "../../../lib/football";
+import { normalizeMediaUrl } from "../../../lib/media-url";
 
 async function ensureTrashColumn() {
   const { DB } = bindings();
@@ -12,19 +13,20 @@ function opponentKey(value: unknown) {
 }
 
 function logoScore(value: string) {
-  if (!value) return 0;
-  if (value.startsWith("/media/")) return 4;
-  if (value.startsWith("/")) return 3;
-  if (value.startsWith("https://")) return 2;
-  if (value.startsWith("http://")) return 1;
-  return 0;
+  const normalized = normalizeMediaUrl(value);
+  if (!normalized) return 0;
+  if (normalized.startsWith("/media/")) return 5;
+  if (normalized.startsWith("/")) return 4;
+  if (normalized.startsWith("https://")) return 3;
+  if (normalized.startsWith("http://")) return 2;
+  return 1;
 }
 
 function canonicalOpponentLogos(rows: Record<string, unknown>[]) {
   const logos = new Map<string, string>();
   for (const row of rows) {
     const key = opponentKey(row.opponent);
-    const candidate = String(row.opponent_logo ?? "").trim();
+    const candidate = normalizeMediaUrl(String(row.opponent_logo ?? ""));
     if (!key || !candidate) continue;
     const current = logos.get(key) ?? "";
     if (logoScore(candidate) > logoScore(current)) logos.set(key, candidate);
@@ -34,7 +36,7 @@ function canonicalOpponentLogos(rows: Record<string, unknown>[]) {
 
 function mapGame(row: Record<string, unknown>, logos: Map<string, string>) {
   const opponent = String(row.opponent ?? "");
-  const storedLogo = String(row.opponent_logo ?? "").trim();
+  const storedLogo = normalizeMediaUrl(String(row.opponent_logo ?? ""));
   const canonicalLogo = logos.get(opponentKey(opponent)) ?? "";
   const opponentLogo = logoScore(canonicalLogo) >= logoScore(storedLogo) ? canonicalLogo : storedLogo;
   return {
@@ -66,5 +68,5 @@ export async function GET() {
     items: rows.map((row) => mapGame(row, logos)),
     league: String(team?.league ?? "Bezirksliga"),
     season: Number(team?.season ?? 2026),
-  }, { headers: { "cache-control": "public, max-age=30, stale-while-revalidate=60" } });
+  }, { headers: { "cache-control": "no-store" } });
 }
