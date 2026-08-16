@@ -112,10 +112,40 @@ function blockIndexAtPoint(doc: Document, x: number, y: number): number {
   });
 }
 
+function flattenInternalScrollContainers(doc: Document) {
+  const win = doc.defaultView;
+  if (!win) return;
+
+  doc.documentElement.style.setProperty("height", "auto", "important");
+  doc.documentElement.style.setProperty("min-height", "0", "important");
+  doc.documentElement.style.setProperty("overflow", "visible", "important");
+  doc.body.style.setProperty("height", "auto", "important");
+  doc.body.style.setProperty("min-height", "0", "important");
+  doc.body.style.setProperty("overflow", "visible", "important");
+
+  for (const element of Array.from(doc.querySelectorAll<HTMLElement>("body *"))) {
+    const style = win.getComputedStyle(element);
+    const overflowY = style.overflowY;
+    const isScroller = (overflowY === "auto" || overflowY === "scroll") && element.scrollHeight > element.clientHeight + 4;
+    if (!isScroller) continue;
+
+    element.style.setProperty("overflow-y", "visible", "important");
+    element.style.setProperty("max-height", "none", "important");
+    if (style.height !== "auto") element.style.setProperty("height", "auto", "important");
+  }
+}
+
 function measureDocumentHeight(doc: Document) {
   const body = doc.body;
   const html = doc.documentElement;
+  let bottom = 0;
+  for (const element of Array.from(body?.children || [])) {
+    if (!(element instanceof HTMLElement)) continue;
+    const rect = element.getBoundingClientRect();
+    bottom = Math.max(bottom, rect.bottom + (doc.defaultView?.scrollY || 0));
+  }
   return Math.max(
+    bottom,
     body?.scrollHeight || 0,
     body?.offsetHeight || 0,
     html?.scrollHeight || 0,
@@ -163,7 +193,7 @@ export function LiveWebsiteMirror() {
     if (!mount) return;
     mount.classList.add("wb-live-mirror-host");
     const resize = () => {
-      const available = Math.max(1, mount.clientWidth - 48);
+      const available = Math.max(1, mount.clientWidth);
       setScale(Math.min(1, available / viewportWidth));
     };
     resize();
@@ -219,10 +249,16 @@ export function LiveWebsiteMirror() {
     doc.documentElement.classList.add("rascals-studio-mirror");
     const style = doc.createElement("style");
     style.textContent = `
-      html.rascals-studio-mirror { scroll-behavior:auto !important; scrollbar-width:none !important; }
+      html.rascals-studio-mirror,
+      html.rascals-studio-mirror body {
+        height:auto !important;
+        min-height:0 !important;
+        max-height:none !important;
+        overflow:visible !important;
+        scrollbar-width:none !important;
+      }
       html.rascals-studio-mirror::-webkit-scrollbar,
       html.rascals-studio-mirror body::-webkit-scrollbar { display:none !important; width:0 !important; height:0 !important; }
-      html.rascals-studio-mirror body { overflow-x:hidden !important; }
       html.rascals-studio-mirror .public-admin-login,
       html.rascals-studio-mirror [data-admin-login],
       html.rascals-studio-mirror .skip-link { display:none !important; }
@@ -233,15 +269,17 @@ export function LiveWebsiteMirror() {
     const syncHeight = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
+        flattenInternalScrollContainers(doc);
         const measured = measureDocumentHeight(doc);
-        if (measured > 0) setFrameHeight(Math.ceil(measured + 2));
+        if (measured > 0) setFrameHeight(Math.ceil(measured + 4));
       });
     };
 
     syncHeight();
-    window.setTimeout(syncHeight, 120);
-    window.setTimeout(syncHeight, 500);
-    window.setTimeout(syncHeight, 1200);
+    window.setTimeout(syncHeight, 100);
+    window.setTimeout(syncHeight, 350);
+    window.setTimeout(syncHeight, 900);
+    window.setTimeout(syncHeight, 1800);
 
     const resizeObserver = new ResizeObserver(syncHeight);
     if (doc.documentElement) resizeObserver.observe(doc.documentElement);
@@ -274,7 +312,7 @@ export function LiveWebsiteMirror() {
           title="1:1 Vorschau der veröffentlichten Website"
           className="wb-live-mirror-frame"
           scrolling="no"
-          style={{ width: viewportWidth, height: frameHeight }}
+          style={{ width: viewportWidth, height: frameHeight, overflow: "hidden" }}
           onLoad={handleFrameLoad}
         />
         <div
