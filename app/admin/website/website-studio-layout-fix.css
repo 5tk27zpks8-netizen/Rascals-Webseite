@@ -1,0 +1,79 @@
+/* Layout guard for the Website Studio.
+   The preview is a scaled 1440/768/390px canvas. It must never participate in
+   the page's horizontal layout or paint over the inspector/sidebar. */
+.cms-main-focused{min-width:0;overflow-x:hidden}
+.cms-main-focused .cms-content{width:100%;max-width:100%;box-sizing:border-box;overflow-x:hidden}
+
+.studio4-workspace{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  grid-template-columns:minmax(220px,250px) minmax(0,1fr) minmax(320px,350px);
+  overflow:clip;
+}
+.studio4-left,.studio4-center,.studio4-right{
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.studio4-left,.studio4-right{z-index:7}
+.studio4-center{position:relative;z-index:1;overflow:clip}
+.studio4-toolbar{min-width:0;overflow:hidden}
+.studio4-toolbar>div:first-child{min-width:0;overflow:hidden}
+.studio4-toolbar>div:first-child b,.studio4-toolbar>div:first-child small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.studio4-preview-host{
+  position:relative;
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  overflow:clip;
+  contain:layout paint;
+}
+.studio4-preview-space{
+  position:relative;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  overflow:clip;
+}
+/* WebsiteBuilderV4 calculates the scale from the available center-column width.
+   The old left:50% combined with scale() moved the 1440px canvas into the
+   inspector and even outside the CMS. Anchor the scaled canvas to the host. */
+.studio4-preview-stage{
+  left:4px!important;
+  right:auto!important;
+  transform-origin:top left!important;
+  max-width:none!important;
+  will-change:transform;
+}
+.studio4-preview-stage iframe{
+  display:block;
+  max-width:none!important;
+  overflow:hidden!important;
+}
+.studio4-right{
+  position:sticky;
+  top:10px;
+  align-self:start;
+  background:#0a1420;
+  box-shadow:-10px 0 28px rgba(2,8,15,.12);
+}
+
+@media(max-width:1450px){
+  .studio4-workspace{grid-template-columns:220px minmax(0,1fr) 320px}
+}
+@media(max-width:1180px){
+  .studio4-workspace{grid-template-columns:205px minmax(0,1fr) 300px}
+  .studio4-preview-host{padding-left:10px;padding-right:10px}
+}
+@media(max-width:1050px){
+  .studio4-workspace{grid-template-columns:210px minmax(0,1fr)}
+  .studio4-right{position:relative;top:auto;grid-column:1/-1;max-height:none;box-shadow:none}
+}
+@media(max-width:760px){
+  .cms-main-focused{overflow-x:hidden}
+  .studio4-workspace{display:block}
+  .studio4-preview-stage{left:2px!important}
+}
