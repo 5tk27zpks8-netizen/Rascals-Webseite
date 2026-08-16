@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getGameBySlug, listGameEvents } from "../../lib/football";
 import { ScheduleLogo } from "../ScheduleLogo";
 import "../spielplan.css";
+import "../game-detail-score.css";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -24,9 +25,17 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
       <section className={`live-panel ${game.status === "live" ? "is-live" : ""}`}>
         <div className="live-kicker"><b>{game.status === "live" ? "● LIVE" : statusLabel(game.status)}</b><span>{game.quarter || ""}{game.gameClock ? ` · ${game.gameClock}` : ""}</span></div>
         <div className="live-score">
-          <div><ScheduleLogo src="/rascals-logo-transparent-4k.png" name="Hellenstein Rascals" className="detail-game-logo"/><b>RASCALS</b><strong>{game.rascalsScore}</strong></div>
-          <span>:</span>
-          <div><ScheduleLogo src={game.opponentLogo} name={game.opponent} className="detail-game-logo"/><b>{game.opponent}</b><strong>{game.opponentScore}</strong></div>
+          <div className="live-score-team live-score-team-left">
+            <ScheduleLogo src="/rascals-logo-transparent-4k.png" name="Hellenstein Rascals" className="detail-game-logo"/>
+            <b>RASCALS</b>
+          </div>
+          <div className="live-score-center" aria-label={`Spielstand ${game.rascalsScore} zu ${game.opponentScore}`}>
+            <strong>{game.rascalsScore}</strong><span>:</span><strong>{game.opponentScore}</strong>
+          </div>
+          <div className="live-score-team live-score-team-right">
+            <b>{game.opponent}</b>
+            <ScheduleLogo src={game.opponentLogo} name={game.opponent} className="detail-game-logo"/>
+          </div>
         </div>
       </section>
 
