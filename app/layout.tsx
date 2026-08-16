@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import "./home-game-logos.css";
+import "./schedule-compact.css";
 import "./image-position.css";
 import "./rascals-standard-builder.css";
 import "./legacy-builder.css";
