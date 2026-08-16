@@ -97,7 +97,7 @@ export function DynamicHomeGames() {
     {fixtureTarget && createPortal(
       <div className="home-schedule">
         <div className="home-schedule-list">
-          {homeGames.map((game) => <GameRow key={game.id} game={game}/>) }
+          {homeGames.map((game, index) => <GameRow key={game.id} game={game} artVariant={index % 3}/>) }
           {!homeGames.length && <div className="home-games-empty">Noch keine Spiele im Spielplan eingetragen.</div>}
         </div>
         <div className="home-schedule-footer">
@@ -115,7 +115,7 @@ export function DynamicHomeGames() {
   </>;
 }
 
-function GameRow({ game }: { game: Game }) {
+function GameRow({ game, artVariant }: { game: Game; artVariant: number }) {
   const home = game.homeAway === "home";
   const left: TeamData = home
     ? { name: "HELLENSTEIN RASCALS", logo: RASCALS_LOGO, score: game.rascalsScore }
@@ -127,7 +127,9 @@ function GameRow({ game }: { game: Game }) {
   const href = game.slug ? `/spielplan/${game.slug}` : "/spielplan";
 
   return <a className="home-game-card-link" href={href}>
-    <article className={`home-game-card status-${game.status}`}>
+    <article className={`home-game-card status-${game.status} art-${artVariant}`}>
+      <FieldArt variant={artVariant}/>
+
       <div className="home-game-meta">
         <span className={`home-game-status ${game.status}`}>{game.status === "live" ? (game.quarter || "LIVE") : game.status === "final" ? "FINAL" : home ? "HOME" : "AWAY"}</span>
         <time dateTime={game.kickoff || undefined}>
@@ -159,6 +161,26 @@ function GameRow({ game }: { game: Game }) {
       </div>
     </article>
   </a>;
+}
+
+function FieldArt({ variant }: { variant: number }) {
+  return <div className={`home-game-field-art field-art-${variant}`} aria-hidden="true">
+    <div className="home-game-yard-numbers">
+      <span>10</span><span>20</span><span>30</span><span>40</span><span>30</span><span>20</span><span>10</span>
+    </div>
+    <svg className="home-game-route home-game-route-hook" viewBox="0 0 190 90" preserveAspectRatio="none">
+      <path d="M16 78 L16 35 Q16 22 29 22 L73 22 Q84 22 84 33 L84 43"/>
+      <path className="route-arrow" d="M78 39 L84 45 L90 38"/>
+    </svg>
+    <svg className="home-game-route home-game-route-post" viewBox="0 0 220 100" preserveAspectRatio="none">
+      <path d="M24 88 L24 47 Q24 35 37 35 L91 35 L158 9"/>
+      <path className="route-arrow" d="M150 8 L160 8 L156 18"/>
+    </svg>
+    <svg className="home-game-route home-game-route-corner" viewBox="0 0 205 95" preserveAspectRatio="none">
+      <path d="M184 85 L184 48 Q184 36 171 36 L131 36 L91 12"/>
+      <path className="route-arrow" d="M99 11 L89 11 L93 21"/>
+    </svg>
+  </div>;
 }
 
 function Team({ team, right = false }: { team: TeamData; right?: boolean }) {
