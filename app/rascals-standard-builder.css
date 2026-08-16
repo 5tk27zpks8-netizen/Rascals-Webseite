@@ -1,69 +1,13 @@
-/* Rascals Standard compatibility layer.
-   The original public homepage uses a compact red stat bar without a section heading.
-   The builder's `strip` stats variant must render the same way so editor and live site match. */
-.sb-stats-section.sb-variant-strip{
-  min-height:0!important;
-  padding:0!important;
-  border:0!important;
-  border-radius:0!important;
-  background:#e7192d!important;
-  color:#fff!important;
-}
-.sb-stats-section.sb-variant-strip>.sb-inner{
-  width:100%!important;
-  max-width:none!important;
-}
-.sb-stats-section.sb-variant-strip .sb-section-head{
-  display:none!important;
-}
-.sb-stats-section.sb-variant-strip .sb-stats{
-  display:grid!important;
-  grid-template-columns:repeat(4,minmax(0,1fr))!important;
-  gap:0!important;
-  width:100%!important;
-  background:#e7192d!important;
-  border-radius:0!important;
-  overflow:visible!important;
-}
-.sb-stats-section.sb-variant-strip .sb-stats article{
-  display:flex!important;
-  flex-direction:row!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:14px!important;
-  min-height:72px!important;
-  padding:14px 24px!important;
-  border-right:1px solid rgba(255,255,255,.22)!important;
-  background:#e7192d!important;
-  color:#fff!important;
-  text-align:left!important;
-}
-.sb-stats-section.sb-variant-strip .sb-stats article:last-child{border-right:0!important}
-.sb-stats-section.sb-variant-strip .sb-stats b{
-  margin:0!important;
-  color:#fff!important;
-  font-size:clamp(1.65rem,2.1vw,2.25rem)!important;
-  line-height:1!important;
-  white-space:nowrap!important;
-}
-.sb-stats-section.sb-variant-strip .sb-stats strong{
-  color:#fff!important;
-  font-size:.68rem!important;
-  font-weight:950!important;
-  line-height:1.15!important;
-  letter-spacing:.12em!important;
-  text-transform:uppercase!important;
-}
-.sb-stats-section.sb-variant-strip .sb-stats span{display:none!important}
-
-@media(max-width:800px){
-  .sb-stats-section.sb-variant-strip .sb-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .sb-stats-section.sb-variant-strip .sb-stats article:nth-child(2){border-right:0!important}
-  .sb-stats-section.sb-variant-strip .sb-stats article{border-bottom:1px solid rgba(255,255,255,.22)!important}
-  .sb-stats-section.sb-variant-strip .sb-stats article:nth-last-child(-n+2){border-bottom:0!important}
-}
-@media(max-width:480px){
-  .sb-stats-section.sb-variant-strip .sb-stats article{gap:9px!important;padding:12px 10px!important;min-height:64px!important}
-  .sb-stats-section.sb-variant-strip .sb-stats b{font-size:1.45rem!important}
-  .sb-stats-section.sb-variant-strip .sb-stats strong{font-size:.58rem!important}
-}
+/* Standard strip layout. Structural rules only: editable values always come
+   from the Website Studio variables or per-element inline styles. */
+.sb-stats-section.sb-variant-strip{min-height:var(--sb-min,0);padding:var(--sb-pt,0) 4vw var(--sb-pb,0);border-color:var(--sb-border,transparent);border-radius:var(--sb-radius,0);background:var(--sb-background,#e7192d);color:var(--sb-text,#fff)}
+.sb-stats-section.sb-variant-strip>.sb-inner{width:min(var(--sb-max,1920px),100%);max-width:none}
+.sb-stats-section.sb-variant-strip .sb-section-head{display:none}
+.sb-stats-section.sb-variant-strip .sb-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;width:100%;background:transparent;border-radius:var(--sb-radius,0);overflow:visible}
+.sb-stats-section.sb-variant-strip .sb-stats article{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:14px;min-height:72px;padding:14px 24px;border-right:1px solid color-mix(in srgb,var(--sb-text,#fff) 22%,transparent);background:transparent;color:inherit;text-align:left}
+.sb-stats-section.sb-variant-strip .sb-stats article:last-child{border-right:0}
+.sb-stats-section.sb-variant-strip .sb-stats b{margin:0;color:inherit;font-size:clamp(1.65rem,2.1vw,2.25rem);line-height:1;white-space:nowrap}
+.sb-stats-section.sb-variant-strip .sb-stats strong{color:inherit;font-size:.68rem;font-weight:950;line-height:1.15;letter-spacing:.12em;text-transform:uppercase}
+.sb-stats-section.sb-variant-strip .sb-stats span{display:none}
+@media(max-width:800px){.sb-stats-section.sb-variant-strip .sb-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.sb-stats-section.sb-variant-strip .sb-stats article:nth-child(2){border-right:0}.sb-stats-section.sb-variant-strip .sb-stats article{border-bottom:1px solid color-mix(in srgb,var(--sb-text,#fff) 22%,transparent)}.sb-stats-section.sb-variant-strip .sb-stats article:nth-last-child(-n+2){border-bottom:0}}
+@media(max-width:480px){.sb-stats-section.sb-variant-strip .sb-stats article{gap:9px;padding:12px 10px;min-height:64px}.sb-stats-section.sb-variant-strip .sb-stats b{font-size:1.45rem}.sb-stats-section.sb-variant-strip .sb-stats strong{font-size:.58rem}}
