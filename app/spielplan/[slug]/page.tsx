@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { getGameBySlug, listGameEvents } from "../../lib/football";
+import { ScheduleLogo } from "../ScheduleLogo";
 import "../spielplan.css";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function GameDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -20,9 +24,9 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
       <section className={`live-panel ${game.status === "live" ? "is-live" : ""}`}>
         <div className="live-kicker"><b>{game.status === "live" ? "● LIVE" : statusLabel(game.status)}</b><span>{game.quarter || ""}{game.gameClock ? ` · ${game.gameClock}` : ""}</span></div>
         <div className="live-score">
-          <div><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS</b><strong>{game.rascalsScore}</strong></div>
+          <div><ScheduleLogo src="/rascals-logo-transparent-4k.png" name="Hellenstein Rascals" className="detail-game-logo"/><b>RASCALS</b><strong>{game.rascalsScore}</strong></div>
           <span>:</span>
-          <div>{game.opponentLogo ? <img src={game.opponentLogo} alt=""/> : <div className="schedule-logo-placeholder">?</div>}<b>{game.opponent}</b><strong>{game.opponentScore}</strong></div>
+          <div><ScheduleLogo src={game.opponentLogo} name={game.opponent} className="detail-game-logo"/><b>{game.opponent}</b><strong>{game.opponentScore}</strong></div>
         </div>
       </section>
 
