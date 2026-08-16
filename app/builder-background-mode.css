@@ -1,8 +1,8 @@
 /* Website Builder background-mode contract.
-   A section background choice must visibly control the section. Legacy hero/CTA
-   media may still be stored in section.image for compatibility, but once the
-   builder says COLOR/GRADIENT/IMAGE/VIDEO the matching background mode is the
-   visual source of truth. */
+   Generic sections use style.backgroundImage for background mode IMAGE.
+   The two legacy Rascals full-bleed variants historically contain the same
+   picture twice (section.image + style.backgroundImage). To avoid publish
+   mismatches, those variants now use section.image as the single visual source. */
 
 /* COLOR means the user intentionally wants the section color visible. */
 .sb-hero.sb-bgmode-color .sb-hero-image,
@@ -14,25 +14,32 @@
   display:none!important;
 }
 
-/* GRADIENT / IMAGE / VIDEO are rendered by .sb-bg-media + .sb-bg-overlay.
-   Do not leave the legacy full-bleed section.image on top of that background. */
-.sb-cta.sb-bgmode-gradient .sb-cta-image,
-.sb-cta.sb-bgmode-image .sb-cta-image,
-.sb-cta.sb-bgmode-video .sb-cta-image{
-  display:none!important;
-}
-.sb-cta.sb-bgmode-gradient .sb-cta-shade,
-.sb-cta.sb-bgmode-image .sb-cta-shade,
-.sb-cta.sb-bgmode-video .sb-cta-shade{
+/* Generic GRADIENT / IMAGE / VIDEO sections use .sb-bg-media. */
+.sb-cta:not(.sb-variant-legacy-join).sb-bgmode-gradient .sb-cta-image,
+.sb-cta:not(.sb-variant-legacy-join).sb-bgmode-image .sb-cta-image,
+.sb-cta:not(.sb-variant-legacy-join).sb-bgmode-video .sb-cta-image,
+.sb-hero:not(.sb-variant-legacy-home).sb-bgmode-gradient .sb-hero-image,
+.sb-hero:not(.sb-variant-legacy-home).sb-bgmode-image .sb-hero-image,
+.sb-hero:not(.sb-variant-legacy-home).sb-bgmode-video .sb-hero-image{
   display:none!important;
 }
 
-/* The generic hero stylesheet already suppresses the legacy hero image for
-   gradient/image/video. Keep that behavior explicit and stable here as well. */
-.sb-hero.sb-bgmode-gradient .sb-hero-image,
-.sb-hero.sb-bgmode-image .sb-hero-image,
-.sb-hero.sb-bgmode-video .sb-hero-image{
+.sb-cta:not(.sb-variant-legacy-join).sb-bgmode-gradient .sb-cta-shade,
+.sb-cta:not(.sb-variant-legacy-join).sb-bgmode-image .sb-cta-shade,
+.sb-cta:not(.sb-variant-legacy-join).sb-bgmode-video .sb-cta-shade{
   display:none!important;
+}
+
+/* Rascals Original hero / join CTA: section.image is canonical.
+   This removes the old double-source problem where the editor changed one URL
+   but the published renderer displayed the other. */
+.sb-hero.sb-variant-legacy-home.sb-bgmode-image>.sb-bg-media,
+.sb-cta.sb-variant-legacy-join.sb-bgmode-image>.sb-bg-media{
+  display:none!important;
+}
+.sb-hero.sb-variant-legacy-home.sb-bgmode-image>.sb-hero-image,
+.sb-cta.sb-variant-legacy-join.sb-bgmode-image>.sb-cta-image{
+  display:block!important;
 }
 
 /* Background layers always fill their selected section and remain behind content. */
