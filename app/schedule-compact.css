@@ -3,7 +3,7 @@
 @media (min-width: 901px) {
   .fixtures-section .section-heading,
   .fixtures-section .fixture-list {
-    width: min(100%, 1240px);
+    width: min(100%, 1120px);
     margin-left: auto;
     margin-right: auto;
   }
@@ -18,10 +18,10 @@
 
   .fixtures-section .fixture-list article.home-game-card,
   .fixtures-section .fixture-list article.home-game-card:hover {
-    grid-template-columns: 124px minmax(0, 1fr) !important;
-    gap: 24px !important;
-    min-height: 168px !important;
-    padding: 24px 28px !important;
+    grid-template-columns: 118px minmax(0, 1fr) !important;
+    gap: 22px !important;
+    min-height: 164px !important;
+    padding: 22px 26px !important;
   }
 
   .home-game-card-link {
@@ -46,23 +46,23 @@
   }
 
   .home-game-matchup {
-    grid-template-columns: minmax(180px, 1fr) minmax(205px, 250px) minmax(180px, 1fr);
-    gap: 20px;
+    grid-template-columns: minmax(165px, 1fr) minmax(195px, 235px) minmax(165px, 1fr);
+    gap: 18px;
   }
 
   .home-game-team {
-    gap: 16px;
+    gap: 14px;
   }
 
   .home-game-team strong {
-    font-size: .9rem;
+    font-size: .88rem;
   }
 
   .home-game-logo,
   .home-game-logo-placeholder {
-    width: 94px;
-    height: 94px;
-    flex: 0 0 94px;
+    width: 88px;
+    height: 88px;
+    flex: 0 0 88px;
   }
 
   .home-game-center {
@@ -71,16 +71,16 @@
 
   .home-game-score {
     gap: 10px;
-    font-size: 3.55rem;
+    font-size: 3.4rem;
   }
 
   .home-game-score b {
-    font-size: 2rem;
+    font-size: 1.9rem;
   }
 
   .home-game-outcome {
     grid-template-columns: 30px auto;
-    min-width: 94px;
+    min-width: 92px;
     height: 30px;
   }
 
@@ -94,27 +94,27 @@
   }
 
   .home-game-versus {
-    width: 62px;
-    height: 38px;
-    font-size: 1rem;
+    width: 60px;
+    height: 36px;
+    font-size: .96rem;
   }
 }
 
 @media (min-width: 901px) and (max-width: 1250px) {
   .fixtures-section .section-heading,
   .fixtures-section .fixture-list {
-    width: min(100%, 1080px);
+    width: min(100%, 980px);
   }
 
   .home-game-matchup {
-    grid-template-columns: minmax(155px, 1fr) minmax(185px, 220px) minmax(155px, 1fr);
-    gap: 14px;
+    grid-template-columns: minmax(145px, 1fr) minmax(175px, 205px) minmax(145px, 1fr);
+    gap: 12px;
   }
 
   .home-game-logo,
   .home-game-logo-placeholder {
-    width: 82px;
-    height: 82px;
-    flex-basis: 82px;
+    width: 76px;
+    height: 76px;
+    flex-basis: 76px;
   }
 }
