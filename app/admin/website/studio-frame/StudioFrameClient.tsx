@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { SiteBuilderPage } from "../../../SiteBuilderPage";
 import type { SiteBuilderState } from "../../../lib/site-builder";
-import { reconcileSiteBuilderMedia } from "../../../lib/site-builder-media";
 import "./studio-frame.css";
 
 type FrameMessage={type:"rascals-studio-state";state:SiteBuilderState;pageId:string}|{type:string};
@@ -15,20 +14,12 @@ export function StudioFrameClient(){
   const[revision,setRevision]=useState(0);
   const[selected,setSelected]=useState<Selection>({});
   const rootRef=useRef<HTMLDivElement>(null);
-  const rawStateRef=useRef<SiteBuilderState|null>(null);
 
   useEffect(()=>{
     const onMessage=(event:MessageEvent<FrameMessage>)=>{
       if(event.origin!==window.location.origin)return;
       if(event.data?.type!=="rascals-studio-state")return;
-      // Compare against the previous RAW editor snapshot, not the already
-      // reconciled preview state. Otherwise a second unrelated edit could make
-      // an old background URL look like a new change and visually revert a
-      // freshly uploaded image before Save/Publish.
-      const rawIncoming=structuredClone(event.data.state);
-      const reconciled=reconcileSiteBuilderMedia(rawStateRef.current??undefined,rawIncoming);
-      rawStateRef.current=rawIncoming;
-      setState(reconciled);
+      setState(structuredClone(event.data.state));
       setPageId(event.data.pageId);
       setRevision(value=>value+1);
     };
