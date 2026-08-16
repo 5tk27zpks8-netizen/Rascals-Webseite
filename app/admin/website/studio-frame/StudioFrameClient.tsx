@@ -2,11 +2,17 @@
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { SiteBuilderPage } from "../../../SiteBuilderPage";
-import type { SiteBuilderState } from "../../../lib/site-builder";
+import type { BuilderSection, SiteBuilderState } from "../../../lib/site-builder";
+import { isLegacyFullBleed } from "../../../lib/site-builder-media";
 import "./studio-frame.css";
 
 type FrameMessage={type:"rascals-studio-state";state:SiteBuilderState;pageId:string}|{type:string};
 type Selection={sectionId?:string;elementKey?:string;theme?:"header"|"footer"};
+
+function findPreviousSection(state:SiteBuilderState|null,pageId:string,section:BuilderSection){
+  const page=state?.pages.find(candidate=>candidate.id===pageId)||state?.pages.find(candidate=>candidate.sections.some(item=>item.id===section.id));
+  return page?.sections.find(candidate=>candidate.id===section.id);
+}
 
 export function StudioFrameClient(){
   const[state,setState]=useState<SiteBuilderState|null>(null);
@@ -14,12 +20,50 @@ export function StudioFrameClient(){
   const[revision,setRevision]=useState(0);
   const[selected,setSelected]=useState<Selection>({});
   const rootRef=useRef<HTMLDivElement>(null);
+  const rawStateRef=useRef<SiteBuilderState|null>(null);
+  const canonicalMediaRef=useRef(new Map<string,string>());
 
   useEffect(()=>{
     const onMessage=(event:MessageEvent<FrameMessage>)=>{
       if(event.origin!==window.location.origin)return;
       if(event.data?.type!=="rascals-studio-state")return;
-      setState(structuredClone(event.data.state));
+
+      const rawIncoming=structuredClone(event.data.state);
+      const previewState=structuredClone(rawIncoming);
+
+      for(const page of previewState.pages){
+        for(const section of page.sections){
+          if(!isLegacyFullBleed(section)||(section.style.backgroundMode||"color")!=="image")continue;
+
+          const previous=findPreviousSection(rawStateRef.current,page.id,section);
+          const image=section.image||"";
+          const background=section.style.backgroundImage||"";
+          let canonical=canonicalMediaRef.current.get(section.id)||image||background;
+
+          if(image===background){
+            canonical=image;
+          }else if(previous){
+            const imageChanged=image!==(previous.image||"");
+            const backgroundChanged=background!==(previous.style.backgroundImage||"");
+            if(imageChanged&&!backgroundChanged)canonical=image;
+            else if(backgroundChanged&&!imageChanged)canonical=background;
+            else if(imageChanged&&backgroundChanged)canonical=image||background||canonical;
+            // If neither changed, keep the already chosen canonical image. This
+            // prevents an unrelated text/color edit from restoring a stale URL.
+          }else{
+            canonical=image||background||canonical;
+          }
+
+          if(canonical){
+            section.image=canonical;
+            section.style.backgroundImage=canonical;
+            canonicalMediaRef.current.set(section.id,canonical);
+          }
+        }
+      }
+
+      rawStateRef.current=rawIncoming;
+      setState(previewState);
       setPageId(event.data.pageId);
       setRevision(value=>value+1);
     };
