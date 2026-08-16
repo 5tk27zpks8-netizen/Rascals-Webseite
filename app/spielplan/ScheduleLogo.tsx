@@ -27,11 +27,20 @@ export function ScheduleLogo({ src, name, className = "" }: { src: string; name:
     loading="eager"
     decoding="async"
     referrerPolicy="no-referrer"
+    style={{ transform: `scale(${logoVisualScale(name)})`, transformOrigin: "center" }}
     onError={() => {
       if (index + 1 < sources.length) setIndex((value) => value + 1);
       else setFailed(true);
     }}
   />;
+}
+
+function logoVisualScale(name: string) {
+  const key = name.toLocaleLowerCase("de-DE");
+  // The Salt Miners source file has more transparent padding than the other marks.
+  // Scale only the visible artwork while preserving the same layout slot.
+  if (key.includes("heilbronn") && key.includes("miner")) return 1.42;
+  return 1;
 }
 
 function initials(name: string) {
