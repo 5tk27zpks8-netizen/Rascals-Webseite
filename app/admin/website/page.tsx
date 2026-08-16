@@ -2,6 +2,7 @@ import { requireChatGPTUser } from "../../chatgpt-auth";
 import { InlineImagePositionAddon } from "./InlineImagePositionAddon";
 import { LiveDraftSyncAddon } from "./LiveDraftSyncAddon";
 import { LiveWebsiteMirror } from "./LiveWebsiteMirror";
+import { TypographyStudioAddon } from "./TypographyStudioAddon";
 import { WebsiteBuilder } from "./WebsiteBuilder";
 import "./website-builder-v3.css";
 
@@ -12,5 +13,5 @@ export const metadata = {
 
 export default async function AdminWebsitePage() {
   await requireChatGPTUser("/admin/website");
-  return <><WebsiteBuilder/><LiveWebsiteMirror/><LiveDraftSyncAddon/><InlineImagePositionAddon/></>;
+  return <><WebsiteBuilder/><LiveWebsiteMirror/><LiveDraftSyncAddon/><InlineImagePositionAddon/><TypographyStudioAddon/></>;
 }
