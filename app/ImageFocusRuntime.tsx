@@ -13,7 +13,9 @@ function focusFromUrl(value:string){
 function applyFocus(root:ParentNode=document){
   root.querySelectorAll<HTMLImageElement>("img[src]").forEach(img=>{
     const focus=focusFromUrl(img.getAttribute("src")||"");
-    if(focus)img.style.objectPosition=`${focus.x}% ${focus.y}%`;
+    if(!focus)return;
+    const next=`${focus.x}% ${focus.y}%`;
+    if(img.style.objectPosition!==next)img.style.objectPosition=next;
   });
 }
 
@@ -26,7 +28,7 @@ export function ImageFocusRuntime(){
         record.addedNodes.forEach(node=>{if(node instanceof HTMLElement)applyFocus(node)});
       }
     });
-    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:["src"]});
+    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:["src","style"]});
     return()=>observer.disconnect();
   },[]);
   return null;
