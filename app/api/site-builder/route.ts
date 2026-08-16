@@ -1,5 +1,6 @@
 import { defaultSiteBuilderState, readPublishedSiteBuilderState, readSiteBuilderState, writeSiteBuilderState, type BuilderPage, type BuilderSection, type SiteBuilderState } from "../../lib/site-builder";
 import { appendSiteBuilderRevision } from "../../lib/site-builder-history";
+import { reconcileSiteBuilderMedia } from "../../lib/site-builder-media";
 import { can, requireCmsPermission } from "../../lib/permissions";
 
 const reservedSlugs = new Set(["admin", "api", "spielplan"]);
@@ -42,10 +43,6 @@ function normalizeEditableBackgroundMedia(input: SiteBuilderState): SiteBuilderS
       const background = (section.style.background || "").toLowerCase();
       const stillLegacyDefault = legacyHero ? background === "#050d18" : background === "#020810";
 
-      // Older Rascals drafts stored the full-bleed hero/CTA image in section.image
-      // while the inspector incorrectly reported backgroundMode="color". Migrate
-      // only that legacy default state. Once a user intentionally selects a color,
-      // backgroundImage remains populated so future loads respect the chosen mode.
       if (!section.style.backgroundImage && (mode === "image" || (mode === "color" && stillLegacyDefault))) {
         section.style.backgroundImage = section.image;
         section.style.backgroundMode = "image";
@@ -190,7 +187,8 @@ export async function GET(request: Request) {
   const editorStartsFromLive = isMainWebsiteEditor(request);
   const firstStudioOpen = editorStartsFromLive && draft.editorInitialized !== true;
   const rawState = firstStudioOpen ? liveEditorState(published, draft) : draft;
-  const state = normalizeEditableBackgroundMedia(rawState);
+  const normalized = normalizeEditableBackgroundMedia(rawState);
+  const state = reconcileSiteBuilderMedia(undefined, normalized);
 
   return Response.json({
     state,
@@ -214,7 +212,9 @@ export async function PUT(request: Request) {
   const error = validateState(state);
   if (error) return Response.json({ error }, { status: 400 });
 
-  const saved = await writeSiteBuilderState(state);
+  const previous = await readSiteBuilderState();
+  const reconciled = reconcileSiteBuilderMedia(previous, state);
+  const saved = await writeSiteBuilderState(reconciled);
   await appendSiteBuilderRevision(saved, actor, "draft");
   return Response.json({ ok: true, state: saved, savedAt: new Date().toISOString(), savedBy: actor.email });
 }
