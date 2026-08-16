@@ -44,11 +44,11 @@ function InlinePositioner({target}:{target:HTMLElement}){
   }
   function start(event:ReactPointerEvent<HTMLDivElement>){event.currentTarget.setPointerCapture(event.pointerId);const next=point(event);setFocus(next);applyLiveFocus(base,next.x,next.y)}
   function move(event:ReactPointerEvent<HTMLDivElement>){if(!event.currentTarget.hasPointerCapture(event.pointerId))return;const next=point(event);setFocus(next);applyLiveFocus(base,next.x,next.y)}
-  function end(event:ReactPointerEvent<HTMLDivElement>){if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);setSelectValue(select,withFocus(base,focus.x,focus.y))}
+  function end(event:ReactPointerEvent<HTMLDivElement>){const next=point(event);setFocus(next);applyLiveFocus(base,next.x,next.y);if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);setSelectValue(select,withFocus(base,next.x,next.y))}
   function reset(){const next={x:50,y:50};setFocus(next);applyLiveFocus(base,50,50);setSelectValue(select,withFocus(base,50,50))}
 
   return <div className="inline-focus-editor">
-    <div className="inline-focus-head"><div><b>Bild positionieren</b><small>Im Bild klicken und Motiv stufenlos verschieben</small></div><button type="button" onClick={reset}>Zentrieren</button></div>
+    <div className="inline-focus-head"><div><b>Bild positionieren</b><small>Direkt ins Bild klicken oder ziehen – ohne feste Sprünge</small></div><button type="button" onClick={reset}>Zentrieren</button></div>
     <div className="inline-focus-stage" onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
       <img src={base} alt="" style={{objectPosition:`${focus.x}% ${focus.y}%`}} draggable={false}/>
       <span className="inline-focus-target" style={{left:`${focus.x}%`,top:`${focus.y}%`}}><i/></span>
