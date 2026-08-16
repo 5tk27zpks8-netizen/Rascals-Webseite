@@ -1,6 +1,6 @@
 import { bindings } from "../../../lib/cms";
 import { ensureFootballSchema } from "../../../lib/football";
-import { normalizeMediaUrl } from "../../../lib/media-url";
+import { mediaUrlForKey, normalizeMediaUrl } from "../../../lib/media-url";
 
 async function ensureTrashColumn() {
   const { DB } = bindings();
@@ -10,6 +10,19 @@ async function ensureTrashColumn() {
 
 function opponentKey(value: unknown) {
   return String(value ?? "").trim().toLocaleLowerCase("de-DE");
+}
+
+function searchKey(value: unknown) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("de-DE")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function opponentTokens(value: unknown) {
+  return searchKey(value).split(/\s+/).filter((token) => token.length >= 4);
 }
 
 function logoScore(value: string) {
@@ -32,6 +45,39 @@ function canonicalOpponentLogos(rows: Record<string, unknown>[]) {
     if (logoScore(candidate) > logoScore(current)) logos.set(key, candidate);
   }
   return logos;
+}
+
+async function recoverMissingOpponentLogos(rows: Record<string, unknown>[], logos: Map<string, string>) {
+  const missing = Array.from(new Set(rows
+    .map((row) => String(row.opponent ?? "").trim())
+    .filter((opponent) => opponent && !logos.get(opponentKey(opponent)))));
+  if (!missing.length) return;
+
+  try {
+    const { MEDIA } = bindings();
+    const listed = await MEDIA.list({ prefix: "uploads/", limit: 1000 });
+    const media = listed.objects.map((object) => ({
+      key: object.key,
+      searchable: searchKey(`${object.key} ${object.customMetadata?.originalName ?? ""}`),
+    }));
+
+    for (const opponent of missing) {
+      const tokens = opponentTokens(opponent);
+      if (!tokens.length) continue;
+      const exact = searchKey(opponent);
+      let best: { key: string; score: number } | null = null;
+
+      for (const object of media) {
+        if (!tokens.every((token) => object.searchable.includes(token))) continue;
+        const score = (object.searchable.includes(exact) ? 10 : 0) + tokens.length;
+        if (!best || score > best.score) best = { key: object.key, score };
+      }
+
+      if (best) logos.set(opponentKey(opponent), mediaUrlForKey(best.key));
+    }
+  } catch {
+    // A missing media lookup must never break the public schedule.
+  }
 }
 
 function mapGame(row: Record<string, unknown>, logos: Map<string, string>) {
@@ -64,6 +110,7 @@ export async function GET() {
   ]);
   const rows = result.results.map((row) => row as Record<string, unknown>);
   const logos = canonicalOpponentLogos(rows);
+  await recoverMissingOpponentLogos(rows, logos);
   return Response.json({
     items: rows.map((row) => mapGame(row, logos)),
     league: String(team?.league ?? "Bezirksliga"),
