@@ -19,6 +19,7 @@ export function BuilderFooterEnhancer() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [footerTitle, setFooterTitle] = useState("HELLENSTEIN RASCALS");
   const [footerSubtitle, setFooterSubtitle] = useState("American Football · Heidenheim");
+  const [logoUrl, setLogoUrl] = useState("/rascals-logo-transparent-4k.png");
 
   useEffect(() => {
     let currentFooter: HTMLElement | null = null;
@@ -36,8 +37,10 @@ export function BuilderFooterEnhancer() {
 
       const title = footer.querySelector<HTMLElement>(":scope > span")?.textContent?.trim();
       const subtitle = footer.querySelector<HTMLElement>(":scope > small")?.textContent?.trim();
+      const currentLogo = document.querySelector<HTMLImageElement>(".sb-header .sb-brand img")?.getAttribute("src")?.trim();
       if (title) setFooterTitle(title);
       if (subtitle) setFooterSubtitle(subtitle);
+      if (currentLogo) setLogoUrl(currentLogo);
 
       if (footer !== currentFooter) {
         currentFooter?.classList.remove("sb-footer-full");
@@ -59,7 +62,7 @@ export function BuilderFooterEnhancer() {
 
     sync();
     const observer = new MutationObserver(sync);
-    observer.observe(document.body, { subtree: true, childList: true });
+    observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["src"] });
     return () => {
       observer.disconnect();
       currentFooter?.classList.remove("sb-footer-full");
@@ -72,7 +75,7 @@ export function BuilderFooterEnhancer() {
   return createPortal(
     <div className="sb-footer-grid" data-builder-theme="footer">
       <div className="sb-footer-brand-block">
-        <img src="/rascals-logo-transparent-4k.png" alt="Hellenstein Rascals" />
+        <img src={logoUrl} alt="Hellenstein Rascals" />
         <a href="/admin" aria-label="Zum Admin Login" className="public-admin-login sb-footer-login">Anmelden</a>
         <p>{footerSubtitle || "American Football in Heidenheim."}<br />Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</p>
       </div>
