@@ -1,20 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./live-website-mirror.css";
 
 type PreviewMode = "desktop" | "tablet" | "mobile";
 
-const widths: Record<PreviewMode, number> = {
-  desktop: 1800,
-  tablet: 768,
-  mobile: 390,
-};
+const widths: Record<PreviewMode, number> = { desktop: 1800, tablet: 768, mobile: 390 };
 
 function currentPreviewMode(): PreviewMode {
-  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".wb-device-switch button"));
-  const active = buttons.find((button) => button.classList.contains("active"));
+  const active = Array.from(document.querySelectorAll<HTMLButtonElement>(".wb-device-switch button"))
+    .find((button) => button.classList.contains("active"));
   const text = active?.textContent?.trim().toLowerCase() || "desktop";
   if (text.includes("mobil")) return "mobile";
   if (text.includes("tablet")) return "tablet";
@@ -32,32 +28,100 @@ function currentLiveHref(): string {
   }
 }
 
-function visibleEditableBlocks(doc: Document): HTMLElement[] {
-  const candidates = Array.from(doc.querySelectorAll<HTMLElement>(
-    "body > section, body > main > section, body > main > div, .site-main > section, .site-main > div, main.site-main > section, main.site-main > div",
-  ));
-
-  const unique = candidates.filter((element, index, all) => all.indexOf(element) === index);
-  const visible = unique.filter((element) => {
-    const style = doc.defaultView?.getComputedStyle(element);
-    const rect = element.getBoundingClientRect();
-    if (!style || style.display === "none" || style.visibility === "hidden") return false;
-    if (rect.height < 40 || rect.width < 120) return false;
-    if (element.matches("header, footer, nav")) return false;
-    if (element.closest("header, footer, nav")) return false;
-    return true;
-  });
-
-  // Keep only the outermost visual blocks. Nested wrappers otherwise create duplicate selections.
-  return visible.filter((element) => !visible.some((other) => other !== element && other.contains(element)));
+function sectionButtons() {
+  return Array.from(document.querySelectorAll<HTMLButtonElement>(".wb-section-list > button"));
 }
 
 function selectEditorSection(index: number) {
-  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".wb-section-list > button"));
-  const button = buttons[index];
+  const button = sectionButtons()[index];
   if (!button) return;
   button.click();
   button.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
+function selectThemeInspector() {
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".wb-nav-special"));
+  const theme = buttons.find((button) => button.textContent?.toLowerCase().includes("website design"));
+  theme?.click();
+}
+
+function isVisible(element: HTMLElement, doc: Document) {
+  const style = doc.defaultView?.getComputedStyle(element);
+  const rect = element.getBoundingClientRect();
+  return Boolean(style && style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity || 1) !== 0 && rect.width >= 120 && rect.height >= 45);
+}
+
+/**
+ * Discover the public page's large visual sections instead of depending on one
+ * historical DOM structure. This is intentionally broad because the live site
+ * can switch between the legacy Rascals layout and Builder layouts.
+ */
+function editableBlocks(doc: Document): HTMLElement[] {
+  const main = doc.querySelector<HTMLElement>("main, .site-main, [role='main']");
+  const root = main || doc.body;
+  const selectors = [
+    ":scope > section",
+    ":scope > article",
+    ":scope > div",
+    "section",
+    "[data-section]",
+    ".hero",
+    ".stats-strip",
+    ".fixtures-section",
+    ".teamwear-section",
+    ".news-preview",
+    ".sponsor-strip",
+    ".join-section",
+    ".cta-section",
+  ];
+  const candidates = Array.from(root.querySelectorAll<HTMLElement>(selectors.join(",")))
+    .filter((el) => isVisible(el, doc))
+    .filter((el) => !el.closest("header, nav, footer"));
+
+  const unique = candidates.filter((el, index, all) => all.indexOf(el) === index);
+  const sectionCount = sectionButtons().length;
+
+  // Prefer large outer visual regions and avoid nested cards/images becoming
+  // separate editor targets.
+  let outer = unique.filter((el) => !unique.some((other) => other !== el && other.contains(el) && other.getBoundingClientRect().height <= el.getBoundingClientRect().height * 1.8));
+  outer = outer.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+
+  // If the generic discovery produced too many wrappers, select the strongest
+  // non-overlapping regions by vertical position. This keeps the live page and
+  // the Builder section list aligned.
+  const compact: HTMLElement[] = [];
+  for (const el of outer) {
+    const rect = el.getBoundingClientRect();
+    const duplicate = compact.some((existing) => {
+      const r = existing.getBoundingClientRect();
+      const overlap = Math.max(0, Math.min(r.bottom, rect.bottom) - Math.max(r.top, rect.top));
+      return overlap > Math.min(r.height, rect.height) * 0.72;
+    });
+    if (!duplicate) compact.push(el);
+  }
+
+  if (sectionCount > 0 && compact.length > sectionCount) return compact.slice(0, sectionCount);
+  return compact;
+}
+
+function blockIndexAtPoint(doc: Document, x: number, y: number): number {
+  const blocks = editableBlocks(doc);
+  if (!blocks.length) return -1;
+
+  const stack = doc.elementsFromPoint(x, y);
+  for (const node of stack) {
+    if (!(node instanceof HTMLElement)) continue;
+    const index = blocks.findIndex((block) => block === node || block.contains(node));
+    if (index >= 0) return index;
+  }
+
+  // Fallback to vertical hit-testing. This also works when an absolutely
+  // positioned image/overlay covers the section DOM node.
+  const byRect = blocks.findIndex((block) => {
+    const rect = block.getBoundingClientRect();
+    return y >= rect.top && y <= rect.bottom;
+  });
+  return byRect;
 }
 
 export function LiveWebsiteMirror() {
@@ -65,6 +129,7 @@ export function LiveWebsiteMirror() {
   const [mode, setMode] = useState<PreviewMode>("desktop");
   const [href, setHref] = useState("/");
   const [scale, setScale] = useState(1);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const viewportWidth = widths[mode];
   const frameHeight = mode === "desktop" ? 1250 : mode === "tablet" ? 1100 : 980;
@@ -105,10 +170,37 @@ export function LiveWebsiteMirror() {
     };
   }, [mount, viewportWidth]);
 
-  const src = useMemo(() => {
-    const separator = href.includes("?") ? "&" : "?";
-    return `${href}${separator}studio_mirror=1`;
-  }, [href]);
+  const src = useMemo(() => `${href}${href.includes("?") ? "&" : "?"}studio_mirror=1`, [href]);
+
+  function pointFromEvent(event: ReactMouseEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return { x: (event.clientX - rect.left) / scale, y: (event.clientY - rect.top) / scale };
+  }
+
+  function handleMove(event: ReactMouseEvent<HTMLDivElement>) {
+    const doc = frameRef.current?.contentDocument;
+    if (!doc) return setHoverIndex(null);
+    const { x, y } = pointFromEvent(event);
+    setHoverIndex(blockIndexAtPoint(doc, x, y));
+  }
+
+  function handleClick(event: ReactMouseEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    const doc = frameRef.current?.contentDocument;
+    if (!doc) return;
+    const { x, y } = pointFromEvent(event);
+
+    // Header/navigation is edited through the global Website Design inspector.
+    const node = doc.elementFromPoint(x, y) as HTMLElement | null;
+    if (node?.closest("header, nav")) {
+      selectThemeInspector();
+      return;
+    }
+
+    const index = blockIndexAtPoint(doc, x, y);
+    if (index >= 0) selectEditorSection(index);
+  }
 
   if (!mount) return null;
 
@@ -123,8 +215,7 @@ export function LiveWebsiteMirror() {
           className="wb-live-mirror-frame"
           style={{ width: viewportWidth, height: frameHeight }}
           onLoad={() => {
-            const frame = frameRef.current;
-            const doc = frame?.contentDocument;
+            const doc = frameRef.current?.contentDocument;
             if (!doc) return;
             doc.documentElement.classList.add("rascals-studio-mirror");
             const style = doc.createElement("style");
@@ -134,57 +225,21 @@ export function LiveWebsiteMirror() {
               html.rascals-studio-mirror .public-admin-login,
               html.rascals-studio-mirror [data-admin-login],
               html.rascals-studio-mirror .skip-link { display:none !important; }
-              html.rascals-studio-mirror a,
-              html.rascals-studio-mirror button { cursor:pointer !important; }
-              html.rascals-studio-mirror .studio-editable-block {
-                position:relative !important;
-                cursor:pointer !important;
-                outline:2px solid transparent !important;
-                outline-offset:-2px !important;
-                transition:outline-color .14s ease, box-shadow .14s ease !important;
-              }
-              html.rascals-studio-mirror .studio-editable-block:hover {
-                outline-color:#4e9dff !important;
-                box-shadow:inset 0 0 0 1px rgba(78,157,255,.32) !important;
-              }
-              html.rascals-studio-mirror .studio-editable-block:hover::after {
-                content:"KLICKEN ZUM BEARBEITEN";
-                position:absolute;
-                z-index:2147483646;
-                top:12px;
-                right:12px;
-                padding:7px 10px;
-                border-radius:7px;
-                background:#1474e8;
-                color:#fff;
-                font:900 10px/1 Arial,sans-serif;
-                letter-spacing:.08em;
-                pointer-events:none;
-              }
             `;
             doc.head.appendChild(style);
-
-            const blocks = visibleEditableBlocks(doc);
-            blocks.forEach((block) => block.classList.add("studio-editable-block"));
-
-            const clickHandler = (event: MouseEvent) => {
-              const target = event.target as HTMLElement | null;
-              if (!target) return;
-              const block = target.closest<HTMLElement>(".studio-editable-block");
-              if (!block) return;
-              const currentBlocks = visibleEditableBlocks(doc);
-              const index = currentBlocks.indexOf(block);
-              if (index < 0) return;
-              event.preventDefault();
-              event.stopPropagation();
-              selectEditorSection(index);
-            };
-
-            doc.addEventListener("click", clickHandler, true);
           }}
         />
+        <div
+          className={`wb-live-edit-layer ${hoverIndex !== null && hoverIndex >= 0 ? "has-target" : ""}`}
+          onMouseMove={handleMove}
+          onMouseLeave={() => setHoverIndex(null)}
+          onClick={handleClick}
+          aria-label="Website-Abschnitt zum Bearbeiten auswählen"
+        >
+          {hoverIndex !== null && hoverIndex >= 0 && <span>ABSCHNITT {hoverIndex + 1} · KLICKEN ZUM BEARBEITEN</span>}
+        </div>
       </div>
-      <div className="wb-live-mirror-badge">LIVE · 1:1 · KLICKEN ZUM BEARBEITEN</div>
+      <div className="wb-live-mirror-badge">LIVE · 1:1 · DIREKT BEARBEITBAR</div>
     </div>,
     mount,
   );
