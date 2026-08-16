@@ -1,6 +1,6 @@
-/* Homepage schedule — compact football scoreboard treatment.
-   All decorative field artwork lives in CSS so it can never become a grid item
-   or disturb the schedule content layout. */
+/* Homepage schedule — single source of truth.
+   Compact scoreboard cards, subtle football-field markings and blue/red edge glow. */
+
 .fixtures-section{color:var(--sb-text,#07172b)}
 .fixtures-section .section-heading{
   display:grid;
@@ -10,11 +10,7 @@
   width:min(100%,1080px);
   margin:0 auto 34px;
 }
-.fixtures-section .section-heading>div:first-child{
-  display:grid;
-  align-content:start;
-  gap:18px;
-}
+.fixtures-section .section-heading>div:first-child{display:grid;align-content:start;gap:18px}
 .fixtures-section .section-heading .eyebrow{
   position:relative;
   z-index:3;
@@ -24,24 +20,12 @@
   line-height:1!important;
   transform:translateY(-10px);
 }
-.fixtures-section .section-heading h2{
-  margin:0!important;
-  color:inherit;
-  line-height:.86!important;
-}
-.fixtures-section .fixture-list{
-  width:min(100%,1080px);
-  margin:0 auto;
-  border:0;
-}
+.fixtures-section .section-heading h2{margin:0!important;color:inherit;line-height:.86!important}
+.fixtures-section .fixture-list{width:min(100%,1080px);margin:0 auto;border:0}
 
-/* Editorial season metadata: no cards/frames around league, record or points. */
+/* Editorial season metadata — intentionally unboxed. */
 .season-stats-target{margin-left:auto}
-.fixtures-section .season-stats{
-  display:flex;
-  align-items:end;
-  gap:30px;
-}
+.fixtures-section .season-stats{display:flex;align-items:end;gap:30px}
 .fixtures-section .season-league,
 .fixtures-section .season-stat{
   display:grid;
@@ -81,10 +65,14 @@
 .home-schedule-list{display:grid;gap:14px}
 .home-game-card-link{display:block;color:inherit;text-decoration:none}
 
-/* Old DOM play-art is intentionally disabled. Field details are now a CSS layer only. */
-.home-game-field-art{display:none!important}
+/* Old DOM play-art stays disabled permanently. */
+.home-game-field-art,
+.home-game-route,
+.home-game-route-hook,
+.home-game-route-post,
+.home-game-route-corner{display:none!important}
 
-/* Dark football-field card with blue left glow and red right glow. */
+/* Card shell. */
 .fixtures-section .fixture-list article.home-game-card,
 .fixtures-section .fixture-list article.home-game-card:hover{
   position:relative;
@@ -96,46 +84,43 @@
   min-height:124px!important;
   padding:17px 20px!important;
   overflow:hidden;
-  border:1px solid rgba(184,207,226,.28)!important;
+  border:1px solid rgba(184,207,226,.24)!important;
   border-radius:14px!important;
   background:
-    radial-gradient(ellipse at -4% 50%,rgba(30,127,255,.25) 0%,rgba(18,84,180,.10) 23%,transparent 43%),
-    radial-gradient(ellipse at 104% 50%,rgba(238,27,49,.24) 0%,rgba(157,15,32,.10) 23%,transparent 43%),
+    radial-gradient(ellipse at -4% 50%,rgba(30,127,255,.24) 0%,rgba(18,84,180,.095) 23%,transparent 43%),
+    radial-gradient(ellipse at 104% 50%,rgba(238,27,49,.23) 0%,rgba(157,15,32,.095) 23%,transparent 43%),
     linear-gradient(90deg,#061523 0%,#04111c 48%,#071019 100%)!important;
   color:#f8fbff!important;
   box-shadow:
-    inset 1px 0 0 rgba(52,153,255,.94),
-    inset -1px 0 0 rgba(255,42,59,.92),
-    inset 0 1px 0 rgba(255,255,255,.055),
-    inset 0 -1px 0 rgba(255,255,255,.025),
-    -8px 0 24px rgba(37,137,255,.25),
-    8px 0 24px rgba(232,24,47,.24),
+    inset 1px 0 0 rgba(52,153,255,.92),
+    inset -1px 0 0 rgba(255,42,59,.90),
+    inset 0 1px 0 rgba(255,255,255,.045),
+    inset 0 -1px 0 rgba(255,255,255,.02),
+    -8px 0 24px rgba(37,137,255,.23),
+    8px 0 24px rgba(232,24,47,.22),
     0 13px 30px rgba(0,0,0,.34)!important;
   transform:none;
   transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease,filter .2s ease;
 }
 
-/* Yard lines, yard numbers and subtle Hook/Post/Corner chalk routes.
-   This is a background overlay only; it contains no interactive or layout DOM. */
+/* Football field only — NO ROUTES.
+   Center = 50. From the center toward either end zone: 40 / 30 / 20 / 10.
+   End zones carry a subtle vertical RASCALS wordmark.
+   Lines and numbers are deliberately faint so the matchup remains dominant. */
 .home-game-card:before{
   content:"";
   position:absolute;
   z-index:0;
   inset:0;
   pointer-events:none;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 140'%3E%3Cg fill='%23a9bfd2' fill-opacity='.105' font-family='Arial' font-size='15' font-weight='700'%3E%3Ctext x='140' y='24'%3E10%3C/text%3E%3Ctext x='265' y='24'%3E20%3C/text%3E%3Ctext x='390' y='24'%3E30%3C/text%3E%3Ctext x='495' y='24'%3E40%3C/text%3E%3Ctext x='610' y='24'%3E30%3C/text%3E%3Ctext x='735' y='24'%3E20%3C/text%3E%3Ctext x='860' y='24'%3E10%3C/text%3E%3Ctext x='140' y='132'%3E10%3C/text%3E%3Ctext x='265' y='132'%3E20%3C/text%3E%3Ctext x='390' y='132'%3E30%3C/text%3E%3Ctext x='495' y='132'%3E40%3C/text%3E%3Ctext x='610' y='132'%3E30%3C/text%3E%3Ctext x='735' y='132'%3E20%3C/text%3E%3Ctext x='860' y='132'%3E10%3C/text%3E%3C/g%3E%3Cg fill='none' stroke='%23b8cad9' stroke-opacity='.115' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M52,110V78Q52,64,66,64H112Q126,64,126,78V88'/%3E%3Cpolyline points='120,82 126,89 133,82'/%3E%3Cpath d='M760,116V83Q760,70,773,70H824L888,34'/%3E%3Cpolyline points='878,34 889,33 885,44'/%3E%3Cpath d='M936,111V80Q936,67,923,67H884L841,42'/%3E%3Cpolyline points='850,41 839,41 843,52'/%3E%3C/g%3E%3C/svg%3E"),
-    repeating-linear-gradient(90deg,transparent 0 38px,rgba(185,208,226,.17) 38px 39px,transparent 39px 49px),
-    repeating-linear-gradient(90deg,transparent 0 34px,rgba(190,213,232,.17) 34px 35px,transparent 35px 49px),
-    repeating-linear-gradient(90deg,transparent 0 34px,rgba(190,213,232,.12) 34px 35px,transparent 35px 49px),
-    linear-gradient(90deg,transparent 49.85%,rgba(184,207,226,.11) 50%,transparent 50.15%);
-  background-position:center,center,top 7px left,bottom 7px left,center;
-  background-size:100% 100%,100% 100%,100% 7px,100% 7px,100% 100%;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 140'%3E%3Cg fill='none' stroke='%23b9cddd' stroke-width='1'%3E%3Cline x1='100' y1='0' x2='100' y2='140' stroke-opacity='.050'/%3E%3Cline x1='200' y1='0' x2='200' y2='140' stroke-opacity='.050'/%3E%3Cline x1='300' y1='0' x2='300' y2='140' stroke-opacity='.050'/%3E%3Cline x1='400' y1='0' x2='400' y2='140' stroke-opacity='.050'/%3E%3Cline x1='500' y1='0' x2='500' y2='140' stroke-opacity='.068'/%3E%3Cline x1='600' y1='0' x2='600' y2='140' stroke-opacity='.050'/%3E%3Cline x1='700' y1='0' x2='700' y2='140' stroke-opacity='.050'/%3E%3Cline x1='800' y1='0' x2='800' y2='140' stroke-opacity='.050'/%3E%3Cline x1='900' y1='0' x2='900' y2='140' stroke-opacity='.050'/%3E%3Cpath d='M50 5v8M150 5v8M250 5v8M350 5v8M450 5v8M550 5v8M650 5v8M750 5v8M850 5v8M950 5v8M50 127v8M150 127v8M250 127v8M350 127v8M450 127v8M550 127v8M650 127v8M750 127v8M850 127v8M950 127v8' stroke-opacity='.038'/%3E%3C/g%3E%3Cg fill='%23b9cddd' fill-opacity='.058' font-family='Arial,sans-serif' font-size='14' font-weight='700' text-anchor='middle'%3E%3Ctext x='100' y='24'%3E10%3C/text%3E%3Ctext x='200' y='24'%3E20%3C/text%3E%3Ctext x='300' y='24'%3E30%3C/text%3E%3Ctext x='400' y='24'%3E40%3C/text%3E%3Ctext x='500' y='24'%3E50%3C/text%3E%3Ctext x='600' y='24'%3E40%3C/text%3E%3Ctext x='700' y='24'%3E30%3C/text%3E%3Ctext x='800' y='24'%3E20%3C/text%3E%3Ctext x='900' y='24'%3E10%3C/text%3E%3Ctext x='100' y='129'%3E10%3C/text%3E%3Ctext x='200' y='129'%3E20%3C/text%3E%3Ctext x='300' y='129'%3E30%3C/text%3E%3Ctext x='400' y='129'%3E40%3C/text%3E%3Ctext x='500' y='129'%3E50%3C/text%3E%3Ctext x='600' y='129'%3E40%3C/text%3E%3Ctext x='700' y='129'%3E30%3C/text%3E%3Ctext x='800' y='129'%3E20%3C/text%3E%3Ctext x='900' y='129'%3E10%3C/text%3E%3C/g%3E%3Cg fill='%23b9cddd' fill-opacity='.070' font-family='Arial,sans-serif' font-size='13' font-weight='800' letter-spacing='3' text-anchor='middle'%3E%3Ctext x='36' y='70' dominant-baseline='middle' transform='rotate(-90 36 70)'%3ERASCALS%3C/text%3E%3Ctext x='964' y='70' dominant-baseline='middle' transform='rotate(90 964 70)'%3ERASCALS%3C/text%3E%3C/g%3E%3C/svg%3E");
+  background-position:center;
+  background-size:100% 100%;
   background-repeat:no-repeat;
-  opacity:.92;
+  opacity:.64;
 }
 
-/* Thin luminous two-tone frame like the supplied reference. */
+/* Thin luminous blue -> neutral -> red frame. */
 .home-game-card:after{
   content:"";
   position:absolute;
@@ -144,20 +129,19 @@
   padding:1px;
   border-radius:inherit;
   pointer-events:none;
-  background:linear-gradient(90deg,rgba(45,149,255,.98) 0%,rgba(151,188,217,.20) 34%,rgba(151,188,217,.15) 66%,rgba(255,43,61,.98) 100%);
+  background:linear-gradient(90deg,rgba(45,149,255,.98) 0%,rgba(151,188,217,.16) 34%,rgba(151,188,217,.12) 66%,rgba(255,43,61,.98) 100%);
   -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
   -webkit-mask-composite:xor;
   mask-composite:exclude;
 }
-
 .fixtures-section .fixture-list article.home-game-card:hover{
-  border-color:rgba(225,235,244,.40)!important;
+  border-color:rgba(225,235,244,.38)!important;
   box-shadow:
     inset 1px 0 0 rgba(65,174,255,1),
     inset -1px 0 0 rgba(255,52,68,1),
-    inset 0 1px 0 rgba(255,255,255,.08),
-    -10px 0 30px rgba(39,143,255,.32),
-    10px 0 30px rgba(236,25,48,.31),
+    inset 0 1px 0 rgba(255,255,255,.07),
+    -10px 0 30px rgba(39,143,255,.30),
+    10px 0 30px rgba(236,25,48,.29),
     0 16px 38px rgba(0,0,0,.40)!important;
   transform:translateY(-2px);
   filter:brightness(1.035);
@@ -190,7 +174,7 @@
   gap:16px;
   min-width:0;
 }
-.home-game-team{display:flex;align-items:center;gap:12px;min-width:0}
+.home-game-team{display:flex;align-items:center;gap:12px;min-width:0;overflow:visible!important}
 .home-game-team.right{justify-content:flex-end;text-align:right}
 .home-game-team strong{
   min-width:0;
@@ -202,18 +186,29 @@
   text-shadow:0 2px 10px rgba(0,0,0,.4);
   text-transform:uppercase;
 }
-.home-game-logo,.home-game-logo-placeholder{width:64px;height:64px;flex:0 0 64px}
-.home-game-logo{object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.34))}
+
+/* Logos are exactly ~15% larger than the previous 64px desktop size. */
+.home-game-logo,.home-game-logo-placeholder{width:74px;height:74px;flex:0 0 74px}
+.home-game-logo{
+  display:block;
+  max-width:74px;
+  max-height:74px;
+  object-fit:contain!important;
+  object-position:center!important;
+  filter:drop-shadow(0 0 1px rgba(255,255,255,.48)) drop-shadow(0 7px 13px rgba(0,0,0,.38));
+}
 .home-game-logo-placeholder{
   display:grid;
   place-items:center;
-  border:1px solid rgba(225,233,241,.25);
-  background:rgba(6,16,27,.62);
-  color:rgba(231,238,245,.54);
-  font-size:.65rem;
+  border:1px solid rgba(238,245,252,.32);
+  background:rgba(255,255,255,.05);
+  color:rgba(255,255,255,.90);
+  font-size:.72rem;
   font-weight:950;
   letter-spacing:.06em;
+  text-shadow:0 1px 8px rgba(0,0,0,.55);
 }
+
 .home-game-center{display:grid;justify-items:center;gap:6px;text-align:center;position:relative;z-index:2}
 .home-game-score{
   display:grid;
@@ -285,7 +280,8 @@
   .fixtures-section .fixture-list article.home-game-card,
   .fixtures-section .fixture-list article.home-game-card:hover{grid-template-columns:92px minmax(0,1fr) 150px!important;gap:14px!important;padding:15px 16px!important}
   .home-game-matchup{grid-template-columns:minmax(125px,1fr) 104px minmax(125px,1fr);gap:10px}
-  .home-game-logo,.home-game-logo-placeholder{width:56px;height:56px;flex-basis:56px}
+  .home-game-logo,.home-game-logo-placeholder{width:64px;height:64px;flex-basis:64px}
+  .home-game-logo{max-width:64px;max-height:64px}
   .home-game-team{gap:9px}.home-game-team strong{font-size:.68rem}
   .home-game-score{font-size:2rem}
 }
@@ -305,10 +301,11 @@
   .home-game-team{flex-direction:column;gap:7px;text-align:center}
   .home-game-team.right{flex-direction:column-reverse;text-align:center}
   .home-game-team strong{font-size:.62rem}
-  .home-game-logo,.home-game-logo-placeholder{width:54px;height:54px;flex-basis:54px}
+  .home-game-logo,.home-game-logo-placeholder{width:62px;height:62px;flex-basis:62px}
+  .home-game-logo{max-width:62px;max-height:62px}
   .home-game-venue{grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:12px 0 0;border-left:0;border-top:1px solid rgba(224,234,243,.16)}
   .home-game-venue span{margin:0}
-  .home-game-card:before{opacity:.72;background-size:145% 100%,100% 100%,100% 7px,100% 7px,100% 100%}
+  .home-game-card:before{opacity:.55}
 }
 
 @media(max-width:560px){
@@ -318,11 +315,12 @@
   .fixtures-section .season-stat{flex:0 0 auto}
   .home-schedule-list{gap:11px}
   .home-game-matchup{grid-template-columns:minmax(0,1fr) 74px minmax(0,1fr)}
-  .home-game-logo,.home-game-logo-placeholder{width:48px;height:48px;flex-basis:48px}
+  .home-game-logo,.home-game-logo-placeholder{width:55px;height:55px;flex-basis:55px}
+  .home-game-logo{max-width:55px;max-height:55px}
   .home-game-team strong{font-size:.56rem}
   .home-game-score{font-size:1.7rem}.home-game-score b{font-size:1rem}
   .home-game-meta time strong{font-size:1rem}.home-game-meta time small{font-size:.47rem}
   .home-game-venue span{display:none}
   .home-schedule-footer{align-items:flex-start;flex-direction:column;gap:10px}
-  .home-game-card:before{opacity:.55;background-image:repeating-linear-gradient(90deg,transparent 0 38px,rgba(185,208,226,.14) 38px 39px,transparent 39px 49px),repeating-linear-gradient(90deg,transparent 0 34px,rgba(190,213,232,.14) 34px 35px,transparent 35px 49px),repeating-linear-gradient(90deg,transparent 0 34px,rgba(190,213,232,.10) 34px 35px,transparent 35px 49px)}
+  .home-game-card:before{opacity:.45}
 }
