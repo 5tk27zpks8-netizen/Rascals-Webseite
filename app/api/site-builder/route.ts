@@ -30,6 +30,31 @@ function isMainWebsiteEditor(request: Request) {
 
 function clone<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T; }
 
+function normalizeEditableBackgroundMedia(input: SiteBuilderState): SiteBuilderState {
+  const state = clone(input);
+  for (const page of state.pages) {
+    for (const section of page.sections) {
+      const legacyHero = section.type === "hero" && section.variant === "legacy-home";
+      const legacyJoin = section.type === "cta" && section.variant === "legacy-join";
+      if ((!legacyHero && !legacyJoin) || !section.image) continue;
+
+      const mode = section.style.backgroundMode || "color";
+      const background = (section.style.background || "").toLowerCase();
+      const stillLegacyDefault = legacyHero ? background === "#050d18" : background === "#020810";
+
+      // Older Rascals drafts stored the full-bleed hero/CTA image in section.image
+      // while the inspector incorrectly reported backgroundMode="color". Migrate
+      // only that legacy default state. Once a user intentionally selects a color,
+      // backgroundImage remains populated so future loads respect the chosen mode.
+      if (!section.style.backgroundImage && (mode === "image" || (mode === "color" && stillLegacyDefault))) {
+        section.style.backgroundImage = section.image;
+        section.style.backgroundMode = "image";
+      }
+    }
+  }
+  return state;
+}
+
 function legacyHomeSections(template: BuilderPage): BuilderSection[] {
   const byId = new Map(template.sections.map((section) => [section.id, clone(section)]));
   const hero = byId.get("seed-home-hero")!;
@@ -38,6 +63,8 @@ function legacyHomeSections(template: BuilderPage): BuilderSection[] {
   hero.style.minHeight = 660;
   hero.style.paddingTop = 0;
   hero.style.paddingBottom = 0;
+  hero.style.backgroundMode = "image";
+  hero.style.backgroundImage = hero.image || "";
 
   const stats = byId.get("seed-home-stats")!;
   stats.variant = "legacy-strip";
@@ -110,6 +137,8 @@ function legacyHomeSections(template: BuilderPage): BuilderSection[] {
   cta.style.minHeight = 620;
   cta.style.paddingTop = 0;
   cta.style.paddingBottom = 0;
+  cta.style.backgroundMode = "image";
+  cta.style.backgroundImage = cta.image;
 
   return [hero, stats, games, story, shop, news, sponsors, cta];
 }
@@ -160,7 +189,8 @@ export async function GET(request: Request) {
   const [draft, published] = await Promise.all([readSiteBuilderState(), readPublishedSiteBuilderState()]);
   const editorStartsFromLive = isMainWebsiteEditor(request);
   const firstStudioOpen = editorStartsFromLive && draft.editorInitialized !== true;
-  const state = firstStudioOpen ? liveEditorState(published, draft) : draft;
+  const rawState = firstStudioOpen ? liveEditorState(published, draft) : draft;
+  const state = normalizeEditableBackgroundMedia(rawState);
 
   return Response.json({
     state,
