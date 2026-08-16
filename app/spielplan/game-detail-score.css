@@ -1,0 +1,118 @@
+/* Game detail scoreboard: logos sit on the outside, score is locked to the true center. */
+.schedule-page .live-score{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:28px;
+  padding:24px 4px;
+}
+
+.schedule-page .live-score-team{
+  display:flex;
+  align-items:center;
+  min-width:0;
+  gap:16px;
+}
+
+.schedule-page .live-score-team-left{
+  justify-content:flex-start;
+  text-align:left;
+}
+
+.schedule-page .live-score-team-right{
+  justify-content:flex-end;
+  text-align:right;
+}
+
+.schedule-page .live-score-team .detail-game-logo,
+.schedule-page .live-score-team .full-schedule-logo-placeholder{
+  width:62px!important;
+  height:62px!important;
+  flex:0 0 62px!important;
+  object-fit:contain;
+}
+
+.schedule-page .live-score-team b{
+  min-width:0;
+  color:#fff;
+  font-size:1rem;
+  font-weight:950;
+  line-height:1.1;
+  text-transform:uppercase;
+}
+
+.schedule-page .live-score-center{
+  display:grid;
+  grid-template-columns:minmax(56px,auto) auto minmax(56px,auto);
+  align-items:center;
+  justify-content:center;
+  gap:13px;
+  min-width:190px;
+  color:#fff;
+  font-variant-numeric:tabular-nums;
+  text-align:center;
+}
+
+.schedule-page .live-score-center strong{
+  min-width:56px;
+  font-size:3.35rem;
+  font-weight:1000;
+  line-height:.9;
+  letter-spacing:-.055em;
+}
+
+.schedule-page .live-score-center span{
+  color:#e72835;
+  font-size:1.8rem;
+  font-weight:950;
+  line-height:1;
+}
+
+@media(max-width:760px){
+  .schedule-page .live-score{
+    grid-template-columns:minmax(0,1fr) 112px minmax(0,1fr);
+    gap:10px;
+    padding:20px 0;
+  }
+  .schedule-page .live-score-team{
+    flex-direction:column;
+    justify-content:center;
+    gap:8px;
+    text-align:center;
+  }
+  .schedule-page .live-score-team-right{
+    flex-direction:column-reverse;
+  }
+  .schedule-page .live-score-team .detail-game-logo,
+  .schedule-page .live-score-team .full-schedule-logo-placeholder{
+    width:52px!important;
+    height:52px!important;
+    flex-basis:52px!important;
+  }
+  .schedule-page .live-score-team b{font-size:.7rem}
+  .schedule-page .live-score-center{
+    grid-template-columns:1fr auto 1fr;
+    min-width:0;
+    gap:6px;
+  }
+  .schedule-page .live-score-center strong{
+    min-width:0;
+    font-size:2.25rem;
+  }
+  .schedule-page .live-score-center span{font-size:1.2rem}
+}
+
+@media(max-width:460px){
+  .schedule-page .live-score{
+    grid-template-columns:minmax(0,1fr) 86px minmax(0,1fr);
+    gap:6px;
+  }
+  .schedule-page .live-score-team .detail-game-logo,
+  .schedule-page .live-score-team .full-schedule-logo-placeholder{
+    width:44px!important;
+    height:44px!important;
+    flex-basis:44px!important;
+  }
+  .schedule-page .live-score-team b{font-size:.6rem}
+  .schedule-page .live-score-center strong{font-size:1.85rem}
+}
