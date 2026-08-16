@@ -1,4 +1,5 @@
 import type { BuilderPage, BuilderSectionStyle, BuilderSectionType, BuilderTheme, SiteBuilderState } from "./site-builder";
+import { applyLayoutPreset, layoutPresets, type LayoutPresetId } from "./layout-presets";
 
 export type DesignPreset = {
   id: string;
@@ -12,82 +13,78 @@ export type DesignPreset = {
   byType: Partial<Record<BuilderSectionType, Partial<BuilderSectionStyle>>>;
   variants?: Partial<Record<BuilderSectionType, string>>;
   sectionStyles?: Array<{ type: BuilderSectionType; variant?: string; style: BuilderSectionStyle }>;
+  layoutId?: LayoutPresetId;
   createdAt?: string;
 };
 
-const darkBase: Partial<BuilderSectionStyle> = {
-  background: "#050d18", textColor: "#ffffff", accentColor: "#e7192d", paddingTop: 72, paddingBottom: 72,
-  maxWidth: 1600, rounded: 0, border: "", headingScale: 1,
-};
+const base = (background:string,textColor:string,accentColor:string):Partial<BuilderSectionStyle> => ({
+  background,textColor,accentColor,paddingTop:76,paddingBottom:76,maxWidth:1600,rounded:0,border:"",headingScale:1,
+});
 
 export const builtInDesignPresets: DesignPreset[] = [
   {
-    id:"rascals-original",name:"Rascals Standard",description:"Das ursprüngliche Rascals Webseiten-Design: dunkler Hero und Spielplan, helle Editorial-Bereiche, Weißraum und klare rote Akzente.",category:"premium",builtin:true,
-    palette:["#050d18","#f4f4f1","#e7192d","#ffffff"],
+    id:"rascals-standard",name:"Rascals Standard",layoutId:"original",builtin:true,category:"premium",
+    description:"Das aktuelle Rascals Originaldesign – dunkler Hero, rote kompakte Zahlenleiste, dunkler Spielplan und helle Editorial-Bereiche.",
+    palette:["#050d18","#e7192d","#ffffff","#f4f4f1"],
     theme:{background:"#ffffff",surface:"#f4f4f1",text:"#071421",muted:"#667386",accent:"#e7192d",headerBackground:"#050d18",headerText:"#ffffff",contentWidth:1600,radius:0,headingWeight:950,headingTracking:-.045,headingTransform:"uppercase",bodyLineHeight:1.65},
     defaults:{textColor:"#071421",accentColor:"#e7192d",paddingTop:78,paddingBottom:78,maxWidth:1600,rounded:0,border:"",headingScale:1},
-    variants:{hero:"cinematic",text:"editorial",split:"image-left",stats:"strip",cards:"editorial",gallery:"masonry",timeline:"drive",games:"scoreboard",news:"editorial",sponsors:"ticker",cta:"panel"},
+    variants:{hero:"cinematic",stats:"strip",games:"scoreboard",split:"image-left",news:"editorial",sponsors:"ticker",cta:"panel",gallery:"masonry",timeline:"drive",cards:"editorial",text:"editorial"},
     byType:{
       hero:{background:"#050d18",textColor:"#ffffff",accentColor:"#e7192d",minHeight:650,paddingTop:92,paddingBottom:92,align:"left"},
-      text:{background:"#ffffff",textColor:"#071421",paddingTop:92,paddingBottom:92},
-      split:{background:"#ffffff",textColor:"#071421",paddingTop:0,paddingBottom:0},
-      stats:{background:"#071421",textColor:"#ffffff",accentColor:"#e7192d",align:"center",paddingTop:54,paddingBottom:54},
-      cards:{background:"#ffffff",textColor:"#071421",paddingTop:86,paddingBottom:86},
-      gallery:{background:"#050d18",textColor:"#ffffff",paddingTop:82,paddingBottom:82},
-      timeline:{background:"#030a13",textColor:"#ffffff",accentColor:"#e7192d",align:"center",paddingTop:82,paddingBottom:96},
+      stats:{background:"#e7192d",textColor:"#ffffff",accentColor:"#ffffff",paddingTop:18,paddingBottom:18,align:"center",maxWidth:1920},
       games:{background:"#050d18",textColor:"#ffffff",accentColor:"#e7192d",paddingTop:76,paddingBottom:76},
+      split:{background:"#ffffff",textColor:"#071421",paddingTop:0,paddingBottom:0},
       news:{background:"#f4f4f1",textColor:"#071421",accentColor:"#e7192d",paddingTop:82,paddingBottom:82},
       sponsors:{background:"#ffffff",textColor:"#071421",align:"center",paddingTop:62,paddingBottom:62},
       cta:{background:"#071421",textColor:"#ffffff",accentColor:"#e7192d",align:"center",minHeight:390,paddingTop:78,paddingBottom:78},
+      gallery:{background:"#050d18",textColor:"#ffffff"},timeline:{background:"#030a13",textColor:"#ffffff",accentColor:"#e7192d",align:"center"},cards:{background:"#ffffff",textColor:"#071421"},text:{background:"#ffffff",textColor:"#071421"},
     },
   },
   {
-    id:"rascals-dark",name:"Rascals Dark",description:"Das klare Rascals Standarddesign: Navy, Weiß und Rot mit sportlicher Typografie.",category:"dark",builtin:true,
-    palette:["#050d18","#0b1725","#e7192d","#ffffff"],
-    theme:{background:"#050d18",surface:"#0b1725",text:"#ffffff",muted:"#9aa7b7",accent:"#e7192d",headerBackground:"#050d18",headerText:"#ffffff",radius:0,headingWeight:950,headingTracking:-.04,headingTransform:"uppercase"},
-    defaults:darkBase,
-    variants:{hero:"cinematic",text:"editorial",split:"image-left",stats:"strip",cards:"grid",gallery:"masonry",timeline:"drive",games:"scoreboard",news:"editorial",sponsors:"ticker",cta:"panel"},
-    byType:{hero:{background:"#050d18",textColor:"#ffffff",minHeight:600,paddingTop:86,paddingBottom:86},text:{background:"#ffffff",textColor:"#071421",paddingTop:84,paddingBottom:84},split:{background:"#ffffff",textColor:"#071421",paddingTop:0,paddingBottom:0},stats:{background:"#071421",textColor:"#ffffff",align:"center"},timeline:{background:"#030a13",textColor:"#ffffff",align:"center",paddingTop:82,paddingBottom:92},games:{background:"#050d18",textColor:"#ffffff"},news:{background:"#f4f4f1",textColor:"#071421"},sponsors:{background:"#ffffff",textColor:"#071421",align:"center"},cta:{background:"#071421",textColor:"#ffffff",align:"center",minHeight:360}},
+    id:"rascals-classic",name:"Klassik",layoutId:"classic",builtin:true,category:"light",
+    description:"Eine klassische, vertraute Vereinswebsite: heller Aufbau, klare Inhaltsblöcke, ruhige Navigation und traditionelle Seitenführung.",
+    palette:["#ffffff","#f3f5f7","#18263a","#b51d2c"],
+    theme:{background:"#ffffff",surface:"#f3f5f7",text:"#18263a",muted:"#657184",accent:"#b51d2c",headerBackground:"#ffffff",headerText:"#18263a",contentWidth:1320,radius:8,headingWeight:800,headingTracking:-.02,headingTransform:"none",bodyLineHeight:1.7},
+    defaults:{...base("#ffffff","#18263a","#b51d2c"),paddingTop:72,paddingBottom:72,maxWidth:1320,rounded:8,border:"#e2e7ec"},
+    variants:{hero:"split",split:"image-right",text:"default",games:"clean",stats:"strip",cards:"compact",news:"clean",gallery:"grid",sponsors:"clean",cta:"default",timeline:"compact"},
+    byType:{
+      hero:{background:"#f3f5f7",textColor:"#18263a",minHeight:520,paddingTop:64,paddingBottom:64},
+      split:{background:"#ffffff",textColor:"#18263a",paddingTop:56,paddingBottom:56},text:{background:"#ffffff",textColor:"#18263a"},
+      games:{background:"#f3f5f7",textColor:"#18263a",accentColor:"#b51d2c",paddingTop:64,paddingBottom:64},
+      stats:{background:"#18263a",textColor:"#ffffff",accentColor:"#ffffff",paddingTop:30,paddingBottom:30},
+      cards:{background:"#ffffff",textColor:"#18263a"},news:{background:"#ffffff",textColor:"#18263a"},gallery:{background:"#f3f5f7",textColor:"#18263a"},
+      sponsors:{background:"#ffffff",textColor:"#18263a",align:"center"},cta:{background:"#b51d2c",textColor:"#ffffff",accentColor:"#ffffff",align:"center",minHeight:280},timeline:{background:"#f3f5f7",textColor:"#18263a",accentColor:"#b51d2c"},
+    },
   },
   {
-    id:"stadium-night",name:"Stadium Night",description:"Dunkler, kontrastreicher Game-Night-Look mit viel Tiefe und starken roten Akzenten.",category:"sport",builtin:true,
-    palette:["#02060b","#09111b","#d41224","#dfe6ee"],
-    theme:{background:"#02060b",surface:"#09111b",text:"#f8fafc",muted:"#8492a3",accent:"#d41224",headerBackground:"#02060b",headerText:"#ffffff",radius:0,headingWeight:950,headingTracking:-.055,headingTransform:"uppercase"},
-    defaults:{...darkBase,background:"#02060b",accentColor:"#d41224",paddingTop:82,paddingBottom:82},
-    variants:{hero:"centered",text:"editorial",split:"image-right",stats:"bold",cards:"bold",gallery:"cinematic",timeline:"drive",games:"scoreboard",news:"editorial",sponsors:"ticker",cta:"banner"},
-    byType:{hero:{background:"#02060b",minHeight:660,paddingTop:100,paddingBottom:100},text:{background:"#07101a",textColor:"#f8fafc"},split:{background:"#09111b",textColor:"#f8fafc",paddingTop:0,paddingBottom:0},stats:{background:"#0b1520",align:"center"},cards:{background:"#050b12"},gallery:{background:"#02060b"},timeline:{background:"#02060b",align:"center",paddingTop:90,paddingBottom:100},games:{background:"#02060b"},news:{background:"#07101a",textColor:"#ffffff"},sponsors:{background:"#09111b",textColor:"#ffffff",align:"center"},cta:{background:"#0b1520",align:"center",minHeight:390}},
+    id:"rascals-performance",name:"Performance",layoutId:"performance",builtin:true,category:"sport",
+    description:"Ein komplett neuer Pro-Team-Look: tiefes Navy, elektrische Akzente, große KPIs, starke Bildflächen und ein Performance-Dashboard-Gefühl.",
+    palette:["#020814","#0b1730","#ff263d","#7bdcff"],
+    theme:{background:"#020814",surface:"#0b1730",text:"#f6f9ff",muted:"#8ea1bb",accent:"#ff263d",headerBackground:"#020814",headerText:"#ffffff",contentWidth:1500,radius:18,headingWeight:1000,headingTracking:-.055,headingTransform:"uppercase",bodyLineHeight:1.55},
+    defaults:{...base("#071122","#f6f9ff","#ff263d"),paddingTop:86,paddingBottom:86,maxWidth:1500,rounded:18,border:"rgba(123,220,255,.14)"},
+    variants:{hero:"centered",stats:"bold",games:"scoreboard",cards:"bold",gallery:"cinematic",split:"image-left",timeline:"vertical",cta:"banner",news:"clean",sponsors:"ticker",text:"centered"},
+    byType:{
+      hero:{background:"#020814",textColor:"#ffffff",accentColor:"#ff263d",minHeight:720,paddingTop:110,paddingBottom:110,align:"center"},
+      stats:{background:"#ff263d",textColor:"#ffffff",accentColor:"#ffffff",paddingTop:46,paddingBottom:46,align:"center"},
+      games:{background:"#071122",textColor:"#ffffff",accentColor:"#7bdcff",paddingTop:78,paddingBottom:78},cards:{background:"#020814",textColor:"#ffffff",accentColor:"#ff263d"},
+      gallery:{background:"#020814",textColor:"#ffffff"},split:{background:"#0b1730",textColor:"#ffffff",paddingTop:0,paddingBottom:0},timeline:{background:"#020814",textColor:"#ffffff",accentColor:"#7bdcff"},
+      cta:{background:"linear-gradient(135deg,#ff263d,#a70f27)",textColor:"#ffffff",accentColor:"#ffffff",align:"center",minHeight:330},news:{background:"#0b1730",textColor:"#ffffff",accentColor:"#7bdcff"},sponsors:{background:"#ffffff",textColor:"#020814",align:"center"},text:{background:"#071122",textColor:"#ffffff",align:"center"},
+    },
   },
   {
-    id:"clean-white",name:"Clean White",description:"Heller, ruhiger Premium-Look mit viel Weißraum und Navy als Kontrast.",category:"light",builtin:true,
-    palette:["#f6f7f8","#ffffff","#071421","#b51d2c"],
-    theme:{background:"#f6f7f8",surface:"#ffffff",text:"#071421",muted:"#697586",accent:"#b51d2c",headerBackground:"#ffffff",headerText:"#071421",radius:0,headingWeight:850,headingTracking:-.025,headingTransform:"none"},
-    defaults:{background:"#ffffff",textColor:"#071421",accentColor:"#b51d2c",paddingTop:88,paddingBottom:88,maxWidth:1440,rounded:0,border:""},
-    variants:{hero:"split",text:"editorial",split:"image-left",stats:"cards",cards:"compact",gallery:"grid",timeline:"compact",games:"clean",news:"editorial",sponsors:"ticker",cta:"panel"},
-    byType:{hero:{background:"#071421",textColor:"#ffffff",minHeight:580,paddingTop:90,paddingBottom:90},text:{background:"#ffffff",textColor:"#071421"},split:{background:"#f6f7f8",textColor:"#071421",paddingTop:0,paddingBottom:0},stats:{background:"#ffffff",textColor:"#071421",align:"center"},cards:{background:"#f6f7f8",textColor:"#071421"},gallery:{background:"#ffffff",textColor:"#071421"},timeline:{background:"#071421",textColor:"#ffffff",align:"center"},games:{background:"#071421",textColor:"#ffffff"},news:{background:"#ffffff",textColor:"#071421"},sponsors:{background:"#f6f7f8",textColor:"#071421",align:"center"},cta:{background:"#071421",textColor:"#ffffff",align:"center",minHeight:340}},
-  },
-  {
-    id:"premium-navy",name:"Premium Navy",description:"Edler Club-Look mit tiefem Navy, weicheren Flächen und subtilen Rundungen.",category:"premium",builtin:true,
-    palette:["#10172c","#19233d","#9e210f","#f5f7fb"],
-    theme:{background:"#10172c",surface:"#19233d",text:"#f5f7fb",muted:"#a5afbf",accent:"#9e210f",headerBackground:"#10172c",headerText:"#ffffff",radius:16,headingWeight:900,headingTracking:-.035,headingTransform:"uppercase"},
-    defaults:{background:"#10172c",textColor:"#f5f7fb",accentColor:"#9e210f",paddingTop:82,paddingBottom:82,maxWidth:1500,rounded:16,border:"rgba(255,255,255,.08)"},
-    variants:{hero:"cinematic",text:"editorial",split:"image-right",stats:"cards",cards:"editorial",gallery:"masonry",timeline:"compact",games:"clean",news:"editorial",sponsors:"ticker",cta:"panel"},
-    byType:{hero:{rounded:0,border:"",minHeight:620,paddingTop:96,paddingBottom:96},text:{background:"#f5f7fb",textColor:"#10172c",rounded:0,border:""},split:{background:"#f5f7fb",textColor:"#10172c",paddingTop:0,paddingBottom:0,rounded:0,border:""},stats:{background:"#19233d",align:"center"},cards:{background:"#10172c"},timeline:{background:"#0c1325",align:"center",rounded:0,border:""},games:{background:"#10172c",rounded:0,border:""},news:{background:"#f5f7fb",textColor:"#10172c",rounded:0,border:""},sponsors:{background:"#ffffff",textColor:"#10172c",align:"center",rounded:0,border:""},cta:{background:"#19233d",align:"center",minHeight:380}},
-  },
-  {
-    id:"game-day",name:"Game Day",description:"Kompakter, aggressiver Sports-Look für Spieltage, Recruiting und Saisonseiten.",category:"sport",builtin:true,
-    palette:["#050505","#151515","#e7192d","#ffffff"],
-    theme:{background:"#050505",surface:"#151515",text:"#ffffff",muted:"#9b9b9b",accent:"#e7192d",headerBackground:"#050505",headerText:"#ffffff",radius:0,headingWeight:1000,headingTracking:-.06,headingTransform:"uppercase"},
-    defaults:{background:"#090909",textColor:"#ffffff",accentColor:"#e7192d",paddingTop:60,paddingBottom:60,maxWidth:1600,rounded:0,border:""},
-    variants:{hero:"centered",text:"editorial",split:"image-left",stats:"bold",cards:"bold",gallery:"cinematic",timeline:"drive",games:"scoreboard",news:"editorial",sponsors:"ticker",cta:"banner"},
-    byType:{hero:{background:"#050505",minHeight:640,paddingTop:86,paddingBottom:86},text:{background:"#111111"},split:{background:"#111111",paddingTop:0,paddingBottom:0},stats:{background:"#e7192d",textColor:"#ffffff",accentColor:"#ffffff",align:"center"},cards:{background:"#0b0b0b"},gallery:{background:"#050505"},timeline:{background:"#050505",align:"center"},games:{background:"#050505"},news:{background:"#111111",textColor:"#ffffff"},sponsors:{background:"#ffffff",textColor:"#111111",align:"center"},cta:{background:"#e7192d",textColor:"#ffffff",accentColor:"#ffffff",align:"center",minHeight:330}},
-  },
-  {
-    id:"minimal",name:"Minimal",description:"Sehr reduziertes Design mit klarer Hierarchie, wenig Dekoration und maximaler Lesbarkeit.",category:"light",builtin:true,
-    palette:["#ffffff","#f2f3f5","#111827","#9e210f"],
-    theme:{background:"#ffffff",surface:"#f2f3f5",text:"#111827",muted:"#6b7280",accent:"#9e210f",headerBackground:"#ffffff",headerText:"#111827",radius:0,contentWidth:1280,headingWeight:800,headingTracking:-.02,headingTransform:"none"},
-    defaults:{background:"#ffffff",textColor:"#111827",accentColor:"#9e210f",paddingTop:96,paddingBottom:96,maxWidth:1280,rounded:0,border:""},
-    variants:{hero:"minimal",text:"editorial",split:"image-left",stats:"strip",cards:"compact",gallery:"grid",timeline:"compact",games:"clean",news:"editorial",sponsors:"ticker",cta:"panel"},
-    byType:{hero:{background:"#111827",textColor:"#ffffff",minHeight:560,paddingTop:90,paddingBottom:90},text:{background:"#ffffff"},split:{background:"#f2f3f5",paddingTop:0,paddingBottom:0},stats:{background:"#ffffff",align:"center"},cards:{background:"#f2f3f5"},gallery:{background:"#ffffff"},timeline:{background:"#111827",textColor:"#ffffff",align:"center"},games:{background:"#111827",textColor:"#ffffff"},news:{background:"#ffffff"},sponsors:{background:"#f2f3f5",align:"center"},cta:{background:"#111827",textColor:"#ffffff",align:"center",minHeight:340}},
+    id:"rascals-editorial",name:"Editorial",layoutId:"editorial",builtin:true,category:"premium",
+    description:"Eine völlig andere Sports-Magazine-Website: warme Editorial-Flächen, News zuerst, asymmetrische Inhalte und hochwertige Magazin-Typografie.",
+    palette:["#f1ede4","#151515","#9e210f","#ffffff"],
+    theme:{background:"#f1ede4",surface:"#ffffff",text:"#151515",muted:"#6d685f",accent:"#9e210f",headerBackground:"#151515",headerText:"#ffffff",contentWidth:1420,radius:0,headingWeight:850,headingTracking:-.035,headingTransform:"none",bodyLineHeight:1.75},
+    defaults:{...base("#f1ede4","#151515","#9e210f"),paddingTop:96,paddingBottom:96,maxWidth:1420,rounded:0,border:""},
+    variants:{news:"editorial",hero:"minimal",split:"editorial",gallery:"masonry",games:"clean",text:"editorial",stats:"cards",timeline:"compact",cards:"editorial",sponsors:"clean",cta:"panel"},
+    byType:{
+      news:{background:"#f1ede4",textColor:"#151515",accentColor:"#9e210f",paddingTop:92,paddingBottom:92},
+      hero:{background:"#151515",textColor:"#ffffff",accentColor:"#9e210f",minHeight:560,paddingTop:88,paddingBottom:88},
+      split:{background:"#ffffff",textColor:"#151515",paddingTop:70,paddingBottom:70},gallery:{background:"#151515",textColor:"#ffffff",paddingTop:86,paddingBottom:86},
+      games:{background:"#ffffff",textColor:"#151515",accentColor:"#9e210f"},text:{background:"#f1ede4",textColor:"#151515"},stats:{background:"#ffffff",textColor:"#151515",accentColor:"#9e210f"},
+      timeline:{background:"#151515",textColor:"#ffffff",accentColor:"#9e210f"},cards:{background:"#f1ede4",textColor:"#151515"},sponsors:{background:"#ffffff",textColor:"#151515",align:"center"},cta:{background:"#9e210f",textColor:"#ffffff",accentColor:"#ffffff",align:"left",minHeight:320},
+    },
   },
 ];
 
@@ -96,6 +93,8 @@ function cloneStyle(style: BuilderSectionStyle): BuilderSectionStyle {
 }
 
 export function applyDesignPreset(state: SiteBuilderState, pageId: string, preset: DesignPreset): SiteBuilderState {
+  const layout = preset.layoutId ? layoutPresets.find(item => item.id === preset.layoutId) : undefined;
+  const arranged = layout ? applyLayoutPreset(state, pageId, layout) : state;
   const sequenceCounters = new Map<BuilderSectionType, number>();
   const sectionPools = new Map<BuilderSectionType, Array<{variant?:string;style:BuilderSectionStyle}>>();
   for (const entry of preset.sectionStyles || []) {
@@ -103,8 +102,7 @@ export function applyDesignPreset(state: SiteBuilderState, pageId: string, prese
     pool.push({ variant: entry.variant, style: entry.style });
     sectionPools.set(entry.type, pool);
   }
-
-  const pages = state.pages.map((page) => {
+  const pages = arranged.pages.map((page) => {
     if (page.id !== pageId) return page;
     const sections = page.sections.map((section) => {
       const index = sequenceCounters.get(section.type) || 0;
@@ -120,8 +118,7 @@ export function applyDesignPreset(state: SiteBuilderState, pageId: string, prese
     });
     return { ...page, sections };
   });
-
-  return { ...state, theme: { ...state.theme, ...preset.theme }, pages };
+  return { ...arranged, theme: { ...arranged.theme, ...preset.theme }, pages };
 }
 
 export function capturePageDesign(state: SiteBuilderState, page: BuilderPage, id: string, name: string, description = "Eigenes gespeichertes Design"): DesignPreset {
