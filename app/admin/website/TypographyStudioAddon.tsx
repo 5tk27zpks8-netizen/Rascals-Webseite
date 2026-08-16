@@ -1,58 +1,93 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { SiteBuilderState } from "../../lib/site-builder";
 import "./typography-studio.css";
 
-type ExtendedTheme = SiteBuilderState["theme"] & {
-  bodyFontSize?: number;
-  bodyFontWeight?: number;
-  bodyItalic?: boolean;
-  bodyLetterSpacing?: number;
-  headingItalic?: boolean;
-};
-
 const fontStyles = [
   { label: "Modern", heading: "Inter, Arial, sans-serif", body: "Inter, Arial, sans-serif" },
-  { label: "Athletic", heading: "Impact, Arial, sans-serif", body: "Trebuchet MS, Arial, sans-serif" },
-  { label: "Condensed", heading: "Arial Narrow, Arial, sans-serif", body: "Arial Narrow, Arial, sans-serif" },
+  { label: "Athletic", heading: '"Arial Black", Arial, sans-serif', body: '"Trebuchet MS", Arial, sans-serif' },
+  { label: "Condensed", heading: '"Arial Narrow", Arial, sans-serif', body: '"Arial Narrow", Arial, sans-serif' },
   { label: "Editorial", heading: "Georgia, serif", body: "Georgia, serif" },
-  { label: "Classic", heading: "Trebuchet MS, Arial, sans-serif", body: "Arial, sans-serif" },
-];
+  { label: "Classic", heading: '"Trebuchet MS", Arial, sans-serif', body: "Arial, sans-serif" },
+] as const;
+
+type ThemePatch = Partial<SiteBuilderState["theme"]>;
+
+function reloadMirror() {
+  const frame = document.querySelector<HTMLIFrameElement>(".wb-live-mirror-frame");
+  if (!frame) return;
+  try {
+    const url = new URL(frame.src, window.location.origin);
+    url.searchParams.set("studio_mirror", "1");
+    url.searchParams.set("studio_refresh", String(Date.now()));
+    frame.src = `${url.pathname}${url.search}`;
+  } catch {
+    frame.contentWindow?.location.reload();
+  }
+}
 
 export function TypographyStudioAddon() {
-  const [state, setState] = useState<SiteBuilderState | null>(null);
+  const [mount, setMount] = useState<HTMLElement | null>(null);
+  const [theme, setTheme] = useState<SiteBuilderState["theme"] | null>(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch("/admin/api/site-builder").then(r => r.ok ? r.json() : null).then(body => body?.state && setState(body.state));
+    const syncMount = () => setMount(document.querySelector<HTMLElement>(".wb-inspector"));
+    syncMount();
+    const observer = new MutationObserver(syncMount);
+    observer.observe(document.body, { childList: true, subtree: true });
+    fetch("/admin/api/site-builder").then(r => r.ok ? r.json() : null).then(body => body?.state?.theme && setTheme(body.state.theme));
+    return () => observer.disconnect();
   }, []);
 
-  if (!state) return null;
-  const theme = state.theme as ExtendedTheme;
-  const patch = (change: Partial<ExtendedTheme>) => setState({ ...state, theme: { ...state.theme, ...change } as SiteBuilderState["theme"] });
-
-  async function save() {
+  async function apply(patch: ThemePatch) {
+    if (!theme || saving) return;
+    const optimistic = { ...theme, ...patch };
+    setTheme(optimistic);
     setSaving(true);
-    const response = await fetch("/admin/api/site-builder", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(state) });
-    setSaving(false);
-    if (response.ok) window.location.reload();
+    try {
+      // Always merge into the newest saved draft so typography changes never
+      // overwrite content/design edits made elsewhere in the inspector.
+      const latestResponse = await fetch("/admin/api/site-builder", { cache: "no-store" });
+      if (!latestResponse.ok) return;
+      const latestBody = await latestResponse.json() as { state: SiteBuilderState };
+      const next: SiteBuilderState = { ...latestBody.state, theme: { ...latestBody.state.theme, ...patch } };
+      const saveResponse = await fetch("/admin/api/site-builder", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(next),
+      });
+      if (saveResponse.ok) {
+        const saved = await saveResponse.json() as { state?: SiteBuilderState };
+        if (saved.state?.theme) setTheme(saved.state.theme);
+        reloadMirror();
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const previewCss = `.wb-canvas{--site-body-font:${theme.bodyFont};--site-heading-font:${theme.headingFont};--builder-body-size:${theme.bodyFontSize ?? 16}px;--builder-body-weight:${theme.bodyFontWeight ?? 400};--builder-body-style:${theme.bodyItalic ? "italic" : "normal"};--builder-body-tracking:${theme.bodyLetterSpacing ?? 0}em;--builder-heading-style:${theme.headingItalic ? "italic" : "normal"}}.wb-canvas .sb-section p,.wb-canvas .sb-native-section p,.wb-canvas .sb-cards p,.wb-canvas .sb-timeline p,.wb-canvas .sb-gallery figcaption span{font-family:var(--site-body-font)!important;font-size:var(--builder-body-size)!important;font-weight:var(--builder-body-weight)!important;font-style:var(--builder-body-style)!important;letter-spacing:var(--builder-body-tracking)!important}.wb-canvas .sb-section h1,.wb-canvas .sb-section h2,.wb-canvas .sb-section h3,.wb-canvas .sb-native-section h1,.wb-canvas .sb-native-section h2,.wb-canvas .sb-native-section h3{font-family:var(--site-heading-font)!important;font-style:var(--builder-heading-style)!important}`;
+  if (!mount || !theme) return null;
 
-  return <><style>{previewCss}</style><section className="type-studio">
-    <button className="type-studio-toggle" onClick={() => setOpen(!open)}><span><b>Aa · Text & Typografie</b><small>Schriftgröße, Fett, Kursiv und Schriftstile</small></span><em>{open ? "−" : "+"}</em></button>
-    {open && <div className="type-studio-body">
-      <div className="type-style-grid">{fontStyles.map(item => <button key={item.label} onClick={() => patch({ headingFont: item.heading, bodyFont: item.body })}><b style={{fontFamily:item.heading}}>Aa</b><span>{item.label}</span></button>)}</div>
-      <div className="type-controls">
-        <label><span>Textgröße</span><input type="range" min={12} max={28} value={theme.bodyFontSize ?? 16} onChange={e => patch({bodyFontSize:Number(e.target.value)})}/><strong>{theme.bodyFontSize ?? 16}px</strong></label>
-        <label><span>Textgewicht</span><select value={theme.bodyFontWeight ?? 400} onChange={e => patch({bodyFontWeight:Number(e.target.value)})}><option value={300}>Leicht</option><option value={400}>Normal</option><option value={500}>Medium</option><option value={600}>Semi Bold</option><option value={700}>Fett</option><option value={800}>Extra Fett</option></select></label>
-        <label><span>Buchstabenabstand</span><input type="range" min={-0.04} max={0.12} step={0.005} value={theme.bodyLetterSpacing ?? 0} onChange={e => patch({bodyLetterSpacing:Number(e.target.value)})}/><strong>{(theme.bodyLetterSpacing ?? 0).toFixed(3)}em</strong></label>
-        <div className="type-format"><button className={(theme.bodyFontWeight ?? 400)>=700?"active":""} onClick={() => patch({bodyFontWeight:(theme.bodyFontWeight ?? 400)>=700?400:700})}><b>B</b></button><button className={theme.bodyItalic?"active":""} onClick={() => patch({bodyItalic:!theme.bodyItalic})}><i>I</i></button><button className={theme.headingItalic?"active":""} onClick={() => patch({headingItalic:!theme.headingItalic})}><i>Headline</i></button></div>
-      </div>
-      <div className="type-studio-footer"><small>Headline-Größe bleibt je Abschnitt und Desktop/Tablet/Mobil separat einstellbar.</small><button onClick={() => void save()} disabled={saving}>{saving?"Speichert…":"Als Entwurf übernehmen"}</button></div>
-    </div>}
-  </section></>;
+  return createPortal(
+    <section className="type-studio type-studio-inline">
+      <button className="type-studio-toggle" onClick={() => setOpen(value => !value)}>
+        <span><b>Aa · Text & Typografie</b><small>Schriften und Textwirkung anpassen</small></span><em>{open ? "−" : "+"}</em>
+      </button>
+      {open && <div className="type-studio-body">
+        <div className="type-style-grid">{fontStyles.map(item => <button key={item.label} onClick={() => void apply({ headingFont: item.heading, bodyFont: item.body })}><b style={{fontFamily:item.heading}}>Aa</b><span>{item.label}</span></button>)}</div>
+        <div className="type-controls type-controls-inline">
+          <label><span>Headline Gewicht</span><select value={theme.headingWeight} onChange={e => void apply({headingWeight:Number(e.target.value)})}><option value={600}>Semi Bold</option><option value={700}>Fett</option><option value={800}>Extra Fett</option><option value={900}>Black</option><option value={950}>Rascals</option></select></label>
+          <label><span>Buchstabenabstand</span><input type="range" min={-0.12} max={0.12} step={0.005} value={theme.headingTracking} onChange={e => void apply({headingTracking:Number(e.target.value)})}/><strong>{theme.headingTracking.toFixed(3)}em</strong></label>
+          <label><span>Text Zeilenhöhe</span><input type="range" min={1} max={2.2} step={0.05} value={theme.bodyLineHeight} onChange={e => void apply({bodyLineHeight:Number(e.target.value)})}/><strong>{theme.bodyLineHeight.toFixed(2)}</strong></label>
+          <div className="type-format"><button className={theme.headingTransform==="uppercase"?"active":""} onClick={() => void apply({headingTransform:theme.headingTransform==="uppercase"?"none":"uppercase"})}>AA</button></div>
+        </div>
+        <small className="type-studio-hint">Den konkreten Text bearbeitest du weiterhin direkt im ausgewählten Abschnitt. Die Headline-Größe bleibt im Tab „Design“ je Desktop/Tablet/Mobil einstellbar.</small>
+      </div>}
+    </section>,
+    mount,
+  );
 }
