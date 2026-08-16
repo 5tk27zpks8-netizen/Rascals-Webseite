@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import "./home-game-logos.css";
+import "./image-position.css";
 import { PublicAdminLogin } from "./PublicAdminLogin";
 
 export async function generateMetadata(): Promise<Metadata> {
