@@ -1,9 +1,11 @@
-import { defaultSiteBuilderState, readPublishedSiteBuilderState, readSiteBuilderState, writeSiteBuilderState, type BuilderPage, type SiteBuilderState } from "../../lib/site-builder";
+import { defaultSiteBuilderState, readPublishedSiteBuilderState, readSiteBuilderState, writeSiteBuilderState, type BuilderPage, type BuilderSection, type SiteBuilderState } from "../../lib/site-builder";
 import { appendSiteBuilderRevision } from "../../lib/site-builder-history";
 import { can, requireCmsPermission } from "../../lib/permissions";
 
 const reservedSlugs = new Set(["admin", "api", "spielplan"]);
 const legacySlugs = new Set(["", "ueber-uns", "team", "sponsoring", "shop", "news", "galerie"]);
+const shopUrl = "https://hellenstein-rascals.myshopify.com";
+const productUrl = `${shopUrl}/products/puli`;
 
 function validateState(state: SiteBuilderState) {
   if (!state || !Array.isArray(state.pages) || !state.pages.length) return "Mindestens eine Seite ist erforderlich.";
@@ -30,32 +32,116 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function legacyHomeSections(template: BuilderPage): BuilderSection[] {
+  const byId = new Map(template.sections.map((section) => [section.id, clone(section)]));
+  const hero = byId.get("seed-home-hero")!;
+  hero.variant = "legacy-home";
+  hero.items = [{ id: "legacy-hero-secondary", title: "Spielplan 2026", linkLabel: "Spielplan 2026", linkUrl: "/spielplan" }];
+  hero.style.minHeight = 660;
+  hero.style.paddingTop = 0;
+  hero.style.paddingBottom = 0;
+
+  const stats = byId.get("seed-home-stats")!;
+  stats.variant = "legacy-strip";
+  stats.eyebrow = "";
+  stats.title = "";
+  stats.style.background = "#dc1726";
+  stats.style.textColor = "#ffffff";
+  stats.style.accentColor = "#ffffff";
+  stats.style.paddingTop = 0;
+  stats.style.paddingBottom = 0;
+
+  const games = byId.get("seed-home-games")!;
+  games.variant = "legacy-games";
+  games.eyebrow = "SAISON 2026";
+  games.title = "NÄCHSTE GAMES.";
+  games.text = "Bestätigte Begegnungen der Rascals in der Kreisoberliga.";
+  games.style.background = "#f2f3ef";
+  games.style.textColor = "#07172b";
+  games.style.paddingTop = 128;
+  games.style.paddingBottom = 128;
+
+  const story = byId.get("seed-home-story")!;
+  story.variant = "legacy-story";
+  story.text = "Seit 2023 bringen wir American Football zurück unter den Hellenstein. Bei uns zählen Einsatz, Fairness und der Mensch unter dem Helm.";
+  story.items = [{ id: "legacy-story-p2", text: "Ob Rookie oder Veteran: Wer für das Team alles gibt, gehört dazu." }];
+  story.style.paddingTop = 0;
+  story.style.paddingBottom = 0;
+
+  const shop: BuilderSection = {
+    id: "seed-home-teamwear",
+    type: "cards",
+    variant: "legacy-shop",
+    visible: true,
+    eyebrow: "OFFICIAL TEAMWEAR",
+    title: "WEAR THE",
+    accent: "RASCALS.",
+    text: "Zeig deine Farben – auf der Tribüne, im Training und überall dazwischen. Direkt im offiziellen RASCALS-SHOP bestellen.",
+    buttonLabel: "Zum Rascals Shop",
+    buttonUrl: shopUrl,
+    image: "/shop-product-4k.webp",
+    style: {
+      ...clone(story.style),
+      background: "#07172b",
+      textColor: "#ffffff",
+      accentColor: "#dc1726",
+      paddingTop: 128,
+      paddingBottom: 128,
+    },
+    items: [
+      { id: "shop-main", eyebrow: "SHOP DROP · 01", title: "Puli", subtitle: "25,00 €", image: "/shop-product-4k.webp", linkLabel: "Puli", linkUrl: productUrl },
+      { id: "shop-detail", eyebrow: "DETAIL", title: "Teamwear", subtitle: "Shop ansehen", image: "/shop-product-4k.webp", linkLabel: "Shop ansehen", linkUrl: productUrl },
+      { id: "shop-online", eyebrow: "ONLINE", title: "Rascals Gear", subtitle: "Alle Artikel", image: "/shop-product-4k.webp", linkLabel: "Alle Artikel", linkUrl: shopUrl },
+    ],
+  };
+
+  const news = byId.get("seed-home-news")!;
+  news.variant = "legacy-news";
+  news.style.background = "#f2f3ef";
+  news.style.textColor = "#07172b";
+
+  const sponsors = byId.get("seed-home-sponsors")!;
+  sponsors.variant = "legacy-ticker";
+
+  const cta = byId.get("seed-home-cta")!;
+  cta.variant = "legacy-join";
+  cta.image = "/team-entry-4k.webp";
+  cta.style.background = "#020810";
+  cta.style.textColor = "#ffffff";
+  cta.style.minHeight = 620;
+  cta.style.paddingTop = 0;
+  cta.style.paddingBottom = 0;
+
+  return [hero, stats, games, story, shop, news, sponsors, cta];
+}
+
+function mirrorLegacyPage(template: BuilderPage): BuilderPage {
+  const next = clone(template);
+  if (next.slug === "") next.sections = legacyHomeSections(next);
+  return next;
+}
+
 /**
- * The public site still renders the historic/legacy Rascals page whenever a
- * corresponding builder page is not enabled. In that situation the editor must
- * not pretend that an old builder draft is the live website. Instead we seed the
- * editor with the protected Rascals Standard representation in the same page and
- * section order as the original site. Custom builder-only pages are preserved.
+ * The Website Studio must start from what visitors actually see. If a legacy
+ * route is live, we build its complete protected Rascals Standard equivalent
+ * here instead of showing an unrelated/older builder draft.
  */
 function liveEditorState(published: SiteBuilderState, draft: SiteBuilderState): SiteBuilderState {
   const home = published.pages.find((page) => page.slug === "");
   if (home?.enabled) return clone(published);
 
   const standard = clone(defaultSiteBuilderState);
-  const defaultBySlug = new Map(standard.pages.map((page) => [page.slug, page]));
   const publishedBySlug = new Map(published.pages.map((page) => [page.slug, page]));
   const draftBySlug = new Map(draft.pages.map((page) => [page.slug, page]));
 
-  const legacyPages = standard.pages.map((template) => {
+  const legacyPages = standard.pages.map((rawTemplate) => {
+    const template = mirrorLegacyPage(rawTemplate);
     const liveBuilderPage = publishedBySlug.get(template.slug);
     if (liveBuilderPage?.enabled) return clone(liveBuilderPage);
 
-    // Keep page-level metadata/navigation choices where possible, but use the
-    // original Rascals section structure and styling because that is what is
-    // actually visible on the public legacy route.
     const source = liveBuilderPage ?? draftBySlug.get(template.slug);
     return {
-      ...clone(template),
+      ...template,
       id: source?.id || template.id,
       name: source?.name || template.name,
       navLabel: source?.navLabel || template.navLabel,
@@ -70,21 +156,14 @@ function liveEditorState(published: SiteBuilderState, draft: SiteBuilderState): 
     .filter((page, index, all) => !legacySlugs.has(page.slug) && all.findIndex((item) => item.slug === page.slug) === index)
     .map(clone);
 
-  return {
-    ...standard,
-    pages: [...legacyPages, ...customPages],
-  };
+  return { ...standard, pages: [...legacyPages, ...customPages] };
 }
 
 export async function GET(request: Request) {
   const actor = await requireCmsPermission("website_edit");
   if (actor instanceof Response) return actor;
 
-  const [draft, published] = await Promise.all([
-    readSiteBuilderState(),
-    readPublishedSiteBuilderState(),
-  ]);
-
+  const [draft, published] = await Promise.all([readSiteBuilderState(), readPublishedSiteBuilderState()]);
   const editorStartsFromLive = isMainWebsiteEditor(request);
   const liveState = liveEditorState(published, draft);
 
