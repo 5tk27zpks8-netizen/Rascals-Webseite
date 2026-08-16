@@ -1,6 +1,5 @@
 import { defaultSiteBuilderState, readPublishedSiteBuilderState, readSiteBuilderState, writeSiteBuilderState, type BuilderPage, type BuilderSection, type SiteBuilderState } from "../../lib/site-builder";
 import { appendSiteBuilderRevision } from "../../lib/site-builder-history";
-import { reconcileSiteBuilderMedia } from "../../lib/site-builder-media";
 import { can, requireCmsPermission } from "../../lib/permissions";
 
 const reservedSlugs = new Set(["admin", "api", "spielplan"]);
@@ -187,8 +186,7 @@ export async function GET(request: Request) {
   const editorStartsFromLive = isMainWebsiteEditor(request);
   const firstStudioOpen = editorStartsFromLive && draft.editorInitialized !== true;
   const rawState = firstStudioOpen ? liveEditorState(published, draft) : draft;
-  const normalized = normalizeEditableBackgroundMedia(rawState);
-  const state = reconcileSiteBuilderMedia(undefined, normalized);
+  const state = normalizeEditableBackgroundMedia(rawState);
 
   return Response.json({
     state,
@@ -198,7 +196,7 @@ export async function GET(request: Request) {
     legacyLive: !published.pages.find((page) => page.slug === "")?.enabled,
     user: actor,
     permissions: { canPublish: can(actor, "website_publish"), canManageDesigns: can(actor, "design_manage") },
-  });
+  }, { headers: { "cache-control": "no-store" } });
 }
 
 export async function PUT(request: Request) {
@@ -212,9 +210,7 @@ export async function PUT(request: Request) {
   const error = validateState(state);
   if (error) return Response.json({ error }, { status: 400 });
 
-  const previous = await readSiteBuilderState();
-  const reconciled = reconcileSiteBuilderMedia(previous, state);
-  const saved = await writeSiteBuilderState(reconciled);
+  const saved = await writeSiteBuilderState(state);
   await appendSiteBuilderRevision(saved, actor, "draft");
-  return Response.json({ ok: true, state: saved, savedAt: new Date().toISOString(), savedBy: actor.email });
+  return Response.json({ ok: true, state: saved, savedAt: new Date().toISOString(), savedBy: actor.email }, { headers: { "cache-control": "no-store" } });
 }
