@@ -1,5 +1,6 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
 import { DesignManager } from "./DesignManager";
+import "./design-preview-modal.css";
 
 export const metadata = {
   title: "Designs · Rascals CMS",
