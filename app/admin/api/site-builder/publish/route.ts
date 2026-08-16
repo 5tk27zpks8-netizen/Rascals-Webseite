@@ -1,5 +1,6 @@
 import { publishSiteBuilderState, readSiteBuilderState, type SiteBuilderState } from "../../../../lib/site-builder";
 import { appendSiteBuilderRevision } from "../../../../lib/site-builder-history";
+import { reconcileSiteBuilderMedia } from "../../../../lib/site-builder-media";
 import { requireCmsPermission } from "../../../../lib/permissions";
 
 const reservedSlugs = new Set(["admin", "api", "spielplan"]);
@@ -18,24 +19,26 @@ export async function POST(request: Request) {
   const actor = await requireCmsPermission("website_publish");
   if (actor instanceof Response) return actor;
 
+  const previous = await readSiteBuilderState();
   let state: SiteBuilderState;
   try {
     const body = await request.json().catch(() => ({})) as { state?: SiteBuilderState };
-    state = body.state || await readSiteBuilderState();
+    state = body.state || previous;
   } catch {
-    state = await readSiteBuilderState();
+    state = previous;
   }
 
   const error = validate(state);
   if (error) return Response.json({ error }, { status: 400 });
 
+  const reconciled = reconcileSiteBuilderMedia(previous, state);
+
   // The public homepage only renders the builder when the homepage is enabled.
-  // Older builder drafts were seeded with enabled=false, so clicking Publish could
-  // successfully write the published state while the public site kept rendering
-  // the legacy homepage. Publishing now explicitly activates the builder homepage.
+  // Publishing explicitly activates the builder homepage while preserving the
+  // reconciled image state used by the studio preview.
   const publishable: SiteBuilderState = {
-    ...state,
-    pages: state.pages.map(page => page.slug === "" ? { ...page, enabled: true } : page),
+    ...reconciled,
+    pages: reconciled.pages.map(page => page.slug === "" ? { ...page, enabled: true } : page),
   };
 
   const published = await publishSiteBuilderState(publishable);
