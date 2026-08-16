@@ -1,4 +1,5 @@
 import { bindings } from "../../lib/cms";
+import { mediaUrlForKey } from "../../lib/media-url";
 import { requireCmsPermission } from "../../lib/permissions";
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -17,14 +18,14 @@ export async function GET() {
   return Response.json({
     items: listed.objects.map((object) => ({
       key: object.key,
-      url: `/media/${encodeURIComponent(object.key)}`,
+      url: mediaUrlForKey(object.key),
       size: object.size,
       uploaded: object.uploaded.toISOString(),
       contentType: object.httpMetadata?.contentType ?? "application/octet-stream",
       originalName: object.customMetadata?.originalName ?? object.key.split("/").pop() ?? object.key,
       uploadedBy: object.customMetadata?.uploadedBy ?? "",
     })),
-  });
+  }, { headers: { "cache-control": "no-store" } });
 }
 
 export async function POST(request: Request) {
@@ -48,7 +49,10 @@ export async function POST(request: Request) {
     customMetadata: { originalName: file.name, uploadedBy: actor.email },
   });
 
-  return Response.json({ key, url: `/media/${encodeURIComponent(key)}`, replaced: Boolean(replaceKey) }, { status: replaceKey ? 200 : 201 });
+  return Response.json({ key, url: mediaUrlForKey(key), replaced: Boolean(replaceKey) }, {
+    status: replaceKey ? 200 : 201,
+    headers: { "cache-control": "no-store" },
+  });
 }
 
 export async function DELETE(request: Request) {
@@ -59,5 +63,5 @@ export async function DELETE(request: Request) {
   if (!key || !key.startsWith("uploads/")) return Response.json({ error: "Invalid key" }, { status: 400 });
   const { MEDIA } = bindings();
   await MEDIA.delete(key);
-  return Response.json({ ok: true });
+  return Response.json({ ok: true }, { headers: { "cache-control": "no-store" } });
 }
