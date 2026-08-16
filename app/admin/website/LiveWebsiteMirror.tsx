@@ -7,6 +7,7 @@ import "./live-website-mirror.css";
 type PreviewMode = "desktop" | "tablet" | "mobile";
 
 const widths: Record<PreviewMode, number> = { desktop: 1800, tablet: 768, mobile: 390 };
+const initialHeights: Record<PreviewMode, number> = { desktop: 1250, tablet: 1100, mobile: 980 };
 
 function currentPreviewMode(): PreviewMode {
   const active = Array.from(document.querySelectorAll<HTMLButtonElement>(".wb-device-switch button"))
@@ -51,11 +52,6 @@ function isVisible(element: HTMLElement, doc: Document) {
   return Boolean(style && style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity || 1) !== 0 && rect.width >= 120 && rect.height >= 45);
 }
 
-/**
- * Discover the public page's large visual sections instead of depending on one
- * historical DOM structure. This is intentionally broad because the live site
- * can switch between the legacy Rascals layout and Builder layouts.
- */
 function editableBlocks(doc: Document): HTMLElement[] {
   const main = doc.querySelector<HTMLElement>("main, .site-main, [role='main']");
   const root = main || doc.body;
@@ -110,11 +106,22 @@ function blockIndexAtPoint(doc: Document, x: number, y: number): number {
     if (index >= 0) return index;
   }
 
-  const byRect = blocks.findIndex((block) => {
+  return blocks.findIndex((block) => {
     const rect = block.getBoundingClientRect();
     return y >= rect.top && y <= rect.bottom;
   });
-  return byRect;
+}
+
+function measureDocumentHeight(doc: Document) {
+  const body = doc.body;
+  const html = doc.documentElement;
+  return Math.max(
+    body?.scrollHeight || 0,
+    body?.offsetHeight || 0,
+    html?.scrollHeight || 0,
+    html?.offsetHeight || 0,
+    html?.clientHeight || 0,
+  );
 }
 
 export function LiveWebsiteMirror() {
@@ -122,10 +129,15 @@ export function LiveWebsiteMirror() {
   const [mode, setMode] = useState<PreviewMode>("desktop");
   const [href, setHref] = useState("/");
   const [scale, setScale] = useState(1);
+  const [frameHeight, setFrameHeight] = useState(initialHeights.desktop);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const cleanupFrameObservers = useRef<(() => void) | null>(null);
   const viewportWidth = widths[mode];
-  const frameHeight = mode === "desktop" ? 1250 : mode === "tablet" ? 1100 : 980;
+
+  useEffect(() => {
+    setFrameHeight(initialHeights[mode]);
+  }, [mode, href]);
 
   useEffect(() => {
     let stopped = false;
@@ -163,6 +175,8 @@ export function LiveWebsiteMirror() {
     };
   }, [mount, viewportWidth]);
 
+  useEffect(() => () => cleanupFrameObservers.current?.(), []);
+
   const src = useMemo(() => `${href}${href.includes("?") ? "&" : "?"}studio_mirror=1`, [href]);
 
   function pointFromEvent(event: ReactMouseEvent<HTMLDivElement>) {
@@ -194,6 +208,60 @@ export function LiveWebsiteMirror() {
     if (index >= 0) selectEditorSection(index);
   }
 
+  function handleFrameLoad() {
+    cleanupFrameObservers.current?.();
+    cleanupFrameObservers.current = null;
+
+    const frame = frameRef.current;
+    const doc = frame?.contentDocument;
+    if (!frame || !doc) return;
+
+    doc.documentElement.classList.add("rascals-studio-mirror");
+    const style = doc.createElement("style");
+    style.textContent = `
+      html.rascals-studio-mirror { scroll-behavior:auto !important; scrollbar-width:none !important; }
+      html.rascals-studio-mirror::-webkit-scrollbar,
+      html.rascals-studio-mirror body::-webkit-scrollbar { display:none !important; width:0 !important; height:0 !important; }
+      html.rascals-studio-mirror body { overflow-x:hidden !important; }
+      html.rascals-studio-mirror .public-admin-login,
+      html.rascals-studio-mirror [data-admin-login],
+      html.rascals-studio-mirror .skip-link { display:none !important; }
+    `;
+    doc.head.appendChild(style);
+
+    let raf = 0;
+    const syncHeight = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const measured = measureDocumentHeight(doc);
+        if (measured > 0) setFrameHeight(Math.ceil(measured + 2));
+      });
+    };
+
+    syncHeight();
+    window.setTimeout(syncHeight, 120);
+    window.setTimeout(syncHeight, 500);
+    window.setTimeout(syncHeight, 1200);
+
+    const resizeObserver = new ResizeObserver(syncHeight);
+    if (doc.documentElement) resizeObserver.observe(doc.documentElement);
+    if (doc.body) resizeObserver.observe(doc.body);
+
+    const mutationObserver = new MutationObserver(syncHeight);
+    mutationObserver.observe(doc.documentElement, { subtree: true, childList: true, attributes: true, characterData: false });
+
+    const images = Array.from(doc.images);
+    images.forEach((image) => {
+      if (!image.complete) image.addEventListener("load", syncHeight, { once: true });
+    });
+
+    cleanupFrameObservers.current = () => {
+      cancelAnimationFrame(raf);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    };
+  }
+
   if (!mount) return null;
 
   return createPortal(
@@ -205,21 +273,9 @@ export function LiveWebsiteMirror() {
           src={src}
           title="1:1 Vorschau der veröffentlichten Website"
           className="wb-live-mirror-frame"
+          scrolling="no"
           style={{ width: viewportWidth, height: frameHeight }}
-          onLoad={() => {
-            const doc = frameRef.current?.contentDocument;
-            if (!doc) return;
-            doc.documentElement.classList.add("rascals-studio-mirror");
-            const style = doc.createElement("style");
-            style.textContent = `
-              html.rascals-studio-mirror { scroll-behavior:auto !important; }
-              html.rascals-studio-mirror body { overflow-x:hidden !important; }
-              html.rascals-studio-mirror .public-admin-login,
-              html.rascals-studio-mirror [data-admin-login],
-              html.rascals-studio-mirror .skip-link { display:none !important; }
-            `;
-            doc.head.appendChild(style);
-          }}
+          onLoad={handleFrameLoad}
         />
         <div
           className={`wb-live-edit-layer ${hoverIndex !== null && hoverIndex >= 0 ? "has-target" : ""}`}
@@ -231,7 +287,7 @@ export function LiveWebsiteMirror() {
           {hoverIndex !== null && hoverIndex >= 0 && <span>ABSCHNITT {hoverIndex + 1} · KLICKEN ZUM BEARBEITEN</span>}
         </div>
       </div>
-      <div className="wb-live-mirror-badge">LIVE · 1:1 · DIREKT BEARBEITBAR</div>
+      <div className="wb-live-mirror-badge">LIVE · 1:1 · KOMPLETTE SEITE · DIREKT BEARBEITBAR</div>
     </div>,
     mount,
   );
