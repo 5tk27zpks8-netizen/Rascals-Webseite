@@ -14,12 +14,37 @@ function validateState(state: SiteBuilderState) {
   return "";
 }
 
-export async function GET() {
+function isMainWebsiteEditor(request: Request) {
+  const referer = request.headers.get("referer");
+  if (!referer) return false;
+  try {
+    const pathname = new URL(referer).pathname.replace(/\/$/, "");
+    return pathname === "/admin/website";
+  } catch {
+    return false;
+  }
+}
+
+export async function GET(request: Request) {
   const actor = await requireCmsPermission("website_edit");
   if (actor instanceof Response) return actor;
+
+  const [draft, published] = await Promise.all([
+    readSiteBuilderState(),
+    readPublishedSiteBuilderState(),
+  ]);
+
+  // Das Hauptstudio startet immer mit exakt dem aktuell veröffentlichten Stand.
+  // Ein älterer gespeicherter Entwurf darf beim Öffnen nicht mehr die Live-Website
+  // überlagern. Der bisherige Entwurf bleibt separat erhalten und kann weiterhin
+  // über die Entwurf-/Verlaufsfunktionen betrachtet bzw. wiederhergestellt werden.
+  const editorStartsFromLive = isMainWebsiteEditor(request);
+
   return Response.json({
-    state: await readSiteBuilderState(),
-    published: await readPublishedSiteBuilderState(),
+    state: editorStartsFromLive ? published : draft,
+    published,
+    savedDraft: draft,
+    editorStartsFromLive,
     user: actor,
     permissions: { canPublish: can(actor, "website_publish"), canManageDesigns: can(actor, "design_manage") },
   });
