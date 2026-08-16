@@ -7,6 +7,7 @@ import { SiteShell } from "./SiteShell";
 import { findBuilderPage, readPublishedSiteBuilderState, readSiteBuilderState } from "./lib/site-builder";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function generateMetadata() {
   const state = await readPublishedSiteBuilderState();
@@ -39,8 +40,6 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
   const state = isStudioMirror ? await readSiteBuilderState() : await readPublishedSiteBuilderState();
   const builderPage = findBuilderPage(state, "");
 
-  // Studio mirror: same public renderer, but always with the latest saved draft.
-  // Public visitors continue to receive only the published state.
   if (builderPage && (builderPage.enabled || isStudioMirror)) {
     return <SiteBuilderPage state={state} page={builderPage} />;
   }
