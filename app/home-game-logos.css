@@ -1,35 +1,61 @@
 /* Homepage schedule — compact football scoreboard treatment.
-   Section background remains controlled by Website Studio; game cards use their own
-   dark field surface so the schedule keeps a consistent visual identity. */
-.fixtures-section{
-  color:var(--sb-text,#07172b);
-}
+   All decorative field artwork lives in CSS so it can never become a grid item
+   or disturb the schedule content layout. */
+.fixtures-section{color:var(--sb-text,#07172b)}
 .fixtures-section .section-heading{
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
   align-items:end;
-  gap:36px;
+  gap:42px;
   width:min(100%,1080px);
-  margin:0 auto 30px;
+  margin:0 auto 34px;
 }
-.fixtures-section .section-heading h2{color:inherit}
+.fixtures-section .section-heading>div:first-child{
+  display:grid;
+  align-content:start;
+  gap:18px;
+}
+.fixtures-section .section-heading .eyebrow{
+  position:relative;
+  z-index:3;
+  display:block;
+  width:max-content;
+  margin:0!important;
+  line-height:1!important;
+  transform:translateY(-10px);
+}
+.fixtures-section .section-heading h2{
+  margin:0!important;
+  color:inherit;
+  line-height:.86!important;
+}
 .fixtures-section .fixture-list{
   width:min(100%,1080px);
   margin:0 auto;
   border:0;
 }
+
+/* Editorial season metadata: no cards/frames around league, record or points. */
 .season-stats-target{margin-left:auto}
-.season-stats{display:flex;align-items:stretch;gap:8px}
-.season-league,.season-stat{
-  display:grid;
-  align-content:center;
-  min-height:62px;
-  padding:10px 14px;
-  border:1px solid color-mix(in srgb,currentColor 12%,transparent);
-  background:color-mix(in srgb,var(--sb-background,#050d18) 88%,transparent);
+.fixtures-section .season-stats{
+  display:flex;
+  align-items:end;
+  gap:30px;
 }
-.season-league{min-width:155px}
-.season-stat{min-width:96px}
+.fixtures-section .season-league,
+.fixtures-section .season-stat{
+  display:grid;
+  align-content:end;
+  min-height:0!important;
+  min-width:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.fixtures-section .season-league{min-width:170px!important}
+.fixtures-section .season-stat{min-width:96px!important}
 .season-stats small,.season-stats span{
   color:color-mix(in srgb,currentColor 46%,transparent);
   font-size:.52rem;
@@ -39,7 +65,7 @@
   text-transform:uppercase;
 }
 .season-stats strong{
-  margin:6px 0 3px;
+  margin:7px 0 3px;
   color:inherit;
   font-size:.92rem;
   font-weight:950;
@@ -55,7 +81,10 @@
 .home-schedule-list{display:grid;gap:14px}
 .home-game-card-link{display:block;color:inherit;text-decoration:none}
 
-/* Football-field card surface inspired by the supplied schedule reference. */
+/* Old DOM play-art is intentionally disabled. Field details are now a CSS layer only. */
+.home-game-field-art{display:none!important}
+
+/* Dark football-field card with blue left glow and red right glow. */
 .fixtures-section .fixture-list article.home-game-card,
 .fixtures-section .fixture-list article.home-game-card:hover{
   position:relative;
@@ -67,64 +96,69 @@
   min-height:124px!important;
   padding:17px 20px!important;
   overflow:hidden;
-  border:1px solid rgba(185,210,232,.28)!important;
+  border:1px solid rgba(184,207,226,.28)!important;
   border-radius:14px!important;
   background:
-    radial-gradient(ellipse at 0% 50%,rgba(33,126,255,.20) 0%,rgba(21,89,177,.09) 20%,transparent 39%),
-    radial-gradient(ellipse at 100% 50%,rgba(225,24,48,.20) 0%,rgba(155,20,35,.09) 20%,transparent 39%),
-    repeating-linear-gradient(90deg,transparent 0 81px,rgba(158,189,216,.075) 81px 82px,transparent 82px 163px),
-    repeating-linear-gradient(0deg,transparent 0 21px,rgba(255,255,255,.018) 21px 22px),
-    linear-gradient(90deg,#061422 0%,#04101b 48%,#071019 100%)!important;
-  color:#f7f9fc!important;
+    radial-gradient(ellipse at -4% 50%,rgba(30,127,255,.25) 0%,rgba(18,84,180,.10) 23%,transparent 43%),
+    radial-gradient(ellipse at 104% 50%,rgba(238,27,49,.24) 0%,rgba(157,15,32,.10) 23%,transparent 43%),
+    linear-gradient(90deg,#061523 0%,#04111c 48%,#071019 100%)!important;
+  color:#f8fbff!important;
   box-shadow:
-    inset 1px 0 0 rgba(56,155,255,.82),
-    inset -1px 0 0 rgba(255,45,60,.78),
-    inset 0 1px 0 rgba(255,255,255,.07),
-    inset 0 -1px 0 rgba(255,255,255,.035),
-    -8px 0 20px rgba(34,132,255,.22),
-    8px 0 20px rgba(225,24,48,.22),
-    0 12px 28px rgba(0,0,0,.32)!important;
+    inset 1px 0 0 rgba(52,153,255,.94),
+    inset -1px 0 0 rgba(255,42,59,.92),
+    inset 0 1px 0 rgba(255,255,255,.055),
+    inset 0 -1px 0 rgba(255,255,255,.025),
+    -8px 0 24px rgba(37,137,255,.25),
+    8px 0 24px rgba(232,24,47,.24),
+    0 13px 30px rgba(0,0,0,.34)!important;
   transform:none;
   transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease,filter .2s ease;
 }
 
-/* Yard-line hashes / stadium texture. */
+/* Yard lines, yard numbers and subtle Hook/Post/Corner chalk routes.
+   This is a background overlay only; it contains no interactive or layout DOM. */
 .home-game-card:before{
   content:"";
   position:absolute;
-  z-index:-1;
+  z-index:0;
   inset:0;
   pointer-events:none;
-  background:
-    repeating-linear-gradient(90deg,transparent 0 39px,rgba(185,208,226,.17) 39px 40px,transparent 40px 47px) top 7px left / 100% 7px no-repeat,
-    repeating-linear-gradient(90deg,transparent 0 39px,rgba(185,208,226,.12) 39px 40px,transparent 40px 47px) bottom 7px left / 100% 7px no-repeat,
-    linear-gradient(90deg,rgba(31,121,255,.12),transparent 23%,transparent 77%,rgba(220,23,38,.12));
-  opacity:.78;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 140'%3E%3Cg fill='%23a9bfd2' fill-opacity='.105' font-family='Arial' font-size='15' font-weight='700'%3E%3Ctext x='140' y='24'%3E10%3C/text%3E%3Ctext x='265' y='24'%3E20%3C/text%3E%3Ctext x='390' y='24'%3E30%3C/text%3E%3Ctext x='495' y='24'%3E40%3C/text%3E%3Ctext x='610' y='24'%3E30%3C/text%3E%3Ctext x='735' y='24'%3E20%3C/text%3E%3Ctext x='860' y='24'%3E10%3C/text%3E%3Ctext x='140' y='132'%3E10%3C/text%3E%3Ctext x='265' y='132'%3E20%3C/text%3E%3Ctext x='390' y='132'%3E30%3C/text%3E%3Ctext x='495' y='132'%3E40%3C/text%3E%3Ctext x='610' y='132'%3E30%3C/text%3E%3Ctext x='735' y='132'%3E20%3C/text%3E%3Ctext x='860' y='132'%3E10%3C/text%3E%3C/g%3E%3Cg fill='none' stroke='%23b8cad9' stroke-opacity='.115' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M52,110V78Q52,64,66,64H112Q126,64,126,78V88'/%3E%3Cpolyline points='120,82 126,89 133,82'/%3E%3Cpath d='M760,116V83Q760,70,773,70H824L888,34'/%3E%3Cpolyline points='878,34 889,33 885,44'/%3E%3Cpath d='M936,111V80Q936,67,923,67H884L841,42'/%3E%3Cpolyline points='850,41 839,41 843,52'/%3E%3C/g%3E%3C/svg%3E"),
+    repeating-linear-gradient(90deg,transparent 0 38px,rgba(185,208,226,.17) 38px 39px,transparent 39px 49px),
+    repeating-linear-gradient(90deg,transparent 0 34px,rgba(190,213,232,.17) 34px 35px,transparent 35px 49px),
+    repeating-linear-gradient(90deg,transparent 0 34px,rgba(190,213,232,.12) 34px 35px,transparent 35px 49px),
+    linear-gradient(90deg,transparent 49.85%,rgba(184,207,226,.11) 50%,transparent 50.15%);
+  background-position:center,center,top 7px left,bottom 7px left,center;
+  background-size:100% 100%,100% 100%,100% 7px,100% 7px,100% 100%;
+  background-repeat:no-repeat;
+  opacity:.92;
 }
 
-/* Inner luminous frame. */
+/* Thin luminous two-tone frame like the supplied reference. */
 .home-game-card:after{
   content:"";
   position:absolute;
   z-index:4;
-  inset:5px;
-  border:1px solid rgba(255,255,255,.035);
-  border-radius:10px;
+  inset:0;
+  padding:1px;
+  border-radius:inherit;
   pointer-events:none;
-  box-shadow:
-    inset 0 0 18px rgba(49,137,255,.035),
-    inset 0 0 18px rgba(220,23,38,.025);
+  background:linear-gradient(90deg,rgba(45,149,255,.98) 0%,rgba(151,188,217,.20) 34%,rgba(151,188,217,.15) 66%,rgba(255,43,61,.98) 100%);
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
 }
 
 .fixtures-section .fixture-list article.home-game-card:hover{
-  border-color:rgba(229,235,242,.43)!important;
+  border-color:rgba(225,235,244,.40)!important;
   box-shadow:
-    inset 1px 0 0 rgba(64,174,255,.98),
-    inset -1px 0 0 rgba(255,50,65,.98),
-    inset 0 1px 0 rgba(255,255,255,.1),
-    -10px 0 28px rgba(36,140,255,.30),
-    10px 0 28px rgba(230,25,48,.30),
-    0 16px 36px rgba(0,0,0,.40)!important;
+    inset 1px 0 0 rgba(65,174,255,1),
+    inset -1px 0 0 rgba(255,52,68,1),
+    inset 0 1px 0 rgba(255,255,255,.08),
+    -10px 0 30px rgba(39,143,255,.32),
+    10px 0 30px rgba(236,25,48,.31),
+    0 16px 38px rgba(0,0,0,.40)!important;
   transform:translateY(-2px);
   filter:brightness(1.035);
 }
@@ -134,8 +168,8 @@
   justify-self:start;
   padding:5px 8px;
   border:1px solid rgba(255,255,255,.24);
-  background:rgba(2,10,18,.32);
-  color:rgba(255,255,255,.72);
+  background:rgba(2,10,18,.34);
+  color:rgba(255,255,255,.75);
   font-size:.5rem;
   font-weight:950;
   line-height:1;
@@ -245,8 +279,9 @@
 .home-games-empty{padding:36px 20px;border:1px solid color-mix(in srgb,currentColor 10%,transparent);text-align:center;color:color-mix(in srgb,currentColor 50%,transparent);font-weight:800}
 
 @media(max-width:1100px){
-  .fixtures-section .section-heading{grid-template-columns:1fr;align-items:start;gap:20px}
+  .fixtures-section .section-heading{grid-template-columns:1fr;align-items:start;gap:22px}
   .season-stats-target{margin-left:0}
+  .fixtures-section .season-stats{gap:22px}
   .fixtures-section .fixture-list article.home-game-card,
   .fixtures-section .fixture-list article.home-game-card:hover{grid-template-columns:92px minmax(0,1fr) 150px!important;gap:14px!important;padding:15px 16px!important}
   .home-game-matchup{grid-template-columns:minmax(125px,1fr) 104px minmax(125px,1fr);gap:10px}
@@ -257,8 +292,10 @@
 
 @media(max-width:820px){
   .fixtures-section{padding-left:18px!important;padding-right:18px!important}
-  .season-stats{width:100%;display:grid;grid-template-columns:1fr 1fr 1fr}
-  .season-league,.season-stat{min-width:0}
+  .fixtures-section .section-heading>div:first-child{gap:11px}
+  .fixtures-section .section-heading .eyebrow{transform:none}
+  .fixtures-section .season-stats{display:flex;flex-wrap:wrap;gap:18px 26px}
+  .fixtures-section .season-league{min-width:150px!important}
   .fixtures-section .fixture-list article.home-game-card,
   .fixtures-section .fixture-list article.home-game-card:hover{grid-template-columns:1fr!important;gap:14px!important;padding:16px!important;border-radius:12px!important}
   .home-game-meta{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -271,12 +308,14 @@
   .home-game-logo,.home-game-logo-placeholder{width:54px;height:54px;flex-basis:54px}
   .home-game-venue{grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:12px 0 0;border-left:0;border-top:1px solid rgba(224,234,243,.16)}
   .home-game-venue span{margin:0}
+  .home-game-card:before{opacity:.72;background-size:145% 100%,100% 100%,100% 7px,100% 7px,100% 100%}
 }
 
 @media(max-width:560px){
   .fixtures-section{padding-left:12px!important;padding-right:12px!important}
-  .season-stats{grid-template-columns:1fr 1fr}.season-league{grid-column:1/-1}
-  .season-league,.season-stat{min-height:54px;padding:9px 11px}
+  .fixtures-section .season-stats{gap:14px 20px}
+  .fixtures-section .season-league{flex:1 1 100%;min-width:0!important}
+  .fixtures-section .season-stat{flex:0 0 auto}
   .home-schedule-list{gap:11px}
   .home-game-matchup{grid-template-columns:minmax(0,1fr) 74px minmax(0,1fr)}
   .home-game-logo,.home-game-logo-placeholder{width:48px;height:48px;flex-basis:48px}
@@ -285,4 +324,5 @@
   .home-game-meta time strong{font-size:1rem}.home-game-meta time small{font-size:.47rem}
   .home-game-venue span{display:none}
   .home-schedule-footer{align-items:flex-start;flex-direction:column;gap:10px}
+  .home-game-card:before{opacity:.55;background-image:repeating-linear-gradient(90deg,transparent 0 38px,rgba(185,208,226,.14) 38px 39px,transparent 39px 49px),repeating-linear-gradient(90deg,transparent 0 34px,rgba(190,213,232,.14) 34px 35px,transparent 35px 49px),repeating-linear-gradient(90deg,transparent 0 34px,rgba(190,213,232,.10) 34px 35px,transparent 35px 49px)}
 }
