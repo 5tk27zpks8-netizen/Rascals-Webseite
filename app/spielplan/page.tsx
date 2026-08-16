@@ -16,7 +16,7 @@ export default async function SpielplanPage() {
   const liveEvents = live ? await listGameEvents(live.id, 6) : [];
   const upcomingAll = games.filter((game) => game.status === "upcoming").sort((a, b) => dateValue(a.kickoff) - dateValue(b.kickoff));
   const nextGame = upcomingAll[0] ?? null;
-  const upcoming = upcomingAll.slice(1);
+  const upcoming = live ? upcomingAll : upcomingAll.slice(1);
   const postponed = games.filter((game) => game.status === "postponed").sort((a, b) => dateValue(a.kickoff) - dateValue(b.kickoff));
   const completed = games.filter((game) => game.status === "final").sort((a, b) => dateValue(b.kickoff) - dateValue(a.kickoff));
   const latestCompleted = completed[0] ?? null;
