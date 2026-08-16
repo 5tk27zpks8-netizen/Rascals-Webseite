@@ -11,6 +11,7 @@ type Selection={sectionId?:string;elementKey?:string;theme?:"header"|"footer"};
 export function StudioFrameClient(){
   const[state,setState]=useState<SiteBuilderState|null>(null);
   const[pageId,setPageId]=useState("");
+  const[revision,setRevision]=useState(0);
   const[selected,setSelected]=useState<Selection>({});
   const rootRef=useRef<HTMLDivElement>(null);
 
@@ -18,7 +19,12 @@ export function StudioFrameClient(){
     const onMessage=(event:MessageEvent<FrameMessage>)=>{
       if(event.origin!==window.location.origin)return;
       if(event.data?.type!=="rascals-studio-state")return;
-      setState(event.data.state);setPageId(event.data.pageId);
+      // Every message is a complete editor snapshot. Clone it and increment a
+      // render revision so CMS portals/effects are remounted as well. This keeps
+      // games, news, sponsors and all style changes in lock-step with the editor.
+      setState(structuredClone(event.data.state));
+      setPageId(event.data.pageId);
+      setRevision(value=>value+1);
     };
     window.addEventListener("message",onMessage);
     window.parent.postMessage({type:"rascals-studio-ready"},window.location.origin);
@@ -29,9 +35,9 @@ export function StudioFrameClient(){
     const root=rootRef.current;if(!root)return;
     let raf=0;
     const sendHeight=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const height=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight,root.getBoundingClientRect().height);window.parent.postMessage({type:"rascals-studio-height",height:Math.ceil(height)},window.location.origin)})};
-    sendHeight();const resize=new ResizeObserver(sendHeight);resize.observe(root);resize.observe(document.body);const mutation=new MutationObserver(sendHeight);mutation.observe(root,{subtree:true,childList:true,attributes:true,characterData:true});window.setTimeout(sendHeight,120);window.setTimeout(sendHeight,500);window.setTimeout(sendHeight,1200);
+    sendHeight();const resize=new ResizeObserver(sendHeight);resize.observe(root);resize.observe(document.body);const mutation=new MutationObserver(sendHeight);mutation.observe(root,{subtree:true,childList:true,attributes:true,characterData:true});window.setTimeout(sendHeight,80);window.setTimeout(sendHeight,300);window.setTimeout(sendHeight,900);
     return()=>{cancelAnimationFrame(raf);resize.disconnect();mutation.disconnect()};
-  },[state,pageId]);
+  },[revision,pageId]);
 
   useEffect(()=>{
     const root=rootRef.current;if(!root)return;
@@ -40,7 +46,7 @@ export function StudioFrameClient(){
     if(selected.theme)target=root.querySelector<HTMLElement>(`[data-builder-theme="${selected.theme}"]`);
     else if(selected.sectionId){const section=root.querySelector<HTMLElement>(`[data-builder-section="${CSS.escape(selected.sectionId)}"]`);target=selected.elementKey?section?.querySelector<HTMLElement>(`[data-builder-element="${CSS.escape(selected.elementKey)}"]`)||section||null:section}
     target?.classList.add("studio-frame-selected");
-  },[selected,state,pageId]);
+  },[selected,revision,pageId]);
 
   const page=state?.pages.find(item=>item.id===pageId)||state?.pages[0];
 
@@ -54,5 +60,5 @@ export function StudioFrameClient(){
   }
 
   if(!state||!page)return <div className="studio-frame-loading">Vorschau wird geladen…</div>;
-  return <div ref={rootRef} className="studio-frame-root" onClickCapture={select}><SiteBuilderPage state={state} page={page}/></div>;
+  return <div ref={rootRef} className="studio-frame-root" onClickCapture={select} data-studio-revision={revision}><SiteBuilderPage key={`${page.id}-${revision}`} state={state} page={page}/></div>;
 }
