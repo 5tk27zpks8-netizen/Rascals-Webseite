@@ -211,11 +211,20 @@ function Logo({ src, name }: { src: string; name: string }) {
     loading="eager"
     decoding="async"
     referrerPolicy="no-referrer"
+    style={{ transform: `scale(${logoVisualScale(name)})`, transformOrigin: "center" }}
     onError={() => {
       if (sourceIndex + 1 < sources.length) setSourceIndex((index) => index + 1);
       else setFailed(true);
     }}
   />;
+}
+
+function logoVisualScale(name: string) {
+  const key = name.toLocaleLowerCase("de-DE");
+  // The Salt Miners source artwork contains considerably more transparent canvas
+  // than the other team marks. Compensate visually while keeping the same 74px slot.
+  if (key.includes("heilbronn") && key.includes("miner")) return 1.42;
+  return 1;
 }
 
 function homepageWindow(games: Game[]) {
