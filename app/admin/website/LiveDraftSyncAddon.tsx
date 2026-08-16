@@ -14,6 +14,11 @@ function findDraftSaveButton() {
     .find(button => button.textContent?.trim().toLowerCase().includes("entwurf speichern"));
 }
 
+function isDirty() {
+  const state = document.querySelector<HTMLElement>(".wb-save-state");
+  return state?.textContent?.toLowerCase().includes("ungespeichert") ?? false;
+}
+
 function reloadMirror() {
   const frame = document.querySelector<HTMLIFrameElement>(".wb-live-mirror-frame");
   if (!frame) return;
@@ -33,15 +38,26 @@ export function LiveDraftSyncAddon() {
   const pending = useRef(false);
 
   useEffect(() => {
-    const sync = async () => {
+    const waitUntilDirtyAndSave = (attempt = 0) => {
       if (busy.current) {
         pending.current = true;
         return;
       }
 
       const button = findDraftSaveButton();
-      if (!button || button.disabled) {
-        window.setTimeout(reloadMirror, 120);
+      const dirty = isDirty();
+
+      // React updates the local builder state after the DOM event. In the old
+      // implementation we often checked the button too early, saw it disabled,
+      // and reloaded the old draft. Give React a short deterministic window to
+      // expose the dirty state before deciding there is nothing to save.
+      if ((!button || button.disabled || !dirty) && attempt < 12) {
+        window.setTimeout(() => waitUntilDirtyAndSave(attempt + 1), 60);
+        return;
+      }
+
+      if (!button || button.disabled || !dirty) {
+        reloadMirror();
         return;
       }
 
@@ -52,16 +68,18 @@ export function LiveDraftSyncAddon() {
       const waitForSave = () => {
         const current = findDraftSaveButton();
         const elapsed = Date.now() - started;
-        if (elapsed > 2600 || (current && !current.disabled && elapsed > 220)) {
+        const finished = !isDirty() && Boolean(current && !current.disabled);
+
+        if (finished || elapsed > 4000) {
           busy.current = false;
           reloadMirror();
           if (pending.current) {
             pending.current = false;
-            window.setTimeout(() => void sync(), 100);
+            window.setTimeout(() => waitUntilDirtyAndSave(), 80);
           }
           return;
         }
-        window.setTimeout(waitForSave, 80);
+        window.setTimeout(waitForSave, 70);
       };
       window.setTimeout(waitForSave, 120);
     };
@@ -69,7 +87,9 @@ export function LiveDraftSyncAddon() {
     const schedule = (event: Event) => {
       if (!isEditorControl(event.target)) return;
       if (timer.current) window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(() => void sync(), event.type === "input" ? 420 : 120);
+      const element = event.target instanceof HTMLInputElement ? event.target : null;
+      const isColor = element?.type === "color";
+      timer.current = window.setTimeout(() => waitUntilDirtyAndSave(), isColor ? 80 : event.type === "input" ? 240 : 100);
     };
 
     document.addEventListener("input", schedule, true);
