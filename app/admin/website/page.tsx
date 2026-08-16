@@ -1,4 +1,5 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
+import { StudioImagePositionAddon } from "./StudioImagePositionAddon";
 import { StudioPreviewFit } from "./StudioPreviewFit";
 import { WebsiteBuilderV4 } from "./WebsiteBuilderV4";
 import "./website-studio-layout-fix.css";
@@ -10,5 +11,5 @@ export const metadata = {
 
 export default async function AdminWebsitePage() {
   await requireChatGPTUser("/admin/website");
-  return <><WebsiteBuilderV4/><StudioPreviewFit/></>;
+  return <><WebsiteBuilderV4/><StudioImagePositionAddon/><StudioPreviewFit/></>;
 }
