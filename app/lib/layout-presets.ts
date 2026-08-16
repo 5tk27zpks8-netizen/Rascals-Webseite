@@ -1,6 +1,6 @@
 import type { BuilderPage, BuilderSection, BuilderSectionType, SiteBuilderState } from "./site-builder";
 
-export type LayoutPresetId = "original" | "stadium" | "editorial" | "performance";
+export type LayoutPresetId = "original" | "classic" | "performance" | "editorial";
 export type LayoutPreset = {
   id: LayoutPresetId;
   name: string;
@@ -13,35 +13,35 @@ export type LayoutPreset = {
 export const layoutPresets: LayoutPreset[] = [
   {
     id: "original",
-    name: "Original",
-    eyebrow: "RASCALS CLASSIC",
-    description: "Der aktuelle Seitenaufbau bleibt erhalten. Nur der gewählte Design-Look wird verändert.",
+    name: "Standard",
+    eyebrow: "RASCALS ORIGINAL",
+    description: "Der bestehende Rascals-Aufbau bleibt als geschützter Ausgangspunkt erhalten.",
     order: [],
     variants: {},
   },
   {
-    id: "stadium",
-    name: "Stadium",
-    eyebrow: "BIG GAME EXPERIENCE",
-    description: "Bildstarker Sportaufbau: Hero, nächstes Spiel und Saison-KPIs stehen sofort im Mittelpunkt.",
-    order: ["hero", "games", "stats", "split", "news", "gallery", "timeline", "cta", "sponsors"],
-    variants: { hero: "cinematic", games: "scoreboard", stats: "bold", split: "image-left", news: "editorial", gallery: "cinematic", timeline: "drive", cta: "banner", sponsors: "ticker" },
-  },
-  {
-    id: "editorial",
-    name: "Editorial",
-    eyebrow: "NFL MAGAZINE",
-    description: "Medienorientierter Aufbau: Stories und News führen die Seite, Spiele und Team-Features folgen wie in einem Sportmagazin.",
-    order: ["news", "hero", "games", "split", "stats", "gallery", "timeline", "sponsors", "cta"],
-    variants: { news: "editorial", hero: "split", games: "clean", split: "editorial", stats: "strip", gallery: "masonry", timeline: "compact", sponsors: "clean", cta: "panel" },
+    id: "classic",
+    name: "Klassik",
+    eyebrow: "CLASSIC CLUB WEBSITE",
+    description: "Klassische Vereinswebsite mit klarer Navigation, ruhigem Hero, Vereinsgeschichte, Spielplan, News und Partnern.",
+    order: ["hero", "split", "text", "games", "stats", "cards", "news", "gallery", "sponsors", "cta", "timeline"],
+    variants: { hero: "split", split: "image-right", text: "default", games: "clean", stats: "strip", cards: "compact", news: "clean", gallery: "grid", sponsors: "clean", cta: "default", timeline: "compact" },
   },
   {
     id: "performance",
     name: "Performance",
-    eyebrow: "PRO TEAM SYSTEM",
-    description: "Moderner Performance-Aufbau: Hero, KPIs, Game Center und Team-Inhalte wirken wie bei einem professionellen Sportprogramm.",
-    order: ["hero", "stats", "games", "cards", "split", "timeline", "gallery", "news", "sponsors", "cta"],
-    variants: { hero: "centered", stats: "cards", games: "scoreboard", cards: "bold", split: "image-right", timeline: "vertical", gallery: "grid", news: "clean", sponsors: "ticker", cta: "panel" },
+    eyebrow: "PRO TEAM EXPERIENCE",
+    description: "Komplett anderer Pro-Team-Aufbau: Performance-KPIs, Game Center und starke Bildflächen dominieren die Seite.",
+    order: ["hero", "stats", "games", "cards", "gallery", "split", "timeline", "cta", "news", "sponsors", "text"],
+    variants: { hero: "centered", stats: "bold", games: "scoreboard", cards: "bold", gallery: "cinematic", split: "image-left", timeline: "vertical", cta: "banner", news: "clean", sponsors: "ticker", text: "centered" },
+  },
+  {
+    id: "editorial",
+    name: "Editorial",
+    eyebrow: "SPORTS MAGAZINE",
+    description: "Magazinartige Website: Stories und News führen, große Editorial-Flächen ersetzen den klassischen Vereinsseiten-Aufbau.",
+    order: ["news", "hero", "split", "gallery", "games", "text", "stats", "timeline", "cards", "sponsors", "cta"],
+    variants: { news: "editorial", hero: "minimal", split: "editorial", gallery: "masonry", games: "clean", text: "editorial", stats: "cards", timeline: "compact", cards: "editorial", sponsors: "clean", cta: "panel" },
   },
 ];
 
