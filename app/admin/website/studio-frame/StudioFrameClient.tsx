@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { SiteBuilderPage } from "../../../SiteBuilderPage";
 import type { SiteBuilderState } from "../../../lib/site-builder";
+import { reconcileSiteBuilderMedia } from "../../../lib/site-builder-media";
 import "./studio-frame.css";
 
 type FrameMessage={type:"rascals-studio-state";state:SiteBuilderState;pageId:string}|{type:string};
@@ -19,10 +20,11 @@ export function StudioFrameClient(){
     const onMessage=(event:MessageEvent<FrameMessage>)=>{
       if(event.origin!==window.location.origin)return;
       if(event.data?.type!=="rascals-studio-state")return;
-      // Every message is a complete editor snapshot. Clone it and increment a
-      // render revision so CMS portals/effects are remounted as well. This keeps
-      // games, news, sponsors and all style changes in lock-step with the editor.
-      setState(structuredClone(event.data.state));
+      // Every message is a complete editor snapshot. Reconcile duplicated legacy
+      // full-bleed image fields before rendering so replacing a hero/CTA image is
+      // visible immediately, regardless of whether it was changed under Content
+      // or Design.
+      setState(previous=>reconcileSiteBuilderMedia(previous??undefined,event.data.state));
       setPageId(event.data.pageId);
       setRevision(value=>value+1);
     };
