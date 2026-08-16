@@ -4,7 +4,7 @@ import { DynamicHomeGames } from "./DynamicHomeGames";
 import { HomeSectionMedia } from "./HomeSectionMedia";
 import { SiteBuilderPage } from "./SiteBuilderPage";
 import { SiteShell } from "./SiteShell";
-import { findBuilderPage, readPublishedSiteBuilderState } from "./lib/site-builder";
+import { findBuilderPage, readPublishedSiteBuilderState, readSiteBuilderState } from "./lib/site-builder";
 
 export async function generateMetadata() {
   const state = await readPublishedSiteBuilderState();
@@ -31,11 +31,16 @@ export async function generateMetadata() {
   };
 }
 
-export default async function Home() {
-  const state = await readPublishedSiteBuilderState();
+export default async function Home({ searchParams }: { searchParams?: Promise<{ studio_mirror?: string }> }) {
+  const params = searchParams ? await searchParams : {};
+  const isStudioMirror = params?.studio_mirror === "1";
+  const state = isStudioMirror ? await readSiteBuilderState() : await readPublishedSiteBuilderState();
   const builderPage = findBuilderPage(state, "");
 
-  if (builderPage?.enabled) {
+  // In Studio the exact same public renderer is used, but with the saved draft
+  // state. This keeps the canvas visually identical while allowing edits to be
+  // previewed before publication.
+  if (builderPage && (builderPage.enabled || isStudioMirror)) {
     return <SiteBuilderPage state={state} page={builderPage} />;
   }
 
