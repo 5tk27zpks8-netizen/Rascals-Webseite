@@ -5,6 +5,7 @@ import "./home-game-logos.css";
 import "./image-position.css";
 import "./rascals-standard-builder.css";
 import "./legacy-builder.css";
+import "./builder-background-mode.css";
 import { ImageFocusRuntime } from "./ImageFocusRuntime";
 import { LegacyBuilderRuntime } from "./LegacyBuilderRuntime";
 import { PublicAdminLogin } from "./PublicAdminLogin";
