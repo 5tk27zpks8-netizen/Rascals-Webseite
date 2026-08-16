@@ -6,6 +6,8 @@ import { SiteBuilderPage } from "./SiteBuilderPage";
 import { SiteShell } from "./SiteShell";
 import { findBuilderPage, readPublishedSiteBuilderState, readSiteBuilderState } from "./lib/site-builder";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata() {
   const state = await readPublishedSiteBuilderState();
   const page = findBuilderPage(state, "");
@@ -37,9 +39,8 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
   const state = isStudioMirror ? await readSiteBuilderState() : await readPublishedSiteBuilderState();
   const builderPage = findBuilderPage(state, "");
 
-  // In Studio the exact same public renderer is used, but with the saved draft
-  // state. This keeps the canvas visually identical while allowing edits to be
-  // previewed before publication.
+  // Studio mirror: same public renderer, but always with the latest saved draft.
+  // Public visitors continue to receive only the published state.
   if (builderPage && (builderPage.enabled || isStudioMirror)) {
     return <SiteBuilderPage state={state} page={builderPage} />;
   }
