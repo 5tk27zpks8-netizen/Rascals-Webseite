@@ -32,6 +32,34 @@ function currentLiveHref(): string {
   }
 }
 
+function visibleEditableBlocks(doc: Document): HTMLElement[] {
+  const candidates = Array.from(doc.querySelectorAll<HTMLElement>(
+    "body > section, body > main > section, body > main > div, .site-main > section, .site-main > div, main.site-main > section, main.site-main > div",
+  ));
+
+  const unique = candidates.filter((element, index, all) => all.indexOf(element) === index);
+  const visible = unique.filter((element) => {
+    const style = doc.defaultView?.getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    if (!style || style.display === "none" || style.visibility === "hidden") return false;
+    if (rect.height < 40 || rect.width < 120) return false;
+    if (element.matches("header, footer, nav")) return false;
+    if (element.closest("header, footer, nav")) return false;
+    return true;
+  });
+
+  // Keep only the outermost visual blocks. Nested wrappers otherwise create duplicate selections.
+  return visible.filter((element) => !visible.some((other) => other !== element && other.contains(element)));
+}
+
+function selectEditorSection(index: number) {
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".wb-section-list > button"));
+  const button = buttons[index];
+  if (!button) return;
+  button.click();
+  button.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
 export function LiveWebsiteMirror() {
   const [mount, setMount] = useState<HTMLElement | null>(null);
   const [mode, setMode] = useState<PreviewMode>("desktop");
@@ -95,7 +123,8 @@ export function LiveWebsiteMirror() {
           className="wb-live-mirror-frame"
           style={{ width: viewportWidth, height: frameHeight }}
           onLoad={() => {
-            const doc = frameRef.current?.contentDocument;
+            const frame = frameRef.current;
+            const doc = frame?.contentDocument;
             if (!doc) return;
             doc.documentElement.classList.add("rascals-studio-mirror");
             const style = doc.createElement("style");
@@ -105,13 +134,57 @@ export function LiveWebsiteMirror() {
               html.rascals-studio-mirror .public-admin-login,
               html.rascals-studio-mirror [data-admin-login],
               html.rascals-studio-mirror .skip-link { display:none !important; }
-              html.rascals-studio-mirror a, html.rascals-studio-mirror button { pointer-events:none !important; }
+              html.rascals-studio-mirror a,
+              html.rascals-studio-mirror button { cursor:pointer !important; }
+              html.rascals-studio-mirror .studio-editable-block {
+                position:relative !important;
+                cursor:pointer !important;
+                outline:2px solid transparent !important;
+                outline-offset:-2px !important;
+                transition:outline-color .14s ease, box-shadow .14s ease !important;
+              }
+              html.rascals-studio-mirror .studio-editable-block:hover {
+                outline-color:#4e9dff !important;
+                box-shadow:inset 0 0 0 1px rgba(78,157,255,.32) !important;
+              }
+              html.rascals-studio-mirror .studio-editable-block:hover::after {
+                content:"KLICKEN ZUM BEARBEITEN";
+                position:absolute;
+                z-index:2147483646;
+                top:12px;
+                right:12px;
+                padding:7px 10px;
+                border-radius:7px;
+                background:#1474e8;
+                color:#fff;
+                font:900 10px/1 Arial,sans-serif;
+                letter-spacing:.08em;
+                pointer-events:none;
+              }
             `;
             doc.head.appendChild(style);
+
+            const blocks = visibleEditableBlocks(doc);
+            blocks.forEach((block) => block.classList.add("studio-editable-block"));
+
+            const clickHandler = (event: MouseEvent) => {
+              const target = event.target as HTMLElement | null;
+              if (!target) return;
+              const block = target.closest<HTMLElement>(".studio-editable-block");
+              if (!block) return;
+              const currentBlocks = visibleEditableBlocks(doc);
+              const index = currentBlocks.indexOf(block);
+              if (index < 0) return;
+              event.preventDefault();
+              event.stopPropagation();
+              selectEditorSection(index);
+            };
+
+            doc.addEventListener("click", clickHandler, true);
           }}
         />
       </div>
-      <div className="wb-live-mirror-badge">LIVE · 1:1</div>
+      <div className="wb-live-mirror-badge">LIVE · 1:1 · KLICKEN ZUM BEARBEITEN</div>
     </div>,
     mount,
   );
