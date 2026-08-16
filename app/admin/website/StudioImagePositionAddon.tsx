@@ -22,6 +22,9 @@ function setSelectValue(select:HTMLSelectElement,value:string){
   if(!option){option=document.createElement("option");option.value=value;option.text="Aktuelle Bildposition";select.appendChild(option)}
   const setter=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value")?.set;
   setter?.call(select,value);
+  // React's controlled <select> listens to native change/input events. Dispatch both
+  // so the focus value is written into the actual builder state before Save/Publish.
+  select.dispatchEvent(new Event("input",{bubbles:true}));
   select.dispatchEvent(new Event("change",{bubbles:true}));
 }
 
@@ -57,7 +60,29 @@ function Positioner({target}:{target:HTMLElement}){
   const [focus,setFocus]=useState(initial);
 
   useEffect(()=>{markLegacyControls(target)},[target]);
-  useEffect(()=>{if(!select)return;const sync=()=>{setValue(select.value);setFocus(parseFocus(select.value))};select.addEventListener("change",sync);return()=>select.removeEventListener("change",sync)},[select]);
+
+  // Important: React updates a controlled select programmatically after a file upload.
+  // That does NOT fire a native change event. The previous addon therefore kept the
+  // old image URL and could overwrite a freshly uploaded image when the user moved
+  // the focus point. Keep the addon synchronized with the real select value instead.
+  useEffect(()=>{
+    if(!select)return;
+    let stopped=false;
+    const sync=()=>{
+      if(stopped)return;
+      const current=select.value||"";
+      setValue(previous=>previous===current?previous:current);
+    };
+    const onChange=()=>sync();
+    select.addEventListener("input",onChange);
+    select.addEventListener("change",onChange);
+    const observer=new MutationObserver(sync);
+    observer.observe(select,{childList:true,subtree:true,attributes:true});
+    const timer=window.setInterval(sync,120);
+    sync();
+    return()=>{stopped=true;window.clearInterval(timer);observer.disconnect();select.removeEventListener("input",onChange);select.removeEventListener("change",onChange)};
+  },[select]);
+
   useEffect(()=>{setFocus(parseFocus(value))},[value]);
   if(!select||!value)return null;
   const base=stripFocus(value);
@@ -65,8 +90,8 @@ function Positioner({target}:{target:HTMLElement}){
   function point(event:ReactPointerEvent<HTMLDivElement>){const rect=event.currentTarget.getBoundingClientRect();return{x:Math.max(0,Math.min(100,((event.clientX-rect.left)/rect.width)*100)),y:Math.max(0,Math.min(100,((event.clientY-rect.top)/rect.height)*100))}}
   function start(event:ReactPointerEvent<HTMLDivElement>){event.currentTarget.setPointerCapture(event.pointerId);const next=point(event);setFocus(next);applyLiveFocus(base,next.x,next.y)}
   function move(event:ReactPointerEvent<HTMLDivElement>){if(!event.currentTarget.hasPointerCapture(event.pointerId))return;const next=point(event);setFocus(next);applyLiveFocus(base,next.x,next.y)}
-  function finish(event:ReactPointerEvent<HTMLDivElement>){const next=point(event);setFocus(next);applyLiveFocus(base,next.x,next.y);if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);setSelectValue(select,withFocus(base,next.x,next.y))}
-  function reset(){const next={x:50,y:50};setFocus(next);applyLiveFocus(base,50,50);setSelectValue(select,withFocus(base,50,50))}
+  function finish(event:ReactPointerEvent<HTMLDivElement>){const next=point(event);setFocus(next);applyLiveFocus(base,next.x,next.y);if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);setSelectValue(select,withFocus(select.value||base,next.x,next.y))}
+  function reset(){const next={x:50,y:50};setFocus(next);applyLiveFocus(base,50,50);setSelectValue(select,withFocus(select.value||base,50,50))}
 
   return <div className="inline-focus-editor studio4-universal-focus">
     <div className="inline-focus-head"><div><b>Bild positionieren</b><small>Ins Bild klicken oder den Fokuspunkt ziehen. Die Vorschau reagiert direkt.</small></div><button type="button" onClick={reset}>Zentrieren</button></div>
@@ -82,7 +107,10 @@ export function StudioImagePositionAddon(){
   const [targets,setTargets]=useState<Target[]>([]);
   useEffect(()=>{
     const ids=new WeakMap<HTMLElement,string>();let seq=0;
-    const scan=()=>setTargets(Array.from(document.querySelectorAll<HTMLElement>(".studio4-media")).map(node=>{markLegacyControls(node);let id=ids.get(node);if(!id){id=`studio-focus-${++seq}`;ids.set(node,id)}return{node,id}}));
+    const scan=()=>{
+      const next=Array.from(document.querySelectorAll<HTMLElement>(".studio4-media")).map(node=>{markLegacyControls(node);let id=ids.get(node);if(!id){id=`studio-focus-${++seq}`;ids.set(node,id)}return{node,id}});
+      setTargets(current=>current.length===next.length&&current.every((item,index)=>item.node===next[index].node&&item.id===next[index].id)?current:next);
+    };
     scan();
     const observer=new MutationObserver(scan);observer.observe(document.body,{childList:true,subtree:true});
     return()=>observer.disconnect();
