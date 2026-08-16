@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 import "./home-game-logos.css";
 import "./image-position.css";
+import "./rascals-standard-builder.css";
 import { ImageFocusRuntime } from "./ImageFocusRuntime";
 import { PublicAdminLogin } from "./PublicAdminLogin";
 
