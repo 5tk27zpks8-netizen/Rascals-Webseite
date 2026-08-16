@@ -2,21 +2,9 @@
 
 import { useEffect, useRef } from "react";
 
-function isEditorControl(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  if (!target.closest(".wb-inspector, .wb-inspector-panel, .wb-sidebar, .wb-section-list, .wb-canvas-toolbar")) return false;
-  if (target.closest("button")?.textContent?.toLowerCase().includes("entwurf speichern")) return false;
-  return Boolean(target.closest("input, textarea, select, button, [role='button']"));
-}
-
 function findDraftSaveButton() {
   return Array.from(document.querySelectorAll<HTMLButtonElement>("button"))
     .find(button => button.textContent?.trim().toLowerCase().includes("entwurf speichern"));
-}
-
-function isDirty() {
-  const state = document.querySelector<HTMLElement>(".wb-save-state");
-  return state?.textContent?.toLowerCase().includes("ungespeichert") ?? false;
 }
 
 function reloadMirror() {
@@ -33,74 +21,60 @@ function reloadMirror() {
 }
 
 export function LiveDraftSyncAddon() {
-  const timer = useRef<number | null>(null);
   const busy = useRef(false);
-  const pending = useRef(false);
+  const lastReload = useRef(0);
 
   useEffect(() => {
-    const waitUntilDirtyAndSave = (attempt = 0) => {
-      if (busy.current) {
-        pending.current = true;
-        return;
-      }
+    let stopped = false;
 
+    const syncIfDirty = () => {
+      if (stopped || busy.current) return;
       const button = findDraftSaveButton();
-      const dirty = isDirty();
-
-      // React updates the local builder state after the DOM event. In the old
-      // implementation we often checked the button too early, saw it disabled,
-      // and reloaded the old draft. Give React a short deterministic window to
-      // expose the dirty state before deciding there is nothing to save.
-      if ((!button || button.disabled || !dirty) && attempt < 12) {
-        window.setTimeout(() => waitUntilDirtyAndSave(attempt + 1), 60);
-        return;
-      }
-
-      if (!button || button.disabled || !dirty) {
-        reloadMirror();
-        return;
-      }
+      if (!button || button.disabled) return;
 
       busy.current = true;
       button.click();
-
       const started = Date.now();
-      const waitForSave = () => {
+
+      const waitForCompletion = () => {
+        if (stopped) return;
         const current = findDraftSaveButton();
         const elapsed = Date.now() - started;
-        const finished = !isDirty() && Boolean(current && !current.disabled);
 
-        if (finished || elapsed > 4000) {
+        // During save the button is disabled; after save it remains disabled
+        // because the Builder is clean again. Only then refresh the mirror.
+        const complete = Boolean(current && current.disabled && elapsed > 140);
+        if (complete || elapsed > 4000) {
           busy.current = false;
-          reloadMirror();
-          if (pending.current) {
-            pending.current = false;
-            window.setTimeout(() => waitUntilDirtyAndSave(), 80);
+          const now = Date.now();
+          if (now - lastReload.current > 120) {
+            lastReload.current = now;
+            reloadMirror();
           }
           return;
         }
-        window.setTimeout(waitForSave, 70);
+        window.setTimeout(waitForCompletion, 60);
       };
-      window.setTimeout(waitForSave, 120);
+
+      window.setTimeout(waitForCompletion, 80);
     };
 
-    const schedule = (event: Event) => {
-      if (!isEditorControl(event.target)) return;
-      if (timer.current) window.clearTimeout(timer.current);
-      const element = event.target instanceof HTMLInputElement ? event.target : null;
-      const isColor = element?.type === "color";
-      timer.current = window.setTimeout(() => waitUntilDirtyAndSave(), isColor ? 80 : event.type === "input" ? 240 : 100);
-    };
-
-    document.addEventListener("input", schedule, true);
-    document.addEventListener("change", schedule, true);
-    document.addEventListener("click", schedule, true);
+    // React can mark the Builder dirty after the originating input event has
+    // already finished. Watching the actual enabled state of the canonical save
+    // button avoids that race and covers every inspector control uniformly.
+    const interval = window.setInterval(syncIfDirty, 180);
+    const observer = new MutationObserver(syncIfDirty);
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["disabled", "class"],
+    });
 
     return () => {
-      document.removeEventListener("input", schedule, true);
-      document.removeEventListener("change", schedule, true);
-      document.removeEventListener("click", schedule, true);
-      if (timer.current) window.clearTimeout(timer.current);
+      stopped = true;
+      window.clearInterval(interval);
+      observer.disconnect();
     };
   }, []);
 
