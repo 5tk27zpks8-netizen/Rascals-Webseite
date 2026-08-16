@@ -1,0 +1,58 @@
+"use client";
+
+import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { SiteBuilderPage } from "../../../SiteBuilderPage";
+import type { SiteBuilderState } from "../../../lib/site-builder";
+import "./studio-frame.css";
+
+type FrameMessage={type:"rascals-studio-state";state:SiteBuilderState;pageId:string}|{type:string};
+
+type Selection={sectionId?:string;elementKey?:string;theme?:"header"|"footer"};
+
+export function StudioFrameClient(){
+  const[state,setState]=useState<SiteBuilderState|null>(null);
+  const[pageId,setPageId]=useState("");
+  const[selected,setSelected]=useState<Selection>({});
+  const rootRef=useRef<HTMLDivElement>(null);
+
+  useEffect(()=>{
+    const onMessage=(event:MessageEvent<FrameMessage>)=>{
+      if(event.origin!==window.location.origin)return;
+      if(event.data?.type!=="rascals-studio-state")return;
+      setState(event.data.state);
+      setPageId(event.data.pageId);
+    };
+    window.addEventListener("message",onMessage);
+    window.parent.postMessage({type:"rascals-studio-ready"},window.location.origin);
+    return()=>window.removeEventListener("message",onMessage);
+  },[]);
+
+  useEffect(()=>{
+    const root=rootRef.current;if(!root)return;
+    let raf=0;
+    const sendHeight=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const height=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight,root.getBoundingClientRect().height);window.parent.postMessage({type:"rascals-studio-height",height:Math.ceil(height)},window.location.origin)})};
+    sendHeight();
+    const resize=new ResizeObserver(sendHeight);resize.observe(root);resize.observe(document.body);
+    const mutation=new MutationObserver(sendHeight);mutation.observe(root,{subtree:true,childList:true,attributes:true,characterData:true});
+    window.setTimeout(sendHeight,120);window.setTimeout(sendHeight,500);window.setTimeout(sendHeight,1200);
+    return()=>{cancelAnimationFrame(raf);resize.disconnect();mutation.disconnect()};
+  },[state,pageId]);
+
+  const page=state?.pages.find(item=>item.id===pageId)||state?.pages[0];
+
+  function select(event:MouseEvent<HTMLDivElement>){
+    event.preventDefault();event.stopPropagation();
+    const target=event.target instanceof HTMLElement?event.target:null;if(!target)return;
+    const themeNode=target.closest<HTMLElement>("[data-builder-theme]");
+    if(themeNode){const theme=themeNode.dataset.builderTheme==="footer"?"footer":"header";setSelected({theme});window.parent.postMessage({type:"rascals-studio-select",theme},window.location.origin);return}
+    const element=target.closest<HTMLElement>("[data-builder-element]");
+    const section=target.closest<HTMLElement>("[data-builder-section]");
+    if(!section)return;
+    const sectionId=section.dataset.builderSection||"";const elementKey=element?.dataset.builderElement||undefined;
+    setSelected({sectionId,elementKey});
+    window.parent.postMessage({type:"rascals-studio-select",sectionId,elementKey},window.location.origin);
+  }
+
+  if(!state||!page)return <div className="studio-frame-loading">Vorschau wird geladen…</div>;
+  return <div ref={rootRef} className="studio-frame-root" onClickCapture={select} data-selected-section={selected.sectionId||""} data-selected-element={selected.elementKey||""}><SiteBuilderPage state={state} page={page}/></div>;
+}
