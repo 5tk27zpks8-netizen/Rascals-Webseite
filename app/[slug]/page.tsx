@@ -3,6 +3,9 @@ import { SiteBuilderPage } from "../SiteBuilderPage";
 import { SiteShell, type PageName } from "../SiteShell";
 import { findBuilderPage, readPublishedSiteBuilderState } from "../lib/site-builder";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const legacyPages: PageName[] = ["ueber-uns", "team", "sponsoring", "shop", "news", "galerie"];
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
