@@ -28,9 +28,7 @@ function isMainWebsiteEditor(request: Request) {
   }
 }
 
-function clone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
+function clone<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T; }
 
 function legacyHomeSections(template: BuilderPage): BuilderSection[] {
   const byId = new Map(template.sections.map((section) => [section.id, clone(section)]));
@@ -80,6 +78,7 @@ function legacyHomeSections(template: BuilderPage): BuilderSection[] {
     buttonLabel: "Zum Rascals Shop",
     buttonUrl: shopUrl,
     image: "/shop-product-4k.webp",
+    elementStyles: {},
     style: {
       ...clone(story.style),
       background: "#07172b",
@@ -121,14 +120,9 @@ function mirrorLegacyPage(template: BuilderPage): BuilderPage {
   return next;
 }
 
-/**
- * The Website Studio must start from what visitors actually see. If a legacy
- * route is live, we build its complete protected Rascals Standard equivalent
- * here instead of showing an unrelated/older builder draft.
- */
 function liveEditorState(published: SiteBuilderState, draft: SiteBuilderState): SiteBuilderState {
   const home = published.pages.find((page) => page.slug === "");
-  if (home?.enabled) return clone(published);
+  if (home?.enabled) return { ...clone(published), editorInitialized: true };
 
   const standard = clone(defaultSiteBuilderState);
   const publishedBySlug = new Map(published.pages.map((page) => [page.slug, page]));
@@ -156,7 +150,7 @@ function liveEditorState(published: SiteBuilderState, draft: SiteBuilderState): 
     .filter((page, index, all) => !legacySlugs.has(page.slug) && all.findIndex((item) => item.slug === page.slug) === index)
     .map(clone);
 
-  return { ...standard, pages: [...legacyPages, ...customPages] };
+  return { ...standard, editorInitialized: true, pages: [...legacyPages, ...customPages] };
 }
 
 export async function GET(request: Request) {
@@ -165,13 +159,14 @@ export async function GET(request: Request) {
 
   const [draft, published] = await Promise.all([readSiteBuilderState(), readPublishedSiteBuilderState()]);
   const editorStartsFromLive = isMainWebsiteEditor(request);
-  const liveState = liveEditorState(published, draft);
+  const firstStudioOpen = editorStartsFromLive && draft.editorInitialized !== true;
+  const state = firstStudioOpen ? liveEditorState(published, draft) : draft;
 
   return Response.json({
-    state: editorStartsFromLive ? liveState : draft,
+    state,
     published,
     savedDraft: draft,
-    editorStartsFromLive,
+    editorStartsFromLive: firstStudioOpen,
     legacyLive: !published.pages.find((page) => page.slug === "")?.enabled,
     user: actor,
     permissions: { canPublish: can(actor, "website_publish"), canManageDesigns: can(actor, "design_manage") },
