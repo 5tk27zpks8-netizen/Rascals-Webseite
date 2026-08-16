@@ -1,0 +1,13 @@
+/* Shared image focal-point presets. URL fragments are ignored by the server but let the UI store per-image positioning without changing media files. */
+img[src$="#pos-top-left"]{object-position:left top!important}
+img[src$="#pos-top"]{object-position:center top!important}
+img[src$="#pos-top-right"]{object-position:right top!important}
+img[src$="#pos-left"]{object-position:left center!important}
+img[src$="#pos-center"]{object-position:center center!important}
+img[src$="#pos-right"]{object-position:right center!important}
+img[src$="#pos-bottom-left"]{object-position:left bottom!important}
+img[src$="#pos-bottom"]{object-position:center bottom!important}
+img[src$="#pos-bottom-right"]{object-position:right bottom!important}
+
+/* Builder section default focus is also respected when no per-image preset is stored. */
+.sb-hero-image,.sb-split-media img,.sb-cta-image,.sb-cards article>img:not(.sb-card-icon),.sb-gallery img{object-position:var(--sb-bg-position,center)}
