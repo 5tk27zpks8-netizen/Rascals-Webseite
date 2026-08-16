@@ -2,6 +2,10 @@ import { bindings } from "../../../lib/cms";
 import { ensureFootballSchema } from "../../../lib/football";
 import { mediaUrlForKey, normalizeMediaUrl } from "../../../lib/media-url";
 
+const OFFICIAL_LOGO_FALLBACKS = new Map<string, string>([
+  ["neckar hammers", "https://hammers.de/wp-content/uploads/2025/11/Neckar_Hammers_Logo_White_Transparent.png"],
+]);
+
 async function ensureTrashColumn() {
   const { DB } = bindings();
   const info = await DB.prepare("PRAGMA table_info(games)").all<Record<string, unknown>>();
@@ -80,6 +84,15 @@ async function recoverMissingOpponentLogos(rows: Record<string, unknown>[], logo
   }
 }
 
+function applyOfficialLogoFallbacks(rows: Record<string, unknown>[], logos: Map<string, string>) {
+  for (const row of rows) {
+    const key = opponentKey(row.opponent);
+    if (!key || logos.get(key)) continue;
+    const fallback = OFFICIAL_LOGO_FALLBACKS.get(key);
+    if (fallback) logos.set(key, fallback);
+  }
+}
+
 function mapGame(row: Record<string, unknown>, logos: Map<string, string>) {
   const opponent = String(row.opponent ?? "");
   const storedLogo = normalizeMediaUrl(String(row.opponent_logo ?? ""));
@@ -111,6 +124,7 @@ export async function GET() {
   const rows = result.results.map((row) => row as Record<string, unknown>);
   const logos = canonicalOpponentLogos(rows);
   await recoverMissingOpponentLogos(rows, logos);
+  applyOfficialLogoFallbacks(rows, logos);
   return Response.json({
     items: rows.map((row) => mapGame(row, logos)),
     league: String(team?.league ?? "Bezirksliga"),
