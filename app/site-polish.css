@@ -1,0 +1,26 @@
+/* Focused public-site polish.
+   Keeps editable builder values intact while restoring the Rascals CTA treatment
+   and lifting only the schedule card base background (not field-line opacity). */
+
+.sb-header .sb-nav-cta{
+  background:#e7192d!important;
+  border-color:#e7192d!important;
+  color:#fff!important;
+  box-shadow:0 8px 22px rgba(231,25,45,.22);
+  transition:transform .18s ease,filter .18s ease,box-shadow .18s ease;
+}
+.sb-header .sb-nav-cta:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.08);
+  box-shadow:0 10px 26px rgba(231,25,45,.30);
+}
+
+/* ~10% stronger card atmosphere. Field lines/numbers remain at their current,
+   deliberately subtle opacity. */
+.fixtures-section .fixture-list article.home-game-card,
+.fixtures-section .fixture-list article.home-game-card:hover{
+  background:
+    radial-gradient(ellipse at -4% 50%,rgba(30,127,255,.264) 0%,rgba(18,84,180,.105) 23%,transparent 43%),
+    radial-gradient(ellipse at 104% 50%,rgba(238,27,49,.253) 0%,rgba(157,15,32,.105) 23%,transparent 43%),
+    linear-gradient(90deg,#071827 0%,#05131f 48%,#08131c 100%)!important;
+}
