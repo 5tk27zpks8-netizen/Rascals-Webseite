@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 const LEGACY_LOGO_SELECTORS = [
   ".site-header .brand img",
@@ -8,7 +8,7 @@ const LEGACY_LOGO_SELECTORS = [
 ];
 
 export function LegacyBrandSync({ logoUrl }: { logoUrl: string }) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const src = logoUrl?.trim() || "/rascals-logo-transparent-4k.png";
 
     const apply = () => {
