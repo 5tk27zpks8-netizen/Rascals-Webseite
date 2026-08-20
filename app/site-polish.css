@@ -1,6 +1,18 @@
 /* Focused public-site polish.
-   Keeps editable builder values intact while restoring the Rascals CTA treatment
-   and lifting only the schedule card base background (not field-line opacity). */
+   Keeps editable builder values intact while restoring the Rascals CTA treatment,
+   enlarging the global brand marks and lifting only the schedule card base background. */
+
+/* Header brand: 54px -> 81px = exactly +50%.
+   Increase header height so the larger mark is never clipped. */
+.sb-header{
+  min-height:98px!important;
+}
+.sb-header .sb-brand img{
+  width:81px!important;
+  height:81px!important;
+  flex:0 0 81px;
+  object-fit:contain!important;
+}
 
 .sb-header .sb-nav-cta{
   background:#e7192d!important;
@@ -15,6 +27,14 @@
   box-shadow:0 10px 26px rgba(231,25,45,.30);
 }
 
+/* Footer brand: 170px -> 255px = exactly +50%. */
+.sb-footer-brand-block img{
+  width:255px!important;
+  height:auto!important;
+  max-width:100%;
+  object-fit:contain!important;
+}
+
 /* ~10% stronger card atmosphere. Field lines/numbers remain at their current,
    deliberately subtle opacity. */
 .fixtures-section .fixture-list article.home-game-card,
@@ -23,4 +43,18 @@
     radial-gradient(ellipse at -4% 50%,rgba(30,127,255,.264) 0%,rgba(18,84,180,.105) 23%,transparent 43%),
     radial-gradient(ellipse at 104% 50%,rgba(238,27,49,.253) 0%,rgba(157,15,32,.105) 23%,transparent 43%),
     linear-gradient(90deg,#071827 0%,#05131f 48%,#08131c 100%)!important;
+}
+
+@media(max-width:680px){
+  .sb-header{
+    min-height:86px!important;
+  }
+  .sb-header .sb-brand img{
+    width:72px!important;
+    height:72px!important;
+    flex-basis:72px;
+  }
+  .sb-footer-brand-block img{
+    width:255px!important;
+  }
 }
