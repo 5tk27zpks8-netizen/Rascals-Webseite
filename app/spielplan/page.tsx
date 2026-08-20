@@ -1,5 +1,6 @@
 import { listGameEvents } from "../lib/football";
 import { listVisibleGames } from "../lib/public-games";
+import { readPublishedSiteBuilderState } from "../lib/site-builder";
 import { ScheduleLogo } from "./ScheduleLogo";
 import "./spielplan.css";
 
@@ -7,11 +8,12 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const metadata = { title: "Spielplan · Hellenstein Rascals", description: "Spielplan, Ergebnisse und Live-Updates der Hellenstein Rascals." };
 
-const RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
+const DEFAULT_RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
 type PublicGame = Awaited<ReturnType<typeof listVisibleGames>>[number];
 
 export default async function SpielplanPage() {
-  const games = await listVisibleGames();
+  const [games, siteState] = await Promise.all([listVisibleGames(), readPublishedSiteBuilderState()]);
+  const rascalsLogo = siteState.theme.logoUrl?.trim() || DEFAULT_RASCALS_LOGO;
   const live = games.find((game) => game.status === "live") ?? null;
   const liveEvents = live ? await listGameEvents(live.id, 6) : [];
   const upcomingAll = games.filter((game) => game.status === "upcoming").sort((a, b) => dateValue(a.kickoff) - dateValue(b.kickoff));
@@ -32,7 +34,7 @@ export default async function SpielplanPage() {
   return <main className="full-schedule-page">
     <header className="full-schedule-hero">
       <nav className="full-schedule-nav">
-        <a className="full-schedule-brand" href="/"><ScheduleLogo src={RASCALS_LOGO} name="Hellenstein Rascals"/><span><b>HELLENSTEIN</b><strong>RASCALS</strong></span></a>
+        <a className="full-schedule-brand" href="/"><ScheduleLogo src={rascalsLogo} name="Hellenstein Rascals"/><span><b>HELLENSTEIN</b><strong>RASCALS</strong></span></a>
         <a className="full-schedule-back" href="/">← Startseite</a>
       </nav>
       <div className="full-schedule-hero-copy">
@@ -43,7 +45,7 @@ export default async function SpielplanPage() {
     </header>
 
     <div className="full-schedule-content">
-      {feature && <FeatureGame game={feature} mode={featureMode}/>} 
+      {feature && <FeatureGame game={feature} mode={featureMode} rascalsLogo={rascalsLogo}/>} 
 
       {completed.length > 0 && <section className="full-schedule-summary" aria-label="Saisonbilanz">
         <div className="full-schedule-summary-lead"><small>SAISON 2026</small><strong>{completed.length}</strong><span>GESPIELT</span></div>
@@ -60,18 +62,18 @@ export default async function SpielplanPage() {
         <a className="full-schedule-text-link" href={`/spielplan/${live.slug}`}>Live-Ticker öffnen →</a>
       </section>}
 
-      {upcoming.length > 0 && <ScheduleGroup title="KOMMENDE SPIELE" kicker="UPCOMING" games={upcoming}/>} 
-      {postponed.length > 0 && <ScheduleGroup title="VERSCHOBENE SPIELE" kicker="STATUS" games={postponed}/>} 
-      {completed.length > 0 && <ScheduleGroup title="ERGEBNISSE" kicker="FINAL" games={completed} results/>}
+      {upcoming.length > 0 && <ScheduleGroup title="KOMMENDE SPIELE" kicker="UPCOMING" games={upcoming} rascalsLogo={rascalsLogo}/>} 
+      {postponed.length > 0 && <ScheduleGroup title="VERSCHOBENE SPIELE" kicker="STATUS" games={postponed} rascalsLogo={rascalsLogo}/>} 
+      {completed.length > 0 && <ScheduleGroup title="ERGEBNISSE" kicker="FINAL" games={completed} results rascalsLogo={rascalsLogo}/>} 
       {!games.length && <div className="full-schedule-empty">Der Spielplan wird hier automatisch angezeigt, sobald Spiele im CMS angelegt wurden.</div>}
     </div>
   </main>;
 }
 
-function FeatureGame({ game, mode }: { game: PublicGame; mode: "live" | "next" | "result" }) {
+function FeatureGame({ game, mode, rascalsLogo }: { game: PublicGame; mode: "live" | "next" | "result"; rascalsLogo: string }) {
   const home = game.homeAway === "home";
-  const left = home ? { name: "HELLENSTEIN RASCALS", logo: RASCALS_LOGO, score: game.rascalsScore } : { name: game.opponent, logo: game.opponentLogo, score: game.opponentScore };
-  const right = home ? { name: game.opponent, logo: game.opponentLogo, score: game.opponentScore } : { name: "HELLENSTEIN RASCALS", logo: RASCALS_LOGO, score: game.rascalsScore };
+  const left = home ? { name: "HELLENSTEIN RASCALS", logo: rascalsLogo, score: game.rascalsScore } : { name: game.opponent, logo: game.opponentLogo, score: game.opponentScore };
+  const right = home ? { name: game.opponent, logo: game.opponentLogo, score: game.opponentScore } : { name: "HELLENSTEIN RASCALS", logo: rascalsLogo, score: game.rascalsScore };
   const scored = game.status === "final" || game.status === "live";
   const kicker = mode === "live" ? "● LIVE" : mode === "next" ? "NEXT UP" : "LETZTES ERGEBNIS";
 
@@ -101,20 +103,20 @@ function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
   return <div className="full-schedule-section-title"><small>{kicker}</small><h2>{title}</h2></div>;
 }
 
-function ScheduleGroup({ title, kicker, games, results = false }: { title: string; kicker: string; games: PublicGame[]; results?: boolean }) {
+function ScheduleGroup({ title, kicker, games, results = false, rascalsLogo }: { title: string; kicker: string; games: PublicGame[]; results?: boolean; rascalsLogo: string }) {
   return <section className="full-schedule-group">
     <SectionTitle kicker={kicker} title={title}/>
-    <div className="full-schedule-grid">{games.map((game) => <GameCard key={game.id} game={game} results={results}/>)}</div>
+    <div className="full-schedule-grid">{games.map((game) => <GameCard key={game.id} game={game} results={results} rascalsLogo={rascalsLogo}/>)}</div>
   </section>;
 }
 
-function GameCard({ game, results }: { game: PublicGame; results: boolean }) {
+function GameCard({ game, results, rascalsLogo }: { game: PublicGame; results: boolean; rascalsLogo: string }) {
   const home = game.homeAway === "home";
   const scored = game.status === "final" || game.status === "live";
   return <a className={`full-schedule-card status-${game.status}`} href={`/spielplan/${game.slug}`}>
     <div className="full-schedule-card-top"><span>{formatDate(game.kickoff)}</span>{results ? <b className={`full-schedule-result-pill ${resultClass(game)}`}>{resultLabel(game)}</b> : <b>{statusLabel(game.status)}</b>}</div>
     <div className="full-schedule-card-matchup">
-      <div><ScheduleLogo src={RASCALS_LOGO} name="Rascals"/><strong>RASCALS</strong></div>
+      <div><ScheduleLogo src={rascalsLogo} name="Rascals"/><strong>RASCALS</strong></div>
       <div className="full-schedule-card-center">{scored ? <><strong>{game.rascalsScore}</strong><span>:</span><strong>{game.opponentScore}</strong></> : <b>{home ? "VS" : "@"}</b>}</div>
       <div><ScheduleLogo src={game.opponentLogo} name={game.opponent}/><strong>{game.opponent}</strong></div>
     </div>
