@@ -1,4 +1,5 @@
 import { AboutTimeline } from "../AboutTimeline";
+import { LegacyBrandSync } from "../LegacyBrandSync";
 import { SiteBuilderPage } from "../SiteBuilderPage";
 import { SiteShell, type PageName } from "../SiteShell";
 import { findBuilderPage, readPublishedSiteBuilderState } from "../lib/site-builder";
@@ -46,7 +47,7 @@ export default async function ContentPage({ params }: { params: Promise<{ slug: 
 
   if (legacyPages.includes(slug as PageName)) {
     const page = slug as PageName;
-    return <><SiteShell page={page} />{page === "ueber-uns" && <AboutTimeline />}</>;
+    return <><LegacyBrandSync logoUrl={state.theme.logoUrl} /><SiteShell page={page} />{page === "ueber-uns" && <AboutTimeline />}</>;
   }
 
   return (
