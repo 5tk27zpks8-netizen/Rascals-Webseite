@@ -20,7 +20,7 @@ type Game = {
 
 type TeamData = { name: string; logo: string; score: number };
 
-const RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
+const DEFAULT_RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
 
 export function DynamicHomeGames() {
   const [games, setGames] = useState<Game[]>([]);
@@ -29,11 +29,21 @@ export function DynamicHomeGames() {
   const [fixtureTarget, setFixtureTarget] = useState<Element | null>(null);
   const [miniTarget, setMiniTarget] = useState<Element | null>(null);
   const [statsTarget, setStatsTarget] = useState<Element | null>(null);
+  const [rascalsLogo, setRascalsLogo] = useState(DEFAULT_RASCALS_LOGO);
 
   useEffect(() => {
     const list = document.querySelector(".fixtures-section .fixture-list");
     const mini = document.querySelector(".schedule-card .mini-fixtures");
     const heading = document.querySelector(".fixtures-section .section-heading");
+    const brandLogo = document.querySelector<HTMLImageElement>(".sb-brand img");
+
+    const syncRascalsLogo = () => {
+      const current = normalizeMediaUrl(brandLogo?.getAttribute("src") || "");
+      setRascalsLogo(current || DEFAULT_RASCALS_LOGO);
+    };
+    syncRascalsLogo();
+    const logoObserver = brandLogo ? new MutationObserver(syncRascalsLogo) : null;
+    logoObserver?.observe(brandLogo!, { attributes: true, attributeFilter: ["src"] });
 
     if (list) {
       list.classList.add("dynamic-games-target");
@@ -67,6 +77,7 @@ export function DynamicHomeGames() {
       .catch(() => setGames([]));
 
     return () => {
+      logoObserver?.disconnect();
       setFixtureTarget(null);
       setMiniTarget(null);
       setStatsTarget(null);
@@ -97,7 +108,7 @@ export function DynamicHomeGames() {
     {fixtureTarget && createPortal(
       <div className="home-schedule">
         <div className="home-schedule-list">
-          {homeGames.map((game, index) => <GameRow key={game.id} game={game} artVariant={index % 3}/>) }
+          {homeGames.map((game, index) => <GameRow key={game.id} game={game} artVariant={index % 3} rascalsLogo={rascalsLogo}/>) }
           {!homeGames.length && <div className="home-games-empty">Noch keine Spiele im Spielplan eingetragen.</div>}
         </div>
         <div className="home-schedule-footer">
@@ -115,14 +126,14 @@ export function DynamicHomeGames() {
   </>;
 }
 
-function GameRow({ game, artVariant }: { game: Game; artVariant: number }) {
+function GameRow({ game, artVariant, rascalsLogo }: { game: Game; artVariant: number; rascalsLogo: string }) {
   const home = game.homeAway === "home";
   const left: TeamData = home
-    ? { name: "HELLENSTEIN RASCALS", logo: RASCALS_LOGO, score: game.rascalsScore }
+    ? { name: "HELLENSTEIN RASCALS", logo: rascalsLogo, score: game.rascalsScore }
     : { name: game.opponent.toUpperCase(), logo: game.opponentLogo, score: game.opponentScore };
   const right: TeamData = home
     ? { name: game.opponent.toUpperCase(), logo: game.opponentLogo, score: game.opponentScore }
-    : { name: "HELLENSTEIN RASCALS", logo: RASCALS_LOGO, score: game.rascalsScore };
+    : { name: "HELLENSTEIN RASCALS", logo: rascalsLogo, score: game.rascalsScore };
   const outcome = resultText(game);
   const href = game.slug ? `/spielplan/${game.slug}` : "/spielplan";
 
@@ -221,8 +232,6 @@ function Logo({ src, name }: { src: string; name: string }) {
 
 function logoVisualScale(name: string) {
   const key = name.toLocaleLowerCase("de-DE");
-  // The Salt Miners source artwork contains considerably more transparent canvas
-  // than the other team marks. Compensate visually while keeping the same 74px slot.
   if (key.includes("heilbronn") && key.includes("miner")) return 1.42;
   return 1;
 }
