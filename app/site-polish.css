@@ -44,17 +44,3 @@
     radial-gradient(ellipse at 104% 50%,rgba(238,27,49,.253) 0%,rgba(157,15,32,.105) 23%,transparent 43%),
     linear-gradient(90deg,#071827 0%,#05131f 48%,#08131c 100%)!important;
 }
-
-@media(max-width:680px){
-  .sb-header{
-    min-height:86px!important;
-  }
-  .sb-header .sb-brand img{
-    width:72px!important;
-    height:72px!important;
-    flex-basis:72px;
-  }
-  .sb-footer-brand-block img{
-    width:255px!important;
-  }
-}
