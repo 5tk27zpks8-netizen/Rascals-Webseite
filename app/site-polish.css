@@ -2,15 +2,15 @@
    Keeps editable builder values intact while restoring the Rascals CTA treatment,
    enlarging the global brand marks and lifting only the schedule card base background. */
 
-/* Header brand: 54px -> 81px = exactly +50%.
-   Increase header height so the larger mark is never clipped. */
+/* Header brand: slightly larger again for stronger presence.
+   81px -> 96px, with enough header height to avoid clipping. */
 .sb-header{
-  min-height:98px!important;
+  min-height:112px!important;
 }
 .sb-header .sb-brand img{
-  width:81px!important;
-  height:81px!important;
-  flex:0 0 81px;
+  width:96px!important;
+  height:96px!important;
+  flex:0 0 96px;
   object-fit:contain!important;
 }
 
@@ -27,12 +27,18 @@
   box-shadow:0 10px 26px rgba(231,25,45,.30);
 }
 
-/* Footer brand: 170px -> 255px = exactly +50%. */
+/* Footer brand stays large, but the artwork itself contains transparent canvas.
+   Shift the image left on desktop so the visible mark aligns with the copy below. */
 .sb-footer-brand-block img{
   width:255px!important;
   height:auto!important;
   max-width:100%;
   object-fit:contain!important;
+}
+@media(min-width:901px){
+  .sb-footer-brand-block img{
+    transform:translateX(-72px);
+  }
 }
 
 /* ~10% stronger card atmosphere. Field lines/numbers remain at their current,
