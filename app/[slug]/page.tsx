@@ -47,7 +47,17 @@ export default async function ContentPage({ params }: { params: Promise<{ slug: 
 
   if (legacyPages.includes(slug as PageName)) {
     const page = slug as PageName;
-    return <><LegacyBrandSync logoUrl={state.theme.logoUrl} /><SiteShell page={page} />{page === "ueber-uns" && <AboutTimeline />}</>;
+    return <>
+      <LegacyBrandSync
+        logoUrl={state.theme.logoUrl}
+        brandTop={state.theme.brandTop}
+        brandBottom={state.theme.brandBottom}
+        navCtaLabel={state.theme.navCtaLabel}
+        navCtaUrl={state.theme.navCtaUrl}
+      />
+      <SiteShell page={page} />
+      {page === "ueber-uns" && <AboutTimeline />}
+    </>;
   }
 
   return (
