@@ -126,14 +126,14 @@ export function CmsHero() {
         .cms-hero.cms-parallax .cms-hero-slide img{transform:scale(1.06) translateX(2%);transition:transform 7s ease}
         .cms-hero.cms-parallax .cms-hero-slide.visible img{transform:scale(1.06) translateX(-2%)}
       `}</style>
-      <section className={`hero cms-hero cms-${cms.transition}`} aria-roledescription="Karussell" aria-label="Rascals Highlights">
+      <section data-hero-pin className={`hero cms-hero cms-${cms.transition}`} aria-roledescription="Karussell" aria-label="Rascals Highlights">
         {slides.map((slide, index) => (
           <div key={slide.id} className={`hero-slide cms-hero-slide ${index === active ? "visible" : ""}`} aria-hidden={index !== active}>
             <img src={slide.image} alt={slide.title ? `${slide.title} ${slide.accent}` : "Rascals Highlight"} data-parallax="10" />
             <div className="hero-shade" />
             <div className="hero-copy">
               <span className="eyebrow">{slide.eyebrow}</span>
-              <h1>{slide.title}<br /><i>{slide.accent}</i></h1>
+              <h1 data-split-reveal><span>{slide.title}</span><br /><i>{slide.accent}</i></h1>
               <p>{slide.text}</p>
               <div className="button-row">
                 {slide.buttonLabel && slide.buttonUrl && <a className={buttonClass(slide.buttonStyle)} href={slide.buttonUrl}>{slide.buttonLabel} <span>→</span></a>}

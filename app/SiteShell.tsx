@@ -61,13 +61,13 @@ function Hero() {
   }, [playing]);
 
   return (
-    <section className="hero" aria-roledescription="Karussell" aria-label="Rascals Highlights">
+    <section className="hero" data-hero-pin aria-roledescription="Karussell" aria-label="Rascals Highlights">
       <div className={`hero-slide helmet-slide ${slide === 0 ? "visible" : ""}`} aria-hidden={slide !== 0}>
         <img src="/helmet-hero-4k.webp" alt="Rascals Footballhelm im Flutlicht" data-parallax="10" />
         <div className="hero-shade" />
         <div className="hero-copy">
           <span className="eyebrow">American Football · Heidenheim</span>
-          <h1>HART. ECHT.<br /><i>RASCALS.</i></h1>
+          <h1 data-split-reveal><span>HART. ECHT.</span><br /><i>RASCALS.</i></h1>
           <p>Ein Team. Eine Familie. Bereit für den nächsten Snap.</p>
           <div className="button-row">
             <a className="button red" href="mailto:football@hsb1846.de">Teil des Teams werden <span>→</span></a>

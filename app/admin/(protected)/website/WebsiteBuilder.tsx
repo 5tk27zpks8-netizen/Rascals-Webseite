@@ -8,7 +8,8 @@ import { AdminNotice, AdminShell } from "../../_components/AdminShell";
 import "./website-builder.css";
 
 const sectionTypes: Array<{type:BuilderSectionType;label:string;desc:string;glyph:string}> = [
-  {type:"hero",label:"Hero",desc:"Großer Einstieg mit Bild und CTA",glyph:"▣"},{type:"text",label:"Text",desc:"Überschrift und Fließtext",glyph:"T"},{type:"split",label:"Bild + Text",desc:"Zweispaltiger Inhaltsbereich",glyph:"◧"},{type:"stats",label:"Statistiken",desc:"Kennzahlen und KPIs",glyph:"#"},{type:"cards",label:"Karten",desc:"Werte, Leistungen oder Inhalte",glyph:"▦"},{type:"gallery",label:"Galerie",desc:"Flexible Bildergalerie",glyph:"◫"},{type:"timeline",label:"Timeline",desc:"Seasons und Meilensteine",glyph:"→"},{type:"games",label:"Spielplan",desc:"Dynamisch aus dem Game Center",glyph:"▤"},{type:"news",label:"News",desc:"Dynamisch aus dem News-CMS",glyph:"◆"},{type:"sponsors",label:"Sponsoren",desc:"Dynamischer Partner-Ticker",glyph:"◇"},{type:"cta",label:"Call to Action",desc:"Prominenter Abschlussbereich",glyph:"↗"},{type:"spacer",label:"Abstand",desc:"Freier Abstand zwischen Bereichen",glyph:"↕"},
+  {type:"hero",label:"Hero",desc:"Großer Einstieg mit Bild und CTA",glyph:"▣"},{type:"text",label:"Text",desc:"Überschrift und Fließtext",glyph:"T"},{type:"split",label:"Bild + Text",desc:"Zweispaltiger Inhaltsbereich",glyph:"◧"},{type:"stats",label:"Statistiken",desc:"Kennzahlen und KPIs",glyph:"#"},{type:"cards",label:"Karten",desc:"Werte, Leistungen oder Inhalte",glyph:"▦"},{type:"gallery",label:"Galerie",desc:"Flexible Bildergalerie",glyph:"◫"},{type:"timeline",label:"Timeline",desc:"Seasons und Meilensteine",glyph:"→"},{type:"games",label:"Spielplan",desc:"Dynamisch aus dem Game Center",glyph:"▤"},{type:"news",label:"News",desc:"Dynamisch aus dem News-CMS",glyph:"◆"},{type:"sponsors",label:"Sponsoren",desc:"Dynamischer Partner-Ticker",glyph:"◇"},{type:"cta",label:"Call to Action",desc:"Prominenter Abschlussbereich",glyph:"↗"},{type:"spacer",label:"Abstand",desc:"Freier Abstand zwischen Bereichen",glyph:"↕"},,
+  {type:"gameday",label:"Gameday",desc:"Nächstes Spiel mit Countdown",glyph:"🏈"},{type:"units",label:"Units",desc:"Offense, Defense, Special Teams",glyph:"🛡"}
 ];
 
 const variantLibrary:Partial<Record<BuilderSectionType,Array<{id:string;label:string;desc:string}>>>={
@@ -36,8 +37,8 @@ type ThemeColorKey="background"|"surface"|"text"|"muted"|"accent"|"headerBackgro
 type LoadResponse={state:SiteBuilderState;published:SiteBuilderState;permissions?:{canPublish?:boolean;canManageDesigns?:boolean}};
 
 const typeLabel=(type:BuilderSectionType)=>sectionTypes.find(item=>item.type===type)?.label??type;
-const itemTypes=new Set<BuilderSectionType>(["stats","cards","gallery","timeline"]);
-const dynamicTypes=new Set<BuilderSectionType>(["games","news","sponsors"]);
+const itemTypes=new Set<BuilderSectionType>(["stats","cards","gallery","timeline","units"]);
+const dynamicTypes=new Set<BuilderSectionType>(["games","news","sponsors","gameday"]);
 const clone=<T,>(value:T):T=>JSON.parse(JSON.stringify(value)) as T;
 
 function slugify(value:string){return value.trim().toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")}

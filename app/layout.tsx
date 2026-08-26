@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import "@fontsource-variable/archivo/standard.css";
 import "@fontsource-variable/archivo/standard-italic.css";
 import "./rascals-design.css";
+import "./rascals-motion.css";
 import "./globals.css";
 import "./home-game-logos.css";
 import "./schedule-compact.css";

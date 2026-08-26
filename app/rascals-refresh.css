@@ -196,6 +196,165 @@ button:focus-visible {
   transform: translateY(-4px);
 }
 
+/* ============================================================
+   GAMEDAY
+   The most-wanted fact on a club site: when do they play next.
+   ============================================================ */
+
+.sb-gameday-section .sb-inner {
+  display: grid;
+  justify-items: start;
+}
+
+.rascals-gameday {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+  width: 100%;
+}
+.rascals-gameday-head h2 {
+  margin: 0.6rem 0 0;
+}
+.rascals-gameday-matchup {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 4vw, 3.5rem);
+  margin: clamp(1.4rem, 3vw, 2.6rem) 0 0.4rem;
+  flex-wrap: wrap;
+}
+.rascals-gameday-team {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+.rascals-gameday-team img,
+.rascals-gameday-team i {
+  width: clamp(52px, 7vw, 84px);
+  height: clamp(52px, 7vw, 84px);
+  object-fit: contain;
+  flex: none;
+}
+.rascals-gameday-team i {
+  display: block;
+  border: 1px solid var(--rascals-line-strong);
+}
+.rascals-gameday-team b {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 76;
+  font-size: clamp(1.2rem, 2.4vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.rascals-gameday-vs {
+  color: var(--rascals-red);
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-weight: 900;
+  font-style: italic;
+}
+.rascals-gameday-meta {
+  margin: 0.5rem 0 0;
+  color: var(--rascals-text-dim);
+  font-size: 0.95rem;
+}
+.rascals-gameday .sb-button {
+  margin-top: 1.6rem;
+}
+
+/* ============================================================
+   UNITS
+   Offense, Defense, Special Teams. Numbered like a depth chart,
+   sized unevenly so the row does not read as three equal cards.
+   ============================================================ */
+
+.sb-units {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  gap: 1px;
+  background: var(--rascals-line);
+}
+.sb-units article {
+  position: relative;
+  display: grid;
+  align-content: end;
+  min-height: clamp(320px, 38vw, 460px);
+  padding: clamp(1.5rem, 3vw, 2.6rem);
+  overflow: hidden;
+  background: var(--sb-bg);
+}
+.sb-units article > img {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.42;
+  transition: transform 700ms var(--ease-drive), opacity 400ms var(--ease-snap);
+}
+.sb-units article:hover > img {
+  transform: scale(1.05);
+  opacity: 0.55;
+}
+.sb-units article::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(transparent 25%, rgb(3 10 19 / 0.92));
+  pointer-events: none;
+}
+.sb-unit-index {
+  position: absolute;
+  top: clamp(1rem, 2vw, 1.8rem);
+  left: clamp(1.5rem, 3vw, 2.6rem);
+  z-index: 2;
+  color: var(--rascals-red);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+.sb-unit-body {
+  position: relative;
+  z-index: 2;
+}
+.sb-unit-body small {
+  color: var(--rascals-red);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.sb-unit-body h3 {
+  margin: 0.5rem 0 0.6rem;
+  font-size: clamp(1.5rem, 2.6vw, 2.3rem);
+}
+.sb-unit-body p {
+  max-width: 34ch;
+  color: var(--rascals-text-dim);
+  font-size: 0.92rem;
+}
+.sb-unit-body a {
+  display: inline-block;
+  margin-top: 0.9rem;
+  color: var(--rascals-red);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .sb-units {
+    grid-template-columns: 1fr;
+  }
+  .sb-units article {
+    min-height: 300px;
+  }
+}
+
 /* --- Motion opt-out -------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   .hero-slide > img,
@@ -205,7 +364,8 @@ button:focus-visible {
   }
   .news-grid article:hover,
   .team-panels article:hover,
-  .sb-cards article:hover {
+  .sb-cards article:hover,
+  .sb-units article:hover > img {
     transform: none;
   }
 }

@@ -5,15 +5,18 @@ import { useEffect } from "react";
 /**
  * Scroll choreography for the public site.
  *
- * Every animation here has one job:
- *  - reveals establish reading order as a section enters
- *  - the hero parallax gives depth to the stadium photography
- *  - stat counters make the club's numbers land as a beat
+ * Every effect here earns its place:
+ *  - word reveals give headlines a spoken cadence instead of a fade
+ *  - block reveals establish reading order as a section enters
+ *  - the hero pins and hands off to the page, so the first scroll
+ *    reads as a transition rather than the hero sliding away
+ *  - parallax gives the stadium photography depth
+ *  - counters make the club's numbers land as a beat
  *  - yard lines fill to mark section boundaries (football motif)
+ *  - the sponsor strip pans horizontally while its section is held
  *
- * Nothing loops forever, nothing hijacks the scroll. GSAP is loaded
- * lazily so it never blocks first paint, and the whole module is a
- * no-op when the visitor prefers reduced motion.
+ * GSAP is imported lazily so it never blocks first paint, and the whole
+ * module is a no-op when the visitor prefers reduced motion.
  */
 export function RascalsMotion() {
   useEffect(() => {
@@ -36,8 +39,41 @@ export function RascalsMotion() {
       if (cancelled) return;
 
       gsap.registerPlugin(ScrollTrigger);
+
       const ctx = gsap.context(() => {
-        // --- Reveals: order-of-reading, staggered per section ---
+        // --- Headlines arrive word by word -----------------------
+        const splitHeadline = (element: HTMLElement) => {
+          if (element.dataset.split === "done") return;
+          element.dataset.split = "done";
+          element.querySelectorAll<HTMLElement>(":scope > span, :scope > i").forEach((part) => {
+            const words = (part.textContent ?? "").split(/\s+/).filter(Boolean);
+            if (!words.length) return;
+            part.textContent = "";
+            words.forEach((word, index) => {
+              const outer = document.createElement("span");
+              outer.className = "rascals-word";
+              outer.style.setProperty("--word-delay", `${index * 55}ms`);
+              const inner = document.createElement("span");
+              inner.textContent = word;
+              outer.appendChild(inner);
+              part.appendChild(outer);
+              if (index < words.length - 1) part.appendChild(document.createTextNode(" "));
+            });
+          });
+        };
+
+        gsap.utils.toArray<HTMLElement>("[data-split-reveal]").forEach((element) => {
+          splitHeadline(element);
+          ScrollTrigger.create({
+            trigger: element,
+            start: "top 90%",
+            once: true,
+            onEnter: () =>
+              element.querySelectorAll<HTMLElement>(".rascals-word").forEach((word) => word.classList.add("is-revealed")),
+          });
+        });
+
+        // --- Block reveals ---------------------------------------
         gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((element) => {
           ScrollTrigger.create({
             trigger: element,
@@ -50,7 +86,26 @@ export function RascalsMotion() {
           });
         });
 
-        // --- Hero parallax: photography drifts slower than copy ---
+        // --- Hero hand-off ---------------------------------------
+        // The hero holds while its copy lifts and dims, so leaving the
+        // hero reads as a deliberate transition into the page.
+        const hero = document.querySelector<HTMLElement>("[data-hero-pin]");
+        const heroCopy = hero?.querySelector<HTMLElement>(".hero-copy, .sb-hero-copy");
+        if (hero && heroCopy && window.innerWidth > 900) {
+          gsap.to(heroCopy, {
+            yPercent: -18,
+            opacity: 0,
+            ease: "none",
+            scrollTrigger: {
+              trigger: hero,
+              start: "top top",
+              end: "bottom top",
+              scrub: 0.6,
+            },
+          });
+        }
+
+        // --- Parallax on photography -----------------------------
         gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((element) => {
           const strength = Number(element.dataset.parallax ?? 12);
           gsap.to(element, {
@@ -58,14 +113,14 @@ export function RascalsMotion() {
             ease: "none",
             scrollTrigger: {
               trigger: element.parentElement ?? element,
-              start: "top top",
+              start: "top bottom",
               end: "bottom top",
               scrub: true,
             },
           });
         });
 
-        // --- Stat counters: the numbers arrive, they don't just sit ---
+        // --- Counters --------------------------------------------
         gsap.utils.toArray<HTMLElement>("[data-count]").forEach((element) => {
           const target = Number(element.dataset.count ?? 0);
           const suffix = element.dataset.countSuffix ?? "";
@@ -87,13 +142,35 @@ export function RascalsMotion() {
           });
         });
 
-        // --- Yard lines fill as the section boundary is crossed ---
+        // --- Yard lines ------------------------------------------
         gsap.utils.toArray<HTMLElement>(".rascals-yardline").forEach((element) => {
           ScrollTrigger.create({
             trigger: element,
             start: "top 92%",
             once: true,
             onEnter: () => element.style.setProperty("--yardline-fill", "100%"),
+          });
+        });
+
+        // --- Horizontal pan --------------------------------------
+        // Used for strips that are wider than the viewport: the section
+        // is held while its track slides, so nothing is missed.
+        gsap.utils.toArray<HTMLElement>("[data-pan]").forEach((wrapper) => {
+          const track = wrapper.querySelector<HTMLElement>("[data-pan-track]");
+          if (!track || window.innerWidth < 900) return;
+          const distance = () => Math.max(0, track.scrollWidth - window.innerWidth);
+          if (distance() <= 0) return;
+          gsap.to(track, {
+            x: () => -distance(),
+            ease: "none",
+            scrollTrigger: {
+              trigger: wrapper,
+              start: "top top",
+              end: () => `+=${distance()}`,
+              pin: true,
+              scrub: 1,
+              invalidateOnRefresh: true,
+            },
           });
         });
       });
