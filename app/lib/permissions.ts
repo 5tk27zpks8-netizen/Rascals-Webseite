@@ -1,4 +1,5 @@
-import { getChatGPTUser } from "../chatgpt-auth";
+import { headers } from "next/headers";
+import { getAdminSessionIdentity } from "./admin-auth";
 import { bindings } from "./cms";
 
 export type CmsRole = "admin" | "editor" | "photographer" | "coach" | "gameday" | "viewer";
@@ -31,26 +32,22 @@ export async function ensureCmsUsersSchema() {
   )`).run();
 }
 
+/**
+ * Resolves the acting CMS user from the signed-in session only. Identity is
+ * never taken from request headers: those are attacker-controlled unless an
+ * upstream proxy is provably stripping them, which we cannot assume here.
+ */
 export async function getCmsActor(): Promise<CmsActor | null> {
-  const identity = await getChatGPTUser();
+  const identity = await getAdminSessionIdentity(await headers());
   if (!identity) return null;
 
   await ensureCmsUsersSchema();
   const { DB } = bindings();
-  let row = await DB.prepare("SELECT email, display_name, role, active FROM cms_users WHERE lower(email) = lower(?)")
+  const row = await DB.prepare("SELECT email, display_name, role, active FROM cms_users WHERE lower(email) = lower(?)")
     .bind(identity.email)
     .first<Record<string, unknown>>();
 
-  if (!row) {
-    const count = await DB.prepare("SELECT COUNT(*) AS total FROM cms_users").first<{ total: number }>();
-    const role: CmsRole = Number(count?.total ?? 0) === 0 ? "admin" : "viewer";
-    await DB.prepare("INSERT INTO cms_users (email, display_name, role, active) VALUES (?, ?, ?, 1)")
-      .bind(identity.email, identity.displayName, role)
-      .run();
-    row = { email: identity.email, display_name: identity.displayName, role, active: 1 };
-  }
-
-  if (Number(row.active ?? 1) !== 1) return null;
+  if (!row || Number(row.active ?? 0) !== 1) return null;
   const rawRole = String(row.role ?? "viewer");
   const role: CmsRole = ["admin", "editor", "photographer", "coach", "gameday"].includes(rawRole) ? rawRole as CmsRole : "viewer";
   return {

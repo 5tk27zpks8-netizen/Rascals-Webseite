@@ -1,1 +1,0 @@
-import {requireChatGPTUser} from "../../chatgpt-auth";import {SectionMediaManager} from "./SectionMediaManager";export const metadata={title:"Startseiten-Bilder · Rascals CMS",robots:{index:false,follow:false}};export default async function Page(){await requireChatGPTUser("/admin/sections");return <SectionMediaManager/>}

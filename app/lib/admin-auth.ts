@@ -76,8 +76,34 @@ export async function canSetupPasswordForEmail(email: string): Promise<boolean> 
   await ensureAdminAuthSchema();
   const { DB } = bindings();
   const row = await DB.prepare("SELECT role, active FROM cms_users WHERE lower(email)=lower(?)").bind(email).first<Record<string, unknown>>();
-  if (!row || Number(row.active ?? 0) !== 1) return false;
-  return String(row.role ?? "viewer") !== "viewer";
+  return Boolean(row) && Number(row?.active ?? 0) === 1;
+}
+
+/**
+ * Self-service registration. The very first account becomes admin so the site
+ * is manageable without seeding; everyone after that starts as "viewer" (the
+ * default player view) and is upgraded by an admin under /admin/users.
+ */
+export async function registerAdminUser(email: string, password: string, displayName: string): Promise<void> {
+  if (password.length < 12) throw new Error("PASSWORD_TOO_SHORT");
+  const normalized = email.trim().toLowerCase();
+  if (!normalized.includes("@")) throw new Error("INVALID_EMAIL");
+  await ensureAdminAuthSchema();
+  const { DB } = bindings();
+
+  const existingCredential = await DB.prepare("SELECT email FROM cms_auth_credentials WHERE lower(email)=lower(?)").bind(normalized).first();
+  if (existingCredential) throw new Error("ALREADY_REGISTERED");
+
+  const total = await DB.prepare("SELECT COUNT(*) AS total FROM cms_users").first<{ total: number }>();
+  const role = Number(total?.total ?? 0) === 0 ? "admin" : "viewer";
+  const name = displayName.trim() || normalized.split("@")[0];
+
+  await DB.prepare(`INSERT INTO cms_users (email, display_name, role, active)
+      VALUES (?,?,?,1)
+      ON CONFLICT(email) DO UPDATE SET display_name=excluded.display_name, updated_at=CURRENT_TIMESTAMP`)
+    .bind(normalized, name, role).run();
+
+  await writePasswordCredential(normalized, password);
 }
 
 export async function hasAdminCredential(email: string): Promise<boolean> {
@@ -92,6 +118,10 @@ export async function setAdminPassword(email: string, password: string): Promise
   await ensureAdminAuthSchema();
   const normalized = email.trim().toLowerCase();
   if (!(await canSetupPasswordForEmail(normalized))) throw new Error("NOT_ALLOWED");
+  await writePasswordCredential(normalized, password);
+}
+
+async function writePasswordCredential(normalizedEmail: string, password: string): Promise<void> {
   const saltBytes = crypto.getRandomValues(new Uint8Array(16));
   const salt = bytesToBase64(saltBytes);
   const hash = await derivePasswordHash(password, saltBytes, PASSWORD_ITERATIONS);
@@ -106,9 +136,9 @@ export async function setAdminPassword(email: string, password: string): Promise
         failed_attempts=0,
         locked_until=NULL,
         updated_at=CURRENT_TIMESTAMP`)
-    .bind(normalized, salt, bytesToBase64(hash), PASSWORD_ITERATIONS)
+    .bind(normalizedEmail, salt, bytesToBase64(hash), PASSWORD_ITERATIONS)
     .run();
-  await DB.prepare("DELETE FROM cms_auth_sessions WHERE lower(email)=lower(?)").bind(normalized).run();
+  await DB.prepare("DELETE FROM cms_auth_sessions WHERE lower(email)=lower(?)").bind(normalizedEmail).run();
 }
 
 export async function verifyAdminPassword(email: string, password: string): Promise<{ ok: boolean; locked?: boolean; email?: string }> {
@@ -116,7 +146,7 @@ export async function verifyAdminPassword(email: string, password: string): Prom
   const normalized = email.trim().toLowerCase();
   const { DB } = bindings();
   const user = await DB.prepare("SELECT email, active, role FROM cms_users WHERE lower(email)=lower(?)").bind(normalized).first<Record<string, unknown>>();
-  if (!user || Number(user.active ?? 0) !== 1 || String(user.role ?? "viewer") === "viewer") return { ok: false };
+  if (!user || Number(user.active ?? 0) !== 1) return { ok: false };
   const row = await DB.prepare("SELECT email,password_salt,password_hash,password_iterations,failed_attempts,locked_until FROM cms_auth_credentials WHERE lower(email)=lower(?)")
     .bind(normalized).first<Record<string, unknown>>();
   if (!row) return { ok: false };
