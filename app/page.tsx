@@ -44,5 +44,5 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
     return <SiteBuilderPage state={state} page={builderPage} />;
   }
 
-  return <><CmsHero/><SiteShell page="home"/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
+  return <><SiteShell page="home" heroOverride={<CmsHero/>}/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
 }

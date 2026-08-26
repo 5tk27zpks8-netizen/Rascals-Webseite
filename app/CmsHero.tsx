@@ -69,6 +69,7 @@ function buttonClass(style?: HeroButtonStyle) {
 export function CmsHero() {
   const [cms, setCms] = useState<CmsState>(fallback);
   const [active, setActive] = useState(0);
+  const [playing, setPlaying] = useState(true);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -103,13 +104,14 @@ export function CmsHero() {
   }, [active, slides.length]);
 
   useEffect(() => {
-    if (slides.length < 2) return;
+    if (slides.length < 2 || !playing) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = window.setInterval(
       () => setActive((current) => (current + 1) % slides.length),
       Math.max(3, cms.intervalSeconds || 7) * 1000,
     );
     return () => window.clearInterval(timer);
-  }, [cms.intervalSeconds, slides.length]);
+  }, [cms.intervalSeconds, slides.length, playing]);
 
   return (
     <>
@@ -127,7 +129,7 @@ export function CmsHero() {
       <section className={`hero cms-hero cms-${cms.transition}`} aria-roledescription="Karussell" aria-label="Rascals Highlights">
         {slides.map((slide, index) => (
           <div key={slide.id} className={`hero-slide cms-hero-slide ${index === active ? "visible" : ""}`} aria-hidden={index !== active}>
-            <img src={slide.image} alt={slide.title ? `${slide.title} ${slide.accent}` : "Rascals Highlight"} />
+            <img src={slide.image} alt={slide.title ? `${slide.title} ${slide.accent}` : "Rascals Highlight"} data-parallax="10" />
             <div className="hero-shade" />
             <div className="hero-copy">
               <span className="eyebrow">{slide.eyebrow}</span>
@@ -145,9 +147,16 @@ export function CmsHero() {
             {slides.map((slide, index) => (
               <button key={slide.id} onClick={() => setActive(index)} aria-label={`Motiv ${index + 1}`} className={index === active ? "active" : ""} />
             ))}
+            {/* WCAG 2.2.2: auto-advancing content longer than 5s needs a pause control. */}
+            <button
+              className="hero-playstate"
+              onClick={() => setPlaying((value) => !value)}
+              aria-label={playing ? "Automatischen Wechsel pausieren" : "Automatischen Wechsel fortsetzen"}
+            >
+              {playing ? "❚❚" : "▶"}
+            </button>
           </div>
         )}
-        <div className="scroll-note">SCROLL TO HUDDLE <span>↓</span></div>
       </section>
     </>
   );

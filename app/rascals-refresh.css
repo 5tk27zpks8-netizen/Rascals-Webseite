@@ -1,0 +1,157 @@
+/* ============================================================
+   RASCALS REFRESH
+   Visual pass on top of globals.css. Consumes the tokens from
+   rascals-design.css. Loaded last so it settles conflicts that
+   the older stylesheets create between themselves.
+   ============================================================ */
+
+/* --- Navigation ------------------------------------------------
+   The nav now carries seven destinations plus the CTA. Tighten
+   the gap so it still resolves on one line down to the mobile
+   breakpoint, per the "nav never wraps at desktop" rule. */
+.site-header .main-nav {
+  gap: clamp(0.85rem, 1.5vw, 1.6rem) !important;
+}
+.site-header .main-nav a {
+  white-space: nowrap;
+}
+
+/* Underline that grows from the left on hover, replacing the
+   previous no-op rule. Signals which link is being targeted. */
+.site-header .main-nav a:not(.nav-cta) {
+  padding-bottom: 4px !important;
+  background-image: linear-gradient(var(--rascals-red), var(--rascals-red));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition: background-size var(--dur-mid) var(--ease-drive), color var(--dur-fast) var(--ease-snap);
+}
+.site-header .main-nav a:not(.nav-cta):hover,
+.site-header .main-nav a:not(.nav-cta):focus-visible,
+.site-header .main-nav a.active:not(.nav-cta) {
+  background-size: 100% 2px;
+}
+
+/* Brand lockup uses the display face rather than an Inter fallback. */
+.site-header .brand strong,
+.site-header .brand em {
+  font-family: var(--font-display) !important;
+  font-variation-settings: "wdth" 82;
+}
+
+/* --- Hero ------------------------------------------------------ */
+.hero-copy p {
+  color: var(--rascals-text-dim);
+}
+
+/* Pause control for the auto-advancing hero (WCAG 2.2.2). */
+.hero-playstate {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-top: 0.6rem;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.45);
+  background: rgb(3 10 19 / 0.55);
+  color: #fff;
+  font-size: 0.6rem;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background-color var(--dur-fast) var(--ease-snap), border-color var(--dur-fast) var(--ease-snap);
+}
+.hero-playstate:hover,
+.hero-playstate:focus-visible {
+  border-color: var(--rascals-red);
+  background: var(--rascals-red);
+}
+
+/* The hero image scales slightly so the parallax drift never
+   exposes an empty edge at the top or bottom of the frame. */
+.hero-slide > img,
+.page-hero > img,
+.join-cta > img {
+  transform: scale(1.08);
+  transform-origin: center;
+}
+
+/* --- Stat bar --------------------------------------------------
+   Numbers are the point here, so they get the display face and
+   real weight instead of sitting at body scale. */
+.stat-bar b {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 76;
+  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.stat-bar span {
+  flex-direction: column;
+  gap: 0.4rem !important;
+  align-items: flex-start !important;
+  padding: clamp(1.5rem, 3vw, 2.4rem) clamp(1rem, 2vw, 2rem) !important;
+  text-align: left;
+}
+
+/* --- Section rhythm -------------------------------------------- */
+.rascals-yardline {
+  background-color: var(--rascals-navy-900);
+}
+
+/* --- Cards and media ------------------------------------------- */
+.product-card,
+.team-panels article,
+.news-grid article {
+  border-radius: var(--radius);
+}
+
+/* Hover lift is a state change, not decoration: it marks the card
+   the pointer will activate. */
+.news-grid article,
+.team-panels article {
+  transition: transform var(--dur-mid) var(--ease-drive);
+}
+.news-grid article:hover,
+.team-panels article:hover {
+  transform: translateY(-4px);
+}
+
+/* --- Focus visibility ------------------------------------------
+   The site had no visible focus ring on brand-coloured surfaces. */
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--rascals-red);
+  outline-offset: 3px;
+}
+
+/* --- Motion opt-out -------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide > img,
+  .page-hero > img,
+  .join-cta > img {
+    transform: none;
+  }
+  .news-grid article:hover,
+  .team-panels article:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 901px) {
+  .site-header .main-nav a {
+    font-size: 0.66rem !important;
+  }
+}
+
+/* The hero controls switch from a vertical stack to a row on small
+   screens, so the pause button needs its spacing on the inline axis. */
+@media (max-width: 720px) {
+  .hero-controls {
+    align-items: center;
+  }
+  .hero-playstate {
+    margin: 0 0 0 0.7rem;
+  }
+}
