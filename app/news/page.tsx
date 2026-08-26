@@ -1,4 +1,5 @@
 import { countPublishedNews, listNewsCategories, listPublishedNews } from "../lib/news";
+import { Header } from "../SiteShell";
 import "./news-public.css";
 
 export const metadata = { title: "News · Hellenstein Rascals", description: "Aktuelle News, Spielberichte und Vereinsmeldungen der Hellenstein Rascals." };
@@ -16,7 +17,9 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
   ]);
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
-  return <main className="public-news-page">
+  return <>
+    <Header page="news" />
+    <main className="public-news-page">
     <header className="public-news-hero"><a href="/" className="public-news-back">← Zur Startseite</a><span>INSIDE RASCALS</span><h1>FROM THE <i>HUDDLE.</i></h1><p>Spielberichte, Team-News, Vereinsleben und aktuelle Meldungen.</p></header>
     <form className="public-news-filters" method="get"><input name="q" defaultValue={q} placeholder="News durchsuchen…"/><select name="category" defaultValue={category}><option value="">Alle Kategorien</option>{categories.map((item)=><option key={item}>{item}</option>)}</select><button type="submit">Filtern</button></form>
     <section className="public-news-grid">
@@ -24,5 +27,6 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
       {!posts.length&&<div className="public-news-empty"><b>Keine Beiträge gefunden.</b><p>Filter anpassen oder später erneut vorbeischauen.</p></div>}
     </section>
     {pages>1&&<nav className="public-news-pagination">{Array.from({length:pages},(_,i)=>i+1).map(p=><a key={p} className={p===page?"active":""} href={`?q=${encodeURIComponent(q)}&category=${encodeURIComponent(category)}&page=${p}`}>{p}</a>)}</nav>}
-  </main>;
+  </main>
+  </>;
 }

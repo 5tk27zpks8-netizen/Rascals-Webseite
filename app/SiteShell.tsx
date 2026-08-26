@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type PageName = "home" | "ueber-uns" | "team" | "sponsoring" | "shop" | "news" | "galerie";
+export type PageName = "home" | "ueber-uns" | "team" | "sponsoring" | "shop" | "news" | "galerie" | "spielplan";
 
 const nav = [
   ["Über uns", "/ueber-uns"],
@@ -26,7 +26,7 @@ const shopUrl = "https://hellenstein-rascals.myshopify.com";
 const productUrl = `${shopUrl}/products/puli`;
 const productImage = "/shop-product-4k.webp";
 
-function Header({ page }: { page: PageName }) {
+export function Header({ page }: { page: PageName }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <header className="site-header">

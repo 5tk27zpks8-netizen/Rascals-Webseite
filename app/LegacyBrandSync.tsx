@@ -103,9 +103,6 @@ const unifiedHeaderCss = `
   box-shadow:0 8px 22px rgba(231,25,45,.22)!important;
   transform:none!important;
 }
-.site-header.legacy-unified-header .menu-button{
-  display:none!important;
-}
 @media(max-width:780px){
   .site-header.legacy-unified-header{
     min-height:88px!important;

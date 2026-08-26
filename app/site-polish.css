@@ -150,7 +150,8 @@
 }
 
 @media(max-width:900px){
-  .site-header{
+  .site-header,
+  .sb-header{
     position:sticky!important;
     min-height:94px!important;
   }
