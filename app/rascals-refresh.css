@@ -126,6 +126,76 @@ button:focus-visible {
   outline-offset: 3px;
 }
 
+/* ============================================================
+   BUILDER PAGES
+   The live homepage renders through SiteBuilderPageV4, not
+   SiteShell, so the brand treatment has to reach it here too.
+   ============================================================ */
+
+/* Nav parity with the legacy header: seven items plus CTA on one
+   line, with the same hover underline and active state. */
+.sb-header nav {
+  gap: clamp(0.85rem, 1.5vw, 1.6rem);
+}
+.sb-header nav a {
+  white-space: nowrap;
+}
+.sb-header nav a:not(.sb-nav-cta) {
+  padding-bottom: 4px;
+  background-image: linear-gradient(var(--rascals-red), var(--rascals-red));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition: background-size var(--dur-mid) var(--ease-drive);
+}
+.sb-header nav a:not(.sb-nav-cta):hover,
+.sb-header nav a:not(.sb-nav-cta):focus-visible,
+.sb-header nav a.active:not(.sb-nav-cta) {
+  background-size: 100% 2px;
+}
+
+/* Display face for builder headings. The CMS theme variable now
+   carries the design-system font as its final fallback, so this
+   only needs to fix width and tracking. */
+.sb-section h1,
+.sb-section h2,
+.sb-native-section h2,
+.sb-brand b,
+.sb-brand em {
+  font-variation-settings: "wdth" 76;
+  letter-spacing: var(--display-tracking);
+}
+
+.sb-stats b {
+  font-variation-settings: "wdth" 76;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+/* Section boundary marker, matching the legacy pages. */
+.sb-section + .sb-section::before,
+.sb-native-section + .sb-section::before,
+.sb-section + .sb-native-section::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--rascals-line-strong) 0 26px,
+    transparent 26px 44px
+  );
+  z-index: 3;
+}
+
+/* Cards lift on hover to mark the activation target. */
+.sb-cards article {
+  transition: transform var(--dur-mid) var(--ease-drive);
+}
+.sb-cards article:hover {
+  transform: translateY(-4px);
+}
+
 /* --- Motion opt-out -------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   .hero-slide > img,
@@ -134,7 +204,8 @@ button:focus-visible {
     transform: none;
   }
   .news-grid article:hover,
-  .team-panels article:hover {
+  .team-panels article:hover,
+  .sb-cards article:hover {
     transform: none;
   }
 }
