@@ -80,11 +80,14 @@ export async function canSetupPasswordForEmail(email: string): Promise<boolean> 
 }
 
 /**
- * Self-service registration. The very first account becomes admin so the site
- * is manageable without seeding; everyone after that starts as "viewer" (the
- * default player view) and is upgraded by an admin under /admin/users.
+ * Self-service registration. Anyone can create an account and sign in right
+ * away, but a new account only carries the standard view (Spielplan and
+ * Live-Ticker, read-only) until an admin widens it under /admin/users.
+ *
+ * The very first account becomes admin, so the site is manageable without
+ * seeding. Returns the granted role so the caller can say what was created.
  */
-export async function registerAdminUser(email: string, password: string, displayName: string): Promise<void> {
+export async function registerAdminUser(email: string, password: string, displayName: string): Promise<{ role: "admin" | "viewer" }> {
   if (password.length < 12) throw new Error("PASSWORD_TOO_SHORT");
   const normalized = email.trim().toLowerCase();
   if (!normalized.includes("@")) throw new Error("INVALID_EMAIL");
@@ -104,6 +107,7 @@ export async function registerAdminUser(email: string, password: string, display
     .bind(normalized, name, role).run();
 
   await writePasswordCredential(normalized, password);
+  return { role };
 }
 
 export async function hasAdminCredential(email: string): Promise<boolean> {
@@ -141,12 +145,28 @@ async function writePasswordCredential(normalizedEmail: string, password: string
   await DB.prepare("DELETE FROM cms_auth_sessions WHERE lower(email)=lower(?)").bind(normalizedEmail).run();
 }
 
-export async function verifyAdminPassword(email: string, password: string): Promise<{ ok: boolean; locked?: boolean; email?: string }> {
+export async function verifyAdminPassword(email: string, password: string): Promise<{ ok: boolean; locked?: boolean; pending?: boolean; email?: string }> {
   await ensureAdminAuthSchema();
   const normalized = email.trim().toLowerCase();
   const { DB } = bindings();
   const user = await DB.prepare("SELECT email, active, role FROM cms_users WHERE lower(email)=lower(?)").bind(normalized).first<Record<string, unknown>>();
-  if (!user || Number(user.active ?? 0) !== 1) return { ok: false };
+  if (!user) return { ok: false };
+  // Registration activates an account immediately, so an inactive one was
+  // switched off by an admin. Saying that plainly beats implying the password
+  // is wrong. Only reported once the password checks out, so it cannot be used
+  // to probe which addresses are registered.
+  if (Number(user.active ?? 0) !== 1) {
+    const credential = await DB.prepare("SELECT password_salt,password_hash,password_iterations FROM cms_auth_credentials WHERE lower(email)=lower(?)")
+      .bind(normalized).first<Record<string, unknown>>();
+    if (!credential) return { ok: false };
+    const derived = await derivePasswordHash(
+      password,
+      base64ToBytes(String(credential.password_salt ?? "")),
+      Math.max(100_000, Number(credential.password_iterations ?? PASSWORD_ITERATIONS)),
+    );
+    if (!timingSafeEqual(derived, base64ToBytes(String(credential.password_hash ?? "")))) return { ok: false };
+    return { ok: false, pending: true };
+  }
   const row = await DB.prepare("SELECT email,password_salt,password_hash,password_iterations,failed_attempts,locked_until FROM cms_auth_credentials WHERE lower(email)=lower(?)")
     .bind(normalized).first<Record<string, unknown>>();
   if (!row) return { ok: false };

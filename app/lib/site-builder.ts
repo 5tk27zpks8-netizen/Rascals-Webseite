@@ -1,6 +1,6 @@
 import { bindings, ensureCmsSchema } from "./cms";
 
-export type BuilderSectionType="hero"|"text"|"split"|"stats"|"cards"|"gallery"|"timeline"|"cta"|"spacer"|"games"|"news"|"sponsors";
+export type BuilderSectionType="hero"|"text"|"split"|"stats"|"cards"|"gallery"|"timeline"|"cta"|"spacer"|"games"|"news"|"sponsors"|"gameday"|"units";
 export type BuilderAlign="left"|"center"|"right";
 export type BuilderBackgroundMode="color"|"gradient"|"image"|"video";
 export type BuilderElementResponsiveStyle={fontSize?:number;lineHeight?:number;letterSpacing?:number;align?:BuilderAlign;paddingX?:number;paddingY?:number};

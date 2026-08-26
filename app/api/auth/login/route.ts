@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   if (!email || !password) return loginRedirect("invalid", returnTo);
 
   const result = await verifyAdminPassword(email, password);
-  if (!result.ok || !result.email) return loginRedirect(result.locked ? "locked" : "invalid", returnTo);
+  if (!result.ok || !result.email) return loginRedirect(result.locked ? "locked" : result.pending ? "pending" : "invalid", returnTo);
 
   const session = await createAdminSession(result.email);
   return new Response(null, {

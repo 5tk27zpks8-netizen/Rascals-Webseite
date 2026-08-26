@@ -18,6 +18,7 @@ const errorText: Record<string, string> = {
   email: "Bitte eine gültige E-Mail-Adresse angeben.",
   exists: "Für diese E-Mail existiert bereits ein Konto. Bitte melde dich an.",
   register: "Registrierung fehlgeschlagen. Bitte erneut versuchen.",
+  pending: "Dein Konto ist deaktiviert. Ein Admin muss es wieder freischalten.",
 };
 
 export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<Search> }) {
@@ -43,7 +44,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
           <h1>{registerMode ? "Konto erstellen" : "Willkommen zurück"}</h1>
           <p>
             {registerMode
-              ? "Erstelle dein persönliches Konto. Du startest mit der Standard-Spieleransicht; erweiterte Rechte vergibt ein Admin."
+              ? "Nach der Registrierung siehst du Spielplan und Live-Ticker. Weitere Rechte \u2014 zum Beispiel die Website zu gestalten \u2014 vergibt ein Admin."
               : "Melde dich mit deiner E-Mail und deinem Passwort an."}
           </p>
         </div>
