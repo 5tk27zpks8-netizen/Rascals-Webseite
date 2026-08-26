@@ -8,7 +8,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-type Search = { return_to?: string; error?: string; mode?: string };
+type Search = { return_to?: string; error?: string; mode?: string; detail?: string };
 
 const errorText: Record<string, string> = {
   invalid: "E-Mail oder Passwort ist nicht korrekt.",
@@ -30,6 +30,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
 
   const registerMode = query.mode === "register";
   const message = query.error ? errorText[query.error] ?? "Anmeldung nicht möglich." : "";
+  const detail = typeof query.detail === "string" ? query.detail.slice(0, 200) : "";
 
   return (
     <main className="admin-login-page">
@@ -49,7 +50,12 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
           </p>
         </div>
 
-        {message && <div className="admin-login-error">{message}</div>}
+        {message && (
+          <div className="admin-login-error">
+            {message}
+            {detail && <span className="admin-login-detail">{detail}</span>}
+          </div>
+        )}
 
         {registerMode ? (
           <form className="admin-login-form" action="/api/auth/register" method="post">

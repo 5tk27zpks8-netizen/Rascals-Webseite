@@ -80,14 +80,34 @@ export async function canSetupPasswordForEmail(email: string): Promise<boolean> 
 }
 
 /**
+ * Whether nobody can sign in as an admin yet, which is the condition for
+ * handing the next registration the admin role.
+ *
+ * Counting rows in cms_users would be wrong here: this database already holds
+ * users from the header-based auth that preceded passwords, so "no users yet"
+ * is never true and the site could never be claimed. What matters is whether
+ * any *active admin* has a password to sign in with.
+ */
+async function needsFirstAdmin(): Promise<boolean> {
+  const { DB } = bindings();
+  const row = await DB.prepare(`SELECT COUNT(*) AS total
+    FROM cms_users u
+    JOIN cms_auth_credentials c ON lower(c.email)=lower(u.email)
+    WHERE u.role='admin' AND u.active=1`).first<{ total: number }>();
+  return Number(row?.total ?? 0) === 0;
+}
+
+/**
  * Self-service registration. Anyone can create an account and sign in right
  * away, but a new account only carries the standard view (Spielplan and
  * Live-Ticker, read-only) until an admin widens it under /admin/users.
  *
- * The very first account becomes admin, so the site is manageable without
- * seeding. Returns the granted role so the caller can say what was created.
+ * While no admin can sign in yet, the next registration claims the admin role
+ * so the site is manageable without seeding; that window closes the moment
+ * someone takes it. An account that already exists keeps whatever role an
+ * admin gave it — setting a password must never quietly demote an editor.
  */
-export async function registerAdminUser(email: string, password: string, displayName: string): Promise<{ role: "admin" | "viewer" }> {
+export async function registerAdminUser(email: string, password: string, displayName: string): Promise<{ role: string }> {
   if (password.length < 12) throw new Error("PASSWORD_TOO_SHORT");
   const normalized = email.trim().toLowerCase();
   if (!normalized.includes("@")) throw new Error("INVALID_EMAIL");
@@ -97,14 +117,25 @@ export async function registerAdminUser(email: string, password: string, display
   const existingCredential = await DB.prepare("SELECT email FROM cms_auth_credentials WHERE lower(email)=lower(?)").bind(normalized).first();
   if (existingCredential) throw new Error("ALREADY_REGISTERED");
 
-  const total = await DB.prepare("SELECT COUNT(*) AS total FROM cms_users").first<{ total: number }>();
-  const role = Number(total?.total ?? 0) === 0 ? "admin" : "viewer";
+  const claimsAdmin = await needsFirstAdmin();
   const name = displayName.trim() || normalized.split("@")[0];
 
-  await DB.prepare(`INSERT INTO cms_users (email, display_name, role, active)
-      VALUES (?,?,?,1)
-      ON CONFLICT(email) DO UPDATE SET display_name=excluded.display_name, updated_at=CURRENT_TIMESTAMP`)
-    .bind(normalized, name, role).run();
+  // Written as an explicit update-or-insert rather than ON CONFLICT: this
+  // table predates the auth work and cannot be assumed to carry the unique
+  // index that an upsert target requires.
+  const existingUser = await DB.prepare("SELECT email, role FROM cms_users WHERE lower(email)=lower(?)")
+    .bind(normalized).first<Record<string, unknown>>();
+
+  let role: string;
+  if (existingUser) {
+    role = claimsAdmin ? "admin" : String(existingUser.role ?? "viewer");
+    await DB.prepare("UPDATE cms_users SET display_name=?, role=?, active=1, updated_at=CURRENT_TIMESTAMP WHERE lower(email)=lower(?)")
+      .bind(name, role, normalized).run();
+  } else {
+    role = claimsAdmin ? "admin" : "viewer";
+    await DB.prepare("INSERT INTO cms_users (email, display_name, role, active) VALUES (?,?,?,1)")
+      .bind(normalized, name, role).run();
+  }
 
   await writePasswordCredential(normalized, password);
   return { role };
@@ -130,18 +161,20 @@ async function writePasswordCredential(normalizedEmail: string, password: string
   const salt = bytesToBase64(saltBytes);
   const hash = await derivePasswordHash(password, saltBytes, PASSWORD_ITERATIONS);
   const { DB } = bindings();
-  await DB.prepare(`INSERT INTO cms_auth_credentials
-      (email,password_salt,password_hash,password_iterations,failed_attempts,locked_until,updated_at)
-      VALUES (?,?,?,?,0,NULL,CURRENT_TIMESTAMP)
-      ON CONFLICT(email) DO UPDATE SET
-        password_salt=excluded.password_salt,
-        password_hash=excluded.password_hash,
-        password_iterations=excluded.password_iterations,
-        failed_attempts=0,
-        locked_until=NULL,
-        updated_at=CURRENT_TIMESTAMP`)
-    .bind(normalizedEmail, salt, bytesToBase64(hash), PASSWORD_ITERATIONS)
-    .run();
+  // Update-or-insert instead of ON CONFLICT, for the same reason as above.
+  const existing = await DB.prepare("SELECT email FROM cms_auth_credentials WHERE lower(email)=lower(?)")
+    .bind(normalizedEmail).first();
+  if (existing) {
+    await DB.prepare(`UPDATE cms_auth_credentials
+        SET password_salt=?, password_hash=?, password_iterations=?, failed_attempts=0, locked_until=NULL, updated_at=CURRENT_TIMESTAMP
+        WHERE lower(email)=lower(?)`)
+      .bind(salt, bytesToBase64(hash), PASSWORD_ITERATIONS, normalizedEmail).run();
+  } else {
+    await DB.prepare(`INSERT INTO cms_auth_credentials
+        (email,password_salt,password_hash,password_iterations,failed_attempts,locked_until,updated_at)
+        VALUES (?,?,?,?,0,NULL,CURRENT_TIMESTAMP)`)
+      .bind(normalizedEmail, salt, bytesToBase64(hash), PASSWORD_ITERATIONS).run();
+  }
   await DB.prepare("DELETE FROM cms_auth_sessions WHERE lower(email)=lower(?)").bind(normalizedEmail).run();
 }
 
