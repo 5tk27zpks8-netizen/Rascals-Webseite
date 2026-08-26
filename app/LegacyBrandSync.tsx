@@ -9,6 +9,10 @@ const LEGACY_LOGO_SELECTORS = [
 
 const STYLE_ID = "legacy-builder-header-unifier";
 
+function setStyleIfChanged(element: HTMLElement, property: string, value: string, priority: "important") {
+  if (element.style.getPropertyValue(property) !== value) element.style.setProperty(property, value, priority);
+}
+
 const unifiedHeaderCss = `
 .site-header.legacy-unified-header{
   position:sticky!important;
@@ -145,9 +149,9 @@ export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, n
     const apply = () => {
       document.querySelectorAll<HTMLElement>(".site-header").forEach((header) => {
         header.classList.add("legacy-unified-header");
-        header.style.setProperty("background", "#050d18", "important");
-        header.style.setProperty("min-height", "112px", "important");
-        header.style.setProperty("height", "auto", "important");
+        setStyleIfChanged(header, "background", "#050d18", "important");
+        setStyleIfChanged(header, "min-height", "112px", "important");
+        setStyleIfChanged(header, "height", "auto", "important");
       });
 
       document.querySelectorAll<HTMLAnchorElement>(".site-header .brand").forEach((brand) => {
@@ -157,9 +161,9 @@ export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, n
       for (const selector of LEGACY_LOGO_SELECTORS) {
         document.querySelectorAll<HTMLImageElement>(selector).forEach((image) => {
           if (image.getAttribute("src") !== src) image.setAttribute("src", src);
-          image.style.setProperty("width", selector.includes("footer") ? "255px" : "96px", "important");
-          image.style.setProperty("height", selector.includes("footer") ? "auto" : "96px", "important");
-          image.style.setProperty("object-fit", "contain", "important");
+          setStyleIfChanged(image, "width", selector.includes("footer") ? "255px" : "96px", "important");
+          setStyleIfChanged(image, "height", selector.includes("footer") ? "auto" : "96px", "important");
+          setStyleIfChanged(image, "object-fit", "contain", "important");
         });
       }
 
@@ -177,7 +181,7 @@ export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, n
 
     apply();
     const observer = new MutationObserver(apply);
-    observer.observe(document.body, { subtree: true, childList: true, attributes: true });
+    observer.observe(document.body, { subtree: true, childList: true });
     return () => observer.disconnect();
   }, [logoUrl, brandTop, brandBottom, navCtaLabel, navCtaUrl]);
 
