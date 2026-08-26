@@ -1,7 +1,11 @@
 import { bindings } from "./cms";
 
 export const ADMIN_SESSION_COOKIE = "rascals_admin_session";
-const PASSWORD_ITERATIONS = 210_000;
+// Cloudflare Workers rejects PBKDF2 above 100_000 iterations ("iteration
+// counts above 100000 are not supported"), so the platform ceiling is also
+// what we use. Local workerd does not enforce this limit, which is why a
+// higher count passed every local test and failed only once deployed.
+const PASSWORD_ITERATIONS = 100_000;
 const SESSION_HOURS = 8;
 const MAX_FAILED_ATTEMPTS = 8;
 const LOCK_MINUTES = 15;
@@ -27,7 +31,7 @@ export async function ensureAdminAuthSchema() {
     email TEXT PRIMARY KEY,
     password_salt TEXT NOT NULL,
     password_hash TEXT NOT NULL,
-    password_iterations INTEGER NOT NULL DEFAULT 210000,
+    password_iterations INTEGER NOT NULL DEFAULT 100000,
     failed_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until TEXT,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -156,6 +160,12 @@ export async function setAdminPassword(email: string, password: string): Promise
   await writePasswordCredential(normalized, password);
 }
 
+/** The iteration count a stored hash was derived with, clamped to what the runtime accepts. */
+function supportedIterations(stored: unknown): number {
+  const value = Number(stored);
+  return Number.isFinite(value) && value > 0 ? Math.min(value, PASSWORD_ITERATIONS) : PASSWORD_ITERATIONS;
+}
+
 async function writePasswordCredential(normalizedEmail: string, password: string): Promise<void> {
   const saltBytes = crypto.getRandomValues(new Uint8Array(16));
   const salt = bytesToBase64(saltBytes);
@@ -195,7 +205,7 @@ export async function verifyAdminPassword(email: string, password: string): Prom
     const derived = await derivePasswordHash(
       password,
       base64ToBytes(String(credential.password_salt ?? "")),
-      Math.max(100_000, Number(credential.password_iterations ?? PASSWORD_ITERATIONS)),
+      supportedIterations(credential.password_iterations),
     );
     if (!timingSafeEqual(derived, base64ToBytes(String(credential.password_hash ?? "")))) return { ok: false };
     return { ok: false, pending: true };
@@ -208,7 +218,7 @@ export async function verifyAdminPassword(email: string, password: string): Prom
 
   const salt = base64ToBytes(String(row.password_salt ?? ""));
   const expected = base64ToBytes(String(row.password_hash ?? ""));
-  const iterations = Math.max(100_000, Number(row.password_iterations ?? PASSWORD_ITERATIONS));
+  const iterations = supportedIterations(row.password_iterations);
   const actual = await derivePasswordHash(password, salt, iterations);
   const ok = timingSafeEqual(actual, expected);
   if (!ok) {
