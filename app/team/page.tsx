@@ -22,7 +22,6 @@ export default async function TeamPage() {
     <Header page="team" />
     <main className="team-public team-public-v2">
       <header className="team-public-head team-public-hero">
-        <a href="/">← Startseite</a>
         <span>HELLENSTEIN RASCALS · 2026</span>
         <h1>ONE TEAM.<br /><i>THREE UNITS.</i></h1>
         <p>Die Coaches geben die Richtung vor. Offense und Defense bringen sie auf das Feld.</p>

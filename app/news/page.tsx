@@ -20,7 +20,7 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
   return <>
     <Header page="news" />
     <main className="public-news-page">
-    <header className="public-news-hero"><a href="/" className="public-news-back">← Zur Startseite</a><span>INSIDE RASCALS</span><h1>FROM THE <i>HUDDLE.</i></h1><p>Spielberichte, Team-News, Vereinsleben und aktuelle Meldungen.</p></header>
+    <header className="public-news-hero"><span>INSIDE RASCALS</span><h1>FROM THE <i>HUDDLE.</i></h1><p>Spielberichte, Team-News, Vereinsleben und aktuelle Meldungen.</p></header>
     <form className="public-news-filters" method="get"><input name="q" defaultValue={q} placeholder="News durchsuchen…"/><select name="category" defaultValue={category}><option value="">Alle Kategorien</option>{categories.map((item)=><option key={item}>{item}</option>)}</select><button type="submit">Filtern</button></form>
     <section className="public-news-grid">
       {posts.map(post=><article key={post.id} className="public-news-card"><a href={`/news/${post.slug}`}><div className="public-news-image">{post.image?<img src={post.image} alt=""/>:<div className="public-news-placeholder">RASCALS</div>}</div><div className="public-news-copy"><span>{post.category} · {post.publishedAt?new Date(post.publishedAt).toLocaleDateString("de-DE"):""}</span><h2>{post.title}</h2>{post.subtitle&&<b>{post.subtitle}</b>}<p>{post.excerpt}</p><strong>Story lesen →</strong></div></a></article>)}
