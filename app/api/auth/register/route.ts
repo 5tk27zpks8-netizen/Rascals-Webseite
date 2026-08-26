@@ -1,7 +1,7 @@
-import { createAdminSession, registerAdminUser, safeAdminReturnTo, sessionCookie } from "../../../../lib/admin-auth";
+import { createAdminSession, registerAdminUser, safeAdminReturnTo, sessionCookie } from "../../../lib/admin-auth";
 
 function registerRedirect(error: string, returnTo: string) {
-  const location = `/admin/login?mode=register&error=${encodeURIComponent(error)}&return_to=${encodeURIComponent(returnTo)}`;
+  const location = `/login?mode=register&error=${encodeURIComponent(error)}&return_to=${encodeURIComponent(returnTo)}`;
   return new Response(null, { status: 303, headers: { location } });
 }
 

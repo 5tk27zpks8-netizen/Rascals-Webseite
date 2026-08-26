@@ -189,21 +189,27 @@ export async function destroyAdminSession(token: string | null): Promise<void> {
 }
 
 export function sessionCookie(token: string): string {
-  return `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/admin; HttpOnly; Secure; SameSite=Lax`;
+  return `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 }
 
 export function clearSessionCookie(): string {
-  return `${ADMIN_SESSION_COOKIE}=; Path=/admin; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+  return `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
+/**
+ * Sanitises a post-login redirect target. Sign-in is no longer admin-only, so
+ * any same-origin path is allowed, but anything that could send a visitor to
+ * another site, or straight back into the auth flow, falls back.
+ */
 export function safeAdminReturnTo(value: unknown, fallback = "/admin"): string {
   const raw = typeof value === "string" ? value : fallback;
-  if (!raw.startsWith("/admin") || raw.startsWith("//")) return fallback;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return fallback;
   try {
     const url = new URL(raw, "https://app.local");
-    if (url.origin !== "https://app.local" || !url.pathname.startsWith("/admin")) return fallback;
-    if (url.pathname.startsWith("/admin/api/auth") || url.pathname === "/admin/login" || url.pathname === "/admin/logout") return fallback;
-    return `${url.pathname}${url.search}${url.hash}`;
+    if (url.origin !== "https://app.local") return fallback;
+    const path = url.pathname;
+    if (path.startsWith("/api/auth") || path === "/login" || path === "/logout") return fallback;
+    return `${path}${url.search}${url.hash}`;
   } catch {
     return fallback;
   }

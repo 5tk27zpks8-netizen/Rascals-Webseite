@@ -11,7 +11,7 @@ import { getAdminSessionIdentity } from "../../lib/admin-auth";
  */
 export default async function ProtectedAdminLayout({ children }: { children: ReactNode }) {
   const identity = await getAdminSessionIdentity(await headers());
-  if (!identity) redirect("/admin/login");
+  if (!identity) redirect("/login?return_to=%2Fadmin");
 
   return (
     <>
