@@ -48,13 +48,13 @@ export const SITE_DESIGNS: SiteDesign[] = [
   },
   {
     id: "arena",
-    name: "Arena 3D",
-    tagline: "Flutlicht und Tiefe",
+    name: "Arena · The Drive",
+    tagline: "Onepager als Spielzug",
     description:
-      "Eine räumliche Szene als Aufmacher: das Feld in Perspektive, der Schriftzug als Körper, Flutlicht und Staub. Reagiert auf Maus und Scrollen.",
-    traits: ["Echte 3D-Szene", "Bewegung im Aufmacher", "Am dunkelsten"],
+      "Kein Abschnittsstapel, sondern ein Drive: Scrollen bewegt die Kamera von der eigenen 20 bis in die gegnerische Endzone. Jeder Abschnitt ist ein Down, oben läuft ein Broadcast-Overlay mit Yardlinie und Distanz mit, die Navigation ist die Kette. Am Ende: Touchdown.",
+    traits: ["Onepager", "Scroll bewegt die Kamera", "Broadcast-Overlay", "Kein klassischer Header"],
     preview: "/arena",
-    palette: ["#03070f", "#e7192d", "#3fa9ff", "#f2f3ef"],
+    palette: ["#03070f", "#e7192d", "#f7cf4a", "#123055"],
     webgl: true,
   },
   {
