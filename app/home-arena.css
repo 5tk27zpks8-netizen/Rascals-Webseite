@@ -1,0 +1,459 @@
+/* ============================================================
+   ARENA — floodlit, spatial, the darkest of the four designs.
+   The 3D scene is the entrance; the rest of the page stays calm.
+   ============================================================ */
+
+.arena-page {
+  --arena-bg: #03070f;
+  --arena-panel: #070e1b;
+  --arena-line: rgba(150, 190, 255, 0.14);
+  --arena-dim: #8ea3bd;
+
+  min-height: 100vh;
+  background: var(--arena-bg);
+  color: #fff;
+  font-family: var(--font-body);
+}
+
+/* --- the opener ------------------------------------------------ */
+
+.arena-hero {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: min(940px, 100svh);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.arena-scene {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.arena-scene canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Stands in for the scene on phones, under reduced motion, and until the
+   renderer starts. The opener is never a blank rectangle. */
+.arena-scene-fallback {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(90% 60% at 50% 6%, rgba(157, 196, 255, 0.22), transparent 62%),
+    radial-gradient(60% 40% at 50% 100%, rgba(231, 25, 45, 0.16), transparent 70%),
+    linear-gradient(180deg, #050c18 0%, #071a12 62%, #03070f 100%);
+}
+
+/* Yard lines in the fallback, receding by perspective. */
+.arena-scene-fallback::after {
+  content: "";
+  position: absolute;
+  inset: 42% 0 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16) 0 2px,
+    transparent 2px 42px
+  );
+  mask-image: linear-gradient(180deg, transparent, #000 40%, #000);
+  transform: perspective(340px) rotateX(58deg);
+  transform-origin: 50% 0;
+}
+
+.arena-scene.is-live .arena-scene-fallback {
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+
+.arena-hero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(3, 7, 15, 0.92) 0%, rgba(3, 7, 15, 0.6) 46%, rgba(3, 7, 15, 0.1) 82%),
+    /* Grounds the lit turf so it stops competing with the headline. */
+    linear-gradient(180deg, transparent 52%, rgba(3, 7, 15, 0.78) 100%);
+}
+
+.arena-hero-copy {
+  width: min(1500px, 92vw);
+  margin: 0 auto;
+  padding: 0 clamp(4px, 2vw, 24px);
+}
+
+.arena-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #dbe6f5;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.arena-kicker i {
+  width: 34px;
+  height: 3px;
+  background: var(--rascals-red);
+}
+
+.arena-hero-copy h1 {
+  margin: 1.4rem 0 1.5rem;
+  max-width: 14ch;
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 9.4vw, 9rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+}
+
+.arena-hero-copy h1 i {
+  color: var(--rascals-red);
+  font-style: italic;
+}
+
+.arena-hero-copy p {
+  max-width: 46ch;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  line-height: 1.7;
+}
+
+.arena-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 2.2rem;
+}
+
+.arena-cta,
+.arena-ghost {
+  display: inline-flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 1.6rem;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.arena-cta {
+  background: var(--rascals-red);
+  color: #fff;
+  box-shadow: 0 12px 40px rgba(231, 25, 45, 0.34);
+}
+
+.arena-cta:hover {
+  filter: brightness(1.09);
+}
+
+.arena-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  color: #fff;
+}
+
+.arena-ghost:hover {
+  border-color: #fff;
+}
+
+.arena-scroll {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  width: 1px;
+  height: 54px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+
+.arena-scroll span {
+  position: absolute;
+  inset: 0;
+  background: var(--rascals-red);
+  animation: arena-scroll 2.4s var(--ease-drive, ease) infinite;
+}
+
+@keyframes arena-scroll {
+  0% { transform: translateY(-100%); }
+  60%, 100% { transform: translateY(100%); }
+}
+
+/* --- gameday and numbers --------------------------------------- */
+
+.arena-gameday {
+  padding: clamp(40px, 5vw, 76px) clamp(20px, 6vw, 96px);
+  border-bottom: 1px solid var(--arena-line);
+  background: var(--arena-panel);
+}
+
+.arena-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--arena-line);
+  border-bottom: 1px solid var(--arena-line);
+}
+
+.arena-stats article {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: clamp(26px, 3vw, 44px) 8px;
+  background: var(--arena-bg);
+  text-align: center;
+}
+
+.arena-stats b {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.4vw, 3.6rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+.arena-stats span {
+  color: var(--arena-dim);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* --- schedule --------------------------------------------------- */
+
+.arena-page .arena-fixtures {
+  padding: clamp(48px, 6vw, 100px) clamp(20px, 6vw, 96px);
+  background: var(--arena-panel);
+  color: #fff;
+}
+
+.arena-page .arena-fixtures .section-heading,
+.arena-page .arena-fixtures .section-heading h2,
+.arena-page .arena-fixtures .season-stats,
+.arena-page .arena-fixtures .season-stat,
+.arena-page .arena-fixtures .season-league,
+.arena-page .arena-fixtures .fixture-list {
+  color: #fff;
+}
+
+.arena-fixtures .section-heading h2 i {
+  color: var(--rascals-red);
+}
+
+/* The teams block is shared with the other designs; it only needs to sit on
+   the dark ground here rather than the light one it was built for. */
+.arena-page .team-units {
+  background: var(--arena-bg);
+  color: #fff;
+}
+
+.arena-page .team-units-grid p,
+.arena-page .team-squads p {
+  color: var(--arena-dim);
+}
+
+.arena-page .team-squads article {
+  border-color: var(--arena-line);
+  background: var(--arena-panel);
+}
+
+.arena-page .team-unit-media {
+  background: var(--arena-panel);
+}
+
+/* --- club ------------------------------------------------------- */
+
+.arena-club {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 72px);
+  padding: clamp(48px, 6vw, 100px) clamp(20px, 6vw, 96px);
+  border-top: 1px solid var(--arena-line);
+  background: var(--arena-panel);
+}
+
+.arena-club h2 {
+  margin: 1rem 0 1.2rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 4.4rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.arena-club h2 i {
+  color: var(--rascals-red);
+  font-style: italic;
+}
+
+.arena-club p {
+  max-width: 52ch;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.arena-club-media img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+/* --- news ------------------------------------------------------- */
+
+.arena-page .arena-news {
+  padding: clamp(44px, 5vw, 88px) clamp(20px, 6vw, 96px);
+  background: var(--arena-bg);
+  color: #fff;
+}
+
+.arena-news .section-heading h2 {
+  color: #fff;
+}
+
+.arena-news .section-heading h2 i {
+  color: var(--rascals-red);
+}
+
+/* --- join ------------------------------------------------------- */
+
+.arena-join {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding: clamp(72px, 9vw, 150px) clamp(20px, 6vw, 96px);
+}
+
+.arena-join-image {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 28%;
+}
+
+.arena-join-veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(3, 7, 15, 0.94) 24%, rgba(3, 7, 15, 0.55) 100%);
+}
+
+.arena-join h2 {
+  margin: 1rem 0 1.2rem;
+  max-width: 16ch;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 6.4vw, 6rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.84;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.arena-join h2 i {
+  color: var(--rascals-red);
+  font-style: italic;
+}
+
+.arena-join p {
+  max-width: 44ch;
+  margin: 0 0 2rem;
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.7;
+}
+
+/* --- footer ----------------------------------------------------- */
+
+.arena-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  justify-content: space-between;
+  padding: 44px clamp(20px, 6vw, 96px);
+  border-top: 1px solid var(--arena-line);
+  background: var(--arena-bg);
+}
+
+.arena-footer > div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 48ch;
+}
+
+.arena-footer img {
+  width: 62px;
+}
+
+.arena-footer strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+
+.arena-footer small {
+  display: block;
+  margin-top: 5px;
+  color: var(--arena-dim);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.arena-footer nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 34px;
+  align-content: start;
+}
+
+.arena-footer nav a {
+  color: var(--arena-dim);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.arena-footer nav a:hover {
+  color: #fff;
+}
+
+/* --- responsive -------------------------------------------------- */
+
+@media (max-width: 1080px) {
+  .arena-club {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .arena-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .arena-hero {
+    min-height: 620px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena-scroll span {
+    animation: none;
+  }
+}

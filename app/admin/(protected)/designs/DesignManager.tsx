@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AdminNotice, AdminShell } from "../../_components/AdminShell";
+import { SiteDesignPicker } from "./SiteDesignPicker";
 import type { BuilderPage, SiteBuilderState } from "../../../lib/site-builder";
 import { applyDesignPreset, builtInDesignPresets, capturePageDesign, type DesignPreset } from "../../../lib/design-presets";
 import { DesignWebsitePreview } from "./DesignWebsitePreview";
@@ -37,6 +38,7 @@ export function DesignManager(){
 
   if(!state||!page)return <AdminShell active="designs" title="Designs"><div className="design-loading">Design-Bibliothek wird geladen…</div></AdminShell>;
   return <AdminShell active="designs" title="Designs" eyebrow="RASCALS DESIGN LIBRARY" actions={<a className="cms-button secondary" href="/admin/website">Website gestalten</a>}>
+    <SiteDesignPicker/>
     <div className="design-studio">
       <header className="design-hero"><div><small>WEBSITE DESIGNS</small><h2>Vier echte Websites.<br/><span>Vier komplett andere Konzepte.</span></h2><p>Ein Design wird nie sofort übernommen. Öffne zuerst die vollständige Vorschau, prüfe die Seite und entscheide erst danach, ob du sie als Entwurf übernehmen möchtest.</p></div><div className="design-page-picker"><label><span>Vorschau-Seite</span><select value={page.id} onChange={event=>setPageId(event.target.value)}>{state.pages.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label><button className="design-save-own" onClick={()=>{setDesignName(`${page.name} Design`);setDesignDescription("");setShowSave(true)}}>＋ Eigenes Design speichern</button></div></header>
       {notice&&<div className="design-notice-row"><AdminNotice tone={notice.includes("konnte nicht")?"error":"success"}>{notice}</AdminNotice>{beforeState&&<button onClick={()=>void undo()} disabled={status==="saving"}>Rückgängig</button>}</div>}
