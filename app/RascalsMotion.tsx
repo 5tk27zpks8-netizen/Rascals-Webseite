@@ -86,6 +86,21 @@ export function RascalsMotion() {
           });
         });
 
+        // Hidden-until-scrolled is a real risk: these elements start at zero
+        // opacity, so anything the triggers miss stays invisible for good.
+        // Triggers measure positions before late images change the layout, so
+        // refresh once the page has fully loaded, and sweep up anything that is
+        // on screen but still hidden. Content beats choreography.
+        const revealWhatIsOnScreen = () => {
+          document.querySelectorAll<HTMLElement>("[data-reveal]:not(.is-revealed)").forEach((element) => {
+            if (element.getBoundingClientRect().top < window.innerHeight * 1.1) element.classList.add("is-revealed");
+          });
+        };
+        if (document.readyState === "complete") ScrollTrigger.refresh();
+        else window.addEventListener("load", () => ScrollTrigger.refresh(), { once: true });
+        const sweep = window.setInterval(revealWhatIsOnScreen, 1200);
+        window.setTimeout(() => window.clearInterval(sweep), 12000);
+
         // --- Hero hand-off ---------------------------------------
         // The hero holds while its copy lifts and dims, so leaving the
         // hero reads as a deliberate transition into the page.

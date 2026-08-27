@@ -76,6 +76,12 @@
   transform-origin: center;
 }
 
+/* The hero photo is 4:3 in a wider frame, so a slice of it is always cropped.
+   Sitting the slice lower keeps the turf under the helmet in shot. */
+.hero-slide > img {
+  object-position: center 62%;
+}
+
 /* --- Stat bar --------------------------------------------------
    Numbers are the point here, so they get the display face and
    real weight instead of sitting at body scale. */

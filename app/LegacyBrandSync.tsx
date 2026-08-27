@@ -23,7 +23,7 @@ const unifiedHeaderCss = `
   align-items:center!important;
   justify-content:space-between!important;
   height:auto!important;
-  min-height:112px!important;
+  min-height:78px!important;
   padding:0 4vw!important;
   border-bottom:1px solid rgba(255,255,255,.08)!important;
   background:#050d18!important;
@@ -41,9 +41,9 @@ const unifiedHeaderCss = `
   transform:none!important;
 }
 .site-header.legacy-unified-header .brand img{
-  width:96px!important;
-  height:96px!important;
-  flex:0 0 96px!important;
+  width:62px!important;
+  height:62px!important;
+  flex:0 0 62px!important;
   max-width:none!important;
   object-fit:contain!important;
 }
@@ -109,13 +109,13 @@ const unifiedHeaderCss = `
 }
 @media(max-width:780px){
   .site-header.legacy-unified-header{
-    min-height:88px!important;
+    min-height:64px!important;
     padding:0 18px!important;
   }
   .site-header.legacy-unified-header .brand img{
-    width:74px!important;
-    height:74px!important;
-    flex-basis:74px!important;
+    width:52px!important;
+    height:52px!important;
+    flex-basis:52px!important;
   }
   .site-header.legacy-unified-header .brand strong{font-size:.62rem!important;}
   .site-header.legacy-unified-header .brand em{font-size:.96rem!important;}
@@ -150,7 +150,7 @@ export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, n
       document.querySelectorAll<HTMLElement>(".site-header").forEach((header) => {
         header.classList.add("legacy-unified-header");
         setStyleIfChanged(header, "background", "#050d18", "important");
-        setStyleIfChanged(header, "min-height", "112px", "important");
+        setStyleIfChanged(header, "min-height", "78px", "important");
         setStyleIfChanged(header, "height", "auto", "important");
       });
 
@@ -161,8 +161,8 @@ export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, n
       for (const selector of LEGACY_LOGO_SELECTORS) {
         document.querySelectorAll<HTMLImageElement>(selector).forEach((image) => {
           if (image.getAttribute("src") !== src) image.setAttribute("src", src);
-          setStyleIfChanged(image, "width", selector.includes("footer") ? "255px" : "96px", "important");
-          setStyleIfChanged(image, "height", selector.includes("footer") ? "auto" : "96px", "important");
+          setStyleIfChanged(image, "width", selector.includes("footer") ? "255px" : "62px", "important");
+          setStyleIfChanged(image, "height", selector.includes("footer") ? "auto" : "62px", "important");
           setStyleIfChanged(image, "object-fit", "contain", "important");
         });
       }
