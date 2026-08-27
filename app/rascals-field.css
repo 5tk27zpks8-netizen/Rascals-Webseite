@@ -1,0 +1,116 @@
+/* ============================================================
+   FOOTBALL FIELD BACKDROP
+   Lines inherit the section's text colour, so the same drawing
+   works on the dark green Spielplan and on a light section.
+   The whole layer is held well back: it is texture, not art.
+   ============================================================ */
+
+.fixtures-section {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Everything the section renders sits above the field. */
+.fixtures-section > *:not(.rascals-field) {
+  position: relative;
+  z-index: 1;
+}
+
+.rascals-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: inherit;
+  opacity: 0.11;
+}
+
+.rascals-field svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rascals-field line,
+.rascals-field circle,
+.rascals-field rect {
+  fill: none;
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
+}
+
+.rascals-field-bounds {
+  stroke-width: 3;
+}
+
+.rascals-field-yard {
+  stroke-width: 1;
+}
+
+.rascals-field-yard.major {
+  stroke-width: 2;
+}
+
+.rascals-field-hash line {
+  stroke-width: 1;
+}
+
+.rascals-field-endzone {
+  fill: currentColor;
+  fill-opacity: 0.16;
+  stroke: none;
+}
+
+.rascals-field-goal line {
+  stroke-width: 3;
+}
+
+.rascals-field-goal circle {
+  stroke-width: 3;
+}
+
+.rascals-field-numbers {
+  position: absolute;
+  inset: 0;
+  color: inherit;
+}
+
+.rascals-field-numbers span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(24px, 3.4vw, 46px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  opacity: 0.3;
+}
+
+/* Near sideline reads upright; the far one is inverted, as on a real field. */
+.rascals-field-numbers span.near {
+  top: 14%;
+}
+
+.rascals-field-numbers span.far {
+  bottom: 14%;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+/* On narrow screens the field is cropped hard, so the numbers and the
+   per-yard hash marks turn into noise. Keep the yard lines and drop the rest. */
+@media (max-width: 780px) {
+  .rascals-field {
+    opacity: 0.1;
+  }
+  .rascals-field-numbers,
+  .rascals-field-hash {
+    display: none;
+  }
+}
+
+@media print {
+  .rascals-field {
+    display: none;
+  }
+}

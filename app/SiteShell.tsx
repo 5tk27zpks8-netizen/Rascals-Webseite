@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RascalsField } from "./RascalsField";
 
 export type PageName = "home" | "ueber-uns" | "team" | "sponsoring" | "shop" | "news" | "galerie" | "spielplan";
 
@@ -132,6 +133,7 @@ function SponsorTicker() {
 function Fixtures() {
   return (
     <section id="spielplan" className="section fixtures-section">
+      <RascalsField />
       <div className="section-heading">
         <div data-reveal><span className="eyebrow red-text">Saison 2026</span><h2>NÄCHSTE <i>GAMES.</i></h2></div>
         <p data-reveal data-reveal-delay="120">Bestätigte Begegnungen der Rascals in der Kreisoberliga.</p>
