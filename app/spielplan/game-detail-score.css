@@ -62,7 +62,7 @@
 }
 
 .schedule-page .live-score-center span{
-  color:#e72835;
+  color:var(--rascals-red);
   font-size:1.8rem;
   font-weight:950;
   line-height:1;

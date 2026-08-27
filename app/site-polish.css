@@ -3,20 +3,20 @@
    enlarging the global brand marks and lifting only the schedule card base background. */
 
 /* Builder header brand: slightly larger again for stronger presence.
-   81px -> 96px, with enough header height to avoid clipping. */
+   The brand mark drives the header height, so both move together. */
 .sb-header{
-  min-height:112px!important;
+  min-height:78px!important;
 }
 .sb-header .sb-brand img{
-  width:96px!important;
-  height:96px!important;
-  flex:0 0 96px;
+  width:62px!important;
+  height:62px!important;
+  flex:0 0 62px;
   object-fit:contain!important;
 }
 
 .sb-header .sb-nav-cta{
-  background:#e7192d!important;
-  border-color:#e7192d!important;
+  background:var(--rascals-red)!important;
+  border-color:var(--rascals-red)!important;
   color:#fff!important;
   box-shadow:0 8px 22px rgba(231,25,45,.22);
   transition:transform .18s ease,filter .18s ease,box-shadow .18s ease;
@@ -39,7 +39,7 @@
   align-items:center!important;
   justify-content:space-between!important;
   height:auto!important;
-  min-height:112px!important;
+  min-height:78px!important;
   padding:0 4vw!important;
   border-bottom:1px solid rgba(255,255,255,.08)!important;
   background:#050d18!important;
@@ -56,9 +56,9 @@
   text-decoration:none!important;
 }
 .site-header .brand img{
-  width:96px!important;
-  height:96px!important;
-  flex:0 0 96px!important;
+  width:62px!important;
+  height:62px!important;
+  flex:0 0 62px!important;
   object-fit:contain!important;
 }
 .site-header .brand span{
@@ -78,7 +78,7 @@
   text-align:left!important;
 }
 .site-header .brand em{
-  color:#e7192d!important;
+  color:var(--rascals-red)!important;
   font-family:var(--site-heading-font,Inter,Arial,sans-serif)!important;
   font-size:1.1rem!important;
   font-style:italic!important;
@@ -104,13 +104,13 @@
   display:none!important;
 }
 .site-header .main-nav a.active{
-  color:#e7192d!important;
+  color:var(--rascals-red)!important;
 }
 .site-header .main-nav .nav-cta{
   padding:11px 16px!important;
-  border:1px solid #e7192d!important;
+  border:1px solid var(--rascals-red)!important;
   border-radius:var(--site-radius,0)!important;
-  background:#e7192d!important;
+  background:var(--rascals-red)!important;
   color:#fff!important;
   box-shadow:0 8px 22px rgba(231,25,45,.22)!important;
   transform:none!important;
@@ -150,15 +150,16 @@
 }
 
 @media(max-width:900px){
-  .site-header{
+  .site-header,
+  .sb-header{
     position:sticky!important;
-    min-height:94px!important;
+    min-height:64px!important;
   }
   .site-header .brand img,
   .sb-header .sb-brand img{
-    width:74px!important;
-    height:74px!important;
-    flex-basis:74px!important;
+    width:52px!important;
+    height:52px!important;
+    flex-basis:52px!important;
   }
   .site-header .main-nav{
     position:absolute!important;

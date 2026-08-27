@@ -1,0 +1,517 @@
+/* ============================================================
+   ARENA — THE DRIVE
+   A onepager built as a possession: the camera walks the field
+   as you scroll, panels arrive at their yard markers, and a
+   broadcast overlay counts the drive down.
+   ============================================================ */
+
+.drive-page {
+  --drive-bg: #030910;
+  --drive-line: rgba(150, 190, 255, 0.16);
+  --drive-dim: #8ea3bd;
+  --drive-progress: 0;
+
+  position: relative;
+  min-height: 100vh;
+  background: var(--drive-bg);
+  color: #fff;
+  font-family: var(--font-body);
+}
+
+.drive-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.drive-canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.drive-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 78% at 50% 46%, transparent 34%, rgba(3, 9, 16, 0.86) 100%),
+    linear-gradient(180deg, rgba(3, 9, 16, 0.9) 0%, transparent 22%, transparent 66%, rgba(3, 9, 16, 0.95) 100%);
+}
+
+/* Without the drive there is no fixed scene to darken. */
+.drive-page:not(.is-driving) .drive-vignette {
+  display: none;
+}
+
+/* --- broadcast overlay ------------------------------------------ */
+
+.drive-hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  padding: 14px clamp(16px, 3vw, 38px);
+  background: linear-gradient(180deg, rgba(3, 9, 16, 0.94), rgba(3, 9, 16, 0.42) 74%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.drive-hud-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.drive-hud-brand img {
+  width: 46px;
+}
+
+.drive-hud-brand span {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: 0.12em;
+}
+
+.drive-hud-brand i {
+  color: var(--rascals-red);
+  font-style: normal;
+}
+
+.drive-hud-centre {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.drive-hud-down {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  color: #dce8f8;
+}
+
+/* The chain marker: how far the drive has come. */
+.drive-hud-bar {
+  --drive: 0%;
+  position: relative;
+  width: min(420px, 42vw);
+  height: 3px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.drive-hud-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--drive);
+  background: var(--rascals-red);
+  box-shadow: 0 0 16px rgba(231, 25, 45, 0.7);
+  transition: width 0.12s linear;
+}
+
+.drive-hud-yard {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.drive-hud-yard small {
+  color: var(--drive-dim);
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+}
+
+.drive-hud-yard b {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 950;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- the chain: navigation as yard markers ----------------------- */
+
+.drive-chain {
+  position: fixed;
+  top: 50%;
+  right: clamp(10px, 1.8vw, 26px);
+  z-index: 20;
+  display: grid;
+  gap: 12px;
+  transform: translateY(-50%);
+}
+
+.drive-chain a {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+  padding: 5px 9px;
+  border-right: 2px solid rgba(255, 255, 255, 0.2);
+  color: var(--drive-dim);
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.drive-chain a:hover,
+.drive-chain a:focus-visible {
+  color: #fff;
+  border-color: var(--rascals-red);
+}
+
+.drive-chain span {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.drive-chain small {
+  font-size: 0.46rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+/* --- panels ------------------------------------------------------- */
+
+.drive-track {
+  position: relative;
+  z-index: 10;
+}
+
+/* Not driving: an ordinary stacked page. This is the base state on
+   purpose, so the readable version never depends on JavaScript. */
+.drive-panel {
+  position: relative;
+  padding: clamp(72px, 12vh, 130px) clamp(20px, 6vw, 90px);
+  border-bottom: 1px solid var(--drive-line);
+}
+
+.drive-page.is-driving .drive-track {
+  /* Six panels, each given a screen of scroll to travel through. */
+  height: 620vh;
+}
+
+.drive-page.is-driving .drive-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(760px, 52vw);
+  height: 100vh;
+  padding: 0 clamp(24px, 5vw, 88px);
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  /* Panels ride in from the direction the drive is heading. */
+  transform: translate3d(-40px, 0, 0);
+  transition: opacity 0.55s ease, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.drive-page.is-driving .drive-panel.is-on {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+}
+
+.drive-eyebrow {
+  margin: 0 0 18px;
+  color: var(--rascals-red);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.drive-panel h1 {
+  margin: 0 0 1.4rem;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7.4vw, 7.4rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+}
+
+.drive-panel h1 span,
+.drive-panel h1 i {
+  display: block;
+}
+
+.drive-panel h1 i {
+  color: var(--rascals-red);
+  font-style: italic;
+}
+
+.drive-panel h2 {
+  margin: 0 0 1.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 4.6rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.drive-panel h2 i {
+  color: var(--rascals-red);
+  font-style: italic;
+}
+
+.drive-lead {
+  max-width: 44ch;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: clamp(0.98rem, 1.2vw, 1.14rem);
+  line-height: 1.72;
+}
+
+.drive-hint {
+  margin-top: 2.4rem;
+  color: var(--drive-dim);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+/* --- numbers ------------------------------------------------------- */
+
+.drive-numbers {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin-bottom: 1.8rem;
+  background: var(--drive-line);
+  border-block: 1px solid var(--drive-line);
+}
+
+.drive-numbers article {
+  display: grid;
+  gap: 6px;
+  padding: 20px 6px;
+  background: rgba(3, 9, 16, 0.72);
+}
+
+.drive-numbers b {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.6vw, 2.5rem);
+  font-weight: 950;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+.drive-numbers span {
+  color: var(--drive-dim);
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* --- units --------------------------------------------------------- */
+
+.drive-units {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 1.8rem;
+}
+
+.drive-units article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--drive-line);
+}
+
+.drive-unit-no {
+  grid-row: span 3;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 950;
+  color: var(--rascals-red);
+}
+
+.drive-units h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+
+.drive-units strong {
+  color: #cfdcec;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.drive-units p {
+  margin: 6px 0 0;
+  color: var(--drive-dim);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+/* --- the fixture panel reuses the shared schedule markup ------------ */
+
+.drive-page .drive-fixtures,
+.drive-page .drive-fixtures .section-heading,
+.drive-page .drive-fixtures .section-heading h2,
+.drive-page .drive-fixtures .season-stats,
+.drive-page .drive-fixtures .season-stat,
+.drive-page .drive-fixtures .season-league,
+.drive-page .drive-fixtures .fixture-list {
+  color: #fff;
+  background: transparent;
+}
+
+.drive-page .drive-fixtures .section-heading {
+  width: 100%;
+  margin: 0 0 20px;
+}
+
+.drive-fixture :is(.md-fixture-kicker, .md-fixture h1, .md-fixture-meta, .md-countdown, .md-fixture-actions) {
+  color: inherit;
+}
+
+.drive-fixture .md-fixture h1 {
+  font-size: clamp(2.2rem, 4.4vw, 4.2rem);
+}
+
+.drive-fixture .md-countdown span {
+  border-color: var(--drive-line);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.drive-fixture .md-fixture-meta dt,
+.drive-fixture .md-countdown small,
+.drive-fixture .md-fixture-note {
+  color: var(--drive-dim);
+}
+
+.drive-fixture .md-link {
+  color: #fff;
+}
+
+/* --- touchdown ------------------------------------------------------ */
+
+.drive-td {
+  font-size: clamp(3rem, 8vw, 8rem) !important;
+}
+
+.drive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  margin-top: 2rem;
+}
+
+.drive-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 1.7rem;
+  background: var(--rascals-red);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 14px 44px rgba(231, 25, 45, 0.4);
+}
+
+.drive-cta:hover {
+  filter: brightness(1.09);
+}
+
+.drive-link {
+  display: inline-block;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 2px solid var(--rascals-red);
+  padding-bottom: 3px;
+}
+
+.drive-end-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 2.6rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--drive-line);
+}
+
+.drive-end-nav a {
+  color: var(--drive-dim);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.drive-end-nav a:hover {
+  color: #fff;
+}
+
+.drive-imprint {
+  display: block;
+  margin-top: 1rem;
+  color: #62748c;
+  font-size: 0.66rem;
+  line-height: 1.6;
+}
+
+/* --- narrow screens: no drive, an ordinary page --------------------- */
+
+@media (max-width: 999px) {
+  .drive-canvas {
+    position: absolute;
+    height: 100vh;
+  }
+  .drive-chain {
+    display: none;
+  }
+  .drive-hud {
+    position: sticky;
+  }
+  .drive-hud-centre {
+    display: none;
+  }
+  .drive-hud {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .drive-numbers {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drive-panel {
+    transition: none;
+  }
+}

@@ -1,0 +1,394 @@
+/* ============================================================
+   RASCALS REFRESH
+   Visual pass on top of globals.css. Consumes the tokens from
+   rascals-design.css. Loaded last so it settles conflicts that
+   the older stylesheets create between themselves.
+   ============================================================ */
+
+/* --- Navigation ------------------------------------------------
+   The nav now carries seven destinations plus the CTA. Tighten
+   the gap so it still resolves on one line down to the mobile
+   breakpoint, per the "nav never wraps at desktop" rule. */
+.site-header .main-nav {
+  gap: clamp(0.85rem, 1.5vw, 1.6rem) !important;
+}
+.site-header .main-nav a {
+  white-space: nowrap;
+}
+
+/* Underline that grows from the left on hover, replacing the
+   previous no-op rule. Signals which link is being targeted. */
+.site-header .main-nav a:not(.nav-cta) {
+  padding-bottom: 4px !important;
+  background-image: linear-gradient(var(--rascals-red), var(--rascals-red));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition: background-size var(--dur-mid) var(--ease-drive), color var(--dur-fast) var(--ease-snap);
+}
+.site-header .main-nav a:not(.nav-cta):hover,
+.site-header .main-nav a:not(.nav-cta):focus-visible,
+.site-header .main-nav a.active:not(.nav-cta) {
+  background-size: 100% 2px;
+}
+
+/* Brand lockup uses the display face rather than an Inter fallback. */
+.site-header .brand strong,
+.site-header .brand em {
+  font-family: var(--font-display) !important;
+  font-variation-settings: "wdth" 82;
+}
+
+/* --- Hero ------------------------------------------------------ */
+.hero-copy p {
+  color: var(--rascals-text-dim);
+}
+
+/* Pause control for the auto-advancing hero (WCAG 2.2.2). */
+.hero-playstate {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-top: 0.6rem;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.45);
+  background: rgb(3 10 19 / 0.55);
+  color: #fff;
+  font-size: 0.6rem;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background-color var(--dur-fast) var(--ease-snap), border-color var(--dur-fast) var(--ease-snap);
+}
+.hero-playstate:hover,
+.hero-playstate:focus-visible {
+  border-color: var(--rascals-red);
+  background: var(--rascals-red);
+}
+
+/* Images that drift on scroll are oversized so the drift never exposes an
+   empty edge. The homepage hero is deliberately not in this list: it no
+   longer drifts, and the oversize was cropping the helmet for nothing. */
+.page-hero > img,
+.join-cta > img {
+  transform: scale(1.08);
+  transform-origin: center;
+}
+
+/* The hero photo is 4:3 in a wider frame, so a slice of it is always cropped.
+   Sitting the slice lower keeps the turf under the helmet in shot. */
+.hero-slide > img {
+  object-position: center 62%;
+}
+
+/* --- Stat bar --------------------------------------------------
+   Numbers are the point here, so they get the display face and
+   real weight instead of sitting at body scale. */
+.stat-bar b {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 76;
+  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.stat-bar span {
+  flex-direction: column;
+  gap: 0.4rem !important;
+  align-items: flex-start !important;
+  padding: clamp(1.5rem, 3vw, 2.4rem) clamp(1rem, 2vw, 2rem) !important;
+  text-align: left;
+}
+
+/* --- Section rhythm -------------------------------------------- */
+.rascals-yardline {
+  background-color: var(--rascals-navy-900);
+}
+
+/* --- Cards and media ------------------------------------------- */
+.product-card,
+.team-panels article,
+.news-grid article {
+  border-radius: var(--radius);
+}
+
+/* Hover lift is a state change, not decoration: it marks the card
+   the pointer will activate. */
+.news-grid article,
+.team-panels article {
+  transition: transform var(--dur-mid) var(--ease-drive);
+}
+.news-grid article:hover,
+.team-panels article:hover {
+  transform: translateY(-4px);
+}
+
+/* --- Focus visibility ------------------------------------------
+   The site had no visible focus ring on brand-coloured surfaces. */
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--rascals-red);
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   BUILDER PAGES
+   The live homepage renders through SiteBuilderPageV4, not
+   SiteShell, so the brand treatment has to reach it here too.
+   ============================================================ */
+
+/* Nav parity with the legacy header: seven items plus CTA on one
+   line, with the same hover underline and active state. */
+.sb-header nav {
+  gap: clamp(0.85rem, 1.5vw, 1.6rem);
+}
+.sb-header nav a {
+  white-space: nowrap;
+}
+.sb-header nav a:not(.sb-nav-cta) {
+  padding-bottom: 4px;
+  background-image: linear-gradient(var(--rascals-red), var(--rascals-red));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition: background-size var(--dur-mid) var(--ease-drive);
+}
+.sb-header nav a:not(.sb-nav-cta):hover,
+.sb-header nav a:not(.sb-nav-cta):focus-visible,
+.sb-header nav a.active:not(.sb-nav-cta) {
+  background-size: 100% 2px;
+}
+
+/* Display face for builder headings. The CMS theme variable now
+   carries the design-system font as its final fallback, so this
+   only needs to fix width and tracking. */
+.sb-section h1,
+.sb-section h2,
+.sb-native-section h2,
+.sb-brand b,
+.sb-brand em {
+  font-variation-settings: "wdth" 76;
+  letter-spacing: var(--display-tracking);
+}
+
+.sb-stats b {
+  font-variation-settings: "wdth" 76;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+/* Section boundary marker, matching the legacy pages. */
+.sb-section + .sb-section::before,
+.sb-native-section + .sb-section::before,
+.sb-section + .sb-native-section::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--rascals-line-strong) 0 26px,
+    transparent 26px 44px
+  );
+  z-index: 3;
+}
+
+/* Cards lift on hover to mark the activation target. */
+.sb-cards article {
+  transition: transform var(--dur-mid) var(--ease-drive);
+}
+.sb-cards article:hover {
+  transform: translateY(-4px);
+}
+
+/* ============================================================
+   GAMEDAY
+   The most-wanted fact on a club site: when do they play next.
+   ============================================================ */
+
+.sb-gameday-section .sb-inner {
+  display: grid;
+  justify-items: start;
+}
+
+.rascals-gameday {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+  width: 100%;
+}
+.rascals-gameday-head h2 {
+  margin: 0.6rem 0 0;
+}
+.rascals-gameday-matchup {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 4vw, 3.5rem);
+  margin: clamp(1.4rem, 3vw, 2.6rem) 0 0.4rem;
+  flex-wrap: wrap;
+}
+.rascals-gameday-team {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+.rascals-gameday-team img,
+.rascals-gameday-team i {
+  width: clamp(52px, 7vw, 84px);
+  height: clamp(52px, 7vw, 84px);
+  object-fit: contain;
+  flex: none;
+}
+.rascals-gameday-team i {
+  display: block;
+  border: 1px solid var(--rascals-line-strong);
+}
+.rascals-gameday-team b {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 76;
+  font-size: clamp(1.2rem, 2.4vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.rascals-gameday-vs {
+  color: var(--rascals-red);
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-weight: 900;
+  font-style: italic;
+}
+.rascals-gameday-meta {
+  margin: 0.5rem 0 0;
+  color: var(--rascals-text-dim);
+  font-size: 0.95rem;
+}
+.rascals-gameday .sb-button {
+  margin-top: 1.6rem;
+}
+
+/* ============================================================
+   UNITS
+   Offense, Defense, Special Teams. Numbered like a depth chart,
+   sized unevenly so the row does not read as three equal cards.
+   ============================================================ */
+
+.sb-units {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  gap: 1px;
+  background: var(--rascals-line);
+}
+.sb-units article {
+  position: relative;
+  display: grid;
+  align-content: end;
+  min-height: clamp(320px, 38vw, 460px);
+  padding: clamp(1.5rem, 3vw, 2.6rem);
+  overflow: hidden;
+  background: var(--sb-bg);
+}
+.sb-units article > img {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.42;
+  transition: transform 700ms var(--ease-drive), opacity 400ms var(--ease-snap);
+}
+.sb-units article:hover > img {
+  transform: scale(1.05);
+  opacity: 0.55;
+}
+.sb-units article::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(transparent 25%, rgb(3 10 19 / 0.92));
+  pointer-events: none;
+}
+.sb-unit-index {
+  position: absolute;
+  top: clamp(1rem, 2vw, 1.8rem);
+  left: clamp(1.5rem, 3vw, 2.6rem);
+  z-index: 2;
+  color: var(--rascals-red);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+.sb-unit-body {
+  position: relative;
+  z-index: 2;
+}
+.sb-unit-body small {
+  color: var(--rascals-red);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.sb-unit-body h3 {
+  margin: 0.5rem 0 0.6rem;
+  font-size: clamp(1.5rem, 2.6vw, 2.3rem);
+}
+.sb-unit-body p {
+  max-width: 34ch;
+  color: var(--rascals-text-dim);
+  font-size: 0.92rem;
+}
+.sb-unit-body a {
+  display: inline-block;
+  margin-top: 0.9rem;
+  color: var(--rascals-red);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .sb-units {
+    grid-template-columns: 1fr;
+  }
+  .sb-units article {
+    min-height: 300px;
+  }
+}
+
+/* --- Motion opt-out -------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide > img,
+  .page-hero > img,
+  .join-cta > img {
+    transform: none;
+  }
+  .news-grid article:hover,
+  .team-panels article:hover,
+  .sb-cards article:hover,
+  .sb-units article:hover > img {
+    transform: none;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 901px) {
+  .site-header .main-nav a {
+    font-size: 0.66rem !important;
+  }
+}
+
+/* The hero controls switch from a vertical stack to a row on small
+   screens, so the pause button needs its spacing on the inline axis. */
+@media (max-width: 720px) {
+  .hero-controls {
+    align-items: center;
+  }
+  .hero-playstate {
+    margin: 0 0 0 0.7rem;
+  }
+}

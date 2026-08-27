@@ -4,7 +4,8 @@
   --navy: #07172b;
   --navy-2: #0d2340;
   --ink: #12161d;
-  --red: #dc1726;
+  /* Resolves to the single brand red defined in rascals-design.css. */
+  --red: var(--rascals-red);
   --ice: #f2f3ef;
   --white: #ffffff;
   --line: rgba(7, 23, 43, 0.14);
@@ -12,7 +13,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--ice); color: var(--navy); font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif; }
+body { margin: 0; background: var(--ice); color: var(--navy); font-family: var(--font-body); }
 a { color: inherit; text-decoration: none; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { font: inherit; }
@@ -46,9 +47,10 @@ img { display: block; max-width: 100%; }
 .eyebrow::before { content: ""; width: 34px; height: 3px; background: var(--red); }
 .red-text { color: var(--red); }
 h1, h2, h3, p { margin-top: 0; }
-h1, h2 { letter-spacing: -.045em; line-height: .83; font-weight: 950; text-transform: uppercase; }
-h1 { margin: 1.35rem 0 1.6rem; font-size: clamp(4.2rem, 9.6vw, 9rem); }
-h1 i, h2 i { color: var(--red); font-style: italic; }
+h1, h2 { font-family: var(--font-display); font-variation-settings: "wdth" 76; letter-spacing: var(--display-tracking); line-height: .86; font-weight: 900; text-transform: uppercase; }
+h1 { margin: 1.35rem 0 1.6rem; font-size: var(--step-hero); }
+/* Italic descenders clip against tight display leading; give them room. */
+h1 i, h2 i { color: var(--red); font-style: italic; line-height: 1.06; padding-bottom: .06em; }
 .hero-copy p { max-width: 520px; font-size: clamp(1rem, 1.4vw, 1.25rem); letter-spacing: .03em; color: rgba(255,255,255,.8); }
 .button-row { display: flex; gap: .8rem; margin-top: 2.2rem; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 1.2rem; min-height: 50px; padding: 0 1.5rem; font-size: .76rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; border: 1px solid transparent; transition: transform .2s ease, background .2s ease; }
