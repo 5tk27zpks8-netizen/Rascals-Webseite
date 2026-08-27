@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { RascalsField } from "./RascalsField";
+import { TeamUnits } from "./TeamUnits";
 
 export type PageName = "home" | "ueber-uns" | "team" | "sponsoring" | "shop" | "news" | "galerie" | "spielplan";
 
@@ -64,7 +65,7 @@ function Hero() {
   return (
     <section className="hero" data-hero-pin aria-roledescription="Karussell" aria-label="Rascals Highlights">
       <div className={`hero-slide helmet-slide ${slide === 0 ? "visible" : ""}`} aria-hidden={slide !== 0}>
-        <img src="/helmet-hero-4k.webp" alt="Rascals Footballhelm im Flutlicht" data-parallax="10" />
+        <img src="/helmet-hero-4k.webp" alt="Rascals Footballhelm im Flutlicht" />
         <div className="hero-shade" />
         <div className="hero-copy">
           <span className="eyebrow">American Football · Heidenheim</span>
@@ -78,7 +79,7 @@ function Hero() {
       </div>
 
       <div className={`hero-slide schedule-slide ${slide === 1 ? "visible" : ""}`} aria-hidden={slide !== 1}>
-        <img src="/team-entry-4k.webp" alt="Hellenstein Rascals beim Einlauf" data-parallax="10" />
+        <img src="/team-entry-4k.webp" alt="Hellenstein Rascals beim Einlauf" />
         <div className="hero-shade" />
         <div className="schedule-card">
           <span className="eyebrow">Kreisoberliga · Saison 2026</span>
@@ -168,6 +169,7 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
     </div>
 
     <Fixtures />
+    <TeamUnits />
     <hr className="rascals-yardline" />
 
     <section className="story-split">

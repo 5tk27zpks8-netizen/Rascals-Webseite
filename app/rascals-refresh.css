@@ -67,9 +67,9 @@
   background: var(--rascals-red);
 }
 
-/* The hero image scales slightly so the parallax drift never
-   exposes an empty edge at the top or bottom of the frame. */
-.hero-slide > img,
+/* Images that drift on scroll are oversized so the drift never exposes an
+   empty edge. The homepage hero is deliberately not in this list: it no
+   longer drifts, and the oversize was cropping the helmet for nothing. */
 .page-hero > img,
 .join-cta > img {
   transform: scale(1.08);
