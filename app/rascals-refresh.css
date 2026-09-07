@@ -76,11 +76,27 @@
   transform-origin: center;
 }
 
-/* The hero photo is 4:3 in a wider frame, so a slice of it is always cropped.
-   Sitting the slice lower keeps the turf under the helmet in shot. */
+/* The hero photo is 4:3 in a 2.1:1 frame. Filling the whole frame meant
+   scaling it until 512px of the picture were cut away top and bottom, which
+   is why the helmet arrived cropped and oversized. Giving the photo the right
+   two thirds — the half the copy does not occupy — lets its full height fit,
+   so the helmet is whole and smaller, and a mask feathers it into the navy
+   instead of ending on a hard edge. */
 .hero-slide > img {
-  object-position: center 62%;
+  object-position: center 58%;
 }
+
+@media (min-width: 1000px) {
+  .hero-slide > img {
+    display: block;
+    width: 68%;
+    margin-left: auto;
+    object-position: center 48%;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 30%);
+  }
+}
+
 
 /* --- Stat bar --------------------------------------------------
    Numbers are the point here, so they get the display face and
