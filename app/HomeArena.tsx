@@ -16,11 +16,14 @@ import "./home-arena.css";
  *
  * Everything the site has to say lives inside the drive: the next game, the
  * club in numbers, the teams, the full schedule and the news, in that order.
- * Nothing is pushed onto a separate page to keep the drive tidy — the whole
- * homepage is one possession.
  *
- * The navigation is the chain: the yard markers double as jump links, so the
- * one thing a visitor always has is a way to skip ahead.
+ * Panels are built as broadcast graphics, not slides. A stop that makes a
+ * statement runs full-bleed with the ground open beside it; a stop that
+ * carries a list splits into a title rail and a content column, so a fixture
+ * list and a news grid are laid out rather than stacked. Every element inside
+ * a panel is marked with `data-cue`, which is what the stylesheet staggers —
+ * content arrives in reading order instead of the whole panel appearing at
+ * once.
  *
  * Everything is plain HTML in document order. Where the drive cannot run —
  * phones, coarse pointers, reduced motion — the panels simply stack and the
@@ -78,6 +81,13 @@ const squads = [
   },
 ];
 
+const figures = [
+  { value: "2023", label: "Gegründet" },
+  { value: "11", label: "Spieler auf dem Feld" },
+  { value: "1", label: "Rascals Family" },
+  { value: "100%", label: "Heidenheim" },
+];
+
 export function HomeArena() {
   return (
     <div className="drive-page">
@@ -85,7 +95,7 @@ export function HomeArena() {
       <div className="drive-vignette" aria-hidden="true" />
 
       {/* --- broadcast overlay ------------------------------------- */}
-      <div className="drive-hud">
+      <header className="drive-hud">
         <a className="drive-hud-brand" href="/">
           <img src="/rascals-logo-transparent-4k.png" alt="" />
           <span>HELLENSTEIN<br /><i>RASCALS</i></span>
@@ -93,19 +103,23 @@ export function HomeArena() {
 
         <div className="drive-hud-centre">
           <span className="drive-hud-down" data-hud-down>KICKOFF</span>
-          <div className="drive-hud-bar" data-hud-bar><i /></div>
+          <div className="drive-hud-bar" data-hud-bar>
+            <i />
+            <u />
+          </div>
+          <span className="drive-hud-caption" data-hud-caption>Der Drive läuft</span>
         </div>
 
         <div className="drive-hud-yard">
-          <small>BALL ON</small>
+          <small>Ball on</small>
           <b data-hud-yard>OWN 20</b>
         </div>
-      </div>
+      </header>
 
       {/* --- the chain: navigation as yard markers ------------------ */}
       <nav className="drive-chain" aria-label="Abschnitte">
         {drivePanels.map((panel) => (
-          <a key={panel.id} href={`#${panel.id}`}>
+          <a key={panel.id} href={`#${panel.id}`} data-chain={panel.id}>
             <span>{panel.yard}</span>
             <small>{panel.label}</small>
           </a>
@@ -115,112 +129,133 @@ export function HomeArena() {
       <main className="drive-track">
         {/* KICKOFF */}
         <section id="kickoff" className="drive-panel drive-panel-open" data-from="0" data-to="0.11">
-          <p className="drive-eyebrow">Kickoff · Own 20</p>
-          <h1>
+          <p className="drive-eyebrow" data-cue>Kickoff · Own 20</p>
+          <h1 data-cue>
             <span>DIESE</span>
             <span>YARDS</span>
             <i>GEHÖREN UNS.</i>
           </h1>
-          <p className="drive-lead">
+          <p className="drive-lead" data-cue>
             Hellenstein Rascals — American Football in Heidenheim. Scroll dich mit uns
             über das Feld, von der eigenen 20 bis in die Endzone.
           </p>
-          <span className="drive-hint">Scrollen startet den Drive ↓</span>
+          <span className="drive-hint" data-cue>Scrollen startet den Drive</span>
         </section>
 
         {/* 1ST & 10 — next game */}
         <section id="nextgame" className="drive-panel" data-from="0.11" data-to="0.24">
-          <p className="drive-eyebrow">1st &amp; 10 · Own 29</p>
-          <div className="drive-fixture"><MatchdayHero /></div>
+          <p className="drive-eyebrow" data-cue>1st &amp; 10 · Own 29</p>
+          <div className="drive-fixture" data-cue><MatchdayHero /></div>
         </section>
 
         {/* 2ND & 6 — the club in numbers */}
         <section id="zahlen" className="drive-panel" data-from="0.24" data-to="0.37">
-          <p className="drive-eyebrow">2nd &amp; 6 · Own 39</p>
-          <h2>DER VEREIN<br /><i>IN ZAHLEN.</i></h2>
+          <p className="drive-eyebrow" data-cue>2nd &amp; 6 · Own 39</p>
+          <h2 data-cue>DER VEREIN<br /><i>IN ZAHLEN.</i></h2>
           <div className="drive-numbers">
-            <article><b>2023</b><span>Gegründet</span></article>
-            <article><b>11</b><span>Spieler auf dem Feld</span></article>
-            <article><b>1</b><span>Rascals Family</span></article>
-            <article><b>100%</b><span>Heidenheim</span></article>
+            {figures.map((figure) => (
+              <article key={figure.label} data-cue>
+                <b>{figure.value}</b>
+                <span>{figure.label}</span>
+              </article>
+            ))}
           </div>
-          <p className="drive-lead">
+          <p className="drive-lead" data-cue>
             Seit 2023 zurück unter dem Hellenstein. Bei uns zählen Einsatz, Fairness und
             der Mensch unter dem Helm.
           </p>
-          <a className="drive-link" href="/ueber-uns">Die ganze Vereinsgeschichte →</a>
+          <a className="drive-link" href="/ueber-uns" data-cue>Die ganze Vereinsgeschichte</a>
         </section>
 
         {/* 1ST & 10 at midfield — the teams */}
         <section id="team" className="drive-panel is-wide" data-from="0.37" data-to="0.53">
-          <p className="drive-eyebrow">1st &amp; 10 · Midfield</p>
-          <h2>DREI UNITS. <i>EIN TEAM.</i></h2>
-
-          <div className="drive-units">
-            {units.map((unit, index) => (
-              <article key={unit.name}>
-                <div className="drive-unit-media">
-                  <img src={unit.image} alt="" loading="lazy" />
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                </div>
-                <h3>{unit.name}</h3>
-                <strong>{unit.line}</strong>
-                <p>{unit.text}</p>
-              </article>
-            ))}
+          <div className="drive-rail">
+            <p className="drive-eyebrow" data-cue>1st &amp; 10 · Midfield</p>
+            <h2 data-cue>DREI UNITS.<br /><i>EIN TEAM.</i></h2>
+            <p className="drive-rail-note" data-cue>
+              Offense, Defense, Special Teams — und zwei Mannschaften, in denen jeder
+              seinen Platz findet.
+            </p>
+            <a className="drive-link" href="/team" data-cue>Zum kompletten Roster</a>
           </div>
 
-          <div className="drive-squads">
-            {squads.map((squad) => (
-              <article key={squad.name}>
-                <img src={squad.image} alt="" loading="lazy" />
-                <div>
-                  <small>{squad.tag}</small>
-                  <h3>{squad.name}</h3>
-                  <p>{squad.text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+          <div className="drive-body">
+            <div className="drive-units">
+              {units.map((unit, index) => (
+                <article key={unit.name} data-cue>
+                  <div className="drive-unit-media">
+                    <img src={unit.image} alt="" loading="lazy" />
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                  </div>
+                  <h3>{unit.name}</h3>
+                  <strong>{unit.line}</strong>
+                  <p>{unit.text}</p>
+                </article>
+              ))}
+            </div>
 
-          <a className="drive-link" href="/team">Zum kompletten Roster →</a>
+            <div className="drive-squads">
+              {squads.map((squad) => (
+                <article key={squad.name} data-cue>
+                  <img src={squad.image} alt="" loading="lazy" />
+                  <div>
+                    <small>{squad.tag}</small>
+                    <h3>{squad.name}</h3>
+                    <p>{squad.text}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* 2ND & 7 — the schedule */}
         <section id="spielplan" className="drive-panel is-wide section fixtures-section drive-fixtures" data-from="0.53" data-to="0.7">
-          <p className="drive-eyebrow">2nd &amp; 7 · Opp 38</p>
-          <div className="section-heading">
-            <div><h2>NÄCHSTE <i>GAMES.</i></h2></div>
+          <div className="drive-rail">
+            <p className="drive-eyebrow" data-cue>2nd &amp; 7 · Opp 38</p>
+            <h2 data-cue>NÄCHSTE<br /><i>GAMES.</i></h2>
+            <div className="section-heading" data-cue />
           </div>
-          <div className="drive-scroller">
-            <div className="fixture-list" />
+
+          <div className="drive-body">
+            <div className="drive-scroller" data-cue>
+              <div className="fixture-list" />
+            </div>
           </div>
         </section>
 
         {/* 1ST & 10 — the news */}
         <section id="news" className="drive-panel is-wide news-preview drive-news" data-from="0.7" data-to="0.86">
-          <p className="drive-eyebrow">1st &amp; 10 · Opp 24</p>
-          <h2>AUS DEM <i>HUDDLE.</i></h2>
-          <div className="drive-scroller">
-            <div className="news-grid" />
+          <div className="drive-rail">
+            <p className="drive-eyebrow" data-cue>1st &amp; 10 · Opp 24</p>
+            <h2 data-cue>AUS DEM<br /><i>HUDDLE.</i></h2>
+            <p className="drive-rail-note" data-cue>
+              Spielberichte, Termine und alles, was zwischen zwei Kickoffs passiert.
+            </p>
+            <a className="drive-link" href="/news" data-cue>Alle News</a>
           </div>
-          <a className="drive-link" href="/news">Alle News →</a>
+
+          <div className="drive-body">
+            <div className="drive-scroller" data-cue>
+              <div className="news-grid" />
+            </div>
+          </div>
         </section>
 
         {/* TOUCHDOWN */}
         <section id="mitmachen" className="drive-panel drive-panel-end" data-from="0.86" data-to="1">
-          <p className="drive-eyebrow">Touchdown · End Zone</p>
-          <h2 className="drive-td">TOUCH<i>DOWN.</i></h2>
-          <p className="drive-lead">
+          <p className="drive-eyebrow" data-cue>Touchdown · End Zone</p>
+          <h2 className="drive-td" data-cue>TOUCH<i>DOWN.</i></h2>
+          <p className="drive-lead" data-cue>
             Jetzt bist du dran. Du brauchst keine Erfahrung — nur den Willen, jede Woche
             wiederzukommen.
           </p>
-          <div className="drive-actions">
+          <div className="drive-actions" data-cue>
             <a className="drive-cta" href="mailto:football@hsb1846.de">Probetraining anfragen</a>
-            <a className="drive-link" href="/spielplan">Kompletter Spielplan →</a>
+            <a className="drive-link" href="/spielplan">Kompletter Spielplan</a>
           </div>
 
-          <nav className="drive-end-nav" aria-label="Weitere Seiten">
+          <nav className="drive-end-nav" aria-label="Weitere Seiten" data-cue>
             <a href="/team">Team</a>
             <a href="/spielplan">Spielplan</a>
             <a href="/news">News</a>
@@ -229,7 +264,7 @@ export function HomeArena() {
             <a href="/sponsoring">Sponsoring</a>
             <a href="/shop">Shop</a>
           </nav>
-          <small className="drive-imprint">
+          <small className="drive-imprint" data-cue>
             American Football · Eine Abteilung des Heidenheimer Sportbund 1846 e.V.
           </small>
         </section>

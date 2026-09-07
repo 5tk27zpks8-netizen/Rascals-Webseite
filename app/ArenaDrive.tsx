@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { FIELD_YARDS_LONG, FIELD_YARDS_WIDE, createCrowdTexture, createFlagTexture, createTurfTexture } from "./lib/arena-textures";
+import {
+  FIELD_YARDS_LONG,
+  FIELD_YARDS_WIDE,
+  createCrowdTexture,
+  createFlagTexture,
+  createScoreboardTexture,
+  createTurfTexture,
+} from "./lib/arena-textures";
 
 /**
  * THE DRIVE — the scroll engine and the stadium behind the Arena design.
@@ -131,6 +138,78 @@ function buildFlags(THREE: Three, flag: import("three").Texture) {
   return group;
 }
 
+/**
+ * A floodlight pylon: a lattice mast carrying a bank of lamps.
+ *
+ * The lights were shining out of nothing before, which is the single clearest
+ * tell that a scene is a demo. Giving the light a structure to come from is
+ * what makes the ground read as built.
+ */
+function buildPylon(THREE: Three, x: number, z: number) {
+  const group = new THREE.Group();
+  const steel = new THREE.MeshStandardMaterial({ color: 0x2a3444, roughness: 0.6, metalness: 0.7 });
+
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1.1, 46, 8), steel);
+  mast.position.y = 23;
+  group.add(mast);
+
+  // Cross braces, so the mast reads as a lattice rather than a pipe.
+  for (let i = 1; i < 6; i += 1) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9 - i * 0.08, 0.09, 5, 10), steel);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = i * 7.4;
+    group.add(ring);
+  }
+
+  const rig = new THREE.Mesh(new THREE.BoxGeometry(11, 5.4, 1), steel);
+  rig.position.set(0, 47, 0);
+  group.add(rig);
+
+  const lampMaterial = new THREE.MeshBasicMaterial({ color: 0xfdfbf2, toneMapped: false });
+  for (let row = 0; row < 2; row += 1) {
+    for (let col = 0; col < 5; col += 1) {
+      const lamp = new THREE.Mesh(new THREE.CircleGeometry(0.86, 12), lampMaterial);
+      lamp.position.set(-4.4 + col * 2.2, 45.9 + row * 2.2, -0.6);
+      lamp.rotation.y = Math.PI;
+      group.add(lamp);
+    }
+  }
+
+  group.position.set(x, 0, z);
+  group.lookAt(0, 40, z);
+  return group;
+}
+
+/** The board behind the far end zone, carrying the real next fixture. */
+function buildScoreboard(THREE: Three, texture: import("three").Texture, z: number) {
+  const group = new THREE.Group();
+  const frame = new THREE.Mesh(
+    new THREE.BoxGeometry(76, 30, 2.4),
+    new THREE.MeshStandardMaterial({ color: 0x0b111b, roughness: 0.8 }),
+  );
+  frame.position.set(0, 30, 0);
+  group.add(frame);
+
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(72, 27),
+    // Fog off: a bright board cuts through night haze instead of dissolving
+    // into it, which is what makes it read as a light source.
+    new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, fog: false }),
+  );
+  face.position.set(0, 30, 1.3);
+  group.add(face);
+
+  const legs = new THREE.MeshStandardMaterial({ color: 0x151d2a, roughness: 0.9 });
+  for (const x of [-26, 26]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 16, 8), legs);
+    leg.position.set(x, 8, 0);
+    group.add(leg);
+  }
+
+  group.position.z = z;
+  return group;
+}
+
 export function ArenaDrive() {
   const canvasHost = useRef<HTMLDivElement | null>(null);
 
@@ -147,6 +226,10 @@ export function ArenaDrive() {
     page.classList.add("is-driving");
 
     const panels = Array.from(page.querySelectorAll<HTMLElement>("[data-from]"));
+    const chainLinks = new Map<string, HTMLElement>();
+    page.querySelectorAll<HTMLElement>("[data-chain]").forEach((link) => {
+      if (link.dataset.chain) chainLinks.set(link.dataset.chain, link);
+    });
     const scrollTotal = () => document.body.scrollHeight - window.innerHeight;
 
     /* While driving the panels are fixed, so an anchor has nothing to scroll
@@ -167,6 +250,7 @@ export function ArenaDrive() {
     const yardOut = page.querySelector<HTMLElement>("[data-hud-yard]");
     const downOut = page.querySelector<HTMLElement>("[data-hud-down]");
     const barOut = page.querySelector<HTMLElement>("[data-hud-bar]");
+    const captionOut = page.querySelector<HTMLElement>("[data-hud-caption]");
 
     let disposed = false;
     let frame = 0;
@@ -190,19 +274,64 @@ export function ArenaDrive() {
       return "KICKOFF";
     };
 
+    /* The overlay only rewrites what actually changed. Reassigning the same
+       string every frame restarts the tick animation and makes the readout
+       flicker, which is exactly the kind of detail that reads as unfinished. */
+    let lastYard = "";
+    let lastDown = "";
+    let lastHere = "";
+    let yardTick: Animation | undefined;
+
     const paintOverlay = () => {
       const absolute = 20 + progress * 80;
-      if (yardOut) {
-        yardOut.textContent = absolute >= 99 ? "TD"
-          : `${absolute > 50 ? "OPP" : "OWN"} ${String(Math.round(absolute > 50 ? 100 - absolute : absolute)).padStart(2, "0")}`;
+      const yard = absolute >= 99
+        ? "TOUCHDOWN"
+        : `${absolute > 50 ? "OPP" : "OWN"} ${String(Math.round(absolute > 50 ? 100 - absolute : absolute)).padStart(2, "0")}`;
+
+      if (yardOut && yard !== lastYard) {
+        lastYard = yard;
+        yardOut.textContent = yard;
+        /* Restarting a CSS class animation means forcing a synchronous
+           layout, and the ball position changes many times a second while
+           scrolling. On a page carrying a WebGL scene and several
+           backdrop-filtered panels that reflow storm stalled every other
+           transition on the page for most of a second. The Web Animations
+           API restarts the same tick without touching layout. */
+        yardTick?.cancel();
+        yardTick = yardOut.animate(
+          [
+            { opacity: 0.25, transform: "translateY(-0.14em)" },
+            { opacity: 1, transform: "none" },
+          ],
+          { duration: 260, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+        );
       }
-      if (downOut) downOut.textContent = downFor(progress);
+
+      const down = downFor(progress);
+      if (downOut && down !== lastDown) {
+        lastDown = down;
+        downOut.textContent = down;
+      }
+      if (captionOut) {
+        captionOut.textContent = progress > 0.86
+          ? "Endzone erreicht"
+          : progress < 0.02 ? "Der Drive beginnt" : `${Math.round(progress * 100)} % über das Feld`;
+      }
       if (barOut) barOut.style.setProperty("--drive", `${(progress * 100).toFixed(1)}%`);
 
+      let here = "";
       for (const panel of panels) {
         const from = Number(panel.dataset.from ?? 0);
         const to = Number(panel.dataset.to ?? 1);
-        panel.classList.toggle("is-on", progress >= from && progress <= to);
+        const on = progress >= from && progress <= to;
+        panel.classList.toggle("is-on", on);
+        if (on) here = panel.id;
+      }
+
+      if (here !== lastHere) {
+        chainLinks.get(lastHere)?.classList.remove("is-here");
+        chainLinks.get(here)?.classList.add("is-here");
+        lastHere = here;
       }
     };
 
@@ -261,6 +390,36 @@ export function ArenaDrive() {
         scene.add(buildStand(THREE, crowdTexture, 1), buildStand(THREE, crowdTexture, -1));
       }
 
+      // The board carries whatever the schedule says is next. It is drawn
+      // once with a placeholder and repainted when the fetch lands, so a slow
+      // network never holds the scene up.
+      let boardTexture: import("three").CanvasTexture | null = null;
+      const boardCanvas = createScoreboardTexture({ competition: "HELLENSTEIN RASCALS" });
+      if (boardCanvas) {
+        boardTexture = new THREE.CanvasTexture(boardCanvas);
+        boardTexture.colorSpace = THREE.SRGBColorSpace;
+        scene.add(buildScoreboard(THREE, boardTexture, OPP_END_Z - 34));
+        void fetch("/api/public/games")
+          .then((response) => (response.ok ? response.json() : null))
+          .then((data: { items?: Array<Record<string, unknown>> } | null) => {
+            const next = data?.items?.find((item) => String(item.status ?? "") !== "finished") ?? data?.items?.[0];
+            if (!next || disposed) return;
+            const kickoff = next.kickoff ? new Date(String(next.kickoff)) : null;
+            const repainted = createScoreboardTexture({
+              competition: "HELLENSTEIN RASCALS",
+              opponent: String(next.opponent ?? "GAST"),
+              kickoff: kickoff
+                ? kickoff.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) +
+                  " · " + kickoff.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " UHR"
+                : undefined,
+            });
+            if (!repainted || !boardTexture) return;
+            boardTexture.image = repainted;
+            boardTexture.needsUpdate = true;
+          })
+          .catch(() => undefined);
+      }
+
       const flagCanvas = createFlagTexture();
       const flagTexture = flagCanvas ? new THREE.CanvasTexture(flagCanvas) : null;
       let flags: import("three").Group | null = null;
@@ -281,6 +440,7 @@ export function ArenaDrive() {
         const z = 12 - i * (FIELD_LONG / 4.4);
         for (const side of [-1, 1] as const) {
           const x = side * (FIELD_WIDE / 2 + 30);
+          scene.add(buildPylon(THREE, x, z));
           const lamp = new THREE.SpotLight(0xeef4ff, 11000, 320, 0.82, 0.5, 2);
           lamp.position.set(x, 46, z);
           lamp.target.position.set(x * 0.15, 0, z - 12);
@@ -299,6 +459,53 @@ export function ArenaDrive() {
           shafts.push(shaft);
         }
       }
+
+      // --- camera flashes in the stands ---------------------------------
+      // A still crowd is a photograph. A handful of flashes going off is what
+      // makes a stand read as people rather than as a texture.
+      const flashCount = 220;
+      const flashPositions = new Float32Array(flashCount * 3);
+      const flashPhase = new Float32Array(flashCount);
+      for (let i = 0; i < flashCount; i += 1) {
+        const side = Math.random() > 0.5 ? 1 : -1;
+        flashPositions[i * 3] = side * (FIELD_WIDE / 2 + 10 + Math.random() * 9);
+        flashPositions[i * 3 + 1] = 8 + Math.random() * 13;
+        flashPositions[i * 3 + 2] = OWN_END_Z + 10 - Math.random() * (FIELD_LONG + 30);
+        flashPhase[i] = Math.random() * 100;
+      }
+      const flashGeometry = new THREE.BufferGeometry();
+      flashGeometry.setAttribute("position", new THREE.BufferAttribute(flashPositions, 3));
+      flashGeometry.setAttribute("phase", new THREE.BufferAttribute(flashPhase, 1));
+      // Each flash needs its own moment, so the timing lives per point in a
+      // shader; a shared material opacity would fire the whole stand at once.
+      const flashMaterial = new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 } },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexShader: `
+          attribute float phase;
+          uniform float uTime;
+          varying float vAlpha;
+          void main() {
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * mv;
+            float t = fract(uTime * 0.22 + phase);
+            vAlpha = pow(max(0.0, 1.0 - t * 16.0), 2.0);
+            gl_PointSize = (30.0 * vAlpha + 1.0) * (60.0 / max(1.0, -mv.z));
+          }
+        `,
+        fragmentShader: `
+          varying float vAlpha;
+          void main() {
+            float m = smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5));
+            if (vAlpha * m < 0.01) discard;
+            gl_FragColor = vec4(1.0, 0.96, 0.88, vAlpha * m);
+          }
+        `,
+      });
+      const flashes = new THREE.Points(flashGeometry, flashMaterial);
+      scene.add(flashes);
 
       // --- night air ----------------------------------------------------
       const dustCount = 1400;
@@ -341,13 +548,21 @@ export function ArenaDrive() {
 
         eased += (progress - eased) * 0.07;
 
+        // A camera that is perfectly still between scrolls reads as a
+        // screenshot. A slow breath keeps the ground alive without ever
+        // competing with the scroll.
+        const breath = Math.sin(time * 0.31) * 0.55;
+        const sway = Math.sin(time * 0.19 + 1.3) * 0.9;
+
         camera.position.set(
-          pointer.x * 5,
-          9.2 - pointer.y * 1.5,
+          pointer.x * 5 + sway,
+          9.2 - pointer.y * 1.5 + breath,
           START_Z + (END_Z - START_Z) * eased,
         );
-        camera.lookAt(pointer.x * 2.4, 2.6, camera.position.z - 52);
+        camera.lookAt(pointer.x * 2.4 + sway * 0.4, 2.6, camera.position.z - 52);
+        camera.rotation.z = Math.sin(time * 0.23) * 0.004;
 
+        flashMaterial.uniforms.uTime.value = time;
         dust.rotation.y = time * 0.008;
         for (const [index, shaft] of shafts.entries()) {
           const material = shaft.material as import("three").MeshBasicMaterial;
@@ -383,6 +598,8 @@ export function ArenaDrive() {
         turfTexture?.dispose();
         crowdTexture?.dispose();
         flagTexture?.dispose();
+        boardTexture?.dispose();
+        flashMaterial.dispose();
         renderer.dispose();
         renderer.domElement.remove();
         page.classList.remove("is-driving");

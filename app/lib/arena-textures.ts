@@ -14,6 +14,45 @@ export const FIELD_YARDS_WIDE = 160 / 3;
 /** Yard numbers, counted up to midfield and back down. */
 const NUMBERS = ["10", "20", "30", "40", "50", "40", "30", "20", "10"];
 
+/**
+ * Paint a word across the field, fitted to a width.
+ *
+ * `facing` flips the word for the far end of the ground, so both ends read
+ * the right way up from the same side of the stadium.
+ */
+function paintAcross(
+  context: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  facing: 1 | -1,
+  fill = "rgba(255,255,255,0.9)",
+  size = 132,
+) {
+  context.save();
+  context.translate(x, y);
+  if (facing < 0) context.rotate(Math.PI);
+  context.fillStyle = fill;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.letterSpacing = `${Math.round(size * 0.14)}px`;
+  context.font = `900 ${size}px Impact, "Arial Narrow", sans-serif`;
+  const measured = context.measureText(text).width;
+  if (measured > maxWidth) {
+    const squash = maxWidth / measured;
+    if (squash < 0.62) {
+      context.font = `900 ${Math.round(size * squash * 1.6)}px Impact, "Arial Narrow", sans-serif`;
+      const remeasured = context.measureText(text).width;
+      if (remeasured > maxWidth) context.scale(maxWidth / remeasured, 1);
+    } else {
+      context.scale(squash, 1);
+    }
+  }
+  context.fillText(text, 0, 0);
+  context.restore();
+}
+
 function noise(context: CanvasRenderingContext2D, width: number, height: number, amount: number) {
   const image = context.getImageData(0, 0, width, height);
   const { data } = image;
@@ -59,16 +98,32 @@ export function createTurfTexture(): HTMLCanvasElement | null {
   context.fillStyle = "#0d2440";
   context.fillRect(0, goalFar, W, endZone);
 
+  // End-zone lettering runs sideline to sideline and is read from the side of
+  // the ground, the way a real end zone is painted — not along the field.
+  paintAcross(context, "RASCALS", W / 2, endZone / 2, W * 0.86, 1);
+  paintAcross(context, "HELLENSTEIN", W / 2, H - endZone / 2, W * 0.7, -1);
+
+  // Midfield emblem. Real grounds carry the club mark at the 50, worn into
+  // the grass rather than printed on top of it, so it stays understated.
+  const midY = H / 2;
   context.save();
-  context.translate(W / 2, endZone / 2);
-  context.rotate(-Math.PI / 2);
-  context.fillStyle = "rgba(255,255,255,0.9)";
-  context.font = "900 108px Impact, sans-serif";
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.letterSpacing = "18px";
-  context.fillText("RASCALS", 0, 0);
+  context.translate(W / 2, midY);
+  context.fillStyle = "rgba(126, 18, 30, 0.62)";
+  context.beginPath();
+  context.arc(0, 0, 186, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = "rgba(255,255,255,0.68)";
+  context.lineWidth = 10;
+  context.beginPath();
+  context.arc(0, 0, 186, 0, Math.PI * 2);
+  context.stroke();
+  context.lineWidth = 4;
+  context.beginPath();
+  context.arc(0, 0, 167, 0, Math.PI * 2);
+  context.stroke();
   context.restore();
+  paintAcross(context, "RASCALS", W / 2, midY - 22, 300, 1, "rgba(255,255,255,0.9)", 86);
+  paintAcross(context, "EST. 2023", W / 2, midY + 54, 210, 1, "rgba(255,255,255,0.62)", 40);
 
   // Sidelines and end lines: a broad white border around the whole thing.
   context.strokeStyle = "rgba(255,255,255,0.92)";
@@ -184,5 +239,80 @@ export function createFlagTexture(): HTMLCanvasElement | null {
   context.font = "900 30px Impact, sans-serif";
   context.letterSpacing = "10px";
   context.fillText("HELLENSTEIN", canvas.width / 2, canvas.height * 0.79);
+  return canvas;
+}
+
+/** What the scoreboard shows. Everything is optional; it falls back to a
+ *  pre-game board rather than inventing a result. */
+export type ScoreboardData = {
+  opponent?: string;
+  kickoff?: string;
+  venue?: string;
+  competition?: string;
+};
+
+/**
+ * The stadium scoreboard behind the far end zone.
+ *
+ * It is the one place in the scene that carries live information, so the
+ * ground is not just scenery: whatever the schedule says is the next game is
+ * what the board is showing.
+ */
+export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 384;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  const W = canvas.width;
+  const H = canvas.height;
+
+  context.fillStyle = "#05080e";
+  context.fillRect(0, 0, W, H);
+
+  // The bezel, so the board reads as a built object rather than a decal.
+  context.strokeStyle = "#1b2536";
+  context.lineWidth = 14;
+  context.strokeRect(7, 7, W - 14, H - 14);
+
+  // Header strip.
+  context.fillStyle = "#b3121f";
+  context.fillRect(14, 14, W - 28, 62);
+  context.fillStyle = "#ffffff";
+  context.font = '900 34px Impact, "Arial Narrow", sans-serif';
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.letterSpacing = "12px";
+  context.fillText((data.competition ?? "HELLENSTEIN RASCALS").toUpperCase(), W / 2, 46);
+
+  // The two sides, with a dot-matrix wash so it reads as lamps not print.
+  const label = (text: string, x: number) => {
+    context.fillStyle = "#f4a72a";
+    context.font = '900 46px Impact, "Arial Narrow", sans-serif';
+    context.letterSpacing = "6px";
+    context.fillText(text.toUpperCase().slice(0, 14), x, 148);
+  };
+  label("RASCALS", W * 0.24);
+  label((data.opponent ?? "GAST").slice(0, 14), W * 0.76);
+
+  context.fillStyle = "#f2f8ff";
+  context.font = '900 108px Impact, "Arial Narrow", sans-serif';
+  context.letterSpacing = "4px";
+  context.fillText("0", W * 0.24, 246);
+  context.fillText("0", W * 0.76, 246);
+
+  context.fillStyle = "#f4a72a";
+  context.font = '900 64px Impact, "Arial Narrow", sans-serif';
+  context.fillText(":", W / 2, 238);
+
+  context.fillStyle = "#7f8ea3";
+  context.font = '900 26px Impact, "Arial Narrow", sans-serif';
+  context.letterSpacing = "9px";
+  context.fillText((data.kickoff ?? "NÄCHSTES SPIEL").toUpperCase().slice(0, 42), W / 2, 330);
+
+  // Lamp grid: a fine dark lattice over everything, like a real LED board.
+  context.fillStyle = "rgba(0,0,0,0.26)";
+  for (let y = 0; y < H; y += 3) context.fillRect(0, y, W, 1);
   return canvas;
 }
