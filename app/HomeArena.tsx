@@ -8,10 +8,16 @@ import "./home-arena.css";
  * ARENA — THE DRIVE.
  *
  * A onepager built as a possession rather than a page. Scrolling walks the
- * camera from the Rascals' own end zone to the opponent's; each panel arrives
- * at the yard marker it belongs to, and a broadcast overlay counts the drive
- * down alongside it. There is no header, no hero-then-sections stack, no
- * footer in the usual sense — the structure is the field.
+ * camera down a real, painted field from the Rascals' own 20 to the
+ * opponent's end zone; each panel arrives at the yard marker it belongs to,
+ * and a broadcast overlay counts the drive down alongside it. There is no
+ * header, no hero-then-sections stack, no footer in the usual sense — the
+ * structure is the field.
+ *
+ * Everything the site has to say lives inside the drive: the next game, the
+ * club in numbers, the teams, the full schedule and the news, in that order.
+ * Nothing is pushed onto a separate page to keep the drive tidy — the whole
+ * homepage is one possession.
  *
  * The navigation is the chain: the yard markers double as jump links, so the
  * one thing a visitor always has is a way to skip ahead.
@@ -21,19 +27,55 @@ import "./home-arena.css";
  * page reads top to bottom like any other.
  */
 
+/**
+ * The stops of the drive. The yard on each marker is the ball position the
+ * overlay actually reads at that point in the scroll, so the chain and the
+ * broadcast never contradict each other.
+ */
 const drivePanels = [
   { id: "kickoff", yard: "OWN 20", label: "KICKOFF" },
-  { id: "nextgame", yard: "OWN 35", label: "1ST & 10" },
-  { id: "zahlen", yard: "50", label: "2ND & 6" },
-  { id: "units", yard: "OPP 35", label: "3RD & 2" },
-  { id: "spielplan", yard: "OPP 12", label: "4TH & GOAL" },
-  { id: "mitmachen", yard: "END ZONE", label: "TOUCHDOWN" },
+  { id: "nextgame", yard: "OWN 29", label: "1ST & 10" },
+  { id: "zahlen", yard: "OWN 39", label: "2ND & 6" },
+  { id: "team", yard: "50", label: "1ST & 10" },
+  { id: "spielplan", yard: "OPP 38", label: "2ND & 7" },
+  { id: "news", yard: "OPP 24", label: "1ST & 10" },
+  { id: "mitmachen", yard: "OPP 11", label: "TOUCHDOWN" },
 ];
 
 const units = [
-  { name: "OFFENSE", line: "Ball. Yards. Punkte.", text: "Line, Backfield und Receiver — elf Spieler, ein Spielzug, kein Alleingang." },
-  { name: "DEFENSE", line: "Stoppen. Zurückholen.", text: "Front, Linebacker und Secondary. Wer hier steht, gibt keinen Meter freiwillig her." },
-  { name: "SPECIAL TEAMS", line: "Ein Snap entscheidet.", text: "Kick, Punt, Return. Die Phase, die Spiele dreht und die keiner trainiert sehen will." },
+  {
+    name: "OFFENSE",
+    line: "Ball. Yards. Punkte.",
+    text: "Line, Backfield und Receiver — elf Spieler, ein Spielzug, kein Alleingang.",
+    image: "/team-players-4k.webp",
+  },
+  {
+    name: "DEFENSE",
+    line: "Stoppen. Zurückholen.",
+    text: "Front, Linebacker und Secondary. Wer hier steht, gibt keinen Meter freiwillig her.",
+    image: "/team-huddle-4k.webp",
+  },
+  {
+    name: "SPECIAL TEAMS",
+    line: "Ein Snap entscheidet.",
+    text: "Kick, Punt, Return. Die Phase, die Spiele dreht.",
+    image: "/team-walk-4k.webp",
+  },
+];
+
+const squads = [
+  {
+    tag: "SENIORS · AB 18",
+    name: "TACKLE FOOTBALL",
+    text: "Wettkampf, Technik und Athletik – mit einem Team, das dich fordert und trägt.",
+    image: "/team-walk-4k.webp",
+  },
+  {
+    tag: "JUNIORS · 14–18",
+    name: "NEXT GENERATION",
+    text: "Grundlagen sicher lernen, Verantwortung übernehmen und als Spieler wachsen.",
+    image: "/team-juniors-new-4k.webp",
+  },
 ];
 
 export function HomeArena() {
@@ -56,7 +98,7 @@ export function HomeArena() {
 
         <div className="drive-hud-yard">
           <small>BALL ON</small>
-          <b data-hud-yard>20</b>
+          <b data-hud-yard>OWN 20</b>
         </div>
       </div>
 
@@ -72,7 +114,7 @@ export function HomeArena() {
 
       <main className="drive-track">
         {/* KICKOFF */}
-        <section id="kickoff" className="drive-panel drive-panel-open" data-from="0" data-to="0.13">
+        <section id="kickoff" className="drive-panel drive-panel-open" data-from="0" data-to="0.11">
           <p className="drive-eyebrow">Kickoff · Own 20</p>
           <h1>
             <span>DIESE</span>
@@ -87,14 +129,14 @@ export function HomeArena() {
         </section>
 
         {/* 1ST & 10 — next game */}
-        <section id="nextgame" className="drive-panel" data-from="0.13" data-to="0.3">
-          <p className="drive-eyebrow">1st &amp; 10 · Own 35</p>
+        <section id="nextgame" className="drive-panel" data-from="0.11" data-to="0.24">
+          <p className="drive-eyebrow">1st &amp; 10 · Own 29</p>
           <div className="drive-fixture"><MatchdayHero /></div>
         </section>
 
         {/* 2ND & 6 — the club in numbers */}
-        <section id="zahlen" className="drive-panel" data-from="0.3" data-to="0.47">
-          <p className="drive-eyebrow">2nd &amp; 6 · Midfield</p>
+        <section id="zahlen" className="drive-panel" data-from="0.24" data-to="0.37">
+          <p className="drive-eyebrow">2nd &amp; 6 · Own 39</p>
           <h2>DER VEREIN<br /><i>IN ZAHLEN.</i></h2>
           <div className="drive-numbers">
             <article><b>2023</b><span>Gegründet</span></article>
@@ -106,36 +148,67 @@ export function HomeArena() {
             Seit 2023 zurück unter dem Hellenstein. Bei uns zählen Einsatz, Fairness und
             der Mensch unter dem Helm.
           </p>
+          <a className="drive-link" href="/ueber-uns">Die ganze Vereinsgeschichte →</a>
         </section>
 
-        {/* 3RD & 2 — the units */}
-        <section id="units" className="drive-panel" data-from="0.47" data-to="0.66">
-          <p className="drive-eyebrow">3rd &amp; 2 · Opp 35</p>
-          <h2>DREI UNITS.<br /><i>EIN TEAM.</i></h2>
+        {/* 1ST & 10 at midfield — the teams */}
+        <section id="team" className="drive-panel is-wide" data-from="0.37" data-to="0.53">
+          <p className="drive-eyebrow">1st &amp; 10 · Midfield</p>
+          <h2>DREI UNITS. <i>EIN TEAM.</i></h2>
+
           <div className="drive-units">
             {units.map((unit, index) => (
-              <article key={unit.name} style={{ "--i": index } as React.CSSProperties}>
-                <span className="drive-unit-no">{String(index + 1).padStart(2, "0")}</span>
+              <article key={unit.name}>
+                <div className="drive-unit-media">
+                  <img src={unit.image} alt="" loading="lazy" />
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                </div>
                 <h3>{unit.name}</h3>
                 <strong>{unit.line}</strong>
                 <p>{unit.text}</p>
               </article>
             ))}
           </div>
+
+          <div className="drive-squads">
+            {squads.map((squad) => (
+              <article key={squad.name}>
+                <img src={squad.image} alt="" loading="lazy" />
+                <div>
+                  <small>{squad.tag}</small>
+                  <h3>{squad.name}</h3>
+                  <p>{squad.text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+
           <a className="drive-link" href="/team">Zum kompletten Roster →</a>
         </section>
 
-        {/* 4TH & GOAL — the schedule */}
-        <section id="spielplan" className="drive-panel section fixtures-section drive-fixtures" data-from="0.66" data-to="0.87">
-          <p className="drive-eyebrow">4th &amp; Goal · Opp 12</p>
+        {/* 2ND & 7 — the schedule */}
+        <section id="spielplan" className="drive-panel is-wide section fixtures-section drive-fixtures" data-from="0.53" data-to="0.7">
+          <p className="drive-eyebrow">2nd &amp; 7 · Opp 38</p>
           <div className="section-heading">
             <div><h2>NÄCHSTE <i>GAMES.</i></h2></div>
           </div>
-          <div className="fixture-list" />
+          <div className="drive-scroller">
+            <div className="fixture-list" />
+          </div>
+        </section>
+
+        {/* 1ST & 10 — the news */}
+        <section id="news" className="drive-panel is-wide news-preview drive-news" data-from="0.7" data-to="0.86">
+          <p className="drive-eyebrow">1st &amp; 10 · Opp 24</p>
+          <h2>AUS DEM <i>HUDDLE.</i></h2>
+          <div className="drive-scroller">
+            <div className="news-grid" />
+          </div>
+          <a className="drive-link" href="/news">Alle News →</a>
         </section>
 
         {/* TOUCHDOWN */}
-        <section id="mitmachen" className="drive-panel drive-panel-end" data-from="0.87" data-to="1">
+        <section id="mitmachen" className="drive-panel drive-panel-end" data-from="0.86" data-to="1">
           <p className="drive-eyebrow">Touchdown · End Zone</p>
           <h2 className="drive-td">TOUCH<i>DOWN.</i></h2>
           <p className="drive-lead">

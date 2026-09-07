@@ -36,7 +36,7 @@
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(120% 78% at 50% 46%, transparent 34%, rgba(3, 9, 16, 0.86) 100%),
+    radial-gradient(122% 80% at 50% 48%, transparent 38%, rgba(3, 9, 16, 0.72) 100%),
     linear-gradient(180deg, rgba(3, 9, 16, 0.9) 0%, transparent 22%, transparent 66%, rgba(3, 9, 16, 0.95) 100%);
 }
 
@@ -134,7 +134,9 @@
 
 .drive-hud-yard b {
   font-family: var(--font-display);
-  font-size: 1.9rem;
+  font-size: clamp(1.1rem, 1.5vw, 1.5rem);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
   font-weight: 950;
   line-height: 0.9;
   font-variant-numeric: tabular-nums;
@@ -145,10 +147,13 @@
 .drive-chain {
   position: fixed;
   top: 50%;
-  right: clamp(10px, 1.8vw, 26px);
+  right: 0;
   z-index: 20;
   display: grid;
   gap: 12px;
+  padding: 14px clamp(10px, 1.8vw, 26px) 14px 52px;
+  /* The chain sits over a lit crowd; without a fade it stops being legible. */
+  background: linear-gradient(90deg, transparent, rgba(3, 9, 16, 0.86) 46%);
   transform: translateY(-50%);
 }
 
@@ -198,8 +203,8 @@
 }
 
 .drive-page.is-driving .drive-track {
-  /* Six panels, each given a screen of scroll to travel through. */
-  height: 620vh;
+  /* Seven panels, each given a screen of scroll to travel through. */
+  height: 760vh;
 }
 
 .drive-page.is-driving .drive-panel {
@@ -219,6 +224,47 @@
   transform: translate3d(-40px, 0, 0);
   transition: opacity 0.55s ease, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
+}
+
+/* Panels that carry a list rather than a statement need the room. */
+.drive-page.is-driving .drive-panel.is-wide {
+  width: min(1180px, 78vw);
+  left: 50%;
+  transform: translate3d(calc(-50% - 40px), -50%, 0);
+}
+
+.drive-page.is-driving .drive-panel.is-wide.is-on {
+  transform: translate3d(-50%, -50%, 0);
+}
+
+/* Text has to sit on top of a lit pitch. Narrow panels fade the scene out
+   behind the words and leave the field showing on the open side; wide panels
+   become a broadcast graphic — the stadium still reads through the blur, the
+   content stays legible on any frame of the drive. */
+.drive-page.is-driving .drive-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(100deg,
+    rgba(3, 9, 16, 0.94) 0%,
+    rgba(3, 9, 16, 0.86) 52%,
+    rgba(3, 9, 16, 0.4) 84%,
+    rgba(3, 9, 16, 0) 100%);
+}
+
+.drive-page.is-driving .drive-panel.is-wide {
+  height: auto;
+  max-height: 84vh;
+  top: 50%;
+  padding: clamp(24px, 3.4vh, 40px) clamp(24px, 3vw, 46px);
+}
+
+.drive-page.is-driving .drive-panel.is-wide::before {
+  background: rgba(4, 10, 18, 0.74);
+  backdrop-filter: blur(14px) saturate(0.9);
+  border: 1px solid var(--drive-line);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6);
 }
 
 .drive-page.is-driving .drive-panel.is-on {
@@ -325,51 +371,135 @@
   text-transform: uppercase;
 }
 
-/* --- units --------------------------------------------------------- */
+/* --- units and squads ---------------------------------------------- */
 
 .drive-units {
   display: grid;
-  gap: 14px;
-  margin-bottom: 1.8rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
 }
 
 .drive-units article {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  column-gap: 16px;
-  padding: 14px 0;
-  border-top: 1px solid var(--drive-line);
+  gap: 4px;
+  align-content: start;
 }
 
-.drive-unit-no {
-  grid-row: span 3;
+.drive-unit-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border: 1px solid var(--drive-line);
+}
+
+.drive-unit-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.drive-unit-media span {
+  position: absolute;
+  left: 10px;
+  bottom: 6px;
   font-family: var(--font-display);
-  font-size: 1.7rem;
+  font-size: 2rem;
   font-weight: 950;
-  color: var(--rascals-red);
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.8);
 }
 
 .drive-units h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+  font-size: clamp(1rem, 1.5vw, 1.35rem);
   font-weight: 950;
   letter-spacing: -0.01em;
 }
 
 .drive-units strong {
-  color: #cfdcec;
-  font-size: 0.74rem;
+  color: var(--rascals-red);
+  font-size: 0.7rem;
   font-weight: 900;
   letter-spacing: 0.06em;
 }
 
 .drive-units p {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--drive-dim);
-  font-size: 0.86rem;
-  line-height: 1.6;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.drive-squads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--drive-line);
+}
+
+.drive-squads article {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.drive-squads img {
+  width: 112px;
+  height: 112px;
+  object-fit: cover;
+  border: 1px solid var(--drive-line);
+}
+
+.drive-squads small {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--rascals-red);
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0.22em;
+}
+
+.drive-squads h3 {
+  margin: 0 0 5px;
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.6vw, 1.45rem);
+  font-weight: 950;
+}
+
+.drive-squads p {
+  margin: 0;
+  color: var(--drive-dim);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+/* --- content that may outgrow one screen ---------------------------- */
+
+/* A list can be longer than a panel. Rather than truncate it, the list
+   scrolls inside the panel and hands the wheel back to the page once it
+   reaches its end, so the drive continues where the reading stops. */
+.drive-scroller {
+  max-height: 46vh;
+  margin-bottom: 18px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+}
+
+.drive-page.is-driving .drive-panel.is-wide .drive-scroller {
+  max-height: 52vh;
+}
+
+.drive-page:not(.is-driving) .drive-scroller {
+  max-height: none;
+  overflow: visible;
 }
 
 /* --- the fixture panel reuses the shared schedule markup ------------ */
@@ -386,8 +516,29 @@
 }
 
 .drive-page .drive-fixtures .section-heading {
+  display: block;
   width: 100%;
-  margin: 0 0 20px;
+  margin: 0 0 16px;
+}
+
+.drive-page .drive-fixtures .section-heading h2 {
+  margin-bottom: 12px;
+}
+
+/* The season figures the schedule injects: a compact broadcast strip. */
+.drive-page .drive-fixtures .season-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  align-items: baseline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.drive-page .drive-fixtures .season-stat b,
+.drive-page .drive-fixtures .season-stat strong {
+  font-family: var(--font-display);
 }
 
 .drive-fixture :is(.md-fixture-kicker, .md-fixture h1, .md-fixture-meta, .md-countdown, .md-fixture-actions) {
@@ -411,6 +562,112 @@
 
 .drive-fixture .md-link {
   color: #fff;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  font-size: 0.7rem;
+  border-bottom: 2px solid var(--rascals-red);
+  padding-bottom: 3px;
+}
+
+.drive-fixture .md-fixture-kicker {
+  display: block;
+  margin: 0 0 12px;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.drive-fixture .md-fixture h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 950;
+  line-height: 0.86;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.drive-fixture .md-fixture h1 i {
+  display: block;
+  color: var(--rascals-red);
+  font-style: italic;
+}
+
+.drive-fixture .md-fixture-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 34px;
+  margin: 26px 0 0;
+}
+
+.drive-fixture .md-fixture-meta dd {
+  margin: 5px 0 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.drive-fixture .md-fixture-meta dt {
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.drive-fixture .md-countdown {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.drive-fixture .md-countdown span {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-width: 74px;
+  padding: 12px 10px;
+}
+
+.drive-fixture .md-countdown b {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 950;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.drive-fixture .md-countdown small {
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+.drive-fixture .md-fixture-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.drive-fixture .md-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 1.6rem;
+  background: var(--rascals-red);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.drive-fixture .md-fixture-note {
+  margin: 16px 0 0;
+  font-size: 0.82rem;
 }
 
 /* --- touchdown ------------------------------------------------------ */
@@ -448,6 +705,7 @@
 
 .drive-link {
   display: inline-block;
+  align-self: flex-start;
   color: #fff;
   font-size: 0.7rem;
   font-weight: 900;
@@ -486,6 +744,82 @@
   line-height: 1.6;
 }
 
+/* --- the news panel reuses the shared news markup -------------------- */
+
+.drive-page .drive-news,
+.drive-page .drive-news .news-grid,
+.drive-page .drive-news .news-grid article,
+.drive-page .drive-news .news-grid div {
+  background: transparent;
+  color: #fff;
+}
+
+.drive-page .drive-news .news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 0;
+}
+
+/* The lead story earns the width; the rest run as a row of cards. */
+.drive-page .drive-news .news-grid .featured-news {
+  grid-column: span 2;
+}
+
+.drive-page .drive-news .news-grid article {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 0 0 14px;
+  border: 0;
+  border-bottom: 1px solid var(--drive-line);
+  box-shadow: none;
+}
+
+.drive-page .drive-news .news-grid img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 1px solid var(--drive-line);
+}
+
+.drive-page .drive-news .news-grid span {
+  color: var(--rascals-red);
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.drive-page .drive-news .news-grid h3 {
+  margin: 6px 0 4px;
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  font-weight: 950;
+  line-height: 1.15;
+  color: #fff;
+}
+
+.drive-page .drive-news .news-grid p {
+  margin: 0;
+  color: var(--drive-dim);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.drive-page .drive-news .news-grid a {
+  display: inline-block;
+  margin-top: 8px;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 2px solid var(--rascals-red);
+  padding-bottom: 2px;
+}
+
 /* --- narrow screens: no drive, an ordinary page --------------------- */
 
 @media (max-width: 999px) {
@@ -507,6 +841,10 @@
   }
   .drive-numbers {
     grid-template-columns: 1fr 1fr;
+  }
+  .drive-units,
+  .drive-squads {
+    grid-template-columns: 1fr;
   }
 }
 
