@@ -23,7 +23,7 @@
   overflow: hidden;
   pointer-events: none;
   color: inherit;
-  opacity: 0.11;
+  opacity: 0.26;
 }
 
 .rascals-field svg {
@@ -101,7 +101,7 @@
    per-yard hash marks turn into noise. Keep the yard lines and drop the rest. */
 @media (max-width: 780px) {
   .rascals-field {
-    opacity: 0.1;
+    opacity: 0.25;
   }
   .rascals-field-numbers,
   .rascals-field-hash {

@@ -170,7 +170,6 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
 
     <Fixtures />
     <TeamUnits />
-    <hr className="rascals-yardline" />
 
     <section className="story-split">
       <div className="story-image">
@@ -187,7 +186,6 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
     </section>
 
     <ShopFeature />
-    <hr className="rascals-yardline" />
 
     <section className="section news-preview">
       <div className="section-heading">
@@ -213,6 +211,7 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
       </div>
     </section>
 
+    <hr className="rascals-yardline" />
     <SponsorTicker />
     <JoinCta />
   </>;

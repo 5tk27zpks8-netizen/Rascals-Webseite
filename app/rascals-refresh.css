@@ -194,10 +194,16 @@ button:focus-visible {
   letter-spacing: -0.03em;
 }
 
-/* Section boundary marker, matching the legacy pages. */
-.sb-section + .sb-section::before,
-.sb-native-section + .sb-section::before,
-.sb-section + .sb-native-section::before {
+/* Section boundary marker: a yard line between blocks. It was drawn at every
+   join, which turned the page into a stack of framed boxes. It now marks the
+   one place a divider earns its keep — the run-up to the sponsors. */
+.sb-section + .sponsor-strip,
+.sb-native-section + .sponsor-strip {
+  position: relative;
+}
+
+.sb-section + .sponsor-strip::before,
+.sb-native-section + .sponsor-strip::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
