@@ -82,7 +82,7 @@ const SHOTS: Shot[] = [
   { at: 0.45, x: 27, y: 9.2, lx: -12, ly: 2.6, ahead: 40, fov: 58, roll: 0.021 },
   { at: 0.615, x: -22, y: 17, lx: 9, ly: 1.4, ahead: 56, fov: 53, roll: -0.016 },
   { at: 0.78, x: 13, y: 6.8, lx: -6, ly: 3.2, ahead: 44, fov: 60, roll: 0.015 },
-  { at: 0.97, x: 0, y: 3.2, lx: 0, ly: 8.5, ahead: 24, fov: 68, roll: 0 },
+  { at: 0.97, x: 0, y: 4.4, lx: 0, ly: 8, ahead: 40, fov: 54, roll: 0 },
 ];
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -112,28 +112,39 @@ function sampleShot(t: number): Shot {
   };
 }
 
-function buildGoal(THREE: Three, z: number, facing: 1 | -1) {
-  const material = new THREE.MeshStandardMaterial({ color: 0xf7cf4a, roughness: 0.34, metalness: 0.72 });
+/**
+ * A gooseneck goal post standing on the end line.
+ *
+ * `outward` points away from the field. The pole is set back behind the end
+ * line and the arm reaches forward, so the crossbar and uprights stand
+ * directly over the line — which is the way round a real post is built, and
+ * the opposite of how this was assembled before.
+ */
+function buildGoal(THREE: Three, endLineZ: number, outward: 1 | -1) {
+  const material = new THREE.MeshStandardMaterial({ color: 0xe8bf3d, roughness: 0.42, metalness: 0.45 });
   const goal = new THREE.Group();
+  const setBack = 6;
 
-  // Gooseneck: the base, the arm reaching over the end line, then the crossbar.
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 10, 14), material);
-  base.position.y = 5;
-  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 6, 12), material);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.34, 10, 28), material);
+  base.position.set(0, 5, outward * setBack);
+
+  // The arm from the pole out over the end line.
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, setBack, 24), material);
   arm.rotation.x = Math.PI / 2;
-  arm.position.set(0, 10, facing * 3);
-  const crossbar = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 6.2 * YARD, 14), material);
+  arm.position.set(0, 10, outward * (setBack / 2));
+
+  const crossbar = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 6.2 * YARD, 28), material);
   crossbar.rotation.z = Math.PI / 2;
-  crossbar.position.set(0, 10, facing * 6);
+  crossbar.position.set(0, 10, 0);
   goal.add(base, arm, crossbar);
 
   for (const x of [-3.1 * YARD, 3.1 * YARD]) {
-    const upright = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 17, 12), material);
-    upright.position.set(x, 18.5, facing * 6);
+    const upright = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 17, 24), material);
+    upright.position.set(x, 18.5, 0);
     goal.add(upright);
   }
 
-  goal.position.z = z;
+  goal.position.z = endLineZ;
   return goal;
 }
 
@@ -170,6 +181,47 @@ function buildStand(THREE: Three, crowd: import("three").Texture, side: 1 | -1) 
   );
   roof.rotation.x = -Math.PI / 2;
   roof.position.set(side * (FIELD_WIDE / 2 + 21), 25, centreZ);
+  group.add(roof);
+
+  return group;
+}
+
+/**
+ * A stand behind an end zone.
+ *
+ * Without these the ground simply stopped: past the end line there was open
+ * black, which is what made the far background read as nothing at all. A
+ * stadium is a closed bowl, so both ends get a bank of seats and a roof.
+ */
+function buildEndStand(THREE: Three, crowd: import("three").Texture | null, z: number, outward: 1 | -1) {
+  const group = new THREE.Group();
+  const width = FIELD_WIDE + 46;
+
+  const wall = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, 5),
+    new THREE.MeshBasicMaterial({ color: 0x0a1220, toneMapped: false }),
+  );
+  wall.position.set(0, 2.5, z + outward * -4);
+  wall.rotation.y = outward > 0 ? Math.PI : 0;
+  group.add(wall);
+
+  if (crowd) {
+    const deck = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, 24),
+      new THREE.MeshBasicMaterial({ map: crowd, toneMapped: false, side: THREE.DoubleSide }),
+    );
+    deck.position.set(0, 12, z);
+    deck.rotation.y = outward > 0 ? Math.PI : 0;
+    deck.rotation.x = outward > 0 ? -0.4 : 0.4;
+    group.add(deck);
+  }
+
+  const roof = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, 18),
+    new THREE.MeshBasicMaterial({ color: 0x04070c, toneMapped: false, side: THREE.DoubleSide }),
+  );
+  roof.rotation.x = -Math.PI / 2;
+  roof.position.set(0, 24, z + outward * 8);
   group.add(roof);
 
   return group;
@@ -248,7 +300,7 @@ function buildScoreboard(THREE: Three, texture: import("three").Texture, z: numb
     new THREE.BoxGeometry(76, 30, 2.4),
     new THREE.MeshStandardMaterial({ color: 0x0b111b, roughness: 0.8 }),
   );
-  frame.position.set(0, 30, 0);
+  frame.position.set(0, 25, 0);
   group.add(frame);
 
   const face = new THREE.Mesh(
@@ -257,13 +309,13 @@ function buildScoreboard(THREE: Three, texture: import("three").Texture, z: numb
     // into it, which is what makes it read as a light source.
     new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, fog: false }),
   );
-  face.position.set(0, 30, 1.3);
+  face.position.set(0, 25, 1.3);
   group.add(face);
 
   const legs = new THREE.MeshStandardMaterial({ color: 0x151d2a, roughness: 0.9 });
   for (const x of [-26, 26]) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 16, 8), legs);
-    leg.position.set(x, 8, 0);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 11, 16), legs);
+    leg.position.set(x, 5.5, 0);
     group.add(leg);
   }
 
@@ -435,7 +487,16 @@ export function ArenaDrive() {
       const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 600);
       const centreZ = (OWN_END_Z + OPP_END_Z) / 2;
 
-      const composer = new EffectComposer(renderer);
+      /* The composer renders into its own target, so the renderer's own
+         antialiasing never applies — which is why edges came back stepped and
+         the posts looked chewed. An explicitly multisampled half-float target
+         restores smooth edges and gives bloom real headroom to work in. */
+      const drawing = renderer.getDrawingBufferSize(new THREE.Vector2());
+      const composerTarget = new THREE.WebGLRenderTarget(drawing.x, drawing.y, {
+        type: THREE.HalfFloatType,
+        samples: 4,
+      });
+      const composer = new EffectComposer(renderer, composerTarget);
       composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       composer.setSize(window.innerWidth, window.innerHeight);
       composer.addPass(new RenderPass(scene, camera));
@@ -475,16 +536,19 @@ export function ArenaDrive() {
       surround.position.set(0, -0.06, centreZ);
       scene.add(surround);
 
-      scene.add(buildGoal(THREE, OWN_END_Z, 1));
-      scene.add(buildGoal(THREE, OPP_END_Z, -1));
-
       // --- stands and flags -------------------------------------------
       const crowdCanvas = createCrowdTexture();
       const crowdTexture = crowdCanvas ? new THREE.CanvasTexture(crowdCanvas) : null;
       if (crowdTexture) {
         crowdTexture.colorSpace = THREE.SRGBColorSpace;
+        crowdTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         scene.add(buildStand(THREE, crowdTexture, 1), buildStand(THREE, crowdTexture, -1));
       }
+
+      scene.add(buildGoal(THREE, OWN_END_Z, 1));
+      scene.add(buildGoal(THREE, OPP_END_Z, -1));
+      scene.add(buildEndStand(THREE, crowdTexture, OWN_END_Z + 26, 1));
+      scene.add(buildEndStand(THREE, crowdTexture, OPP_END_Z - 26, -1));
 
       // The board carries whatever the schedule says is next. It is drawn
       // once with a placeholder and repainted when the fetch lands, so a slow
@@ -494,22 +558,29 @@ export function ArenaDrive() {
       if (boardCanvas) {
         boardTexture = new THREE.CanvasTexture(boardCanvas);
         boardTexture.colorSpace = THREE.SRGBColorSpace;
+        boardTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         scene.add(buildScoreboard(THREE, boardTexture, OPP_END_Z - 82));
+        /* A stadium board shows what happened, not what is scheduled: the
+           last game that was actually played, with its real score. The list
+           arrives oldest first, so the last finished game is the last match. */
         void fetch("/api/public/games")
           .then((response) => (response.ok ? response.json() : null))
           .then((data: { items?: Array<Record<string, unknown>> } | null) => {
-            const next = data?.items?.find((item) => String(item.status ?? "") !== "finished") ?? data?.items?.[0];
-            if (!next || disposed) return;
-            const kickoff = next.kickoff ? new Date(String(next.kickoff)) : null;
+            const played = (data?.items ?? []).filter((item) => String(item.status ?? "") === "final");
+            const last = played[played.length - 1];
+            if (!last || disposed || !boardTexture) return;
+            const home = String(last.homeAway ?? "") === "home";
+            const kickoff = last.kickoff ? new Date(String(last.kickoff)) : null;
             const repainted = createScoreboardTexture({
-              competition: "HELLENSTEIN RASCALS",
-              opponent: String(next.opponent ?? "GAST"),
+              competition: home ? "LETZTES SPIEL · HEIM" : "LETZTES SPIEL · AUSWÄRTS",
+              opponent: String(last.opponent ?? "GAST"),
+              home: Number(last.rascalsScore ?? 0),
+              away: Number(last.opponentScore ?? 0),
               kickoff: kickoff
-                ? kickoff.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) +
-                  " · " + kickoff.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " UHR"
-                : undefined,
+                ? "ENDSTAND · " + kickoff.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+                : "ENDSTAND",
             });
-            if (!repainted || !boardTexture) return;
+            if (!repainted) return;
             boardTexture.image = repainted;
             boardTexture.needsUpdate = true;
           })
@@ -518,6 +589,7 @@ export function ArenaDrive() {
 
       const flagCanvas = createFlagTexture();
       const flagTexture = flagCanvas ? new THREE.CanvasTexture(flagCanvas) : null;
+      if (flagTexture) flagTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       let flags: import("three").Group | null = null;
       if (flagTexture) {
         flagTexture.colorSpace = THREE.SRGBColorSpace;
@@ -537,7 +609,7 @@ export function ArenaDrive() {
          the grass — so the alpha is built from the viewing angle and the
          height rather than being a constant. */
       const shaftMaterial = new THREE.ShaderMaterial({
-        uniforms: { uStrength: { value: 0.34 }, uColor: { value: new THREE.Color(0xbcd8ff) } },
+        uniforms: { uStrength: { value: 0.2 }, uColor: { value: new THREE.Color(0xbcd8ff) } },
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
@@ -711,7 +783,7 @@ export function ArenaDrive() {
         dust.rotation.y = time * 0.008;
         for (const [index, shaft] of shafts.entries()) {
           const material = shaft.material as import("three").ShaderMaterial;
-          material.uniforms.uStrength.value = 0.32 + Math.sin(time * 1.2 + index) * 0.05;
+          material.uniforms.uStrength.value = 0.19 + Math.sin(time * 1.2 + index) * 0.035;
         }
         // Flags stir in the night air rather than hanging dead on the pole.
         if (flags) {
@@ -747,6 +819,7 @@ export function ArenaDrive() {
         flashMaterial.dispose();
         shaftMaterial.dispose();
         composer.dispose();
+        composerTarget.dispose();
         renderer.dispose();
         renderer.domElement.remove();
         page.classList.remove("is-driving");

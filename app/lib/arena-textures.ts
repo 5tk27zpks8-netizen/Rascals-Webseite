@@ -73,13 +73,19 @@ function noise(context: CanvasRenderingContext2D, width: number, height: number,
  */
 export function createTurfTexture(): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 2304;
+  /* Every measurement below is in the layout the field was drawn at. The
+     canvas is larger than that — the pitch is the surface the camera spends
+     the whole drive on, so it carries the most resolution the texture limit
+     safely allows — and the context is scaled once instead of every line
+     width, radius and type size being rewritten. */
+  const W = 1024;
+  const H = 2304;
+  const SCALE = 1.75;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
   const context = canvas.getContext("2d");
   if (!context) return null;
-
-  const W = canvas.width;
-  const H = canvas.height;
+  context.scale(SCALE, SCALE);
   const yard = H / FIELD_YARDS_LONG;
   const endZone = 10 * yard;
   const goalNear = endZone;
@@ -90,7 +96,7 @@ export function createTurfTexture(): HTMLCanvasElement | null {
   context.fillRect(0, 0, W, H);
   context.fillStyle = "#134622";
   for (let i = 0; i < 24; i += 2) context.fillRect(0, (i * H) / 24, W, H / 24);
-  noise(context, W, H, 26);
+  noise(context, canvas.width, canvas.height, 26);
 
   // End zones, painted darker with the club in them.
   context.fillStyle = "#5e1019";
@@ -186,23 +192,27 @@ export function createTurfTexture(): HTMLCanvasElement | null {
 /** A packed stand at night: warm specks under a dark roof. */
 export function createCrowdTexture(): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 256;
+  const W = 1024;
+  const H = 256;
+  const SCALE = 2;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
   const context = canvas.getContext("2d");
   if (!context) return null;
+  context.scale(SCALE, SCALE);
 
-  const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+  const gradient = context.createLinearGradient(0, 0, 0, H);
   gradient.addColorStop(0, "#0a1018");
   gradient.addColorStop(0.55, "#1a2432");
   gradient.addColorStop(1, "#2a3546");
   context.fillStyle = gradient;
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillRect(0, 0, W, H);
 
   // People. Mostly dark clothing, with club colours scattered through.
   const colours = ["#39445a", "#4a556b", "#5d6880", "#a3202f", "#c2ccdb", "#e4ebf5", "#e7192d", "#2b5691"];
-  for (let i = 0; i < 14000; i += 1) {
-    const x = Math.random() * canvas.width;
-    const y = 40 + Math.pow(Math.random(), 0.8) * (canvas.height - 50);
+  for (let i = 0; i < 22000; i += 1) {
+    const x = Math.random() * W;
+    const y = 40 + Math.pow(Math.random(), 0.8) * (H - 50);
     context.fillStyle = colours[Math.floor(Math.random() * colours.length)];
     context.globalAlpha = 0.55 + Math.random() * 0.45;
     context.fillRect(x, y, 2.4, 3.4);
@@ -211,44 +221,50 @@ export function createCrowdTexture(): HTMLCanvasElement | null {
 
   // The dark lip of the roof along the top.
   context.fillStyle = "#05090f";
-  context.fillRect(0, 0, canvas.width, 34);
+  context.fillRect(0, 0, W, 34);
   return canvas;
 }
 
 /** A club flag: brand red with the wordmark. */
 export function createFlagTexture(): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 320;
+  const W = 512;
+  const H = 320;
+  const SCALE = 2;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
   const context = canvas.getContext("2d");
   if (!context) return null;
+  context.scale(SCALE, SCALE);
 
   context.fillStyle = "#0a1626";
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillRect(0, 0, W, H);
   context.fillStyle = "#e7192d";
-  context.fillRect(0, 0, canvas.width, canvas.height * 0.62);
+  context.fillRect(0, 0, W, H * 0.62);
 
   context.fillStyle = "#ffffff";
   context.font = "900 74px Impact, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.letterSpacing = "8px";
-  context.fillText("RASCALS", canvas.width / 2, canvas.height * 0.31);
+  context.fillText("RASCALS", W / 2, H * 0.31);
 
   context.fillStyle = "rgba(255,255,255,0.85)";
   context.font = "900 30px Impact, sans-serif";
   context.letterSpacing = "10px";
-  context.fillText("HELLENSTEIN", canvas.width / 2, canvas.height * 0.79);
+  context.fillText("HELLENSTEIN", W / 2, H * 0.79);
   return canvas;
 }
 
-/** What the scoreboard shows. Everything is optional; it falls back to a
- *  pre-game board rather than inventing a result. */
+/** What the scoreboard shows: the last game that was actually played. It
+ *  falls back to a blank board rather than inventing a result. */
 export type ScoreboardData = {
   opponent?: string;
+  /** The line under the score — the date the result was earned. */
   kickoff?: string;
-  venue?: string;
   competition?: string;
+  home?: number;
+  away?: number;
 };
 
 /**
@@ -260,13 +276,14 @@ export type ScoreboardData = {
  */
 export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 384;
+  const W = 1024;
+  const H = 384;
+  const SCALE = 2;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
   const context = canvas.getContext("2d");
   if (!context) return null;
-
-  const W = canvas.width;
-  const H = canvas.height;
+  context.scale(SCALE, SCALE);
 
   context.fillStyle = "#05080e";
   context.fillRect(0, 0, W, H);
@@ -317,7 +334,7 @@ export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement
   context.fillStyle = "#7f8ea3";
   context.font = '900 26px Impact, "Arial Narrow", sans-serif';
   context.letterSpacing = "9px";
-  context.fillText((data.kickoff ?? "NÄCHSTES SPIEL").toUpperCase().slice(0, 42), W / 2, 330);
+  context.fillText((data.kickoff ?? "LETZTES ERGEBNIS").toUpperCase().slice(0, 46), W / 2, 330);
 
   // Lamp grid: a fine dark lattice over everything, like a real LED board.
   context.fillStyle = "rgba(0,0,0,0.26)";

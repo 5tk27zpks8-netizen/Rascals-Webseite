@@ -45,9 +45,10 @@
   transition: filter 0.62s var(--drive-ease), transform 0.62s var(--drive-ease);
 }
 
+/* A touch of softening while a list is being read, far short of a blur: the
+   ground should still look like the ground, not like a backdrop. */
 .drive-page.is-reading .drive-canvas canvas {
-  filter: blur(7px) saturate(0.86) brightness(0.72);
-  transform: scale(1.1);
+  filter: saturate(0.94) brightness(0.82);
 }
 
 .drive-vignette {
@@ -347,53 +348,32 @@
   gap: clamp(24px, 3vw, 52px);
   align-items: start;
   align-content: center;
-  /* Offset from centre so the plate never runs under the chain. */
-  left: calc(50% - 46px);
+  /* Offset from centre so the content never runs under the chain. */
+  left: calc(50% - 54px);
   top: 50%;
-  width: min(1040px, 70vw);
+  width: min(1060px, 72vw);
   height: auto;
-  max-height: 78vh;
-  padding: clamp(30px, 3.4vh, 42px) clamp(30px, 2.8vw, 44px);
+  max-height: 80vh;
+  padding: 0;
   transform: translate(-50%, -50%);
 }
 
-/* The plate is a broadcast graphic, not a container: cut corners, a lit top
-   edge, the club's line down the left, and a raking gradient rather than a
-   flat fill. A plain rectangle over a render is the thing that reads as two
-   unrelated layers stacked. */
+/* No plate. A briefing sits on the pitch exactly like a statement does — the
+   ground is darkened underneath it and the darkening fades out to nothing on
+   every side, so there is no edge, no panel and no frame anywhere. A drawn
+   rectangle, however well dressed, always reads as a box laid over a picture. */
 .drive-page.is-driving .drive-panel.is-wide::before {
-  inset: 0;
+  inset: -22vh -16vw;
   background:
-    linear-gradient(118deg,
-      rgba(231, 25, 45, 0.16) 0%,
-      rgba(6, 13, 24, 0.9) 26%,
-      rgba(4, 9, 17, 0.93) 62%,
-      rgba(10, 22, 40, 0.9) 100%);
-  backdrop-filter: blur(3px) saturate(0.9);
-  box-shadow: 0 60px 150px rgba(0, 0, 0, 0.72);
-  clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 26px 100%, 0 calc(100% - 26px));
-}
-
-/* The lit edges: a thin highlight along the top and the club red down the
-   left, both following the cut. */
-.drive-page.is-driving .drive-panel.is-wide::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, var(--rascals-red) 0 3px, transparent 3px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px);
-  clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 26px 100%, 0 calc(100% - 26px));
+    radial-gradient(76% 62% at 46% 50%, rgba(2, 7, 13, 0.94) 0%, rgba(2, 7, 13, 0.9) 42%, rgba(2, 7, 13, 0.6) 68%, rgba(2, 7, 13, 0) 100%);
 }
 
 /* Where in the drive this stop sits — set into the cut corner of the plate,
    the way a broadcast graphic carries its own slate. */
 .drive-stop {
   position: absolute;
-  top: clamp(12px, 1.4vh, 18px);
-  right: clamp(30px, 2.8vw, 44px);
+  top: -6px;
+  right: 0;
   display: flex;
   align-items: baseline;
   gap: 2px;
@@ -415,15 +395,8 @@
   padding-right: 18px;
 }
 
-/* The rail is separated from the content column by a rule, not by a gap
-   alone — a broadcast graphic divides its fields. */
-.drive-rail::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 1px;
-  background: linear-gradient(180deg, transparent, var(--drive-line) 14%, var(--drive-line) 86%, transparent);
-}
+/* No divider: the gap does the separating. Any drawn line here reads as the
+   edge of a panel that is not supposed to exist. */
 
 .drive-rail-note {
   margin: 0 0 22px;
@@ -585,20 +558,24 @@
    NUMBERS
    ============================================================ */
 
+/* Figures stand on the pitch, separated by hairlines rather than boxed into
+   cells: a filled, bordered strip is a box like any other. */
 .drive-numbers {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
+  grid-template-columns: repeat(4, max-content);
+  gap: 0;
   margin-bottom: 1.9rem;
-  background: var(--drive-line);
-  border-block: 1px solid var(--drive-line);
 }
 
 .drive-numbers article {
   display: grid;
   gap: 7px;
-  padding: 20px 6px;
-  background: rgba(3, 9, 16, 0.66);
+  padding: 4px 18px 4px 0;
+}
+
+.drive-numbers article + article {
+  padding-left: 18px;
+  border-left: 1px solid var(--drive-line);
 }
 
 .drive-numbers b {
@@ -698,8 +675,9 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
-  padding-top: 20px;
-  border-top: 1px solid var(--drive-line);
+  padding-top: 22px;
+  border-top: 0;
+  background: linear-gradient(90deg, var(--drive-line), rgba(150, 190, 255, 0)) no-repeat top left / 62% 1px;
 }
 
 .drive-squads article {
@@ -835,12 +813,29 @@
    it has roughly half that, so it takes the stacked shape the shared
    stylesheet already defines for narrow viewports — the viewport here is
    wide, only the container is not. */
+/* The shared card is a bordered, rounded, gradient-filled panel. On the
+   pitch that is one more box, so it keeps its structure and loses its
+   chrome — the play-art backdrop with it. */
 .drive-page .drive-fixtures .fixture-list article.home-game-card,
 .drive-page .drive-fixtures .fixture-list article.home-game-card:hover {
   grid-template-columns: 1fr !important;
   gap: 13px !important;
-  padding: 16px !important;
+  padding: 4px 0 14px !important;
   min-height: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.drive-page .drive-fixtures .home-game-card::before,
+.drive-page .drive-fixtures .home-game-card::after {
+  display: none !important;
+}
+
+.drive-page .drive-fixtures .fixture-list .home-game-card-link + .home-game-card-link article {
+  border-top: 1px solid var(--drive-line) !important;
+  padding-top: 16px !important;
 }
 
 .drive-page .drive-fixtures .home-game-meta {
@@ -878,6 +873,13 @@
   max-width: 58px;
   max-height: 58px;
   flex-basis: 58px;
+}
+
+/* A club with no crest uploaded gets its initials, not an empty frame. */
+.drive-page .drive-fixtures .home-game-logo-placeholder {
+  border: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
 }
 
 .drive-page .drive-fixtures .home-game-venue {
@@ -1180,7 +1182,8 @@
   gap: 8px 22px;
   margin-top: 2.6rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--drive-line);
+  border-top: 0;
+  background: linear-gradient(90deg, var(--drive-line), rgba(150, 190, 255, 0)) no-repeat top left / 52% 1px;
 }
 
 .drive-end-nav a {
