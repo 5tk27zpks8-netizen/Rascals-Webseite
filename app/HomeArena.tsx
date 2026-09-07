@@ -169,6 +169,7 @@ export function HomeArena() {
 
         {/* 1ST & 10 at midfield — the teams */}
         <section id="team" className="drive-panel is-wide" data-from="0.37" data-to="0.53">
+          <span className="drive-stop" aria-hidden="true">04<i>/07</i></span>
           <div className="drive-rail">
             <p className="drive-eyebrow" data-cue>1st &amp; 10 · Midfield</p>
             <h2 data-cue>DREI UNITS.<br /><i>EIN TEAM.</i></h2>
@@ -211,6 +212,7 @@ export function HomeArena() {
 
         {/* 2ND & 7 — the schedule */}
         <section id="spielplan" className="drive-panel is-wide section fixtures-section drive-fixtures" data-from="0.53" data-to="0.7">
+          <span className="drive-stop" aria-hidden="true">05<i>/07</i></span>
           <div className="drive-rail">
             <p className="drive-eyebrow" data-cue>2nd &amp; 7 · Opp 38</p>
             <h2 data-cue>NÄCHSTE<br /><i>GAMES.</i></h2>
@@ -226,6 +228,7 @@ export function HomeArena() {
 
         {/* 1ST & 10 — the news */}
         <section id="news" className="drive-panel is-wide news-preview drive-news" data-from="0.7" data-to="0.86">
+          <span className="drive-stop" aria-hidden="true">06<i>/07</i></span>
           <div className="drive-rail">
             <p className="drive-eyebrow" data-cue>1st &amp; 10 · Opp 24</p>
             <h2 data-cue>AUS DEM<br /><i>HUDDLE.</i></h2>

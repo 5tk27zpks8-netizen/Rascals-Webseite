@@ -51,6 +51,67 @@ const END_Z = OPP_GOAL_Z - 6 * YARD;
 
 type Three = typeof import("three");
 
+/**
+ * The camera plan.
+ *
+ * A camera that only ever runs straight down the middle makes every stop look
+ * like the same picture with different words on it. Each stop gets a framing
+ * instead — low and wide at the kickoff, high over midfield, angled in from
+ * the touchline for the teams, down at the posts for the touchdown — and the
+ * drive interpolates between them. The z position still comes from the scroll,
+ * so the shots ride the possession rather than replacing it.
+ */
+type Shot = {
+  /** Where in the drive this framing is fully in force. */
+  at: number;
+  /** Camera offset across the field and its height. */
+  x: number;
+  y: number;
+  /** Where it is aimed: across, height, and how far ahead. */
+  lx: number;
+  ly: number;
+  ahead: number;
+  fov: number;
+  roll: number;
+};
+
+const SHOTS: Shot[] = [
+  { at: 0.04, x: 0, y: 5, lx: 0, ly: 3.4, ahead: 76, fov: 64, roll: 0 },
+  { at: 0.175, x: -15, y: 10.5, lx: 5, ly: 2.6, ahead: 52, fov: 55, roll: 0.014 },
+  { at: 0.305, x: 7, y: 21, lx: -3, ly: 0.4, ahead: 62, fov: 51, roll: -0.011 },
+  { at: 0.45, x: 27, y: 9.2, lx: -12, ly: 2.6, ahead: 40, fov: 58, roll: 0.021 },
+  { at: 0.615, x: -22, y: 17, lx: 9, ly: 1.4, ahead: 56, fov: 53, roll: -0.016 },
+  { at: 0.78, x: 13, y: 6.8, lx: -6, ly: 3.2, ahead: 44, fov: 60, roll: 0.015 },
+  { at: 0.97, x: 0, y: 3.2, lx: 0, ly: 8.5, ahead: 24, fov: 68, roll: 0 },
+];
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/** Ease between framings so a shot arrives rather than slides. */
+function sampleShot(t: number): Shot {
+  if (t <= SHOTS[0].at) return SHOTS[0];
+  const last = SHOTS[SHOTS.length - 1];
+  if (t >= last.at) return last;
+
+  let index = 0;
+  while (index < SHOTS.length - 2 && t > SHOTS[index + 1].at) index += 1;
+  const a = SHOTS[index];
+  const b = SHOTS[index + 1];
+  const raw = (t - a.at) / (b.at - a.at);
+  const k = raw * raw * (3 - 2 * raw);
+
+  return {
+    at: t,
+    x: lerp(a.x, b.x, k),
+    y: lerp(a.y, b.y, k),
+    lx: lerp(a.lx, b.lx, k),
+    ly: lerp(a.ly, b.ly, k),
+    ahead: lerp(a.ahead, b.ahead, k),
+    fov: lerp(a.fov, b.fov, k),
+    roll: lerp(a.roll, b.roll, k),
+  };
+}
+
 function buildGoal(THREE: Three, z: number, facing: 1 | -1) {
   const material = new THREE.MeshStandardMaterial({ color: 0xf7cf4a, roughness: 0.34, metalness: 0.72 });
   const goal = new THREE.Group();
@@ -84,7 +145,7 @@ function buildStand(THREE: Three, crowd: import("three").Texture, side: 1 | -1) 
 
   const wall = new THREE.Mesh(
     new THREE.PlaneGeometry(length, 4),
-    new THREE.MeshStandardMaterial({ color: 0x101a28, roughness: 0.9 }),
+    new THREE.MeshBasicMaterial({ color: 0x0a1220, toneMapped: false }),
   );
   wall.rotation.y = (-side * Math.PI) / 2;
   wall.position.set(side * (FIELD_WIDE / 2 + 6), 2.2, centreZ);
@@ -105,7 +166,7 @@ function buildStand(THREE: Three, crowd: import("three").Texture, side: 1 | -1) 
   // A dark roof, so the stand reads as enclosed rather than as a floating wall.
   const roof = new THREE.Mesh(
     new THREE.PlaneGeometry(length, 16),
-    new THREE.MeshStandardMaterial({ color: 0x05090f, roughness: 1, side: THREE.DoubleSide }),
+    new THREE.MeshBasicMaterial({ color: 0x04070c, toneMapped: false, side: THREE.DoubleSide }),
   );
   roof.rotation.x = -Math.PI / 2;
   roof.position.set(side * (FIELD_WIDE / 2 + 21), 25, centreZ);
@@ -320,13 +381,23 @@ export function ArenaDrive() {
       if (barOut) barOut.style.setProperty("--drive", `${(progress * 100).toFixed(1)}%`);
 
       let here = "";
+      let briefing = false;
       for (const panel of panels) {
         const from = Number(panel.dataset.from ?? 0);
         const to = Number(panel.dataset.to ?? 1);
         const on = progress >= from && progress <= to;
         panel.classList.toggle("is-on", on);
-        if (on) here = panel.id;
+        if (on) {
+          here = panel.id;
+          briefing = panel.classList.contains("is-wide");
+        }
       }
+
+      /* A rack focus. When a stop carries a list to read, the ground falls out
+         of focus behind it — the same thing a camera does when the subject
+         changes. It is also what stops the two layers reading as a render with
+         a box on top. */
+      page.classList.toggle("is-reading", briefing);
 
       if (here !== lastHere) {
         chainLinks.get(lastHere)?.classList.remove("is-here");
@@ -336,7 +407,16 @@ export function ArenaDrive() {
     };
 
     void (async () => {
-      const THREE = await import("three");
+      // Postprocessing is what separates a lit scene from a photographed one:
+      // without bloom the floodlights and the board are just bright pixels,
+      // with it they throw light into the air around them.
+      const [THREE, { EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] = await Promise.all([
+        import("three"),
+        import("three/examples/jsm/postprocessing/EffectComposer.js"),
+        import("three/examples/jsm/postprocessing/RenderPass.js"),
+        import("three/examples/jsm/postprocessing/UnrealBloomPass.js"),
+        import("three/examples/jsm/postprocessing/OutputPass.js"),
+      ]);
       if (disposed) return;
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -354,6 +434,22 @@ export function ArenaDrive() {
 
       const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 600);
       const centreZ = (OWN_END_Z + OPP_END_Z) / 2;
+
+      const composer = new EffectComposer(renderer);
+      composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      composer.setSize(window.innerWidth, window.innerHeight);
+      composer.addPass(new RenderPass(scene, camera));
+      // The threshold has to sit above the lit turf. Painted yard lines under
+      // floodlight are already near white, so a lower cut smeared the markings
+      // into the grass instead of glowing the lamps.
+      const bloom = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        0.44,
+        0.32,
+        1.15,
+      );
+      composer.addPass(bloom);
+      composer.addPass(new OutputPass());
 
       // --- the pitch --------------------------------------------------
       const turfCanvas = createTurfTexture();
@@ -398,7 +494,7 @@ export function ArenaDrive() {
       if (boardCanvas) {
         boardTexture = new THREE.CanvasTexture(boardCanvas);
         boardTexture.colorSpace = THREE.SRGBColorSpace;
-        scene.add(buildScoreboard(THREE, boardTexture, OPP_END_Z - 34));
+        scene.add(buildScoreboard(THREE, boardTexture, OPP_END_Z - 82));
         void fetch("/api/public/games")
           .then((response) => (response.ok ? response.json() : null))
           .then((data: { items?: Array<Record<string, unknown>> } | null) => {
@@ -435,6 +531,46 @@ export function ArenaDrive() {
       scene.add(new THREE.HemisphereLight(0x24405f, 0x0a1a0f, 0.55));
       scene.add(new THREE.AmbientLight(0x18273d, 0.45));
 
+      /* A cone drawn at a flat opacity is a paper triangle, however faint. A
+         beam of light is dense where you look through the most of it and
+         nothing where the surface faces you, and it dies out before it reaches
+         the grass — so the alpha is built from the viewing angle and the
+         height rather than being a constant. */
+      const shaftMaterial = new THREE.ShaderMaterial({
+        uniforms: { uStrength: { value: 0.34 }, uColor: { value: new THREE.Color(0xbcd8ff) } },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        vertexShader: `
+          varying vec3 vNormalW;
+          varying vec3 vViewW;
+          varying float vUp;
+          void main() {
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            vNormalW = normalize(normalMatrix * normal);
+            vViewW = normalize(-mv.xyz);
+            vUp = uv.y;
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          uniform float uStrength;
+          uniform vec3 uColor;
+          varying vec3 vNormalW;
+          varying vec3 vViewW;
+          varying float vUp;
+          void main() {
+            float rim = 1.0 - abs(dot(normalize(vNormalW), normalize(vViewW)));
+            float body = pow(clamp(rim, 0.0, 1.0), 2.2);
+            float fall = smoothstep(0.0, 0.72, vUp);
+            float a = body * fall * uStrength;
+            if (a < 0.004) discard;
+            gl_FragColor = vec4(uColor, a);
+          }
+        `,
+      });
+
       const shafts: import("three").Mesh[] = [];
       for (let i = 0; i < 5; i += 1) {
         const z = 12 - i * (FIELD_LONG / 4.4);
@@ -447,11 +583,8 @@ export function ArenaDrive() {
           scene.add(lamp, lamp.target);
 
           const shaft = new THREE.Mesh(
-            new THREE.ConeGeometry(22, 48, 20, 1, true),
-            new THREE.MeshBasicMaterial({
-              color: 0xa9caff, transparent: true, opacity: 0.045,
-              blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
-            }),
+            new THREE.ConeGeometry(20, 46, 24, 1, true),
+            shaftMaterial.clone(),
           );
           shaft.position.set(x * 0.66, 24, z - 6);
           shaft.rotation.z = side > 0 ? 0.34 : -0.34;
@@ -530,6 +663,8 @@ export function ArenaDrive() {
       };
       const onResize = () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+        bloom.setSize(window.innerWidth, window.innerHeight);
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         readProgress();
@@ -551,22 +686,32 @@ export function ArenaDrive() {
         // A camera that is perfectly still between scrolls reads as a
         // screenshot. A slow breath keeps the ground alive without ever
         // competing with the scroll.
-        const breath = Math.sin(time * 0.31) * 0.55;
-        const sway = Math.sin(time * 0.19 + 1.3) * 0.9;
+        const breath = Math.sin(time * 0.31) * 0.4;
+        const sway = Math.sin(time * 0.19 + 1.3) * 0.7;
+        const shot = sampleShot(eased);
+
+        if (Math.abs(camera.fov - shot.fov) > 0.01) {
+          camera.fov = shot.fov;
+          camera.updateProjectionMatrix();
+        }
 
         camera.position.set(
-          pointer.x * 5 + sway,
-          9.2 - pointer.y * 1.5 + breath,
+          shot.x + pointer.x * 3.4 + sway,
+          shot.y - pointer.y * 1.2 + breath,
           START_Z + (END_Z - START_Z) * eased,
         );
-        camera.lookAt(pointer.x * 2.4 + sway * 0.4, 2.6, camera.position.z - 52);
-        camera.rotation.z = Math.sin(time * 0.23) * 0.004;
+        camera.lookAt(
+          shot.lx + pointer.x * 1.8 + sway * 0.35,
+          shot.ly,
+          camera.position.z - shot.ahead,
+        );
+        camera.rotation.z = shot.roll + Math.sin(time * 0.23) * 0.004;
 
         flashMaterial.uniforms.uTime.value = time;
         dust.rotation.y = time * 0.008;
         for (const [index, shaft] of shafts.entries()) {
-          const material = shaft.material as import("three").MeshBasicMaterial;
-          material.opacity = 0.04 + Math.sin(time * 1.2 + index) * 0.01;
+          const material = shaft.material as import("three").ShaderMaterial;
+          material.uniforms.uStrength.value = 0.32 + Math.sin(time * 1.2 + index) * 0.05;
         }
         // Flags stir in the night air rather than hanging dead on the pole.
         if (flags) {
@@ -579,7 +724,7 @@ export function ArenaDrive() {
         }
 
         paintOverlay();
-        renderer.render(scene, camera);
+        composer.render();
       };
       tick();
 
@@ -600,6 +745,8 @@ export function ArenaDrive() {
         flagTexture?.dispose();
         boardTexture?.dispose();
         flashMaterial.dispose();
+        shaftMaterial.dispose();
+        composer.dispose();
         renderer.dispose();
         renderer.domElement.remove();
         page.classList.remove("is-driving");

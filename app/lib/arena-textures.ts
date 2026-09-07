@@ -288,13 +288,21 @@ export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement
 
   // The two sides, with a dot-matrix wash so it reads as lamps not print.
   const label = (text: string, x: number) => {
+    context.save();
     context.fillStyle = "#f4a72a";
-    context.font = '900 46px Impact, "Arial Narrow", sans-serif';
     context.letterSpacing = "6px";
-    context.fillText(text.toUpperCase().slice(0, 14), x, 148);
+    let size = 46;
+    context.font = `900 ${size}px Impact, "Arial Narrow", sans-serif`;
+    const room = W * 0.44;
+    while (context.measureText(text).width > room && size > 20) {
+      size -= 2;
+      context.font = `900 ${size}px Impact, "Arial Narrow", sans-serif`;
+    }
+    context.fillText(text, x, 148);
+    context.restore();
   };
   label("RASCALS", W * 0.24);
-  label((data.opponent ?? "GAST").slice(0, 14), W * 0.76);
+  label((data.opponent ?? "GAST").toUpperCase(), W * 0.76);
 
   context.fillStyle = "#f2f8ff";
   context.font = '900 108px Impact, "Arial Narrow", sans-serif';
