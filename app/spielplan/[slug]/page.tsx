@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getGameBySlug, listGameEvents } from "../../lib/football";
 import { readPublishedSiteBuilderState } from "../../lib/site-builder";
+import { Header } from "../../SiteShell";
 import { ScheduleLogo } from "../ScheduleLogo";
 import "../spielplan.css";
 import "../game-detail-score.css";
@@ -17,7 +18,9 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
   const events = await listGameEvents(game.id, 50);
   const rascalsLogo = siteState.theme.logoUrl?.trim() || DEFAULT_RASCALS_LOGO;
 
-  return <main className="schedule-page">
+  return <>
+    <Header page="spielplan" />
+    <main className="schedule-page">
     <header className="schedule-hero">
       <a href="/spielplan">← Spielplan</a>
       <span>{game.status === "live" ? "LIVE GAMEDAY" : "HELLENSTEIN RASCALS"}</span>
@@ -51,7 +54,8 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
         </article>)}</div> : <div className="schedule-empty">Für dieses Spiel gibt es noch keine Ticker-Einträge.</div>}
       </section>
     </section>
-  </main>;
+    </main>
+  </>;
 }
 
 function formatDate(value: string | null) {

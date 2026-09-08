@@ -57,9 +57,9 @@
   letter-spacing:.035em;
   white-space:nowrap;
 }
-.season-league strong{color:var(--sb-accent,#dc1726)}
+.season-league strong{color:var(--sb-accent,var(--rascals-red))}
 .season-stat strong{font-size:1.05rem}
-.season-stat strong i{padding:0 3px;color:var(--sb-accent,#dc1726);font-style:normal}
+.season-stat strong i{padding:0 3px;color:var(--sb-accent,var(--rascals-red));font-style:normal}
 
 .home-schedule{width:100%}
 .home-schedule-list{display:grid;gap:14px}
@@ -159,7 +159,7 @@
   line-height:1;
   letter-spacing:.14em;
 }
-.home-game-status.live{border-color:var(--sb-accent,#dc1726);background:var(--sb-accent,#dc1726);color:#fff;box-shadow:0 0 13px rgba(220,23,38,.22)}
+.home-game-status.live{border-color:var(--sb-accent,var(--rascals-red));background:var(--sb-accent,var(--rascals-red));color:#fff;box-shadow:0 0 13px rgba(220,23,38,.22)}
 .home-game-meta time{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:4px 7px;color:#fff!important;font-variant-numeric:tabular-nums}
 .home-game-meta time b{color:#f12635;font-size:.54rem;letter-spacing:.13em}
 .home-game-meta time strong{font-size:1.18rem;font-weight:950;line-height:1;color:#fff}
@@ -270,7 +270,7 @@
 .home-schedule-footer{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 2px 0}
 .home-schedule-footer>span{color:color-mix(in srgb,currentColor 46%,transparent);font-size:.58rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
 .home-schedule-footer a{color:inherit;font-size:.63rem;font-weight:950;letter-spacing:.09em;text-decoration:none;text-transform:uppercase}
-.home-schedule-footer a b{margin-left:7px;color:var(--sb-accent,#dc1726)}
+.home-schedule-footer a b{margin-left:7px;color:var(--sb-accent,var(--rascals-red))}
 .home-games-empty{padding:36px 20px;border:1px solid color-mix(in srgb,currentColor 10%,transparent);text-align:center;color:color-mix(in srgb,currentColor 50%,transparent);font-weight:800}
 
 @media(max-width:1100px){

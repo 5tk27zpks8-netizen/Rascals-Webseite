@@ -1,5 +1,6 @@
 import { listPublicTeamPlayers } from "../lib/public-team-players";
 import { listActiveCoaches } from "../lib/coaches";
+import { Header } from "../SiteShell";
 import { RascalsPlayerCard } from "./RascalsPlayerCard";
 import "./team.css";
 import "./coaches-public.css";
@@ -17,9 +18,10 @@ export default async function TeamPage() {
   const specialTeams = players.filter((player) => player.unit === "special-teams");
 
   return (
+    <>
+    <Header page="team" />
     <main className="team-public team-public-v2">
       <header className="team-public-head team-public-hero">
-        <a href="/">← Startseite</a>
         <span>HELLENSTEIN RASCALS · 2026</span>
         <h1>ONE TEAM.<br /><i>THREE UNITS.</i></h1>
         <p>Die Coaches geben die Richtung vor. Offense und Defense bringen sie auf das Feld.</p>
@@ -85,5 +87,6 @@ export default async function TeamPage() {
         {!players.length && !coaches.length && <div className="team-empty">Teammitglieder erscheinen hier automatisch, sobald sie im CMS angelegt und öffentlich sichtbar sind.</div>}
       </section>
     </main>
+    </>
   );
 }

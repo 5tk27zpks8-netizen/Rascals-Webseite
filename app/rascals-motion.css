@@ -1,0 +1,99 @@
+/* ============================================================
+   RASCALS MOTION LAYER
+   Page-to-page transitions and the CSS half of the scroll
+   choreography. The JavaScript half lives in RascalsMotion.tsx.
+   ============================================================ */
+
+/* --- Page transitions ------------------------------------------
+   Native cross-document view transitions. Chromium runs them on
+   same-origin navigations; every other browser simply navigates,
+   so this is progressive enhancement with no fallback cost. */
+@view-transition {
+  navigation: auto;
+}
+
+/* The header is the same element on both pages, so it should stay
+   put rather than cross-fading with the rest of the document. */
+.site-header,
+.sb-header {
+  view-transition-name: rascals-header;
+}
+
+::view-transition-old(root) {
+  animation: rascals-page-out 260ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(root) {
+  animation: rascals-page-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rascals-page-out {
+  to { opacity: 0; transform: translate3d(0, -14px, 0); }
+}
+@keyframes rascals-page-in {
+  from { opacity: 0; transform: translate3d(0, 22px, 0); }
+}
+
+/* --- Headline word reveal --------------------------------------
+   Words are wrapped by the motion module and lifted into place, so
+   a headline arrives as a phrase instead of a block of opacity. */
+.rascals-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+.rascals-word > span {
+  display: inline-block;
+  transform: translate3d(0, 105%, 0);
+  will-change: transform;
+}
+.rascals-word.is-revealed > span {
+  transform: none;
+  transition: transform 760ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--word-delay, 0ms);
+}
+
+/* --- Gameday countdown ----------------------------------------- */
+.rascals-countdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.8rem, 2vw, 1.8rem);
+  margin-top: 1.4rem;
+}
+.rascals-countdown > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 62px;
+}
+.rascals-countdown b {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 76;
+  font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.rascals-countdown span {
+  color: var(--rascals-text-faint);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* --- Reduced motion --------------------------------------------
+   Collapses transitions, word reveals and page changes to static. */
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+  .rascals-word,
+  .rascals-word > span {
+    overflow: visible;
+    transform: none;
+    transition: none;
+  }
+}

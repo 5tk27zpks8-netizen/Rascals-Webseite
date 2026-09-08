@@ -1,0 +1,166 @@
+/* ============================================================
+   TEAMS BLOCK — three units and two squads, below the schedule.
+   Photography in colour; the numbering reads like a depth chart.
+   ============================================================ */
+
+.team-units {
+  padding: clamp(48px, 6vw, 104px) clamp(20px, 6vw, 96px);
+  background: var(--white);
+  color: var(--navy);
+}
+
+.team-units-head {
+  margin-bottom: clamp(28px, 3.4vw, 48px);
+}
+
+.team-units-head .eyebrow {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.team-units-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 6vw, 5.4rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.team-units-head h2 i {
+  color: var(--red);
+  font-style: italic;
+}
+
+/* --- the three units ------------------------------------------ */
+
+.team-units-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 2.4vw, 34px);
+}
+
+.team-units-grid article {
+  min-width: 0;
+}
+
+.team-unit-media {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--ice);
+}
+
+.team-unit-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s var(--ease-drive, ease);
+}
+
+.team-units-grid article:hover .team-unit-media img {
+  transform: scale(1.04);
+}
+
+/* Sits over the photograph, so it needs its own contrast rather than
+   relying on whatever happens to be behind it. */
+.team-unit-index {
+  position: absolute;
+  left: 12px;
+  bottom: 2px;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: clamp(38px, 4.4vw, 62px);
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 2px 18px rgba(2, 10, 21, 0.55);
+}
+
+.team-units-grid h3 {
+  margin: 16px 0 4px;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.1vw, 1.9rem);
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+
+.team-units-grid strong {
+  display: block;
+  color: var(--red);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.team-units-grid p {
+  margin: 10px 0 0;
+  color: #55606e;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+/* --- seniors and juniors --------------------------------------- */
+
+.team-squads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 2.4vw, 34px);
+  margin-top: clamp(26px, 3.2vw, 48px);
+}
+
+.team-squads article {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: var(--ice);
+}
+
+.team-squads img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.team-squads small {
+  color: var(--red);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+
+.team-squads h3 {
+  margin: 7px 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 1.9vw, 1.6rem);
+  font-weight: 950;
+}
+
+.team-squads p {
+  margin: 0 0 14px;
+  color: #55606e;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 1080px) {
+  .team-units-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .team-units-grid,
+  .team-squads {
+    grid-template-columns: 1fr;
+  }
+  .team-squads article {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px;
+  }
+}

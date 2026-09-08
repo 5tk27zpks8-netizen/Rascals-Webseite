@@ -60,6 +60,11 @@ async function authorize() {
   return requireCmsPermission("games");
 }
 
+/** Reading the Spielplan is part of the standard view; changing it is not. */
+async function authorizeRead() {
+  return requireCmsPermission("games_view");
+}
+
 async function saveAssignment(gameId: string, email?: string) {
   const { DB } = bindings();
   const normalized = email?.trim().toLowerCase() ?? "";
@@ -91,7 +96,7 @@ async function getGame(id: string) {
 }
 
 export async function GET(request: Request) {
-  const actor = await authorize();
+  const actor = await authorizeRead();
   if (actor instanceof Response) return actor;
   await ensureFootballSchema();
   await ensureAssignments();
