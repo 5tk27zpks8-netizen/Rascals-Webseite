@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build-Ausgaben (build/ selbst ist Quellcode: build/sites-vite-plugin.ts)
+dist/
+.next/
+.vinext/
+
+# Cloudflare / Wrangler (lokaler Zustand, siehe vite.config.ts)
+.wrangler/
+
+# Umgebungsvariablen — niemals committen
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+
+# Betriebssystem-Artefakte
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test- und Tooling-Caches
+coverage/
+.eslintcache
+*.tsbuildinfo
+
+# Vom Build generiert (verweist auf .next/), wird bei jedem Build neu erzeugt
+next-env.d.ts

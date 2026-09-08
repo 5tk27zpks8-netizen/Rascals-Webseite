@@ -30,3 +30,14 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+
+      # Lint und Typecheck laufen vorerst nicht-blockierend: der Bestand hat
+      # noch offene Befunde (Accessibility, React-Hooks, implizite `any`).
+      # Sobald diese abgearbeitet sind, `continue-on-error` entfernen, damit
+      # beides zu einem echten Qualitaetsgate wird.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+      - name: Typecheck
+        run: npx tsc --noEmit
+        continue-on-error: true
