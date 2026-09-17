@@ -209,3 +209,122 @@
   border-bottom: 2px solid var(--rascals-red, #e7192d);
   padding-bottom: 5px;
 }
+
+/* ============================================================
+   THE DECK
+
+   The squad fanned out across the field: the card at the centre
+   faces you, the rest turn away and fall back into the picture.
+   Scrolling walks the focus along the row.
+
+   PlayerDeck writes one number, --focus (the fractional index of
+   the centre card). Each card derives its own place from that and
+   its own --i, so a scroll frame costs one property write.
+
+   Until that class arrives — no JS, reduced motion, narrow screen
+   — this is a plain scrollable row.
+   ============================================================ */
+
+.deck {
+  margin: clamp(10px, 2vh, 26px) 0;
+}
+
+.deck-rail {
+  display: flex;
+  gap: clamp(12px, 1.6vw, 24px);
+  overflow-x: auto;
+  padding: 10px 2px 18px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.deck-rail > * {
+  flex: 0 0 clamp(210px, 22vw, 290px);
+  scroll-snap-align: center;
+}
+
+/* ---- Fanned out ---- */
+
+/* The deck owns a stretch of scroll of its own: one screen to sit in, plus a
+   slice per card to walk through. Without that overhang a short page never
+   reaches either end of the row and most of the squad stays unreachable. */
+.deck.is-deck {
+  position: relative;
+  height: calc(100vh + var(--count, 10) * 46px);
+  overflow: visible;
+}
+
+.deck.is-deck .deck-rail {
+  position: sticky;
+  top: 0;
+  display: block;
+  height: 100vh;
+  padding: 0;
+  overflow: hidden;
+  perspective: 1600px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.deck.is-deck .deck-card {
+  --offset: calc(var(--i) - var(--focus, 0));
+  /* Distance from the centre, unsigned, without abs() — still not safe to
+     assume everywhere. Used for depth, fade and scale. */
+  --away: max(var(--offset), calc(var(--offset) * -1));
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(200px, 20vw, 268px);
+  margin-left: calc(clamp(200px, 20vw, 268px) / -2);
+  margin-top: calc(clamp(200px, 20vw, 268px) * -0.72);
+
+  /* Spread wide enough that a neighbour's name is still readable — at a
+     tighter step the card in front cut the next one off mid-word. */
+  transform:
+    translateX(calc(var(--offset) * clamp(168px, 16.5vw, 252px)))
+    translateZ(calc(var(--away) * -118px))
+    rotateY(calc(var(--offset) * -22deg))
+    scale(calc(1 - min(var(--away) * 0.05, 0.3)));
+
+  /* Nearer the middle draws in front; only whole numbers are allowed here. */
+  z-index: calc(100 - round(nearest, var(--away), 1));
+  will-change: transform;
+}
+
+/* The cards away from the centre are darkened by the scene rather than by a
+   per-card opacity: a nested min() of a nested max() of a custom property is
+   past what the engine resolves, and it silently fell back to fully opaque.
+   A gradient over the rail does the same job in one element, and reads as the
+   depth of the picture rather than as faded cards. */
+.deck.is-deck .deck-rail::before,
+.deck.is-deck .deck-rail::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 200;
+  width: clamp(180px, 26vw, 460px);
+  pointer-events: none;
+}
+.deck.is-deck .deck-rail::before {
+  left: 0;
+  background: linear-gradient(90deg, #050d18 8%, rgba(5, 13, 24, 0.72) 46%, transparent);
+}
+.deck.is-deck .deck-rail::after {
+  right: 0;
+  background: linear-gradient(270deg, #050d18 8%, rgba(5, 13, 24, 0.72) 46%, transparent);
+}
+
+.deck.is-deck .deck-card .rascals-player-card {
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.62);
+}
+
+.deck.is-deck .deck-card .pc-name,
+.deck.is-deck .deck-card .pc-name-medium,
+.deck.is-deck .deck-card .pc-name-small {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+

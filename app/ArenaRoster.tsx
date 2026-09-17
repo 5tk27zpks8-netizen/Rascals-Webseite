@@ -1,5 +1,5 @@
 import { ArenaDrive } from "./ArenaDrive";
-import { RascalsPlayerCard } from "./team/RascalsPlayerCard";
+import { PlayerDeck } from "./PlayerDeck";
 import type { Player, PlayerUnit } from "./lib/football";
 import "./home-arena.css";
 import "./arena-roster.css";
@@ -9,10 +9,8 @@ import "./arena-roster.css";
  *
  * The Arena ground with nothing in it but player cards: no fixture, no numbers,
  * no schedule, no news. The camera still walks down the field as you scroll —
- * that is ArenaDrive, unchanged — but the content is an ordinary column that
- * scrolls with it rather than the pinned one-screen stops the homepage uses.
- * Cards arrive line by line as they cross the scroll trigger, which is what a
- * pinned one-screen stop cannot do.
+ * that is ArenaDrive, unchanged — and the squad is fanned out across it as a
+ * deck you scroll through, one unit at a time.
  *
  * The unit switch is plain radio inputs and labels. No client component, no
  * JavaScript, no hydration: it works on a page whose scroll is already spoken
@@ -77,8 +75,8 @@ export function ArenaRoster({ players }: { players: Player[] }) {
             <i>DIE RASCALS.</i>
           </h1>
           <p className="roster-lead" data-reveal>
-            {players.length} Spieler. Wähl die Unit und scroll dich Reihe für Reihe durch
-            den Kader — während die Kamera über das Feld zieht.
+            {players.length} Spieler. Wähl die Unit und scroll dich durch den Kader —
+            Karte für Karte, während die Kamera über das Feld zieht.
           </p>
         </section>
 
@@ -116,23 +114,7 @@ export function ArenaRoster({ players }: { players: Player[] }) {
                   gesetzt ist, erscheinen die Karten hier automatisch.
                 </p>
               ) : (
-                /* One grid rather than rows fixed at three: the column count
-                   changes with the screen, and hard-coded rows of three would
-                   break into a ragged 2+1 on a narrower one. The row-by-row
-                   arrival comes from the reveals instead — cards on the same
-                   line cross the trigger together, the next line follows. */
-                <div className="roster-grid">
-                  {unit.players.map((player, index) => (
-                    <div
-                      className="roster-card"
-                      key={player.id}
-                      data-reveal
-                      data-reveal-delay={(index % 3) * 90}
-                    >
-                      <RascalsPlayerCard player={player} />
-                    </div>
-                  ))}
-                </div>
+                <PlayerDeck players={unit.players} />
               )}
             </section>
           ))}
