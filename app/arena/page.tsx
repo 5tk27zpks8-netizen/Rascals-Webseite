@@ -8,6 +8,6 @@ export const metadata = {
 };
 
 /** Preview address for the Arena design, so it can be judged before going live. */
-export default function ArenaPreviewPage() {
+export default async function ArenaPreviewPage() {
   return <HomeArena />;
 }

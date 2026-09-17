@@ -112,29 +112,11 @@ export function createTurfTexture(): HTMLCanvasElement | null {
   paintAcross(context, "RASCALS", W / 2, endZone / 2, W * 0.86, 1);
   paintAcross(context, "HELLENSTEIN", W / 2, H - endZone / 2, W * 0.7, -1);
 
-  // Midfield emblem. Real grounds carry the club mark at the 50, worn into
-  // the grass rather than printed on top of it, so it stays understated.
-  const midY = H / 2;
-  context.save();
-  context.translate(W / 2, midY);
-  context.fillStyle = "rgba(126, 18, 30, 0.62)";
-  context.beginPath();
-  context.arc(0, 0, 186, 0, Math.PI * 2);
-  context.fill();
-  context.strokeStyle = "rgba(255,255,255,0.68)";
-  context.lineWidth = 10;
-  context.beginPath();
-  context.arc(0, 0, 186, 0, Math.PI * 2);
-  context.stroke();
-  context.lineWidth = 4;
-  context.beginPath();
-  context.arc(0, 0, 167, 0, Math.PI * 2);
-  context.stroke();
-  context.restore();
-  /* Nothing is painted inside the ring here: the club mark goes in via
-     paintMidfieldMark once the image has loaded, and a wordmark underneath
-     would show through its transparent areas. A ringed circle is a perfectly
-     good centre circle on its own if the mark never arrives. */
+  /* Midfield emblem. Nothing is painted here at all: the club mark goes
+     straight onto the grass via paintMidfieldMark once the image has loaded.
+     There is no disc and no ring behind it — a mark mown into the turf is what
+     a real ground looks like, and any fill underneath would show through the
+     artwork's transparent areas. */
 
   // Sidelines and end lines: a broad white border around the whole thing.
   context.strokeStyle = "rgba(255,255,255,0.92)";
@@ -202,17 +184,17 @@ export function createTurfTexture(): HTMLCanvasElement | null {
 export const MIDFIELD_MARK = { x: 1024 / 2, y: 2304 / 2, radius: 186 } as const;
 
 /**
- * Paints the club mark into the centre circle of an existing turf canvas.
+ * Paints the club mark onto the halfway line of an existing turf canvas.
  *
  * Separate from createTurfTexture because an image has to load and that
  * function is synchronous: the caller paints the field first, then awaits this
  * and refreshes the texture. Resolves false if the mark cannot be loaded, in
- * which case the painted wordmark underneath simply stays.
+ * which case the field simply carries no emblem.
  *
- * The artwork is trimmed to its inked pixels before being fitted, so the
- * transparent margin in the source file does not shrink the mark inside the
- * circle, and it is drawn at reduced opacity to stay worn into the grass
- * rather than printed on top of it.
+ * The artwork is trimmed to its inked pixels before being sized, so the
+ * transparent margin in the source file does not shrink it, and it goes on at
+ * slightly reduced opacity so it reads as mown into the grass rather than
+ * printed on top of it.
  */
 export async function paintMidfieldMark(
   canvas: HTMLCanvasElement,
@@ -272,20 +254,19 @@ export async function paintMidfieldMark(
     /* keep the untrimmed frame */
   }
 
-  // Fit inside the circle with a little breathing room off the painted ring.
+  // Sized off the old circle radius, which is still the right footprint for a
+  // mark at the 50 — wide enough to read from the camera, short of the hashes.
   const { x, y, radius } = MIDFIELD_MARK;
-  const room = radius * 1.82;
+  const room = radius * 2.1;
   const scale = Math.min(room / sw, room / sh);
   const width = sw * scale;
   const height = sh * scale;
 
   context.save();
   // Held just under full strength so the mark reads as worn into the grass
-  // rather than printed on top of it, and clipped so it cannot cross the ring.
-  context.globalAlpha = 0.88;
-  context.beginPath();
-  context.arc(x, y, radius - 6, 0, Math.PI * 2);
-  context.clip();
+  // rather than printed on top of it. Nothing to clip against now that the
+  // disc is gone, so the artwork keeps its own silhouette.
+  context.globalAlpha = 0.9;
   context.drawImage(image, sx, sy, sw, sh, x - width / 2, y - height / 2, width, height);
   context.restore();
   return true;

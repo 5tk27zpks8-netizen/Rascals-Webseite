@@ -91,7 +91,9 @@ const figures = [
 ];
 
 export async function HomeArena() {
-  const players = await listPublicTeamPlayers();
+  /* The drive is a stadium, not a roster page: it must not go down because the
+     squad query did. A failure here costs the card band and nothing else. */
+  const players = await listPublicTeamPlayers().catch(() => []);
 
   return (
     <div className="drive-page">
