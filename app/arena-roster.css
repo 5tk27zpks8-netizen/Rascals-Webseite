@@ -1,54 +1,22 @@
 /* ============================================================
-   THE SQUAD, IN THE STADIUM.
+   THE FORMATION, AND YOU FLY THROUGH IT.
 
-   An ordinary scrolling column over the Arena ground. The drive's
-   camera still rides the page scroll, but nothing here is pinned:
-   rows arrive one after another as you come down the field.
+   Nothing on the ground but the squad. The cards stand out on
+   the pitch, spread across its width and posted down its length,
+   and scrolling carries the camera forward past them.
 
-   The unit switch is CSS only — radio inputs before the panels,
-   sibling selectors showing the one that is checked. No JS on a
-   page whose scroll is already spoken for.
+   PlayerDeck writes one number, --focus: the fractional index of
+   the card the camera is level with. Each card works out its own
+   depth from that and its own --i, so a scroll frame costs one
+   property write.
+
+   Until that class arrives — no JS, reduced motion, narrow screen
+   — this is a plain swipeable row of the same markup.
    ============================================================ */
 
 .roster-page {
   position: relative;
   color: #fff;
-}
-
-/* The drive pins [data-from] panels; there are none here, so nothing is
-   pinned. The column is only lifted above the stadium canvas. */
-.roster-flow {
-  position: relative;
-  z-index: 2;
-  width: min(1180px, 92vw);
-  margin: 0 auto;
-  padding: clamp(96px, 16vh, 190px) 0 clamp(80px, 12vh, 150px);
-}
-
-/* ---------- Opening ---------- */
-
-.roster-open {
-  margin-bottom: clamp(38px, 6vh, 74px);
-}
-.roster-open h1 {
-  margin: 14px 0 18px;
-  font-family: var(--font-display, Impact, sans-serif);
-  font-size: clamp(2.8rem, 6vw, 5.4rem);
-  font-weight: 950;
-  line-height: 0.86;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-}
-.roster-open h1 i {
-  color: var(--rascals-red, #e7192d);
-  font-style: italic;
-}
-.roster-lead {
-  max-width: 52ch;
-  margin: 0;
-  color: #a8b8c8;
-  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
-  line-height: 1.65;
 }
 
 /* ---------- Unit switch ---------- */
@@ -64,61 +32,58 @@
   white-space: nowrap;
 }
 
+/* Bare labels over the pitch — no plate, no border, no blur panel. */
 .roster-switch {
-  position: sticky;
-  top: 86px;
-  z-index: 3;
+  position: fixed;
+  left: 50%;
+  bottom: clamp(20px, 4vh, 42px);
+  z-index: 20;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: clamp(26px, 4vh, 46px);
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(5, 13, 24, 0.82);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  gap: clamp(14px, 2vw, 32px);
+  transform: translateX(-50%);
 }
 
 .roster-tab {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 9px;
-  padding: 11px 18px;
-  border: 1px solid transparent;
-  color: #93a5b8;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.46);
   font-family: var(--font-display, Impact, sans-serif);
-  font-size: 0.82rem;
+  font-size: clamp(0.72rem, 0.9vw, 0.86rem);
   font-weight: 950;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
   cursor: pointer;
-  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  transition: color 0.18s ease;
 }
 .roster-tab small {
-  font-size: 0.72rem;
+  font-size: 0.74em;
   font-weight: 800;
   letter-spacing: 0.04em;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 .roster-tab:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.82);
 }
 
-/* The checked radio lights its own tab and shows its own panel. Index-matched:
-   the radios are emitted in the same order as the tabs and the panels. */
+/* The checked radio lights its own label and shows its own panel, matched by
+   index: radios, labels and panels are emitted in the same order. */
 .roster-radio:nth-of-type(1):checked ~ .roster-switch .roster-tab:nth-child(1),
 .roster-radio:nth-of-type(2):checked ~ .roster-switch .roster-tab:nth-child(2),
 .roster-radio:nth-of-type(3):checked ~ .roster-switch .roster-tab:nth-child(3) {
-  border-color: var(--rascals-red, #e7192d);
-  background: var(--rascals-red, #e7192d);
   color: #fff;
 }
+.roster-radio:nth-of-type(1):checked ~ .roster-switch .roster-tab:nth-child(1) small,
+.roster-radio:nth-of-type(2):checked ~ .roster-switch .roster-tab:nth-child(2) small,
+.roster-radio:nth-of-type(3):checked ~ .roster-switch .roster-tab:nth-child(3) small {
+  color: var(--rascals-red, #e7192d);
+  opacity: 1;
+}
 
-/* Keyboard focus has to be visible: the real control is off-screen, so the
-   label is the only thing a keyboard user can see. */
+/* The control itself is off-screen, so the label carries the focus ring. */
 .roster-radio:focus-visible ~ .roster-switch .roster-tab {
-  outline: 2px solid rgba(255, 255, 255, 0.4);
-  outline-offset: 2px;
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 4px;
 }
 
 .roster-panel {
@@ -130,193 +95,103 @@
   display: block;
 }
 
-.roster-note {
-  margin: 0 0 clamp(20px, 3vh, 34px);
-  color: #8fa1b4;
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
-}
-
 .roster-empty {
-  padding: clamp(28px, 5vh, 54px);
-  border: 1px dashed rgba(255, 255, 255, 0.16);
-  background: rgba(5, 13, 24, 0.5);
-  color: #9fb0c2;
-  line-height: 1.6;
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  padding: 44vh clamp(24px, 6vw, 80px);
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
 }
 
-/* ---------- Rows of cards ---------- */
+/* ---------- Fallback: a plain row ---------- */
 
-.roster-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--per-row, 3), minmax(0, 1fr));
-  gap: clamp(14px, 1.8vw, 28px);
-  align-items: start;
-}
-
-.roster-card {
-  min-width: 0;
-}
-
-/* At this width the cards are close to the size the roster grid draws them at,
-   so only the name needs help: it is allowed to wrap, which the base stylesheet
-   forbids, rather than running out of the card on a long one. */
-.roster-card .pc-name,
-.roster-card .pc-name-medium,
-.roster-card .pc-name-small {
-  overflow-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto;
-}
-
-@media (max-width: 900px) {
-  .roster-grid {
-    --per-row: 2;
-  }
-  .roster-switch {
-    top: 74px;
-  }
-}
-
-@media (max-width: 520px) {
-  .roster-grid {
-    --per-row: 1;
-  }
-  .roster-card .rascals-player-card {
-    max-width: 380px;
-    margin: 0 auto;
-  }
-  .roster-tab {
-    padding: 9px 13px;
-    font-size: 0.74rem;
-  }
-}
-
-/* ---------- Tail ---------- */
-
-.roster-end {
-  margin-top: clamp(40px, 7vh, 80px);
-  padding-top: 26px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-.roster-end a {
-  color: #fff;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-decoration: none;
-  border-bottom: 2px solid var(--rascals-red, #e7192d);
-  padding-bottom: 5px;
-}
-
-/* ============================================================
-   THE DECK
-
-   The squad fanned out across the field: the card at the centre
-   faces you, the rest turn away and fall back into the picture.
-   Scrolling walks the focus along the row.
-
-   PlayerDeck writes one number, --focus (the fractional index of
-   the centre card). Each card derives its own place from that and
-   its own --i, so a scroll frame costs one property write.
-
-   Until that class arrives — no JS, reduced motion, narrow screen
-   — this is a plain scrollable row.
-   ============================================================ */
-
-.deck {
-  margin: clamp(10px, 2vh, 26px) 0;
-}
-
-.deck-rail {
+.deck-stage {
+  position: relative;
+  z-index: 2;
   display: flex;
   gap: clamp(12px, 1.6vw, 24px);
   overflow-x: auto;
-  padding: 10px 2px 18px;
+  padding: clamp(80px, 14vh, 150px) clamp(16px, 4vw, 48px);
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
 }
-.deck-rail > * {
+.deck-stage > * {
   flex: 0 0 clamp(210px, 22vw, 290px);
   scroll-snap-align: center;
 }
 
-/* ---- Fanned out ---- */
+/* ---------- The drive-through ---------- */
 
 /* The deck owns a stretch of scroll of its own: one screen to sit in, plus a
-   slice per card to walk through. Without that overhang a short page never
-   reaches either end of the row and most of the squad stays unreachable. */
+   slice per card to travel through. Without that overhang a short page never
+   reaches either end and most of the squad stays unreachable. */
 .deck.is-deck {
   position: relative;
-  height: calc(100vh + var(--count, 10) * 46px);
-  overflow: visible;
+  height: calc(100vh + var(--count, 10) * 62px);
 }
 
-.deck.is-deck .deck-rail {
+.deck.is-deck .deck-stage {
   position: sticky;
   top: 0;
   display: block;
   height: 100vh;
   padding: 0;
   overflow: hidden;
-  perspective: 1600px;
-  perspective-origin: 50% 50%;
+  perspective: 1150px;
+  /* Eye level a little above centre, as if standing on the field. */
+  perspective-origin: 50% 42%;
   transform-style: preserve-3d;
 }
 
 .deck.is-deck .deck-card {
-  --offset: calc(var(--i) - var(--focus, 0));
-  /* Distance from the centre, unsigned, without abs() — still not safe to
-     assume everywhere. Used for depth, fade and scale. */
-  --away: max(var(--offset), calc(var(--offset) * -1));
+  /* How many cards ahead this one is. Negative once the camera has passed it. */
+  --rel: calc(var(--i) - var(--focus, 0));
 
   position: absolute;
   left: 50%;
   top: 50%;
-  width: clamp(200px, 20vw, 268px);
-  margin-left: calc(clamp(200px, 20vw, 268px) / -2);
-  margin-top: calc(clamp(200px, 20vw, 268px) * -0.72);
+  width: clamp(232px, 21vw, 310px);
+  margin-left: calc(clamp(232px, 21vw, 310px) / -2);
+  margin-top: calc(clamp(232px, 21vw, 310px) * -0.7);
 
-  /* Spread wide enough that a neighbour's name is still readable — at a
-     tighter step the card in front cut the next one off mid-word. */
+  /* Posted across the width of the pitch and down its length. The card the
+     camera is level with sits at z=0, square on and full size; the ones ahead
+     stand further downfield and fall away with the perspective. */
   transform:
-    translateX(calc(var(--offset) * clamp(168px, 16.5vw, 252px)))
-    translateZ(calc(var(--away) * -118px))
-    rotateY(calc(var(--offset) * -22deg))
-    scale(calc(1 - min(var(--away) * 0.05, 0.3)));
+    translateX(calc(var(--lane, 0) * clamp(180px, 17vw, 260px)))
+    translateZ(calc(var(--rel) * -430px))
+    rotateY(calc(var(--lane, 0) * -7deg));
 
-  /* Nearer the middle draws in front; only whole numbers are allowed here. */
-  z-index: calc(100 - round(nearest, var(--away), 1));
-  will-change: transform;
-}
+  /* Fades out over the last stretch before it would pass the camera, so a card
+     never swells across the screen on its way out. Kept to one clamp over one
+     plain variable: nesting min()/max() over a variable that is itself a
+     max() is past what the engine resolves and silently does nothing. */
+  opacity: clamp(0, calc((var(--rel) + 0.85) * 2.5), 1);
 
-/* The cards away from the centre are darkened by the scene rather than by a
-   per-card opacity: a nested min() of a nested max() of a custom property is
-   past what the engine resolves, and it silently fell back to fully opaque.
-   A gradient over the rail does the same job in one element, and reads as the
-   depth of the picture rather than as faded cards. */
-.deck.is-deck .deck-rail::before,
-.deck.is-deck .deck-rail::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  z-index: 200;
-  width: clamp(180px, 26vw, 460px);
-  pointer-events: none;
-}
-.deck.is-deck .deck-rail::before {
-  left: 0;
-  background: linear-gradient(90deg, #050d18 8%, rgba(5, 13, 24, 0.72) 46%, transparent);
-}
-.deck.is-deck .deck-rail::after {
-  right: 0;
-  background: linear-gradient(270deg, #050d18 8%, rgba(5, 13, 24, 0.72) 46%, transparent);
+  /* Nearer the camera draws in front. */
+  z-index: calc(1000 - round(nearest, var(--i), 1));
+  will-change: transform, opacity;
 }
 
 .deck.is-deck .deck-card .rascals-player-card {
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.62);
+  box-shadow: 0 36px 90px rgba(0, 0, 0, 0.7);
+}
+
+/* Depth haze: the far end of the formation sinks into the ground rather than
+   staying crisp to the horizon. One element instead of a per-card filter. */
+.deck.is-deck .deck-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background: radial-gradient(
+    ellipse 70% 58% at 50% 44%,
+    transparent 40%,
+    rgba(5, 13, 24, 0.55) 78%,
+    rgba(5, 13, 24, 0.86) 100%
+  );
+  pointer-events: none;
 }
 
 .deck.is-deck .deck-card .pc-name,
@@ -327,4 +202,13 @@
   hyphens: auto;
 }
 
-
+@media (max-width: 760px) {
+  .roster-switch {
+    bottom: 14px;
+    gap: 14px;
+  }
+  .roster-tab {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+  }
+}

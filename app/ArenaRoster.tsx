@@ -5,25 +5,25 @@ import "./home-arena.css";
 import "./arena-roster.css";
 
 /**
- * THE SQUAD, IN THE STADIUM.
+ * THE FORMATION, AND YOU FLY THROUGH IT.
  *
- * The Arena ground with nothing in it but player cards: no fixture, no numbers,
- * no schedule, no news. The camera still walks down the field as you scroll —
- * that is ArenaDrive, unchanged — and the squad is fanned out across it as a
- * deck you scroll through, one unit at a time.
+ * The Arena ground with nothing on it but the squad. No headline, no panels,
+ * no copy, no footer, no boxes — the players stand out on the field like a
+ * formation and scrolling carries you through them, one arriving at the front
+ * as the last one passes behind you.
  *
- * The unit switch is plain radio inputs and labels. No client component, no
- * JavaScript, no hydration: it works on a page whose scroll is already spoken
- * for, and it keeps working if the drive never engages.
+ * The only chrome is the drive's own broadcast overlay and a bare unit switch,
+ * which is radio inputs and labels: no client component and no hydration on a
+ * page whose scroll is already spoken for.
  */
 
-const UNITS: { id: PlayerUnit; label: string; note: string }[] = [
-  { id: "offense", label: "OFFENSE", note: "Die Unit, die Raum gewinnt und Punkte bringt." },
-  { id: "defense", label: "DEFENSE", note: "Die Unit, die Drives stoppt und Momentum dreht." },
-  { id: "special-teams", label: "SPECIAL TEAMS", note: "Kick, Punt, Return — ein Snap entscheidet." },
+const UNITS: { id: PlayerUnit; label: string }[] = [
+  { id: "offense", label: "OFFENSE" },
+  { id: "defense", label: "DEFENSE" },
+  { id: "special-teams", label: "SPECIAL" },
 ];
 
-/** Captains, then starters, then by shirt number — the roster's own order. */
+/** Captains, then starters, then by shirt number. */
 function order(players: Player[]) {
   return [...players].sort((a, b) => {
     const rank = (p: Player) => (p.captain ? 0 : 1) * 2 + (p.starter ? 0 : 1);
@@ -42,8 +42,11 @@ export function ArenaRoster({ players }: { players: Player[] }) {
     players: order(players.filter((player) => player.unit === unit.id)),
   }));
 
-  // Open on the unit that actually has players, so the page never starts empty.
-  const initial = byUnit.reduce((best, unit) => (unit.players.length > best.players.length ? unit : best), byUnit[0]);
+  // Open on the unit that actually has players, so it never starts empty.
+  const initial = byUnit.reduce(
+    (best, unit) => (unit.players.length > best.players.length ? unit : best),
+    byUnit[0],
+  );
 
   return (
     <div className="drive-page roster-page">
@@ -66,64 +69,42 @@ export function ArenaRoster({ players }: { players: Player[] }) {
         </div>
       </header>
 
-      <main className="roster-flow">
-        <section className="roster-open">
-          <p className="drive-eyebrow" data-reveal>Kader 2026</p>
-          <h1 data-reveal>
-            DAS SIND
-            <br />
-            <i>DIE RASCALS.</i>
-          </h1>
-          <p className="roster-lead" data-reveal>
-            {players.length} Spieler. Wähl die Unit und scroll dich durch den Kader —
-            Karte für Karte, während die Kamera über das Feld zieht.
-          </p>
-        </section>
+      {/* The radios sit before the panels so the :checked sibling selectors reach them. */}
+      <div className="roster-units">
+        {byUnit.map((unit) => (
+          <input
+            key={unit.id}
+            type="radio"
+            name="roster-unit"
+            id={`unit-${unit.id}`}
+            className="roster-radio"
+            defaultChecked={unit.id === initial.id}
+          />
+        ))}
 
-        {/* The radios sit before the panels so the :checked sibling selectors reach them. */}
-        <div className="roster-units">
+        {/* A radio group, not a tablist: role="tablist" without role="tab"
+            children is broken ARIA, and the inputs already say "pick one". */}
+        <div className="roster-switch" role="group" aria-label="Unit wählen">
           {byUnit.map((unit) => (
-            <input
-              key={unit.id}
-              type="radio"
-              name="roster-unit"
-              id={`unit-${unit.id}`}
-              className="roster-radio"
-              defaultChecked={unit.id === initial.id}
-            />
-          ))}
-
-          {/* A radio group, not a tablist: role="tablist" without role="tab"
-              children is broken ARIA, and the inputs already say "pick one". */}
-          <div className="roster-switch" role="group" aria-label="Unit wählen">
-            {byUnit.map((unit) => (
-              <label key={unit.id} htmlFor={`unit-${unit.id}`} className="roster-tab">
-                <b>{unit.label}</b>
-                <small>{unit.players.length}</small>
-              </label>
-            ))}
-          </div>
-
-          {byUnit.map((unit) => (
-            <section key={unit.id} className="roster-panel" data-unit={unit.id}>
-              <p className="roster-note">{unit.note}</p>
-
-              {unit.players.length === 0 ? (
-                <p className="roster-empty">
-                  Für diese Unit ist noch kein Spieler hinterlegt. Sobald im CMS eine Unit
-                  gesetzt ist, erscheinen die Karten hier automatisch.
-                </p>
-              ) : (
-                <PlayerDeck players={unit.players} />
-              )}
-            </section>
+            <label key={unit.id} htmlFor={`unit-${unit.id}`} className="roster-tab">
+              {unit.label}
+              <small>{unit.players.length}</small>
+            </label>
           ))}
         </div>
 
-        <footer className="roster-end">
-          <a href="/team">Zur klassischen Teamübersicht →</a>
-        </footer>
-      </main>
+        {byUnit.map((unit) => (
+          <section key={unit.id} className="roster-panel" data-unit={unit.id}>
+            {unit.players.length === 0 ? (
+              <p className="roster-empty">
+                Für diese Unit ist noch kein Spieler hinterlegt.
+              </p>
+            ) : (
+              <PlayerDeck players={unit.players} />
+            )}
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

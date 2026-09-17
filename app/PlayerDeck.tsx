@@ -5,31 +5,34 @@ import type { Player } from "./lib/football";
 import { RascalsPlayerCard } from "./team/RascalsPlayerCard";
 
 /**
- * The squad as a deck of cards you scroll through.
+ * The squad standing out on the field, and you drive through them.
  *
- * The cards stand in a row across the field, turned towards the viewer like a
- * hand being fanned out: the one in the middle faces you square on, the rest
- * angle away and fall back into the depth of the picture. Scrolling the page
- * walks the focus along the row.
+ * The cards are not a row you pan along: they are posted down the length of the
+ * pitch, spread across its width the way players are, and scrolling carries the
+ * camera forward past them. One card is always closest — square on, full size,
+ * readable — while the next ones stand further downfield, smaller and dimmer,
+ * and the one you have passed slips behind you and goes.
  *
- * Only one number crosses from JavaScript to CSS — `--focus`, the fractional
- * index of the card at the centre. Every card works out its own position from
- * that and its own index, so a frame costs one custom-property write and no
- * layout: no per-card style writes, no React re-render while scrolling.
+ * Only one number crosses from JavaScript to CSS: `--focus`, the fractional
+ * index of the card the camera is level with. Every card works out its own
+ * depth from that and its own index, so a scroll frame costs one
+ * custom-property write — no per-card style writes, no React render.
  *
- * Without JavaScript, or before this mounts, `--focus` is simply unset and the
- * stylesheet lays the cards out as a plain scrollable row. The deck is an
- * enhancement of something that already works.
+ * Without JavaScript, with reduced motion, or on a narrow screen the class
+ * never arrives, `--focus` stays unset, and the same markup is a plain
+ * swipeable row. The drive-through is an enhancement of something that works.
  */
+
+/** Three lanes across the field, so the squad is spread rather than stacked. */
+const LANES = [0, 1, -1, 0, -1, 1];
+
 export function PlayerDeck({ players }: { players: Player[] }) {
   const host = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const element = host.current;
     if (!element || players.length === 0) return;
-
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    // Below this the stylesheet shows a simple swipeable row instead.
     if (!window.matchMedia("(min-width: 760px)").matches) return;
 
     element.classList.add("is-deck");
@@ -38,12 +41,10 @@ export function PlayerDeck({ players }: { players: Player[] }) {
     const update = () => {
       frame = 0;
       const box = element.getBoundingClientRect();
-      /* The deck is taller than the screen and its rail sticks, so the scroll
-         distance it owns is exactly the overhang. 0 when its top reaches the
-         top of the screen, 1 when its bottom does — every card gets its turn.
-         Measuring against the viewport instead, as this first did, meant a
-         short page never reached either end and most of the squad was
-         unreachable. */
+      /* The deck is taller than the screen and its stage sticks, so the scroll
+         it owns is exactly that overhang: 0 when its top meets the top of the
+         screen, 1 when its bottom does. Measuring against the viewport instead
+         means a short page never reaches either end of the squad. */
       const runway = box.height - window.innerHeight;
       const travel = runway > 0 ? -box.top / runway : 0;
       const clamped = Math.min(1, Math.max(0, travel));
@@ -74,12 +75,17 @@ export function PlayerDeck({ players }: { players: Player[] }) {
       ref={host}
       style={{ "--count": players.length } as React.CSSProperties}
     >
-      <div className="deck-rail">
+      <div className="deck-stage">
         {players.map((player, index) => (
           <div
             className="deck-card"
             key={player.id}
-            style={{ "--i": index } as React.CSSProperties}
+            style={
+              {
+                "--i": index,
+                "--lane": LANES[index % LANES.length],
+              } as React.CSSProperties
+            }
           >
             <RascalsPlayerCard player={player} />
           </div>
