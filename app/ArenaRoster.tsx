@@ -1,38 +1,34 @@
-import type { CSSProperties } from "react";
 import { ArenaDrive } from "./ArenaDrive";
 import { RascalsPlayerCard } from "./team/RascalsPlayerCard";
-import type { Player } from "./lib/football";
+import type { Player, PlayerUnit } from "./lib/football";
 import "./home-arena.css";
 import "./arena-roster.css";
 
 /**
- * THE DRIVE — ROSTER ONLY.
+ * THE SQUAD, IN THE STADIUM.
  *
- * The Arena stadium with nothing in it but the squad: no fixture, no numbers,
- * no schedule, no news. A preview of what the drive looks like when the player
- * cards are the entire content.
+ * The Arena ground with nothing in it but player cards: no fixture, no numbers,
+ * no schedule, no news. The camera still walks down the field as you scroll —
+ * that is ArenaDrive, unchanged — but the content is an ordinary column that
+ * scrolls with it rather than the pinned one-screen stops the homepage uses.
+ * Cards arrive line by line as they cross the scroll trigger, which is what a
+ * pinned one-screen stop cannot do.
  *
- * It reuses the drive wholesale — same stadium, same scroll engine, same
- * broadcast overlay — and only swaps what the stops carry. The roster is cut
- * into groups of six, each group gets its own stop, and the stops are spread
- * evenly over the drive, so walking from the own 20 to the end zone walks the
- * whole squad. ArenaDrive finds the stops by their data-from/data-to, so
- * nothing about the engine needs to know the count has changed; the track
- * height rides a variable instead of the seven-panel constant.
+ * The unit switch is plain radio inputs and labels. No client component, no
+ * JavaScript, no hydration: it works on a page whose scroll is already spoken
+ * for, and it keeps working if the drive never engages.
  */
 
-const PER_STOP = 6;
+const UNITS: { id: PlayerUnit; label: string; note: string }[] = [
+  { id: "offense", label: "OFFENSE", note: "Die Unit, die Raum gewinnt und Punkte bringt." },
+  { id: "defense", label: "DEFENSE", note: "Die Unit, die Drives stoppt und Momentum dreht." },
+  { id: "special-teams", label: "SPECIAL TEAMS", note: "Kick, Punt, Return — ein Snap entscheidet." },
+];
 
-function chunk(players: Player[], size: number) {
-  const out: Player[][] = [];
-  for (let i = 0; i < players.length; i += size) out.push(players.slice(i, i + size));
-  return out;
-}
-
-/** Captains and starters first — with a thin roster those carry the real data. */
+/** Captains, then starters, then by shirt number — the roster's own order. */
 function order(players: Player[]) {
   return [...players].sort((a, b) => {
-    const rank = (p: Player) => (p.captain ? 0 : 1) * 4 + (p.starter ? 0 : 1) * 2 + (p.portrait ? 0 : 1);
+    const rank = (p: Player) => (p.captain ? 0 : 1) * 2 + (p.starter ? 0 : 1);
     const diff = rank(a) - rank(b);
     if (diff !== 0) return diff;
     const an = a.jerseyNumber ?? 999;
@@ -42,31 +38,17 @@ function order(players: Player[]) {
   });
 }
 
-/** Ball position for a stop, counted from our own 20 to the opposing end zone. */
-function yardLabel(progress: number) {
-  const absolute = 20 + progress * 80;
-  if (absolute >= 99) return "TOUCHDOWN";
-  return absolute > 50
-    ? `OPP ${String(Math.round(100 - absolute)).padStart(2, "0")}`
-    : `OWN ${String(Math.round(absolute)).padStart(2, "0")}`;
-}
-
 export function ArenaRoster({ players }: { players: Player[] }) {
-  const groups = chunk(order(players), PER_STOP);
-  /* One opening stop plus one per group. Each gets an equal stretch of the
-     drive, which is also what the scroll height is built from. */
-  const stops = groups.length + 1;
-  const span = 1 / stops;
-
-  const marks = Array.from({ length: stops }, (_, index) => ({
-    id: index === 0 ? "kickoff" : `unit-${index}`,
-    from: index * span,
-    to: (index + 1) * span,
-    yard: yardLabel(index * span),
+  const byUnit = UNITS.map((unit) => ({
+    ...unit,
+    players: order(players.filter((player) => player.unit === unit.id)),
   }));
 
+  // Open on the unit that actually has players, so the page never starts empty.
+  const initial = byUnit.reduce((best, unit) => (unit.players.length > best.players.length ? unit : best), byUnit[0]);
+
   return (
-    <div className="drive-page drive-roster-page" style={{ "--stops": stops } as CSSProperties}>
+    <div className="drive-page roster-page">
       <ArenaDrive />
       <div className="drive-vignette" aria-hidden="true" />
 
@@ -86,64 +68,79 @@ export function ArenaRoster({ players }: { players: Player[] }) {
         </div>
       </header>
 
-      <nav className="drive-chain" aria-label="Kader">
-        {marks.map((mark, index) => (
-          <a key={mark.id} href={`#${mark.id}`} data-chain={mark.id}>
-            <span>{mark.yard}</span>
-            <small>{index === 0 ? "KICKOFF" : `${index}/${groups.length}`}</small>
-          </a>
-        ))}
-      </nav>
-
-      <main className="drive-track">
-        <section
-          id="kickoff"
-          className="drive-panel drive-panel-open"
-          data-from={marks[0].from}
-          data-to={marks[0].to}
-        >
-          <p className="drive-eyebrow" data-cue>Kader 2026 · Own 20</p>
-          <h1 data-cue>
-            <span>DAS SIND</span>
+      <main className="roster-flow">
+        <section className="roster-open">
+          <p className="drive-eyebrow" data-reveal>Kader 2026</p>
+          <h1 data-reveal>
+            DAS SIND
+            <br />
             <i>DIE RASCALS.</i>
           </h1>
-          <p className="drive-lead" data-cue>
-            {players.length} Spieler, ein Drive. Scroll dich über das Feld — Karte für Karte,
-            von der eigenen 20 bis in die Endzone.
+          <p className="roster-lead" data-reveal>
+            {players.length} Spieler. Wähl die Unit und scroll dich Reihe für Reihe durch
+            den Kader — während die Kamera über das Feld zieht.
           </p>
-          <span className="drive-hint" data-cue>Scrollen startet den Drive</span>
         </section>
 
-        {groups.map((group, index) => {
-          const mark = marks[index + 1];
-          return (
-            <section
-              key={mark.id}
-              id={mark.id}
-              className="drive-panel is-wide arena-roster-panel"
-              data-from={mark.from}
-              data-to={mark.to}
-            >
-              <div className="arena-roster-head">
-                <p className="drive-eyebrow" data-cue>{mark.yard}</p>
-                <span className="arena-roster-count" data-cue>
-                  {index * PER_STOP + 1}–{index * PER_STOP + group.length}
-                  <i>/{players.length}</i>
-                </span>
-              </div>
-              {/* No wrapper link: RascalsPlayerCard is an <a> itself, and
-                  nesting anchors is invalid — the browser unnests them and the
-                  outer element collapses to nothing. */}
-              <div className="arena-roster-cards">
-                {group.map((player) => (
-                  <div className="arena-roster-card" key={player.id} data-cue>
-                    <RascalsPlayerCard player={player} />
-                  </div>
-                ))}
-              </div>
+        {/* The radios sit before the panels so the :checked sibling selectors reach them. */}
+        <div className="roster-units">
+          {byUnit.map((unit) => (
+            <input
+              key={unit.id}
+              type="radio"
+              name="roster-unit"
+              id={`unit-${unit.id}`}
+              className="roster-radio"
+              defaultChecked={unit.id === initial.id}
+            />
+          ))}
+
+          {/* A radio group, not a tablist: role="tablist" without role="tab"
+              children is broken ARIA, and the inputs already say "pick one". */}
+          <div className="roster-switch" role="group" aria-label="Unit wählen">
+            {byUnit.map((unit) => (
+              <label key={unit.id} htmlFor={`unit-${unit.id}`} className="roster-tab">
+                <b>{unit.label}</b>
+                <small>{unit.players.length}</small>
+              </label>
+            ))}
+          </div>
+
+          {byUnit.map((unit) => (
+            <section key={unit.id} className="roster-panel" data-unit={unit.id}>
+              <p className="roster-note">{unit.note}</p>
+
+              {unit.players.length === 0 ? (
+                <p className="roster-empty">
+                  Für diese Unit ist noch kein Spieler hinterlegt. Sobald im CMS eine Unit
+                  gesetzt ist, erscheinen die Karten hier automatisch.
+                </p>
+              ) : (
+                /* One grid rather than rows fixed at three: the column count
+                   changes with the screen, and hard-coded rows of three would
+                   break into a ragged 2+1 on a narrower one. The row-by-row
+                   arrival comes from the reveals instead — cards on the same
+                   line cross the trigger together, the next line follows. */
+                <div className="roster-grid">
+                  {unit.players.map((player, index) => (
+                    <div
+                      className="roster-card"
+                      key={player.id}
+                      data-reveal
+                      data-reveal-delay={(index % 3) * 90}
+                    >
+                      <RascalsPlayerCard player={player} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
-          );
-        })}
+          ))}
+        </div>
+
+        <footer className="roster-end">
+          <a href="/team">Zur klassischen Teamübersicht →</a>
+        </footer>
       </main>
     </div>
   );

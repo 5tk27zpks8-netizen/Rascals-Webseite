@@ -1,162 +1,211 @@
 /* ============================================================
-   DRIVE — ROSTER ONLY.
+   THE SQUAD, IN THE STADIUM.
 
-   The Arena drive carrying nothing but player cards. Everything
-   structural comes from home-arena.css; this only sizes the card
-   rows and frees the track height from the seven-panel constant
-   the original layout hard-codes.
+   An ordinary scrolling column over the Arena ground. The drive's
+   camera still rides the page scroll, but nothing here is pinned:
+   rows arrive one after another as you come down the field.
+
+   The unit switch is CSS only — radio inputs before the panels,
+   sibling selectors showing the one that is checked. No JS on a
+   page whose scroll is already spoken for.
    ============================================================ */
 
-/* The original gives the track 760vh for its seven stops. This page has as
-   many stops as the roster needs, so the height is derived instead. */
-.drive-page.drive-roster-page.is-driving .drive-track {
-  height: calc(var(--stops, 7) * 108vh);
-}
-
-/* is-wide gives the panel its width and centring, but also a two-column grid
-   for the rail/body split the briefing panels use. These stops stack a heading
-   over a row of cards instead, so the columns are collapsed back to one. */
-.drive-page.is-driving .drive-panel.is-wide.arena-roster-panel,
-.arena-roster-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: clamp(14px, 2.2vh, 26px);
-  align-content: center;
-}
-
-.arena-roster-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.arena-roster-count {
-  font-family: var(--font-display, Impact, sans-serif);
-  font-size: clamp(1rem, 1.6vw, 1.5rem);
-  font-weight: 950;
-  letter-spacing: 0.02em;
+.roster-page {
+  position: relative;
   color: #fff;
 }
-.arena-roster-count i {
-  color: #7d8fa2;
-  font-style: normal;
-  font-size: 0.72em;
+
+/* The drive pins [data-from] panels; there are none here, so nothing is
+   pinned. The column is only lifted above the stadium canvas. */
+.roster-flow {
+  position: relative;
+  z-index: 2;
+  width: min(1180px, 92vw);
+  margin: 0 auto;
+  padding: clamp(96px, 16vh, 190px) 0 clamp(80px, 12vh, 150px);
 }
 
-/* One row of cards, sized so a full group fits the screen without scrolling —
-   the drive owns the scroll, so anything that overflows here is unreachable. */
-.arena-roster-cards {
+/* ---------- Opening ---------- */
+
+.roster-open {
+  margin-bottom: clamp(38px, 6vh, 74px);
+}
+.roster-open h1 {
+  margin: 14px 0 18px;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(2.8rem, 6vw, 5.4rem);
+  font-weight: 950;
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.roster-open h1 i {
+  color: var(--rascals-red, #e7192d);
+  font-style: italic;
+}
+.roster-lead {
+  max-width: 52ch;
+  margin: 0;
+  color: #a8b8c8;
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+  line-height: 1.65;
+}
+
+/* ---------- Unit switch ---------- */
+
+.roster-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.roster-switch {
+  position: sticky;
+  top: 86px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: clamp(26px, 4vh, 46px);
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 13, 24, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.roster-tab {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 11px 18px;
+  border: 1px solid transparent;
+  color: #93a5b8;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+.roster-tab small {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+.roster-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* The checked radio lights its own tab and shows its own panel. Index-matched:
+   the radios are emitted in the same order as the tabs and the panels. */
+.roster-radio:nth-of-type(1):checked ~ .roster-switch .roster-tab:nth-child(1),
+.roster-radio:nth-of-type(2):checked ~ .roster-switch .roster-tab:nth-child(2),
+.roster-radio:nth-of-type(3):checked ~ .roster-switch .roster-tab:nth-child(3) {
+  border-color: var(--rascals-red, #e7192d);
+  background: var(--rascals-red, #e7192d);
+  color: #fff;
+}
+
+/* Keyboard focus has to be visible: the real control is off-screen, so the
+   label is the only thing a keyboard user can see. */
+.roster-radio:focus-visible ~ .roster-switch .roster-tab {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 2px;
+}
+
+.roster-panel {
+  display: none;
+}
+.roster-radio:nth-of-type(1):checked ~ .roster-panel:nth-of-type(1),
+.roster-radio:nth-of-type(2):checked ~ .roster-panel:nth-of-type(2),
+.roster-radio:nth-of-type(3):checked ~ .roster-panel:nth-of-type(3) {
+  display: block;
+}
+
+.roster-note {
+  margin: 0 0 clamp(20px, 3vh, 34px);
+  color: #8fa1b4;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+}
+
+.roster-empty {
+  padding: clamp(28px, 5vh, 54px);
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  background: rgba(5, 13, 24, 0.5);
+  color: #9fb0c2;
+  line-height: 1.6;
+}
+
+/* ---------- Rows of cards ---------- */
+
+.roster-grid {
   display: grid;
-  grid-template-columns: repeat(var(--per-row, 6), minmax(0, 1fr));
-  gap: clamp(8px, 1vw, 18px);
+  grid-template-columns: repeat(var(--per-row, 3), minmax(0, 1fr));
+  gap: clamp(14px, 1.8vw, 28px);
   align-items: start;
 }
 
-.arena-roster-card {
-  display: block;
+.roster-card {
   min-width: 0;
-  text-decoration: none;
-  color: inherit;
-  transition: transform 0.22s ease;
-}
-.arena-roster-card:hover,
-.arena-roster-card:focus-visible {
-  transform: translateY(-6px);
 }
 
-/* The cards were drawn for a roster grid at roughly twice this width, so the
-   type inside them is stepped down rather than the layout being changed. */
-.arena-roster-card .rascals-player-card {
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
-}
-.arena-roster-card .rpc-number {
-  font-size: clamp(30px, 3.1vw, 52px);
-}
-.arena-roster-card .rpc-player-info {
-  bottom: clamp(30px, 3.6vh, 46px);
-  grid-template-columns: clamp(30px, 3.1vw, 50px) minmax(0, 1fr);
-  gap: clamp(5px, 0.5vw, 9px);
-}
-/* The card sizes its name for a roster grid twice this wide. Here a long name
-   ran straight out of the card, so it is stepped down and allowed to wrap and
-   hyphenate — the base stylesheet forbids both. */
-.arena-roster-card .pc-name,
-.arena-roster-card .pc-name-medium,
-.arena-roster-card .pc-name-small {
-  font-size: clamp(8px, 0.78vw, 13px);
-  padding-bottom: 4px;
+/* At this width the cards are close to the size the roster grid draws them at,
+   so only the name needs help: it is allowed to wrap, which the base stylesheet
+   forbids, rather than running out of the card on a long one. */
+.roster-card .pc-name,
+.roster-card .pc-name-medium,
+.roster-card .pc-name-small {
   overflow-wrap: break-word;
   word-break: break-word;
   hyphens: auto;
 }
-.arena-roster-card .rpc-position {
-  margin-bottom: 2px;
-  font-size: clamp(6px, 0.55vw, 9px);
-}
-.arena-roster-card .rpc-brand-center img {
-  width: clamp(20px, 2vw, 34px);
-  height: clamp(14px, 1.4vw, 24px);
-}
-.arena-roster-card .rpc-brand-center b {
-  font-size: clamp(6px, 0.6vw, 10px);
-  line-height: 1.2;
-}
-.arena-roster-card .rpc-player-stage {
-  top: clamp(34px, 4.6vh, 58px);
-  bottom: clamp(52px, 6.4vh, 82px);
-}
-.arena-roster-card .rpc-player-placeholder strong {
-  font-size: clamp(30px, 3.2vw, 54px);
-}
-.arena-roster-card .rpc-player-placeholder span {
-  font-size: clamp(5px, 0.5vw, 8px);
-}
-.arena-roster-card .rpc-badges {
-  bottom: clamp(9px, 1.1vh, 16px);
-  padding-top: 5px;
-}
-.arena-roster-card .rpc-badge {
-  padding: 0 clamp(3px, 0.4vw, 8px);
-  gap: 3px;
-}
-.arena-roster-card .rpc-badge i {
-  width: clamp(13px, 1.3vw, 21px);
-  height: clamp(13px, 1.3vw, 21px);
-  font-size: clamp(9px, 0.9vw, 14px);
-}
-.arena-roster-card .rpc-badge.starter i {
-  font-size: clamp(10px, 1vw, 16px);
-}
-.arena-roster-card .rpc-badge b {
-  font-size: clamp(4px, 0.4vw, 6px);
-}
-.arena-roster-card .rpc-frame {
-  inset: clamp(4px, 0.5vw, 8px);
-}
-
-/* ---- Narrower screens ----
-   The drive stands down below 1000px and the panels return to normal document
-   flow, so the cards only need to reflow into fewer columns. */
-
-@media (max-width: 1400px) {
-  .arena-roster-cards {
-    --per-row: 4;
-  }
-}
 
 @media (max-width: 900px) {
-  .arena-roster-cards {
-    --per-row: 3;
+  .roster-grid {
+    --per-row: 2;
+  }
+  .roster-switch {
+    top: 74px;
   }
 }
 
-@media (max-width: 620px) {
-  .arena-roster-cards {
-    --per-row: 2;
+@media (max-width: 520px) {
+  .roster-grid {
+    --per-row: 1;
   }
-  .arena-roster-head {
-    flex-direction: column;
-    gap: 6px;
+  .roster-card .rascals-player-card {
+    max-width: 380px;
+    margin: 0 auto;
   }
+  .roster-tab {
+    padding: 9px 13px;
+    font-size: 0.74rem;
+  }
+}
+
+/* ---------- Tail ---------- */
+
+.roster-end {
+  margin-top: clamp(40px, 7vh, 80px);
+  padding-top: 26px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.roster-end a {
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 2px solid var(--rascals-red, #e7192d);
+  padding-bottom: 5px;
 }
