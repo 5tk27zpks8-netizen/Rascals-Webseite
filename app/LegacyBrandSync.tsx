@@ -23,7 +23,7 @@ const unifiedHeaderCss = `
   align-items:center!important;
   justify-content:space-between!important;
   height:auto!important;
-  min-height:86px!important;
+  min-height:96px!important;
   padding:0 4vw!important;
   border-bottom:1px solid rgba(255,255,255,.08)!important;
   background:#050d18!important;
@@ -34,17 +34,19 @@ const unifiedHeaderCss = `
 .site-header.legacy-unified-header .brand{
   display:flex!important;
   align-items:center!important;
-  gap:12px!important;
+  /* Same gap as the builder lockup: at 12px the wordmark sat 3px closer to the
+     mark here than it does on the homepage. */
+  gap:15px!important;
   min-width:0!important;
   color:inherit!important;
   text-decoration:none!important;
   transform:none!important;
 }
 .site-header.legacy-unified-header .brand img{
-  width:76px!important;
-  height:76px!important;
-  flex:0 0 76px!important;
-  max-width:none!important;
+  width:auto!important;
+  height:78px!important;
+  flex:0 0 auto!important;
+  max-width:140px!important;
   object-fit:contain!important;
 }
 .site-header.legacy-unified-header .brand span{
@@ -57,22 +59,20 @@ const unifiedHeaderCss = `
 .site-header.legacy-unified-header .brand strong{
   width:auto!important;
   color:#fff!important;
-  font-family:Inter,Arial,sans-serif!important;
-  font-size:.72rem!important;
+  font-family:var(--font-display,Inter,Arial,sans-serif)!important;
+  font-size:.84rem!important;
   font-weight:950!important;
-  line-height:1!important;
-  letter-spacing:.16em!important;
+  letter-spacing:.18em!important;
   text-align:left!important;
   text-transform:uppercase!important;
 }
 .site-header.legacy-unified-header .brand em{
   color:#e7192d!important;
-  font-family:Inter,Arial,sans-serif!important;
-  font-size:1.1rem!important;
+  font-family:var(--font-display,Inter,Arial,sans-serif)!important;
+  font-size:1.9rem!important;
   font-style:italic!important;
   font-weight:950!important;
-  line-height:1!important;
-  letter-spacing:0!important;
+  letter-spacing:-.01em!important;
   text-transform:uppercase!important;
 }
 .site-header.legacy-unified-header .main-nav{
@@ -107,18 +107,19 @@ const unifiedHeaderCss = `
   box-shadow:0 8px 22px rgba(231,25,45,.22)!important;
   transform:none!important;
 }
-@media(max-width:780px){
+@media(max-width:900px){
   .site-header.legacy-unified-header{
-    min-height:72px!important;
+    min-height:78px!important;
     padding:0 18px!important;
   }
   .site-header.legacy-unified-header .brand img{
-    width:60px!important;
-    height:60px!important;
-    flex-basis:60px!important;
+    width:auto!important;
+    height:58px!important;
+    flex-basis:auto!important;
+    max-width:104px!important;
   }
-  .site-header.legacy-unified-header .brand strong{font-size:.62rem!important;}
-  .site-header.legacy-unified-header .brand em{font-size:.96rem!important;}
+  .site-header.legacy-unified-header .brand strong{font-size:.76rem!important;letter-spacing:.16em!important;}
+  .site-header.legacy-unified-header .brand em{font-size:1.45rem!important;}
 }
 `;
 
@@ -150,7 +151,7 @@ export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, n
       document.querySelectorAll<HTMLElement>(".site-header").forEach((header) => {
         header.classList.add("legacy-unified-header");
         setStyleIfChanged(header, "background", "#050d18", "important");
-        setStyleIfChanged(header, "min-height", "78px", "important");
+        setStyleIfChanged(header, "min-height", "96px", "important");
         setStyleIfChanged(header, "height", "auto", "important");
       });
 
@@ -158,11 +159,13 @@ export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, n
         brand.classList.add("legacy-unified-brand");
       });
 
+      /* Only the source is synced here. Size is deliberately NOT set inline:
+         an inline !important beats every stylesheet, so doing it here pinned
+         the subpage lockup to a square 62px and silently overrode the shared
+         header spec in site-polish.css. The size has one home now. */
       for (const selector of LEGACY_LOGO_SELECTORS) {
         document.querySelectorAll<HTMLImageElement>(selector).forEach((image) => {
           if (image.getAttribute("src") !== src) image.setAttribute("src", src);
-          setStyleIfChanged(image, "width", selector.includes("footer") ? "255px" : "62px", "important");
-          setStyleIfChanged(image, "height", selector.includes("footer") ? "auto" : "62px", "important");
           setStyleIfChanged(image, "object-fit", "contain", "important");
         });
       }

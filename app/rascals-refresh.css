@@ -32,11 +32,15 @@
   background-size: 100% 2px;
 }
 
-/* Brand lockup uses the display face rather than an Inter fallback. */
+/* Brand lockup uses the display face rather than an Inter fallback, at the
+   same width as everything else set in it. This was the one place still on
+   "wdth" 82 while the display face is 76 everywhere — headings, stats, and the
+   builder header's own lockup — so the subpages drew a visibly wider wordmark
+   than the homepage did. */
 .site-header .brand strong,
 .site-header .brand em {
   font-family: var(--font-display) !important;
-  font-variation-settings: "wdth" 82;
+  font-variation-settings: "wdth" 76;
 }
 
 /* --- Hero ------------------------------------------------------ */
