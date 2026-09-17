@@ -2,16 +2,38 @@
    Keeps editable builder values intact while restoring the Rascals CTA treatment,
    enlarging the global brand marks and lifting only the schedule card base background. */
 
-/* Builder header brand: slightly larger again for stronger presence.
-   The brand mark drives the header height, so both move together. */
+/* Builder header brand: the lockup anchors the header, so it has to outweigh
+   the nav rather than match it. The nav sits at .72rem, so a wordmark at the
+   same size reads as one more link; the club name is set well above it and the
+   mark grows with it. The brand drives the header height, so both move together. */
 .sb-header{
-  min-height:86px!important;
+  min-height:96px!important;
 }
+.sb-header .sb-brand{
+  gap:15px!important;
+}
+/* The mark is landscape (roughly 3:2, and its inked area is nearer 2:1). A square
+   box with object-fit:contain sizes it by its width, so it rendered at well under
+   half the height the header reserved for it — which is why it read as hidden.
+   Sizing by height instead lets the width follow the artwork; max-width only
+   guards against an unusually wide logo uploaded through the CMS. */
 .sb-header .sb-brand img{
-  width:62px!important;
-  height:62px!important;
-  flex:0 0 62px;
+  width:auto!important;
+  height:78px!important;
+  flex:0 0 auto;
+  max-width:140px!important;
   object-fit:contain!important;
+}
+/* "HELLENSTEIN" is the kicker over the name: wide-tracked and small, but still
+   clear of the nav. "RASCALS" is the name itself and carries the weight. */
+.sb-header .sb-brand b{
+  font-size:.84rem!important;
+  font-weight:950!important;
+  letter-spacing:.18em!important;
+}
+.sb-header .sb-brand em{
+  font-size:1.9rem!important;
+  letter-spacing:-.01em!important;
 }
 
 .sb-header .sb-nav-cta{
@@ -39,7 +61,7 @@
   align-items:center!important;
   justify-content:space-between!important;
   height:auto!important;
-  min-height:86px!important;
+  min-height:96px!important;
   padding:0 4vw!important;
   border-bottom:1px solid rgba(255,255,255,.08)!important;
   background:#050d18!important;
@@ -50,15 +72,16 @@
 .site-header .brand{
   display:flex!important;
   align-items:center!important;
-  gap:12px!important;
+  gap:15px!important;
   min-width:0!important;
   color:inherit!important;
   text-decoration:none!important;
 }
 .site-header .brand img{
-  width:76px!important;
-  height:76px!important;
-  flex:0 0 76px!important;
+  width:auto!important;
+  height:78px!important;
+  flex:0 0 auto!important;
+  max-width:140px!important;
   object-fit:contain!important;
 }
 .site-header .brand span{
@@ -72,18 +95,18 @@
   width:auto!important;
   color:#fff!important;
   font-family:var(--site-heading-font,Inter,Arial,sans-serif)!important;
-  font-size:.72rem!important;
+  font-size:.84rem!important;
   font-weight:950!important;
-  letter-spacing:.16em!important;
+  letter-spacing:.18em!important;
   text-align:left!important;
 }
 .site-header .brand em{
   color:var(--rascals-red)!important;
   font-family:var(--site-heading-font,Inter,Arial,sans-serif)!important;
-  font-size:1.1rem!important;
+  font-size:1.9rem!important;
   font-style:italic!important;
   font-weight:950!important;
-  letter-spacing:0!important;
+  letter-spacing:-.01em!important;
 }
 .site-header .main-nav{
   display:flex!important;
@@ -153,13 +176,25 @@
   .site-header,
   .sb-header{
     position:sticky!important;
-    min-height:72px!important;
+    min-height:78px!important;
   }
   .site-header .brand img,
   .sb-header .sb-brand img{
-    width:60px!important;
-    height:60px!important;
-    flex-basis:60px!important;
+    width:auto!important;
+    height:58px!important;
+    flex-basis:auto!important;
+    max-width:104px!important;
+  }
+  /* The lockup stays the heaviest thing in the bar, scaled to the shorter
+     header so the name never crowds the menu button. */
+  .site-header .brand strong,
+  .sb-header .sb-brand b{
+    font-size:.76rem!important;
+    letter-spacing:.16em!important;
+  }
+  .site-header .brand em,
+  .sb-header .sb-brand em{
+    font-size:1.45rem!important;
   }
   .site-header .main-nav{
     position:absolute!important;
