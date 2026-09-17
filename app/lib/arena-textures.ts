@@ -11,6 +11,9 @@
 export const FIELD_YARDS_LONG = 120;
 export const FIELD_YARDS_WIDE = 160 / 3;
 
+/** How much larger the turf canvas is than the layout it is drawn in. */
+export const TURF_SCALE = 1.75;
+
 /** Yard numbers, counted up to midfield and back down. */
 const NUMBERS = ["10", "20", "30", "40", "50", "40", "30", "20", "10"];
 
@@ -80,7 +83,7 @@ export function createTurfTexture(): HTMLCanvasElement | null {
      width, radius and type size being rewritten. */
   const W = 1024;
   const H = 2304;
-  const SCALE = 1.75;
+  const SCALE = TURF_SCALE;
   canvas.width = W * SCALE;
   canvas.height = H * SCALE;
   const context = canvas.getContext("2d");
@@ -128,8 +131,10 @@ export function createTurfTexture(): HTMLCanvasElement | null {
   context.arc(0, 0, 167, 0, Math.PI * 2);
   context.stroke();
   context.restore();
-  paintAcross(context, "RASCALS", W / 2, midY - 22, 300, 1, "rgba(255,255,255,0.9)", 86);
-  paintAcross(context, "EST. 2023", W / 2, midY + 54, 210, 1, "rgba(255,255,255,0.62)", 40);
+  /* Nothing is painted inside the ring here: the club mark goes in via
+     paintMidfieldMark once the image has loaded, and a wordmark underneath
+     would show through its transparent areas. A ringed circle is a perfectly
+     good centre circle on its own if the mark never arrives. */
 
   // Sidelines and end lines: a broad white border around the whole thing.
   context.strokeStyle = "rgba(255,255,255,0.92)";
@@ -187,6 +192,103 @@ export function createTurfTexture(): HTMLCanvasElement | null {
   });
 
   return canvas;
+}
+
+/**
+ * Where the midfield emblem sits, in the same layout coordinates createTurfTexture
+ * draws in — NOT canvas pixels. The turf context is scaled by TURF_SCALE, so any
+ * code addressing the raw canvas has to multiply by it.
+ */
+export const MIDFIELD_MARK = { x: 1024 / 2, y: 2304 / 2, radius: 186 } as const;
+
+/**
+ * Paints the club mark into the centre circle of an existing turf canvas.
+ *
+ * Separate from createTurfTexture because an image has to load and that
+ * function is synchronous: the caller paints the field first, then awaits this
+ * and refreshes the texture. Resolves false if the mark cannot be loaded, in
+ * which case the painted wordmark underneath simply stays.
+ *
+ * The artwork is trimmed to its inked pixels before being fitted, so the
+ * transparent margin in the source file does not shrink the mark inside the
+ * circle, and it is drawn at reduced opacity to stay worn into the grass
+ * rather than printed on top of it.
+ */
+export async function paintMidfieldMark(
+  canvas: HTMLCanvasElement,
+  src: string,
+): Promise<boolean> {
+  const context = canvas.getContext("2d");
+  if (!context) return false;
+
+  const image = await new Promise<HTMLImageElement | null>((resolve) => {
+    const element = new Image();
+    /* The finished canvas is uploaded as a WebGL texture, and a canvas tainted
+       by a cross-origin image cannot be. The mark is served from our own origin,
+       so this costs nothing and keeps the turf usable if it ever moves to a CDN. */
+    element.crossOrigin = "anonymous";
+    element.onload = () => resolve(element);
+    element.onerror = () => resolve(null);
+    element.src = src;
+  });
+  if (!image?.naturalWidth) return false;
+
+  // Trim to the inked area. Same-origin, so reading the pixels is allowed; if
+  // anything throws we fall back to the full frame rather than giving up.
+  let sx = 0;
+  let sy = 0;
+  let sw = image.naturalWidth;
+  let sh = image.naturalHeight;
+  try {
+    const probe = document.createElement("canvas");
+    probe.width = image.naturalWidth;
+    probe.height = image.naturalHeight;
+    const probeContext = probe.getContext("2d", { willReadFrequently: true });
+    if (probeContext) {
+      probeContext.drawImage(image, 0, 0);
+      const { data } = probeContext.getImageData(0, 0, probe.width, probe.height);
+      let minX = probe.width;
+      let minY = probe.height;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < probe.height; y += 1) {
+        for (let x = 0; x < probe.width; x += 1) {
+          if (data[(y * probe.width + x) * 4 + 3] > 12) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (maxX >= minX && maxY >= minY) {
+        sx = minX;
+        sy = minY;
+        sw = maxX - minX + 1;
+        sh = maxY - minY + 1;
+      }
+    }
+  } catch {
+    /* keep the untrimmed frame */
+  }
+
+  // Fit inside the circle with a little breathing room off the painted ring.
+  const { x, y, radius } = MIDFIELD_MARK;
+  const room = radius * 1.82;
+  const scale = Math.min(room / sw, room / sh);
+  const width = sw * scale;
+  const height = sh * scale;
+
+  context.save();
+  // Held just under full strength so the mark reads as worn into the grass
+  // rather than printed on top of it, and clipped so it cannot cross the ring.
+  context.globalAlpha = 0.88;
+  context.beginPath();
+  context.arc(x, y, radius - 6, 0, Math.PI * 2);
+  context.clip();
+  context.drawImage(image, sx, sy, sw, sh, x - width / 2, y - height / 2, width, height);
+  context.restore();
+  return true;
 }
 
 /** A packed stand at night: warm specks under a dark roof. */

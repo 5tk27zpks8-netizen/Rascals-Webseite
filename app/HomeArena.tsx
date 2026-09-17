@@ -1,4 +1,6 @@
 import { ArenaDrive } from "./ArenaDrive";
+import { listPublicTeamPlayers } from "./lib/public-team-players";
+import { DriveRoster } from "./DriveRoster";
 import { MatchdayHero } from "./MatchdayHero";
 import { DynamicHomeGames } from "./DynamicHomeGames";
 import { DynamicHomeFeeds } from "./DynamicHomeFeeds";
@@ -88,7 +90,9 @@ const figures = [
   { value: "100%", label: "Heidenheim" },
 ];
 
-export function HomeArena() {
+export async function HomeArena() {
+  const players = await listPublicTeamPlayers();
+
   return (
     <div className="drive-page">
       <ArenaDrive />
@@ -207,6 +211,9 @@ export function HomeArena() {
                 </article>
               ))}
             </div>
+
+            {/* The squad itself, pulled across by the drive's own progress. */}
+            <DriveRoster players={players} />
           </div>
         </section>
 

@@ -8,6 +8,7 @@ import {
   createFlagTexture,
   createScoreboardTexture,
   createTurfTexture,
+  paintMidfieldMark,
 } from "./lib/arena-textures";
 
 /**
@@ -442,6 +443,11 @@ export function ArenaDrive() {
         if (on) {
           here = panel.id;
           briefing = panel.classList.contains("is-wide");
+          /* How far through this stop we are, 0..1. A panel whose content is
+             longer than the screen — the roster band — rides this instead of
+             needing a scroller of its own, which the drive has taken over. */
+          const span = to - from;
+          panel.style.setProperty("--panel-progress", span > 0 ? ((progress - from) / span).toFixed(4) : "0");
         }
       }
 
@@ -518,6 +524,14 @@ export function ArenaDrive() {
       if (turfTexture) {
         turfTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         turfTexture.colorSpace = THREE.SRGBColorSpace;
+        /* The club mark at the 50 is a real image, so it arrives after the
+           painted field. Drop it in and refresh the map when it lands; until
+           then the painted wordmark holds the circle. */
+        if (turfCanvas) {
+          void paintMidfieldMark(turfCanvas, "/rascals-logo-transparent-4k.png").then((painted) => {
+            if (painted && !disposed) turfTexture.needsUpdate = true;
+          });
+        }
       }
       const field = new THREE.Mesh(
         new THREE.PlaneGeometry(FIELD_WIDE, FIELD_LONG),
