@@ -24,12 +24,18 @@ import { RascalsPlayerCard } from "./team/RascalsPlayerCard";
  */
 
 /**
- * Lanes across the width of the pitch. Five of them, and the sequence never
- * repeats a lane back to back, so consecutive cards are never in line with
- * each other — the squad reads as standing about the field rather than queued
- * down one stripe of it.
+ * Lanes across the width of the pitch.
+ *
+ * Every card changes side from the one before it and no two neighbours share a
+ * lane, so the squad reads as standing about the field rather than queued down
+ * one stripe of it. The magnitudes are wide on purpose: perspective squeezes a
+ * lane towards the middle the further downfield it is, so a sequence that
+ * looks generous flat on the page comes out as a huddle once it has depth.
+ *
+ * Eleven of them, a prime count, so the cycle does not land the same lane
+ * under the same card as the squad grows.
  */
-const LANES = [0, 1.55, -1.1, 0.72, -1.72, 1.12, -0.6, 1.8, -1.35, 0.35];
+const LANES = [0, 1.9, -1.45, 1.1, -2.05, 1.55, -0.85, 2.1, -1.75, 0.6, -1.2];
 
 export function PlayerDeck({ players }: { players: Player[] }) {
   const host = useRef<HTMLDivElement | null>(null);

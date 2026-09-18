@@ -363,11 +363,25 @@ export function createTurfRoughnessTexture(): HTMLCanvasElement | null {
   return canvas;
 }
 
-/** A packed stand at night: warm specks under a dark roof. */
-export function createCrowdTexture(): HTMLCanvasElement | null {
+/**
+ * One row of a crowd, drawn to tile.
+ *
+ * The stand used to be a single crowd texture stretched over a plane the whole
+ * length of the ground: 22000 specks smeared across two hundred scene units,
+ * which at a grazing angle from the pitch reads as a pixel pattern and nothing
+ * else. A crowd is rows of people standing on steps, so this draws one row —
+ * heads and shoulders on a transparent strip — and the stand repeats it up the
+ * rake. Each row is then at its own height and its own depth, so the rows
+ * occlude each other the way real ones do as the camera travels past.
+ *
+ * The strip carries an empty gangway at its left edge. Every variant puts the
+ * gangway in the same place, so when the rows stack the gaps line up into the
+ * vertical aisles a terrace actually has, while the people in them differ.
+ */
+export function createCrowdRowTexture(variant: number): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
-  const W = 1024;
-  const H = 256;
+  const W = 512;
+  const H = 52;
   const SCALE = 2;
   canvas.width = W * SCALE;
   canvas.height = H * SCALE;
@@ -375,27 +389,189 @@ export function createCrowdTexture(): HTMLCanvasElement | null {
   if (!context) return null;
   context.scale(SCALE, SCALE);
 
-  const gradient = context.createLinearGradient(0, 0, 0, H);
-  gradient.addColorStop(0, "#0a1018");
-  gradient.addColorStop(0.55, "#1a2432");
-  gradient.addColorStop(1, "#2a3546");
+  /* Deterministic per variant, so a reload gives the same ground back and the
+     four strips stay recognisably different from one another. */
+  let seed = 1337 + variant * 7919;
+  const rnd = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+
+  // Coats first, club colours sparingly: a terrace is mostly dark clothing
+  // with the red showing through it, not a wall of replica shirts.
+  const coats = [
+    "#222a3a", "#2b3446", "#333c4f", "#1b2130", "#3d4658",
+    "#4a5266", "#2a3346", "#191f2b", "#525b70", "#39435a",
+  ];
+  const CLUB = ["#e7192d", "#b8162a", "#f2f5fa", "#d8dee8", "#1d4f96"];
+  const SKIN = ["#c79a78", "#a97a54", "#e0b795", "#8a5f3e", "#d8ab86", "#6f4a30"];
+
+  const GANGWAY = 36;
+  const STEP = 17.4;
+
+  for (let x = GANGWAY + STEP / 2; x < W - 2; x += STEP) {
+    // A regional ground is well attended, not sold out. The gaps are what let
+    // the step behind show through and prove the rake is really there.
+    if (rnd() < 0.09) continue;
+
+    const jitter = (rnd() - 0.5) * 3.4;
+    const cx = x + jitter;
+    const scale = 0.86 + rnd() * 0.3;
+    const shoulder = H - 30 * scale;
+
+    const club = rnd() < 0.17;
+    context.fillStyle = club ? CLUB[Math.floor(rnd() * CLUB.length)] : coats[Math.floor(rnd() * coats.length)];
+
+    // Shoulders: a torso that widens towards the bottom, so a packed row reads
+    // as bodies pressed together rather than as a line of posts.
+    context.beginPath();
+    context.moveTo(cx - 5.4 * scale, shoulder + 2);
+    context.quadraticCurveTo(cx, shoulder - 3.4 * scale, cx + 5.4 * scale, shoulder + 2);
+    context.lineTo(cx + 7.6 * scale, H);
+    context.lineTo(cx - 7.6 * scale, H);
+    context.closePath();
+    context.fill();
+
+    // Head.
+    context.fillStyle = SKIN[Math.floor(rnd() * SKIN.length)];
+    context.beginPath();
+    context.arc(cx, shoulder - 5.6 * scale, 3.9 * scale, 0, Math.PI * 2);
+    context.fill();
+
+    // Hair or a hat on most of them, which is what stops a row of heads
+    // looking like a row of identical beads.
+    if (rnd() < 0.72) {
+      context.fillStyle = rnd() < 0.3 ? "#e7192d" : ["#1a1a1f", "#3a2a1c", "#6b6155", "#141820"][Math.floor(rnd() * 4)];
+      context.beginPath();
+      context.arc(cx, shoulder - 6.8 * scale, 3.9 * scale, Math.PI, Math.PI * 2);
+      context.fill();
+    }
+
+    // A few with their arms up. One in fifteen is enough to read as movement.
+    if (rnd() < 0.07) {
+      context.strokeStyle = context.fillStyle;
+      context.lineWidth = 2.1 * scale;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(cx - 5 * scale, shoulder + 3);
+      context.lineTo(cx - 8.2 * scale, shoulder - 8 * scale);
+      context.moveTo(cx + 5 * scale, shoulder + 3);
+      context.lineTo(cx + 8.2 * scale, shoulder - 8 * scale);
+      context.stroke();
+    }
+  }
+
+  // The row sits down into its step: the last few pixels darken so the people
+  // meet the concrete instead of ending on a cut line.
+  const foot = context.createLinearGradient(0, H - 9, 0, H);
+  foot.addColorStop(0, "rgba(0,0,0,0)");
+  foot.addColorStop(1, "rgba(0,0,0,0.75)");
+  context.fillStyle = foot;
+  context.globalCompositeOperation = "source-atop";
+  context.fillRect(0, H - 9, W, 9);
+  context.globalCompositeOperation = "source-over";
+
+  return canvas;
+}
+
+/**
+ * A soft round dot, for anything drawn as a point sprite.
+ *
+ * A PointsMaterial with no map draws hard squares. At the size the night air
+ * needs them that is invisible in the distance and a row of white tiles up
+ * close, which is what the motes over the pitch were doing.
+ */
+export function createSoftDotTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 64;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(0.35, "rgba(255,255,255,0.55)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
   context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 64);
+  return canvas;
+}
+
+/**
+ * The advertising band at the foot of a stand.
+ *
+ * Tiles along the touchline. Drawn bright and unlit, because a hoarding at a
+ * night match is a lit board — it is one of the few things down there throwing
+ * light back rather than taking it.
+ */
+export function createAdBoardTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const W = 1024;
+  const H = 96;
+  const SCALE = 2;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.scale(SCALE, SCALE);
+
+  context.fillStyle = "#0b1422";
   context.fillRect(0, 0, W, H);
 
-  // People. Mostly dark clothing, with club colours scattered through.
-  const colours = ["#39445a", "#4a556b", "#5d6880", "#a3202f", "#c2ccdb", "#e4ebf5", "#e7192d", "#2b5691"];
-  for (let i = 0; i < 22000; i += 1) {
-    const x = Math.random() * W;
-    const y = 40 + Math.pow(Math.random(), 0.8) * (H - 50);
-    context.fillStyle = colours[Math.floor(Math.random() * colours.length)];
-    context.globalAlpha = 0.55 + Math.random() * 0.45;
-    context.fillRect(x, y, 2.4, 3.4);
-  }
-  context.globalAlpha = 1;
+  /* Four boards to a tile, alternating a name with a run of chevrons. A band
+     that is nothing but names is unreadable at any distance the camera ever
+     stands at; the chevrons give the eye somewhere to rest between them. */
+  const boards: ({ kind: "name"; text: string } | { kind: "chevrons" })[] = [
+    { kind: "name", text: "HELLENSTEIN RASCALS" },
+    { kind: "chevrons" },
+    { kind: "name", text: "RASCALS.FOOTBALL" },
+    { kind: "chevrons" },
+  ];
+  const panelW = W / boards.length;
 
-  // The dark lip of the roof along the top.
-  context.fillStyle = "#05090f";
-  context.fillRect(0, 0, W, 34);
+  boards.forEach((board, i) => {
+    const x = i * panelW;
+    const name = board.kind === "name";
+    context.fillStyle = name ? "#c4152a" : "#101b2c";
+    context.fillRect(x + 3, 4, panelW - 6, H - 8);
+
+    if (!name) {
+      context.fillStyle = "rgba(231,25,45,0.5)";
+      for (let c = 0; c < 9; c += 1) {
+        context.beginPath();
+        context.moveTo(x + 16 + c * 27, 8);
+        context.lineTo(x + 32 + c * 27, 8);
+        context.lineTo(x + 22 + c * 27, H - 8);
+        context.lineTo(x + 6 + c * 27, H - 8);
+        context.closePath();
+        context.fill();
+      }
+      return;
+    }
+
+    /* Fitted rather than trusted. Set at a fixed size, the longer name runs
+       straight over the edge of its board and collides with the next one,
+       which is exactly what a hoarding never does. */
+    const inner = panelW - 34;
+    let size = 46;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    do {
+      context.font = `900 ${size}px Impact, Haettenschweiler, sans-serif`;
+      size -= 2;
+    } while (size > 14 && context.measureText(board.text).width > inner);
+
+    context.fillStyle = "#ffffff";
+    context.fillText(board.text, x + panelW / 2, H / 2 + 2);
+  });
+
+  // The lens glare off a lit board, strongest across the middle.
+  const glare = context.createLinearGradient(0, 0, 0, H);
+  glare.addColorStop(0, "rgba(255,255,255,0.16)");
+  glare.addColorStop(0.5, "rgba(255,255,255,0.03)");
+  glare.addColorStop(1, "rgba(0,0,0,0.3)");
+  context.fillStyle = glare;
+  context.fillRect(0, 0, W, H);
+
   return canvas;
 }
 

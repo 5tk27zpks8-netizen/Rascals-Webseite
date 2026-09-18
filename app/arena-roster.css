@@ -17,6 +17,10 @@
 .roster-page {
   position: relative;
   color: #fff;
+  /* The clipping lives here and not on the stage. `clip` rather than `hidden`
+     because `hidden` would make this a scroll container and the stage inside
+     it would stick to a box that never scrolls. */
+  overflow-x: clip;
 }
 
 /* ---------- Unit switch ---------- */
@@ -137,7 +141,13 @@
   display: block;
   height: 100vh;
   padding: 0;
-  overflow: hidden;
+  /* Not `hidden`, and this matters more than it looks. Clipping the element
+     that carries the perspective makes the engine project its children about
+     the wrong point: cards that belong at the middle of the screen land a
+     thousand pixels off to the left and are clipped away, so most of the
+     squad was simply never drawn. The clip belongs on .roster-page, which has
+     no perspective of its own to corrupt. */
+  overflow: visible;
   perspective: 1150px;
   /* Eye level a little above centre, as if standing on the field. */
   perspective-origin: 50% 42%;
@@ -159,15 +169,19 @@
      camera is level with sits at z=0, square on and full size; the ones ahead
      stand further downfield and fall away with the perspective. */
   transform:
-    translateX(calc(var(--lane, 0) * clamp(150px, 14vw, 215px)))
-    translateZ(calc(var(--rel) * -760px))
+    translateX(calc(var(--lane, 0) * clamp(170px, 17vw, 280px)))
+    translateZ(calc(var(--rel) * -640px))
     rotateY(calc(var(--lane, 0) * -6deg));
 
-  /* Fades out over the last stretch before it would pass the camera, so a card
-     never swells across the screen on its way out. Kept to one clamp over one
-     plain variable: nesting min()/max() over a variable that is itself a
-     max() is past what the engine resolves and silently does nothing. */
-  opacity: clamp(0, calc((var(--rel) + 0.85) * 2.5), 1);
+  /* Gone before it swells. At the old rate a card was still a third of the
+     way across the screen at a third of its opacity as it went by, which
+     reads as a smear over the field rather than as a card you have passed.
+     Now it is clear of the frame within half a step of the camera.
+
+     Kept to one clamp over one plain variable: nesting min()/max() over a
+     variable that is itself a max() is past what the engine resolves, and it
+     silently does nothing. */
+  opacity: clamp(0, calc((var(--rel) + 0.42) * 3.2), 1);
 
   /* Nearer the camera draws in front. */
   z-index: calc(1000 - round(nearest, var(--i), 1));

@@ -4,8 +4,10 @@ import { useEffect, useRef } from "react";
 import {
   FIELD_YARDS_LONG,
   FIELD_YARDS_WIDE,
-  createCrowdTexture,
+  createAdBoardTexture,
+  createCrowdRowTexture,
   createFlagTexture,
+  createSoftDotTexture,
   createScoreboardTexture,
   createTurfNormalTexture,
   createTurfRoughnessTexture,
@@ -267,41 +269,268 @@ function buildGoal(THREE: Three, endLineZ: number, outward: 1 | -1) {
   return goal;
 }
 
-/** A raked stand down one touchline, with a crowd in it. */
-function buildStand(THREE: Three, crowd: import("three").Texture, side: 1 | -1) {
+/** The four crowd strips a terrace stacks up its rake. */
+type CrowdStrips = import("three").Texture[];
+
+/** Rows of seats, the depth of one step, and the height of one. */
+const TERRACE_RISER = 1.08;
+const TERRACE_TREAD = 1.62;
+/** One crowd strip spans this much of the stand, so the gangways land here. */
+const TERRACE_TILE = 19;
+
+/**
+ * A raked terrace: real steps, a crowd standing in them, a roof over the top.
+ *
+ * The stands used to be three planes — a dark wall, one crowd texture stretched
+ * end to end, and a flat roof. From the pitch that is a printed backdrop, and it
+ * was the most obviously unbuilt thing left in the ground. So the rake is now a
+ * stepped profile extruded down the length of the stand: the floodlights find
+ * real edges on it, the front lip throws a real line of shadow, and the steps
+ * stay visible in the gaps the crowd leaves.
+ *
+ * The crowd is one alpha strip per row, standing on its own step. Rows at the
+ * front cross in front of rows behind as the camera travels, which is the whole
+ * reason to build it this way rather than tilt a single plane.
+ *
+ * Nothing here adds a light. Ten floodlights are already in the scene and they
+ * are aimed at the grass, so the light inside the stand is baked: the concrete
+ * carries a vertex ramp that brightens towards the roof and the crowd rows lift
+ * with it, matching the strip lights along the roof's leading edge.
+ *
+ * Built in its own space — +X is depth away from the pitch, +Z runs along the
+ * stand, the front edge sits at x = 0 — so the same terrace serves a touchline
+ * and an end by being turned.
+ */
+function buildTerrace(
+  THREE: Three,
+  crowd: CrowdStrips,
+  options: {
+    length: number;
+    rows: number;
+    base: number;
+    roof: boolean;
+    boards: import("three").Texture | null;
+  },
+) {
+  const { length, rows, base, roof, boards } = options;
   const group = new THREE.Group();
-  const length = FIELD_LONG + 40;
-  const centreZ = (OWN_END_Z + OPP_END_Z) / 2;
+  const depth = rows * TERRACE_TREAD;
+  const top = base + rows * TERRACE_RISER;
+  const half = length / 2;
 
-  const wall = new THREE.Mesh(
-    new THREE.PlaneGeometry(length, 4),
-    new THREE.MeshBasicMaterial({ color: 0x0a1220, toneMapped: false }),
+  // --- the concrete ---------------------------------------------------
+  const profile = new THREE.Shape();
+  profile.moveTo(0, base - 4.2); // the wall below the front row
+  profile.lineTo(0, base);
+  for (let i = 0; i < rows; i += 1) {
+    profile.lineTo((i + 1) * TERRACE_TREAD, base + i * TERRACE_RISER); // tread
+    profile.lineTo((i + 1) * TERRACE_TREAD, base + (i + 1) * TERRACE_RISER); // riser
+  }
+  profile.lineTo(depth + 2.6, top); // the back wall's inner face
+  profile.lineTo(depth + 2.6, base - 4.2);
+  profile.closePath();
+
+  const shell = new THREE.ExtrudeGeometry(profile, { depth: length, bevelEnabled: false });
+  shell.translate(0, 0, -half);
+
+  /* The baked light. Nothing reaches inside a stand from the pitch, so the
+     ramp does the work the missing lights would: dark at the foot where the
+     front rows shut the light out, opening up towards the strip lights on the
+     roof's leading edge. Vertex colours rather than a map, because an extruded
+     profile has no UV layout worth mapping to. */
+  const position = shell.getAttribute("position");
+  const tint = new Float32Array(position.count * 3);
+  const low = new THREE.Color(0x11151e);
+  const high = new THREE.Color(0x5e6b83);
+  const mix = new THREE.Color();
+  for (let i = 0; i < position.count; i += 1) {
+    const t = Math.min(1, Math.max(0, (position.getY(i) - (base - 4.2)) / (top - base + 4.2)));
+    mix.copy(low).lerp(high, Math.pow(t, 0.72));
+    tint[i * 3] = mix.r;
+    tint[i * 3 + 1] = mix.g;
+    tint[i * 3 + 2] = mix.b;
+  }
+  shell.setAttribute("color", new THREE.BufferAttribute(tint, 3));
+  shell.computeVertexNormals();
+
+  const concrete = new THREE.Mesh(
+    shell,
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.94,
+      metalness: 0,
+      /* A floor under the ramp, so the deepest steps are grey concrete in
+         shadow rather than a hole cut in the night. */
+      emissive: 0x0c121c,
+    }),
   );
-  wall.rotation.y = (-side * Math.PI) / 2;
-  wall.position.set(side * (FIELD_WIDE / 2 + 6), 2.2, centreZ);
-  group.add(wall);
+  concrete.receiveShadow = true;
+  concrete.castShadow = true;
+  group.add(concrete);
 
-  // The crowd carries its own light level: lighting it from the pitch left
-  // the stands as two black walls, which is not what a full ground looks
-  // like from the field.
-  const deck = new THREE.Mesh(
-    new THREE.PlaneGeometry(length, 26),
-    new THREE.MeshBasicMaterial({ map: crowd, toneMapped: false, side: THREE.DoubleSide }),
+  // --- the crowd ------------------------------------------------------
+  if (crowd.length > 0) {
+    const rowGeometry = new THREE.PlaneGeometry(length, 2.05);
+    /* Cloned per terrace, because the repeat count belongs to the stand and
+       not to the strip: a touchline and an end are different lengths, and the
+       four strips are shared between them. Rounded, so a whole number of
+       gangways fits and the aisles land in the same place on every row. */
+    const tiles = Math.max(1, Math.round(length / TERRACE_TILE));
+    const strips = crowd.map((source) => {
+      const texture = source.clone();
+      texture.needsUpdate = true;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.repeat.set(tiles, 1);
+      return texture;
+    });
+    for (let i = 0; i < rows; i += 1) {
+      const texture = strips[i % strips.length];
+      /* Lifts with the concrete behind it. A row at the foot of the stand is
+         in the same shadow the steps are, and the ramp has to agree or the
+         people float off the structure. */
+      const lift = 0.44 + 0.56 * Math.pow(i / Math.max(1, rows - 1), 0.75);
+      const row = new THREE.Mesh(
+        rowGeometry,
+        new THREE.MeshBasicMaterial({
+          map: texture,
+          color: new THREE.Color(lift * 0.92, lift * 0.94, lift),
+          transparent: true,
+          /* Cut out rather than blended: sixty transparent strips would have
+             to be sorted every frame and would still show through each other
+             at a grazing angle. A cutout writes depth, so the front rows
+             simply stand in front of the ones behind. */
+          alphaTest: 0.45,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+        }),
+      );
+      row.rotation.y = Math.PI / 2;
+      row.position.set(i * TERRACE_TREAD + TERRACE_TREAD * 0.42, base + i * TERRACE_RISER + 0.92, 0);
+      group.add(row);
+    }
+  }
+
+  // --- the front wall and the hoardings --------------------------------
+  const frontWall = new THREE.Mesh(
+    new THREE.BoxGeometry(0.7, 4.2, length),
+    new THREE.MeshStandardMaterial({ color: 0x141b27, roughness: 0.9 }),
   );
-  deck.rotation.y = (-side * Math.PI) / 2;
-  deck.rotation.x = -0.42;
-  deck.position.set(side * (FIELD_WIDE / 2 + 13), 12.5, centreZ);
-  group.add(deck);
+  frontWall.position.set(-0.35, base - 2.1, 0);
+  frontWall.receiveShadow = true;
+  group.add(frontWall);
 
-  // A dark roof, so the stand reads as enclosed rather than as a floating wall.
-  const roof = new THREE.Mesh(
-    new THREE.PlaneGeometry(length, 16),
-    new THREE.MeshBasicMaterial({ color: 0x04070c, toneMapped: false, side: THREE.DoubleSide }),
-  );
-  roof.rotation.x = -Math.PI / 2;
-  roof.position.set(side * (FIELD_WIDE / 2 + 21), 25, centreZ);
-  group.add(roof);
+  /* The band of hoardings that runs round every ground at this level. Unlit
+     and tone-mapping off: a lit board at a night match throws light back at
+     the pitch rather than taking it, and it is the one bright line between
+     the grass and the dark foot of the stand. */
+  if (boards) {
+    const band = boards.clone();
+    band.needsUpdate = true;
+    band.wrapS = THREE.RepeatWrapping;
+    band.wrapT = THREE.ClampToEdgeWrapping;
+    /* One tile carries four boards, and a board at this level is about
+       five metres wide. Repeating any harder squeezes the names into a smear,
+       which is what a board covered in unreadable text looks like from the
+       halfway line. */
+    band.repeat.set(Math.max(1, Math.round(length / 68)), 1);
+    const hoarding = new THREE.Mesh(
+      new THREE.PlaneGeometry(length, 2.9),
+      new THREE.MeshBasicMaterial({ map: band, toneMapped: false }),
+    );
+    hoarding.rotation.y = -Math.PI / 2;
+    hoarding.position.set(-0.78, base - 2.5, 0);
+    group.add(hoarding);
+  }
 
+  // --- the roof --------------------------------------------------------
+  if (roof) {
+    const steel = new THREE.MeshStandardMaterial({ color: 0x323d4e, roughness: 0.55, metalness: 0.55 });
+    const roofY = top + 5.6;
+    const overhang = 3.4;
+
+    const deck = new THREE.Mesh(
+      new THREE.BoxGeometry(depth + 6 + overhang, 0.6, length),
+      /* Not black. A roof that reads as a hole cut in the sky takes the
+         trusses under it with it, and the trusses are the only thing giving
+         the stand any depth above the crowd. */
+      new THREE.MeshStandardMaterial({ color: 0x161e2a, roughness: 0.88, emissive: 0x080d15 }),
+    );
+    deck.position.set((depth + 6) / 2 - overhang / 2, roofY, 0);
+    group.add(deck);
+
+    /* The leading edge. A roof that ends on a cut line is a plane; a roof with
+       a fascia beam under a strip of light is a stand, and the strip is what
+       the crowd ramp below is lit by. */
+    const fascia = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.9, length), steel);
+    fascia.position.set(-overhang, roofY - 1.0, 0);
+    group.add(fascia);
+
+    /* Lamps along the fascia, not a strip. One continuous bright box seen
+       end-on from the pitch is a line ruled across the sky — the brightest
+       thing in frame and the least like a stadium. A run of separate lamps
+       with dark between them reads as fittings, and the gaps give the roof
+       its length as the camera travels. */
+    const lamps = Math.max(4, Math.round(length / 12));
+    // Instanced: sixty identical fittings round the ground is sixty draw calls
+    // for four batches' worth of work.
+    const fittings = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.9, 0.3, 2.4),
+      new THREE.MeshBasicMaterial({ color: 0x6f839f, toneMapped: false }),
+      lamps,
+    );
+    const place = new THREE.Object3D();
+    for (let i = 0; i < lamps; i += 1) {
+      place.position.set(-overhang + 0.35, roofY - 1.95, -half + (length * (i + 0.5)) / lamps);
+      place.updateMatrix();
+      fittings.setMatrixAt(i, place.matrix);
+    }
+    fittings.instanceMatrix.needsUpdate = true;
+    group.add(fittings);
+
+    /* Trusses and back columns. These are what give the stand parallax: the
+       camera travels the length of the ground, and a roof with nothing holding
+       it up never moves against what is behind it. */
+    const bays = Math.max(3, Math.round(length / 21));
+    const trussGeometry = new THREE.BoxGeometry(depth + 6, 0.42, 0.42);
+    const columnGeometry = new THREE.CylinderGeometry(0.42, 0.52, roofY - (base - 4.2), 8);
+    for (let i = 0; i <= bays; i += 1) {
+      const z = -half + (i * length) / bays;
+
+      const truss = new THREE.Mesh(trussGeometry, steel);
+      truss.position.set((depth + 6) / 2 - overhang, roofY - 0.62, z);
+      group.add(truss);
+
+      const brace = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.3, 0.3), steel);
+      brace.position.set(-overhang + 3.2, roofY - 2.3, z);
+      brace.rotation.z = -0.52;
+      group.add(brace);
+
+      const column = new THREE.Mesh(columnGeometry, steel);
+      column.position.set(depth + 4.4, (roofY + base - 4.2) / 2, z);
+      group.add(column);
+    }
+  }
+
+  return group;
+}
+
+/** A raked stand down one touchline. */
+function buildStand(
+  THREE: Three,
+  crowd: CrowdStrips,
+  boards: import("three").Texture | null,
+  side: 1 | -1,
+) {
+  const group = buildTerrace(THREE, crowd, {
+    length: FIELD_LONG + 40,
+    rows: 15,
+    base: 4.4,
+    roof: true,
+    boards,
+  });
+  group.position.set(side * (FIELD_WIDE / 2 + 8), 0, (OWN_END_Z + OPP_END_Z) / 2);
+  group.rotation.y = side > 0 ? 0 : Math.PI;
   return group;
 }
 
@@ -312,57 +541,57 @@ function buildStand(THREE: Three, crowd: import("three").Texture, side: 1 | -1) 
  * black, which is what made the far background read as nothing at all. A
  * stadium is a closed bowl, so both ends get a bank of seats and a roof.
  */
-function buildEndStand(THREE: Three, crowd: import("three").Texture | null, z: number, outward: 1 | -1) {
-  const group = new THREE.Group();
-  const width = FIELD_WIDE + 46;
-
-  const wall = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, 5),
-    new THREE.MeshBasicMaterial({ color: 0x0a1220, toneMapped: false }),
-  );
-  wall.position.set(0, 2.5, z + outward * -4);
-  wall.rotation.y = outward > 0 ? Math.PI : 0;
-  group.add(wall);
-
-  if (crowd) {
-    const deck = new THREE.Mesh(
-      new THREE.PlaneGeometry(width, 24),
-      new THREE.MeshBasicMaterial({ map: crowd, toneMapped: false, side: THREE.DoubleSide }),
-    );
-    deck.position.set(0, 12, z);
-    deck.rotation.y = outward > 0 ? Math.PI : 0;
-    deck.rotation.x = outward > 0 ? -0.4 : 0.4;
-    group.add(deck);
-  }
-
-  const roof = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, 18),
-    new THREE.MeshBasicMaterial({ color: 0x04070c, toneMapped: false, side: THREE.DoubleSide }),
-  );
-  roof.rotation.x = -Math.PI / 2;
-  roof.position.set(0, 24, z + outward * 8);
-  group.add(roof);
-
+function buildEndStand(
+  THREE: Three,
+  crowd: CrowdStrips,
+  boards: import("three").Texture | null,
+  z: number,
+  outward: 1 | -1,
+) {
+  const group = buildTerrace(THREE, crowd, {
+    length: FIELD_WIDE + 46,
+    rows: 12,
+    base: 4.4,
+    roof: true,
+    boards,
+  });
+  group.position.set(0, 0, z);
+  // Turned a quarter so the rake climbs away from the end line.
+  group.rotation.y = outward > 0 ? -Math.PI / 2 : Math.PI / 2;
   return group;
 }
 
-/** Club flags on poles along both touchlines. */
+/**
+ * Club flags along the front edge of both roofs.
+ *
+ * These used to stand on the touchline at head height, which was fine when the
+ * stand behind them was a flat plane and wrong the moment it became a terrace:
+ * a flag at nine units is level with the fourth row, so thirteen of them read
+ * as posters pasted across the crowd. On the roof lip they are where a ground
+ * actually flies them, they break the roofline instead of the stand, and they
+ * are the one thing in the scene that moves against the sky.
+ */
 function buildFlags(THREE: Three, flag: import("three").Texture) {
   const group = new THREE.Group();
-  const geometry = new THREE.PlaneGeometry(5, 3.2);
+  const geometry = new THREE.PlaneGeometry(4.4, 2.8);
   const material = new THREE.MeshStandardMaterial({ map: flag, side: THREE.DoubleSide, roughness: 0.85 });
   const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x9aa7b8, roughness: 0.5, metalness: 0.5 });
+  const poleGeometry = new THREE.CylinderGeometry(0.11, 0.11, 8.4, 8);
 
-  for (let i = 0; i < 13; i += 1) {
-    const z = 12 - i * 16;
+  // The lip of the touchline roofs, worked out the same way the terrace does.
+  const roofY = 4.4 + 15 * TERRACE_RISER + 5.6;
+  const lipX = FIELD_WIDE / 2 + 8 - 3.4;
+
+  for (let i = 0; i < 9; i += 1) {
+    const z = 4 - i * 23;
     for (const side of [-1, 1] as const) {
-      const x = side * (FIELD_WIDE / 2 + 5);
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 12, 8), poleMaterial);
-      pole.position.set(x, 6, z);
+      const x = side * lipX;
+      const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+      pole.position.set(x, roofY + 4.2, z);
       group.add(pole);
 
       const cloth = new THREE.Mesh(geometry, material);
-      cloth.position.set(x + side * 2.6, 9.4, z);
+      cloth.position.set(x + side * 2.3, roofY + 6.6, z);
       cloth.userData.phase = i * 0.7 + (side > 0 ? 1.6 : 0);
       group.add(cloth);
     }
@@ -415,11 +644,16 @@ function buildPylon(THREE: Three, x: number, z: number) {
 /** The board behind the far end zone, carrying the real next fixture. */
 function buildScoreboard(THREE: Three, texture: import("three").Texture, z: number) {
   const group = new THREE.Group();
+  /* High enough to clear the end stand in front of it. At its old height the
+     roof truss of that stand ran straight through the score, which is the one
+     thing on the board anybody reads. */
+  const BOARD_Y = 40;
+
   const frame = new THREE.Mesh(
     new THREE.BoxGeometry(76, 30, 2.4),
     new THREE.MeshStandardMaterial({ color: 0x0b111b, roughness: 0.8 }),
   );
-  frame.position.set(0, 25, 0);
+  frame.position.set(0, BOARD_Y, 0);
   group.add(frame);
 
   const face = new THREE.Mesh(
@@ -428,13 +662,14 @@ function buildScoreboard(THREE: Three, texture: import("three").Texture, z: numb
     // into it, which is what makes it read as a light source.
     new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, fog: false }),
   );
-  face.position.set(0, 25, 1.3);
+  face.position.set(0, BOARD_Y, 1.3);
   group.add(face);
 
   const legs = new THREE.MeshStandardMaterial({ color: 0x151d2a, roughness: 0.9 });
   for (const x of [-26, 26]) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 11, 16), legs);
-    leg.position.set(x, 5.5, 0);
+    const stalk = BOARD_Y - 15;
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.6, stalk, 16), legs);
+    leg.position.set(x, stalk / 2, 0);
     group.add(leg);
   }
 
@@ -757,21 +992,40 @@ export function ArenaDrive() {
       scene.add(surround);
 
       // --- stands and flags -------------------------------------------
-      const crowdCanvas = createCrowdTexture();
-      const crowdTexture = crowdCanvas ? new THREE.CanvasTexture(crowdCanvas) : null;
-      if (crowdTexture) {
-        crowdTexture.colorSpace = THREE.SRGBColorSpace;
-        crowdTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        scene.add(buildStand(THREE, crowdTexture, 1), buildStand(THREE, crowdTexture, -1));
+      /* Four strips, dealt round the rows of every terrace. One would stack
+         the same heads into columns all the way up the rake; four is enough
+         that the eye stops finding the repeat, and it is four textures rather
+         than sixty. */
+      const crowdStrips: import("three").Texture[] = [];
+      for (let i = 0; i < 4; i += 1) {
+        const canvas = createCrowdRowTexture(i);
+        if (!canvas) continue;
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        crowdStrips.push(texture);
       }
+      const boardCanvasAds = createAdBoardTexture();
+      const adTexture = boardCanvasAds ? new THREE.CanvasTexture(boardCanvasAds) : null;
+      if (adTexture) {
+        adTexture.colorSpace = THREE.SRGBColorSpace;
+        adTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      }
+
+      scene.add(
+        buildStand(THREE, crowdStrips, adTexture, 1),
+        buildStand(THREE, crowdStrips, adTexture, -1),
+      );
 
       const sky = buildSky(THREE);
       scene.add(sky.group);
 
       scene.add(buildGoal(THREE, OWN_END_Z, 1));
       scene.add(buildGoal(THREE, OPP_END_Z, -1));
-      scene.add(buildEndStand(THREE, crowdTexture, OWN_END_Z + 26, 1));
-      scene.add(buildEndStand(THREE, crowdTexture, OPP_END_Z - 26, -1));
+      scene.add(buildEndStand(THREE, crowdStrips, adTexture, OWN_END_Z + 26, 1));
+      scene.add(buildEndStand(THREE, crowdStrips, adTexture, OPP_END_Z - 26, -1));
 
       // The board carries whatever the schedule says is next. It is drawn
       // once with a placeholder and repainted when the fetch lands, so a slow
@@ -836,7 +1090,7 @@ export function ArenaDrive() {
          the grass — so the alpha is built from the viewing angle and the
          height rather than being a constant. */
       const shaftMaterial = new THREE.ShaderMaterial({
-        uniforms: { uStrength: { value: 0.155 }, uColor: { value: new THREE.Color(0xc6dcff) } },
+        uniforms: { uStrength: { value: 0.125 }, uColor: { value: new THREE.Color(0xc6dcff) } },
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
@@ -919,8 +1173,11 @@ export function ArenaDrive() {
       const flashPhase = new Float32Array(flashCount);
       for (let i = 0; i < flashCount; i += 1) {
         const side = Math.random() > 0.5 ? 1 : -1;
-        flashPositions[i * 3] = side * (FIELD_WIDE / 2 + 10 + Math.random() * 9);
-        flashPositions[i * 3 + 1] = 8 + Math.random() * 13;
+        /* Inside the new rake: front row to back row, foot of the steps to
+           the top. A flash going off in front of the stand or above its roof
+           is the tell that the two were never the same object. */
+        flashPositions[i * 3] = side * (FIELD_WIDE / 2 + 10 + Math.random() * 21);
+        flashPositions[i * 3 + 1] = 6 + Math.random() * 15;
         flashPositions[i * 3 + 2] = OWN_END_Z + 10 - Math.random() * (FIELD_LONG + 30);
         flashPhase[i] = Math.random() * 100;
       }
@@ -962,14 +1219,33 @@ export function ArenaDrive() {
       const dustCount = 1400;
       const dustPositions = new Float32Array(dustCount * 3);
       for (let i = 0; i < dustCount; i += 1) {
-        dustPositions[i * 3] = (Math.random() - 0.5) * (FIELD_WIDE + 60);
-        dustPositions[i * 3 + 1] = Math.random() * 30;
+        const y = Math.random() * 30;
+        /* Point size attenuates with distance, so a mote that happens to sit
+           a unit from the lens fills a tenth of the screen. The camera runs
+           down the middle of the field at about head height for the whole
+           drive, so the air keeps out of that corridor: below thirteen units
+           the motes start clear of the centre and drift outward from there. */
+        const clear = y < 13 ? 12 : 0;
+        const side = Math.random() > 0.5 ? 1 : -1;
+        dustPositions[i * 3] = side * (clear + Math.random() * (FIELD_WIDE / 2 + 30 - clear));
+        dustPositions[i * 3 + 1] = y;
         dustPositions[i * 3 + 2] = OWN_END_Z - Math.random() * (FIELD_LONG + 40);
       }
       const dustGeometry = new THREE.BufferGeometry();
       dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+      /* Round and additive. Left unmapped these are hard white squares, and
+         the ones that drift close to the camera read as litter on the lens
+         rather than as air. */
+      const dotCanvas = createSoftDotTexture();
+      const dotTexture = dotCanvas ? new THREE.CanvasTexture(dotCanvas) : null;
       const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({
-        color: 0xdbe9ff, size: 0.16, transparent: true, opacity: 0.4, depthWrite: false,
+        color: 0xdbe9ff,
+        size: 0.28,
+        map: dotTexture ?? undefined,
+        transparent: true,
+        opacity: 0.32,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
       }));
       scene.add(dust);
 
@@ -1035,7 +1311,10 @@ export function ArenaDrive() {
         dust.rotation.y = time * 0.008;
         for (const [index, shaft] of shafts.entries()) {
           const material = shaft.material as import("three").ShaderMaterial;
-          material.uniforms.uStrength.value = 0.19 + Math.sin(time * 1.2 + index) * 0.035;
+          /* Softer than it was. A beam you can see the edges of is a pane of
+             glass leaning on the stand; at this strength it is the air the
+             lamp is shining through, which is all it should ever have been. */
+          material.uniforms.uStrength.value = 0.125 + Math.sin(time * 1.2 + index) * 0.028;
         }
         // Flags stir in the night air rather than hanging dead on the pole.
         if (flags) {
@@ -1065,7 +1344,9 @@ export function ArenaDrive() {
           else material?.dispose?.();
         });
         turfTexture?.dispose();
-        crowdTexture?.dispose();
+        crowdStrips.forEach((texture) => texture.dispose());
+        adTexture?.dispose();
+        dotTexture?.dispose();
         flagTexture?.dispose();
         boardTexture?.dispose();
         flashMaterial.dispose();
