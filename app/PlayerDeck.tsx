@@ -23,8 +23,13 @@ import { RascalsPlayerCard } from "./team/RascalsPlayerCard";
  * swipeable row. The drive-through is an enhancement of something that works.
  */
 
-/** Three lanes across the field, so the squad is spread rather than stacked. */
-const LANES = [0, 1, -1, 0, -1, 1];
+/**
+ * Lanes across the width of the pitch. Five of them, and the sequence never
+ * repeats a lane back to back, so consecutive cards are never in line with
+ * each other — the squad reads as standing about the field rather than queued
+ * down one stripe of it.
+ */
+const LANES = [0, 1.55, -1.1, 0.72, -1.72, 1.12, -0.6, 1.8, -1.35, 0.35];
 
 export function PlayerDeck({ players }: { players: Player[] }) {
   const host = useRef<HTMLDivElement | null>(null);

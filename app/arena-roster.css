@@ -128,7 +128,7 @@
    reaches either end and most of the squad stays unreachable. */
 .deck.is-deck {
   position: relative;
-  height: calc(100vh + var(--count, 10) * 62px);
+  height: calc(100vh + var(--count, 10) * 78px);
 }
 
 .deck.is-deck .deck-stage {
@@ -151,17 +151,17 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: clamp(232px, 21vw, 310px);
-  margin-left: calc(clamp(232px, 21vw, 310px) / -2);
-  margin-top: calc(clamp(232px, 21vw, 310px) * -0.7);
+  width: clamp(178px, 15vw, 236px);
+  margin-left: calc(clamp(178px, 15vw, 236px) / -2);
+  margin-top: calc(clamp(178px, 15vw, 236px) * -0.68);
 
   /* Posted across the width of the pitch and down its length. The card the
      camera is level with sits at z=0, square on and full size; the ones ahead
      stand further downfield and fall away with the perspective. */
   transform:
-    translateX(calc(var(--lane, 0) * clamp(180px, 17vw, 260px)))
-    translateZ(calc(var(--rel) * -430px))
-    rotateY(calc(var(--lane, 0) * -7deg));
+    translateX(calc(var(--lane, 0) * clamp(150px, 14vw, 215px)))
+    translateZ(calc(var(--rel) * -760px))
+    rotateY(calc(var(--lane, 0) * -6deg));
 
   /* Fades out over the last stretch before it would pass the camera, so a card
      never swells across the screen on its way out. Kept to one clamp over one
@@ -174,8 +174,13 @@
   will-change: transform, opacity;
 }
 
+/* Standing on grass, not floating over it: a tight contact shadow under the
+   card plus the long one the floodlights would throw. */
 .deck.is-deck .deck-card .rascals-player-card {
-  box-shadow: 0 36px 90px rgba(0, 0, 0, 0.7);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.85),
+    0 26px 44px rgba(0, 0, 0, 0.6),
+    0 60px 120px rgba(0, 0, 0, 0.45);
 }
 
 /* Depth haze: the far end of the formation sinks into the ground rather than

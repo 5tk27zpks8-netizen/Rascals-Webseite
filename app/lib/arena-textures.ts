@@ -272,6 +272,97 @@ export async function paintMidfieldMark(
   return true;
 }
 
+
+/**
+ * A normal map for the turf, so the grass catches light instead of lying flat.
+ *
+ * The mower bands on a real pitch are not paint: they are the same grass bent
+ * in opposite directions, which catches the floodlights differently depending
+ * on which way you look along it. Encoding that as surface direction — rather
+ * than as two shades of green, which is all the colour map can say — is what
+ * makes the bands shift as the camera travels, and what stops the field
+ * reading as a printed sheet.
+ *
+ * Built at a fraction of the colour map's size and tiled: fibre detail has no
+ * absolute position to be faithful to, and a full-size one would cost several
+ * megabytes of texture memory for noise.
+ */
+export function createTurfNormalTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const size = 512;
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  const image = context.createImageData(size, size);
+  const { data } = image;
+  const bandHeight = size / 8;
+
+  for (let y = 0; y < size; y += 1) {
+    // Alternate the lie of the grass every band, the way a mower leaves it.
+    const lean = Math.floor(y / bandHeight) % 2 === 0 ? 1 : -1;
+    for (let x = 0; x < size; x += 1) {
+      const i = (y * size + x) * 4;
+
+      /* Fibres: high-frequency noise along the lie of the blade, lower across
+         it, so the surface has a grain rather than being evenly bumpy. */
+      const along = Math.sin(x * 2.7 + y * 0.31) * 0.5 + Math.random() - 0.5;
+      const across = Math.sin(y * 1.3) * 0.2 + (Math.random() - 0.5) * 0.7;
+
+      // Tangent-space normal: +Z is straight up, so the blue channel stays high.
+      const nx = across * 0.34;
+      const ny = (lean * 0.28) + along * 0.22;
+      const nz = 1;
+      const len = Math.hypot(nx, ny, nz);
+
+      data[i] = ((nx / len) * 0.5 + 0.5) * 255;
+      data[i + 1] = ((ny / len) * 0.5 + 0.5) * 255;
+      data[i + 2] = ((nz / len) * 0.5 + 0.5) * 255;
+      data[i + 3] = 255;
+    }
+  }
+  context.putImageData(image, 0, 0);
+  return canvas;
+}
+
+/**
+ * A roughness map for the turf.
+ *
+ * Grass is not uniformly matte: worn lines, the painted markings and the
+ * flattened bands all scatter light differently. A single roughness value
+ * gives the whole pitch one sheen, which is most of why it reads as a
+ * surface rather than as a field.
+ */
+export function createTurfRoughnessTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const size = 512;
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  const image = context.createImageData(size, size);
+  const { data } = image;
+  const bandHeight = size / 8;
+
+  for (let y = 0; y < size; y += 1) {
+    // Grass bent towards you is flatter, so it is glossier than grass bent away.
+    const band = Math.floor(y / bandHeight) % 2 === 0 ? 0.84 : 0.94;
+    for (let x = 0; x < size; x += 1) {
+      const i = (y * size + x) * 4;
+      const wear = (Math.random() - 0.5) * 0.09;
+      const v = Math.max(0, Math.min(1, band + wear)) * 255;
+      data[i] = v;
+      data[i + 1] = v;
+      data[i + 2] = v;
+      data[i + 3] = 255;
+    }
+  }
+  context.putImageData(image, 0, 0);
+  return canvas;
+}
+
 /** A packed stand at night: warm specks under a dark roof. */
 export function createCrowdTexture(): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
