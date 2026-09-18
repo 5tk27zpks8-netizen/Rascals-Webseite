@@ -48,9 +48,19 @@ export function PlayerDeck({ players }: { players: Player[] }) {
 
     element.classList.add("is-deck");
 
+    /* Where the scroll says the camera is, and where it is actually drawn.
+       They are not the same number: a wheel notch arrives as one jump of a
+       hundred pixels or more, and writing that straight through moves the
+       whole formation in a single frame. The drawn value chases the scrolled
+       one instead, which is also what the stadium behind these cards does —
+       when only one of the two glides, the page reads as broken rather than
+       as fast. */
+    let target = 0;
+    let drawn = 0;
     let frame = 0;
-    const update = () => {
-      frame = 0;
+    let last = 0;
+
+    const measure = () => {
       const box = element.getBoundingClientRect();
       /* The deck is taller than the screen and its stage sticks, so the scroll
          it owns is exactly that overhang: 0 when its top meets the top of the
@@ -59,18 +69,47 @@ export function PlayerDeck({ players }: { players: Player[] }) {
       const runway = box.height - window.innerHeight;
       const travel = runway > 0 ? -box.top / runway : 0;
       const clamped = Math.min(1, Math.max(0, travel));
-      element.style.setProperty("--focus", (clamped * (players.length - 1)).toFixed(3));
+      target = clamped * (players.length - 1);
+    };
+
+    const write = () => element.style.setProperty("--focus", drawn.toFixed(3));
+
+    const tick = (now: number) => {
+      const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+      last = now;
+
+      /* Exponential ease, expressed per second rather than per frame. A plain
+         factor per frame converges twice as fast on a 120Hz screen as on a
+         60Hz one, so the same page feels smooth on one machine and snappy on
+         the next. This one settles at the same rate everywhere. */
+      drawn += (target - drawn) * (1 - Math.exp(-3.6 * dt));
+
+      if (Math.abs(target - drawn) < 0.002) {
+        drawn = target;
+        write();
+        frame = 0;
+        last = 0;
+        return;
+      }
+      write();
+      frame = requestAnimationFrame(tick);
     };
 
     const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
+      measure();
+      if (!frame) {
+        last = 0;
+        frame = requestAnimationFrame(tick);
+      }
     };
 
-    update();
+    measure();
+    drawn = target;
+    write();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     return () => {
-      cancelAnimationFrame(frame);
+      if (frame) cancelAnimationFrame(frame);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       element.classList.remove("is-deck");

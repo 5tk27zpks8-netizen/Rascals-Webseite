@@ -1271,13 +1271,25 @@ export function ArenaDrive() {
       eased = progress;
 
       const start = performance.now();
+      let lastFrame = start;
       const tick = () => {
         frame = requestAnimationFrame(tick);
-        const time = (performance.now() - start) / 1000;
+        const now = performance.now();
+        const time = (now - start) / 1000;
+        /* Capped, so a tab that was in the background does not come back and
+           jump the camera the whole length of the field in one step. */
+        const dt = Math.min(0.05, (now - lastFrame) / 1000);
+        lastFrame = now;
         (sky.stars.material as import("three").ShaderMaterial).uniforms.uTime.value = time;
         filmPass.uniforms.uTime.value = time;
 
-        eased += (progress - eased) * 0.07;
+        /* The camera trails the scroll, and that lag is what makes this feel
+           like travelling rather than like dragging a slider. Expressed per
+           second rather than per frame: a flat factor per frame settles twice
+           as fast on a 120Hz screen as on a 60Hz one, so the drive had a
+           different weight on every machine. Same rate as the cards in front
+           of it, so the two move as one thing. */
+        eased += (progress - eased) * (1 - Math.exp(-3.6 * dt));
 
         // A camera that is perfectly still between scrolls reads as a
         // screenshot. A slow breath keeps the ground alive without ever

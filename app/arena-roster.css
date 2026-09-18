@@ -129,10 +129,16 @@
 
 /* The deck owns a stretch of scroll of its own: one screen to sit in, plus a
    slice per card to travel through. Without that overhang a short page never
-   reaches either end and most of the squad stays unreachable. */
+   reaches either end and most of the squad stays unreachable.
+
+   The slice was 78px, and one notch of a mouse wheel is about a hundred: a
+   single click of the wheel threw the camera past a whole player. At 300 a
+   notch is under a third of a card, which is the difference between flying
+   through a formation and cutting between slides. It also slows the stadium
+   behind it, because the drive reads the same page scroll. */
 .deck.is-deck {
   position: relative;
-  height: calc(100vh + var(--count, 10) * 78px);
+  height: calc(100vh + var(--count, 10) * 300px);
 }
 
 .deck.is-deck .deck-stage {
@@ -161,9 +167,9 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: clamp(178px, 15vw, 236px);
-  margin-left: calc(clamp(178px, 15vw, 236px) / -2);
-  margin-top: calc(clamp(178px, 15vw, 236px) * -0.68);
+  width: clamp(210px, 18vw, 264px);
+  margin-left: calc(clamp(210px, 18vw, 264px) / -2);
+  margin-top: calc(clamp(210px, 18vw, 264px) * -0.68);
 
   /* Posted across the width of the pitch and down its length. The card the
      camera is level with sits at z=0, square on and full size; the ones ahead
@@ -185,7 +191,13 @@
 
   /* Nearer the camera draws in front. */
   z-index: calc(1000 - round(nearest, var(--i), 1));
-  will-change: transform, opacity;
+
+  /* Opacity only. Naming `transform` here pins the card's raster at the scale
+     it had when the layer was promoted, so every card that grows towards the
+     camera is a bitmap being enlarged — soft edges and mushy type, which is
+     most of what read as unclean. Left off, the type is re-drawn at the size
+     it is actually being shown. */
+  will-change: opacity;
 }
 
 /* Standing on grass, not floating over it: a tight contact shadow under the
@@ -213,12 +225,38 @@
   pointer-events: none;
 }
 
+/* The card's own layout is drawn for the team grid, where a card is half as
+   wide again as it is here. There it can spend a fixed 92px on the shirt
+   number; on a 264px card that is most of the width, and the name is left a
+   column too narrow to hold WAGNER. It was being broken mid-syllable to fit —
+   SCHU / STER, WAG / NER — which looked like a rendering fault.
+
+   So the number sizes to its own content instead of to a fixed column, the
+   name gets the rest, and names break between words or not at all. */
+.deck.is-deck .deck-card .rpc-player-info {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 11px;
+}
+
+.deck.is-deck .deck-card .rpc-number {
+  font-size: 58px;
+}
+
 .deck.is-deck .deck-card .pc-name,
 .deck.is-deck .deck-card .pc-name-medium,
 .deck.is-deck .deck-card .pc-name-small {
-  overflow-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+.deck.is-deck .deck-card .pc-name {
+  font-size: 19px;
+}
+.deck.is-deck .deck-card .pc-name-medium {
+  font-size: 17px;
+}
+.deck.is-deck .deck-card .pc-name-small {
+  font-size: 15px;
 }
 
 @media (max-width: 760px) {
