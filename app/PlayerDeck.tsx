@@ -51,6 +51,16 @@ const RANKS = [3, 2, 3, 3, 2];
  */
 const STAGGER = 0.28;
 
+/**
+ * How far each place in a rank is nudged forward or back, in ranks.
+ *
+ * Without it a rank arrives and leaves as a single object: all three cards
+ * cross the camera on the same frame, and the nearest thing in the picture
+ * drops from filling the screen to two thirds of it in one step. That reads as
+ * being thrown backwards. Offset in depth, they hand over one at a time.
+ */
+const DEPTH_STAGGER = [-0.16, 0.05, 0.17];
+
 /** A card in the deck, and whether it is a player or one of the staff. */
 export type DeckEntry = { player: Player; coach?: boolean };
 
@@ -215,6 +225,12 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
                   {
                     "--row": row,
                     "--x": across.toFixed(3),
+                    /* Mirrored on alternate ranks so the offsets do not line
+                       up into a permanent diagonal down the formation. */
+                    "--dz": (row % 2 === 0
+                      ? DEPTH_STAGGER[column % DEPTH_STAGGER.length]
+                      : -DEPTH_STAGGER[column % DEPTH_STAGGER.length]
+                    ).toFixed(3),
                   } as React.CSSProperties
                 }
               >

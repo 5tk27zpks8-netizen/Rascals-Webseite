@@ -161,8 +161,16 @@
 }
 
 .deck.is-deck .deck-card {
-  /* How many rows ahead this one stands. Negative once the camera is past it. */
-  --rel: calc(var(--row) - var(--focus, 0));
+  /* How many rows ahead this one stands, plus its own small offset within the
+     rank. Negative once the camera is past it.
+
+     The offset is what stops a rank arriving and leaving as one object. With
+     all three crossing the camera on the same frame, the nearest thing in
+     frame jumped from filling the screen to two thirds of it in one step, once
+     per rank — and a nearest object that suddenly shrinks reads as being
+     thrown backwards, which is exactly what it felt like. Staggered in depth
+     they hand over one at a time and the motion stays forward. */
+  --rel: calc(var(--row) + var(--dz, 0) - var(--focus, 0));
 
   position: absolute;
   left: 50%;
@@ -176,10 +184,12 @@
      stand further downfield and fall away with the perspective.
 
      The column pitch has to clear a card and then some, or the three run into
-     each other at the front where they are largest. */
+     each other at the front where they are largest. The rank spacing is closer
+     than it was: at 700 the step in size between one rank and the next was
+     large enough to register as a jolt every time the front rank went by. */
   transform:
     translateX(calc(var(--x, 0) * clamp(238px, 23vw, 338px)))
-    translateZ(calc(var(--rel) * -700px))
+    translateZ(calc(var(--rel) * -470px))
     rotateY(calc(var(--x, 0) * -5deg));
 
   /* Gone before it swells. At the old rate a card was still a third of the

@@ -5,6 +5,7 @@ import {
   FIELD_YARDS_LONG,
   FIELD_YARDS_WIDE,
   createAdBoardTexture,
+  createBallTexture,
   createCloudTexture,
   createCrowdRowTexture,
   createFlagTexture,
@@ -59,6 +60,16 @@ const START_Z = OWN_GOAL_Z - 20 * YARD;
    Coming to rest short of the line leaves all ten yards of it laid out ahead
    under the posts, which is the picture the whole page drives towards. */
 const END_Z = OPP_GOAL_Z + 8 * YARD;
+
+/**
+ * Where the receiver waits, and so where the throw has to come down.
+ *
+ * Off the middle on purpose: the cards fly down the centre of the screen, so a
+ * catch on the centre line happens behind the last rank of them and is never
+ * seen. Out here it lands beside the squad instead of under it.
+ */
+const CATCH_X = 8.5;
+const CATCH_Z = OPP_GOAL_Z - 5 * YARD;
 
 type Three = typeof import("three");
 
@@ -763,6 +774,87 @@ function buildPylon(THREE: Three, x: number, z: number) {
   return group;
 }
 
+/**
+ * A football, and the man waiting for it.
+ *
+ * The ball flies with the drive rather than along a fixed line of its own: it
+ * stays ahead and to the right of the camera and closes that gap as the drive
+ * runs out, so at any point on the page it reads as a pass already in the air
+ * and at the end it arrives in the end zone. Its arc is a real parabola over
+ * the length of the throw, and it spins about its long axis with the axis laid
+ * along the direction of travel — a football that flies without spinning, or
+ * spins about the wrong axis, is the first thing anyone who plays notices.
+ *
+ * The receiver is built from primitives on purpose. At the distance the drive
+ * ever sees him he is a silhouette: helmet, shoulders, jersey, arms up. Detail
+ * beyond that would cost geometry nobody can resolve, and a figure that tries
+ * for realism and misses is worse than one that reads as a marker.
+ */
+function buildBall(THREE: Three, hide: import("three").Texture | null) {
+  const ball = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 24, 18),
+    new THREE.MeshStandardMaterial({
+      map: hide ?? undefined,
+      color: hide ? 0xffffff : 0x8b4423,
+      roughness: 0.62,
+      metalness: 0.05,
+    }),
+  );
+  // A prolate spheroid: long on its own z, which is the axis it spins about.
+  ball.scale.set(0.62, 0.62, 1.05);
+  ball.castShadow = true;
+  const pivot = new THREE.Group();
+  pivot.add(ball);
+  return { pivot, ball };
+}
+
+/** The receiver waiting in the end zone, arms up for the catch. */
+function buildReceiver(THREE: Three, x: number, z: number) {
+  const group = new THREE.Group();
+
+  const jersey = new THREE.MeshStandardMaterial({ color: 0xc4152a, roughness: 0.78 });
+  const pants = new THREE.MeshStandardMaterial({ color: 0x1b2740, roughness: 0.8 });
+  const helmet = new THREE.MeshStandardMaterial({ color: 0xd8dee8, roughness: 0.34, metalness: 0.2 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xb98a63, roughness: 0.85 });
+
+  const add = (
+    geometry: import("three").BufferGeometry,
+    material: import("three").Material,
+    x: number,
+    y: number,
+    zz: number,
+    rot?: [number, number, number],
+  ) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, zz);
+    if (rot) mesh.rotation.set(rot[0], rot[1], rot[2]);
+    mesh.castShadow = true;
+    group.add(mesh);
+  };
+
+  // Legs, hips, torso.
+  add(new THREE.CapsuleGeometry(0.19, 1.5, 4, 8), pants, -0.22, 0.85, 0);
+  add(new THREE.CapsuleGeometry(0.19, 1.5, 4, 8), pants, 0.22, 0.85, 0);
+  add(new THREE.BoxGeometry(0.86, 0.42, 0.5), pants, 0, 1.78, 0);
+  add(new THREE.CapsuleGeometry(0.44, 0.72, 4, 10), jersey, 0, 2.42, 0);
+  // Shoulder pads: the one shape that says football rather than person.
+  add(new THREE.BoxGeometry(1.42, 0.38, 0.62), jersey, 0, 2.86, 0);
+
+  // Arms up and slightly forward, hands open towards the throw.
+  add(new THREE.CapsuleGeometry(0.14, 1.15, 4, 8), skin, -0.74, 3.5, 0.18, [0.34, 0, 0.22]);
+  add(new THREE.CapsuleGeometry(0.14, 1.15, 4, 8), skin, 0.74, 3.5, 0.18, [0.34, 0, -0.22]);
+
+  // Head and helmet.
+  add(new THREE.SphereGeometry(0.28, 14, 12), skin, 0, 3.16, 0);
+  add(new THREE.SphereGeometry(0.34, 16, 14), helmet, 0, 3.24, -0.02);
+  add(new THREE.TorusGeometry(0.2, 0.035, 6, 12), helmet, 0, 3.12, 0.3, [1.35, 0, 0]);
+
+  group.position.set(x, 0, z);
+  // Turned to face back up the field, towards the ball and the camera.
+  group.rotation.y = Math.PI;
+  return group;
+}
+
 /** The board behind the far end zone, carrying the real next fixture. */
 function buildScoreboard(THREE: Three, texture: import("three").Texture, z: number) {
   const group = new THREE.Group();
@@ -1174,6 +1266,26 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       const sky = buildSky(THREE, cloudTexture);
       scene.add(sky.group);
 
+      /* The pass, and the man under it. Only on the roster drive: the panel
+         page has its own things to look at and a ball crossing them would be
+         one more moving object competing with the copy. */
+      let ballPivot: import("three").Group | null = null;
+      let ballMesh: import("three").Mesh | null = null;
+      let ballTexture: import("three").CanvasTexture | null = null;
+      if (steady) {
+        const hideCanvas = createBallTexture();
+        ballTexture = hideCanvas ? new THREE.CanvasTexture(hideCanvas) : null;
+        if (ballTexture) {
+          ballTexture.colorSpace = THREE.SRGBColorSpace;
+          ballTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        }
+        const built = buildBall(THREE, ballTexture);
+        ballPivot = built.pivot;
+        ballMesh = built.ball;
+        scene.add(ballPivot);
+        scene.add(buildReceiver(THREE, CATCH_X, CATCH_Z));
+      }
+
       scene.add(buildGoal(THREE, OWN_END_Z, 1));
       scene.add(buildGoal(THREE, OPP_END_Z, -1));
       /* Fourteen units back from the end line, not twenty-six. At twenty-six
@@ -1371,19 +1483,28 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         const tilt = steady ? 0 : pointer.y;
         const shot = steady ? STEADY : sampleShot(eased);
 
+        /* The weave. Tied to how far down the field the camera has come, not
+           to the clock: a path rather than a wobble. Stop scrolling and it
+           stops too, which matters because the squad is pinned to the screen
+           and cannot follow anything that moves on its own. The aim carries
+           the same offset, so this is a sideways dolly down a winding line and
+           never a turn — a turn is what the cards could not survive. */
+        const weave = steady ? Math.sin(eased * Math.PI * 2.6) * 2.4 : 0;
+        const weaveRise = steady ? Math.sin(eased * Math.PI * 1.7) * 0.5 : 0;
+
         if (Math.abs(camera.fov - shot.fov) > 0.01) {
           camera.fov = shot.fov;
           camera.updateProjectionMatrix();
         }
 
         camera.position.set(
-          shot.x + lead * 3.4 + sway,
-          shot.y - tilt * 1.2 + breath,
+          shot.x + lead * 3.4 + sway + weave,
+          shot.y - tilt * 1.2 + breath + weaveRise,
           START_Z + (END_Z - START_Z) * eased,
         );
         camera.lookAt(
-          shot.lx + lead * 1.8 + sway * 0.35,
-          shot.ly,
+          shot.lx + lead * 1.8 + sway * 0.35 + weave,
+          shot.ly + weaveRise,
           camera.position.z - shot.ahead,
         );
         camera.rotation.z = steady ? 0 : shot.roll + Math.sin(time * 0.23) * 0.004;
@@ -1393,6 +1514,37 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         sky.group.position.set(camera.position.x, 0, camera.position.z);
 
         dust.rotation.y = time * 0.008;
+        /* The ball rides the drive. It holds a lead on the camera that closes
+           as the page runs out, so it is always a pass already in the air and
+           it arrives exactly when the drive does. The arc is a parabola over
+           that lead, and the spin axis is laid along the flight so it spirals
+           rather than tumbling. */
+        if (ballPivot && ballMesh) {
+          const flight = Math.min(1, Math.max(0, eased));
+          /* Held close. At seventy units ahead the ball is a couple of pixels
+             across and lost behind the cards; the point is to see it. This
+             keeps it near enough to read and high and wide enough to sit in
+             the corner of the frame the squad never occupies, then brings it
+             down to the receiver over the last stretch. */
+          const lead = 31 - 10 * flight;
+          const drift = 9.6 - (9.6 - CATCH_X / 1.4) * flight;
+          const fall = 13.4 - 9.2 * flight + Math.sin(Math.PI * flight) * 2.4;
+          ballPivot.position.set(
+            drift + weave * 0.6,
+            fall,
+            camera.position.z - lead,
+          );
+          /* Pointed where it is going, and tipping from climbing to falling as
+             it passes the top of the arc. */
+          ballPivot.rotation.set(
+            -0.5 + flight * 0.85,
+            Math.atan2(drift, lead) * -0.8,
+            0,
+          );
+          // Spiralling about its long axis. A football that tumbles is a fumble.
+          ballMesh.rotation.z = time * 9.2;
+        }
+
         // Flags stir in the night air rather than hanging dead on the pole.
         if (flags) {
           for (const child of flags.children) {
@@ -1425,6 +1577,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         adTexture?.dispose();
         dotTexture?.dispose();
         cloudTexture?.dispose();
+        ballTexture?.dispose();
         flagTexture?.dispose();
         boardTexture?.dispose();
         composer.dispose();

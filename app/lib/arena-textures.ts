@@ -526,6 +526,53 @@ export function createCloudTexture(): HTMLCanvasElement | null {
   return canvas;
 }
 
+/** The hide of a football: leather, a white stripe each side, and the laces. */
+export function createBallTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const W = 512;
+  const H = 256;
+  canvas.width = W;
+  canvas.height = H;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  /* Wrapped round a stretched sphere, so u runs the long way round the ball
+     and v from one point to the other. */
+  const grain = context.createLinearGradient(0, 0, 0, H);
+  grain.addColorStop(0, "#5a2a16");
+  grain.addColorStop(0.5, "#8b4423");
+  grain.addColorStop(1, "#5a2a16");
+  context.fillStyle = grain;
+  context.fillRect(0, 0, W, H);
+
+  // Pebbling, so the leather is not a flat brown field.
+  let seed = 4242;
+  const rnd = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+  context.fillStyle = "rgba(0,0,0,0.16)";
+  for (let i = 0; i < 2600; i += 1) {
+    context.beginPath();
+    context.arc(rnd() * W, rnd() * H, 0.9 + rnd() * 0.9, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // The two white rings near the ends.
+  context.fillStyle = "#f2efe8";
+  context.fillRect(0, 26, W, 13);
+  context.fillRect(0, H - 39, W, 13);
+
+  // Laces, along one seam.
+  context.fillStyle = "#f6f4ef";
+  context.fillRect(W * 0.5 - 3, H * 0.34, 6, H * 0.32);
+  for (let i = 0; i < 8; i += 1) {
+    context.fillRect(W * 0.5 - 15, H * 0.36 + i * (H * 0.28) / 7, 30, 5);
+  }
+
+  return canvas;
+}
+
 /**
  * A soft round dot, for anything drawn as a point sprite.
  *

@@ -18,10 +18,10 @@ import "./arena-roster.css";
  * page whose scroll is already spoken for.
  */
 
-const UNITS: { id: PlayerUnit; label: string }[] = [
+/** The two squads that get a tab of their own. */
+const SQUADS: { id: PlayerUnit; label: string }[] = [
   { id: "offense", label: "OFFENSE" },
   { id: "defense", label: "DEFENSE" },
-  { id: "special-teams", label: "SPECIAL" },
 ];
 
 /**
@@ -89,14 +89,29 @@ export function ArenaRoster({
     .sort((a, b) => a.sortOrder - b.sortOrder || a.lastName.localeCompare(b.lastName, "de"))
     .map((coach) => ({ player: asCard(coach), coach: true }));
 
-  const byUnit = UNITS.map((unit) => {
-    const squad = order(players.filter((player) => player.unit === unit.id));
-    return {
-      ...unit,
-      count: squad.length,
-      entries: [...staff, ...squad.map((player) => ({ player }))] as DeckEntry[],
-    };
-  });
+  /* Offense, Defense, and the staff in their own right — special teams no
+     longer has a tab here. Anyone carried as special teams in the CMS is
+     therefore not on this page; they still appear on /team, which lists every
+     unit. */
+  const byUnit = [
+    ...SQUADS.map((unit) => {
+      const squad = order(players.filter((player) => player.unit === unit.id));
+      return {
+        id: unit.id as string,
+        label: unit.label,
+        count: squad.length,
+        staffOnly: false,
+        entries: [...staff, ...squad.map((player) => ({ player }))] as DeckEntry[],
+      };
+    }),
+    {
+      id: "coaches",
+      label: "COACHES",
+      count: staff.length,
+      staffOnly: true,
+      entries: staff,
+    },
+  ];
 
   // Open on the unit that actually has players, so it never starts empty.
   const initial = byUnit.reduce(
@@ -140,7 +155,7 @@ export function ArenaRoster({
 
         {/* A radio group, not a tablist: role="tablist" without role="tab"
             children is broken ARIA, and the inputs already say "pick one". */}
-        <div className="roster-switch" role="group" aria-label="Unit wählen">
+        <div className="roster-switch" role="group" aria-label="Bereich wählen">
           {byUnit.map((unit) => (
             <label key={unit.id} htmlFor={`unit-${unit.id}`} className="roster-tab">
               {unit.label}
@@ -153,7 +168,9 @@ export function ArenaRoster({
           <section key={unit.id} className="roster-panel" data-unit={unit.id}>
             {unit.entries.length === 0 ? (
               <p className="roster-empty">
-                Für diese Unit ist noch kein Spieler hinterlegt.
+                {unit.staffOnly
+                  ? "Es ist noch kein Coach hinterlegt."
+                  : "Für diese Unit ist noch kein Spieler hinterlegt."}
               </p>
             ) : (
               <PlayerDeck entries={unit.entries} />
