@@ -64,11 +64,12 @@ const END_Z = OPP_GOAL_Z + 8 * YARD;
 /**
  * Where the receiver waits, and so where the throw has to come down.
  *
- * Off the middle on purpose: the cards fly down the centre of the screen, so a
- * catch on the centre line happens behind the last rank of them and is never
- * seen. Out here it lands beside the squad instead of under it.
+ * Well off the middle on purpose: the cards fly down the centre of the screen
+ * and the last rank is still there when the ball arrives, so a catch anywhere
+ * near the centre line happens behind a card and is never seen. Out here it
+ * lands clear of the squad rather than under it.
  */
-const CATCH_X = 8.5;
+const CATCH_X = 12.5;
 const CATCH_Z = OPP_GOAL_Z - 5 * YARD;
 
 type Three = typeof import("three");
@@ -808,51 +809,84 @@ function buildBall(THREE: Three, hide: import("three").Texture | null) {
   return { pivot, ball };
 }
 
-/** The receiver waiting in the end zone, arms up for the catch. */
+/**
+ * The receiver waiting in the end zone, arms up for the catch.
+ *
+ * In the club's own kit: navy jersey and pants, a white helmet, red on the
+ * sleeves and down the leg. Built from primitives on purpose — at the distance
+ * the drive ever sees him he is a silhouette, and a figure that reaches for
+ * realism and misses is worse than one that reads as a marker. What makes him
+ * read as a footballer rather than a person is the shoulder pads and the
+ * helmet, so those carry the size.
+ *
+ * Returns where his hands are, because the throw has to end exactly there and
+ * a hand position copied into two places is a hand position that drifts apart.
+ */
 function buildReceiver(THREE: Three, x: number, z: number) {
   const group = new THREE.Group();
+  const SCALE = 1.5;
 
-  const jersey = new THREE.MeshStandardMaterial({ color: 0xc4152a, roughness: 0.78 });
-  const pants = new THREE.MeshStandardMaterial({ color: 0x1b2740, roughness: 0.8 });
-  const helmet = new THREE.MeshStandardMaterial({ color: 0xd8dee8, roughness: 0.34, metalness: 0.2 });
+  const navy = new THREE.MeshStandardMaterial({ color: 0x1b2b57, roughness: 0.74 });
+  const red = new THREE.MeshStandardMaterial({ color: 0xc4152a, roughness: 0.72 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xeef1f6, roughness: 0.42, metalness: 0.08 });
   const skin = new THREE.MeshStandardMaterial({ color: 0xb98a63, roughness: 0.85 });
 
   const add = (
     geometry: import("three").BufferGeometry,
     material: import("three").Material,
-    x: number,
-    y: number,
-    zz: number,
+    px: number,
+    py: number,
+    pz: number,
     rot?: [number, number, number],
   ) => {
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, y, zz);
+    mesh.position.set(px, py, pz);
     if (rot) mesh.rotation.set(rot[0], rot[1], rot[2]);
     mesh.castShadow = true;
     group.add(mesh);
   };
 
-  // Legs, hips, torso.
-  add(new THREE.CapsuleGeometry(0.19, 1.5, 4, 8), pants, -0.22, 0.85, 0);
-  add(new THREE.CapsuleGeometry(0.19, 1.5, 4, 8), pants, 0.22, 0.85, 0);
-  add(new THREE.BoxGeometry(0.86, 0.42, 0.5), pants, 0, 1.78, 0);
-  add(new THREE.CapsuleGeometry(0.44, 0.72, 4, 10), jersey, 0, 2.42, 0);
-  // Shoulder pads: the one shape that says football rather than person.
-  add(new THREE.BoxGeometry(1.42, 0.38, 0.62), jersey, 0, 2.86, 0);
+  // Legs and hips, with the red stripe down the outside of each leg.
+  add(new THREE.CapsuleGeometry(0.19, 1.5, 4, 8), navy, -0.22, 0.85, 0);
+  add(new THREE.CapsuleGeometry(0.19, 1.5, 4, 8), navy, 0.22, 0.85, 0);
+  add(new THREE.BoxGeometry(0.06, 1.3, 0.1), red, -0.4, 0.95, 0);
+  add(new THREE.BoxGeometry(0.06, 1.3, 0.1), red, 0.4, 0.95, 0);
+  add(new THREE.BoxGeometry(0.86, 0.42, 0.5), navy, 0, 1.78, 0);
 
-  // Arms up and slightly forward, hands open towards the throw.
-  add(new THREE.CapsuleGeometry(0.14, 1.15, 4, 8), skin, -0.74, 3.5, 0.18, [0.34, 0, 0.22]);
-  add(new THREE.CapsuleGeometry(0.14, 1.15, 4, 8), skin, 0.74, 3.5, 0.18, [0.34, 0, -0.22]);
+  // Jersey and the pads that make the shape a footballer's.
+  add(new THREE.CapsuleGeometry(0.46, 0.74, 4, 10), navy, 0, 2.44, 0);
+  add(new THREE.BoxGeometry(1.5, 0.42, 0.66), navy, 0, 2.9, 0);
+  add(new THREE.BoxGeometry(1.54, 0.12, 0.68), red, 0, 2.66, 0);
 
-  // Head and helmet.
-  add(new THREE.SphereGeometry(0.28, 14, 12), skin, 0, 3.16, 0);
-  add(new THREE.SphereGeometry(0.34, 16, 14), helmet, 0, 3.24, -0.02);
-  add(new THREE.TorusGeometry(0.2, 0.035, 6, 12), helmet, 0, 3.12, 0.3, [1.35, 0, 0]);
+  // Arms up and slightly forward, red cuffs, hands open towards the throw.
+  add(new THREE.CapsuleGeometry(0.15, 1.2, 4, 8), navy, -0.78, 3.52, 0.2, [0.34, 0, 0.22]);
+  add(new THREE.CapsuleGeometry(0.15, 1.2, 4, 8), navy, 0.78, 3.52, 0.2, [0.34, 0, -0.22]);
+  add(new THREE.SphereGeometry(0.17, 10, 8), white, -0.98, 4.18, 0.42);
+  add(new THREE.SphereGeometry(0.17, 10, 8), white, 0.98, 4.18, 0.42);
 
+  // Head, white helmet, red centre stripe, facemask.
+  add(new THREE.SphereGeometry(0.28, 14, 12), skin, 0, 3.18, 0);
+  add(new THREE.SphereGeometry(0.36, 16, 14), white, 0, 3.26, -0.02);
+  add(new THREE.BoxGeometry(0.1, 0.06, 0.7), red, 0, 3.6, -0.02);
+  add(new THREE.TorusGeometry(0.21, 0.035, 6, 12), white, 0, 3.14, 0.31, [1.35, 0, 0]);
+
+  group.scale.setScalar(SCALE);
   group.position.set(x, 0, z);
-  // Turned to face back up the field, towards the ball and the camera.
-  group.rotation.y = Math.PI;
-  return group;
+  /* Left unturned, which is what faces him back up the field. He is built
+     looking towards +z and the camera is downfield of him on that side, so
+     turning him the half circle that reads as "face the other way" in the
+     source put his back, and his facemask, to the viewer. */
+  group.rotation.y = 0;
+
+  /* Between the hands and a little in front of them, which is where a ball
+     being caught actually sits. Worked out in the same space the parts were
+     placed in, then taken through the group's own scale and turn. */
+  const catchPoint = new THREE.Vector3(0, 4.3, 0.55)
+    .applyEuler(group.rotation)
+    .multiplyScalar(SCALE)
+    .add(group.position);
+
+  return { group, catchPoint };
 }
 
 /** The board behind the far end zone, carrying the real next fixture. */
@@ -1272,6 +1306,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       let ballPivot: import("three").Group | null = null;
       let ballMesh: import("three").Mesh | null = null;
       let ballTexture: import("three").CanvasTexture | null = null;
+      let catchPoint: import("three").Vector3 | null = null;
       if (steady) {
         const hideCanvas = createBallTexture();
         ballTexture = hideCanvas ? new THREE.CanvasTexture(hideCanvas) : null;
@@ -1283,7 +1318,9 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         ballPivot = built.pivot;
         ballMesh = built.ball;
         scene.add(ballPivot);
-        scene.add(buildReceiver(THREE, CATCH_X, CATCH_Z));
+        const receiver = buildReceiver(THREE, CATCH_X, CATCH_Z);
+        scene.add(receiver.group);
+        catchPoint = receiver.catchPoint;
       }
 
       scene.add(buildGoal(THREE, OWN_END_Z, 1));
@@ -1519,30 +1556,45 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
            it arrives exactly when the drive does. The arc is a parabola over
            that lead, and the spin axis is laid along the flight so it spirals
            rather than tumbling. */
-        if (ballPivot && ballMesh) {
+        if (ballPivot && ballMesh && catchPoint) {
           const flight = Math.min(1, Math.max(0, eased));
-          /* Held close. At seventy units ahead the ball is a couple of pixels
-             across and lost behind the cards; the point is to see it. This
-             keeps it near enough to read and high and wide enough to sit in
-             the corner of the frame the squad never occupies, then brings it
-             down to the receiver over the last stretch. */
+
+          /* Two places the ball could be, and a blend between them.
+
+             For most of the drive it rides with the camera: held close enough
+             to read — at the seventy units ahead it started at, a ball is a
+             couple of pixels across and lost — and high and wide enough to sit
+             in the corner of the frame the squad never occupies.
+
+             Over the last stretch that gives way to a fixed point in the
+             world: the receiver's hands. Blending into his hands rather than
+             flying a path that happens to pass near them is what makes the
+             catch land, every time, whatever the page height works out to. */
           const lead = 31 - 10 * flight;
-          const drift = 9.6 - (9.6 - CATCH_X / 1.4) * flight;
-          const fall = 13.4 - 9.2 * flight + Math.sin(Math.PI * flight) * 2.4;
-          ballPivot.position.set(
-            drift + weave * 0.6,
-            fall,
-            camera.position.z - lead,
-          );
+          const drift = 9.6 - 6.2 * flight;
+          const carriedX = drift + weave * 0.6;
+          const carriedY = 13.4 - 6.2 * flight + Math.sin(Math.PI * flight) * 2.4;
+          const carriedZ = camera.position.z - lead;
+
+          const t = Math.min(1, Math.max(0, (flight - 0.66) / 0.34));
+          const arrive = t * t * (3 - 2 * t);
+
+          const bx = carriedX + (catchPoint.x - carriedX) * arrive;
+          const by = carriedY + (catchPoint.y - carriedY) * arrive;
+          const bz = carriedZ + (catchPoint.z - carriedZ) * arrive;
+          ballPivot.position.set(bx, by, bz);
+
           /* Pointed where it is going, and tipping from climbing to falling as
              it passes the top of the arc. */
           ballPivot.rotation.set(
-            -0.5 + flight * 0.85,
-            Math.atan2(drift, lead) * -0.8,
+            -0.5 + flight * 0.95,
+            Math.atan2(bx, Math.max(1, camera.position.z - bz)) * -0.8,
             0,
           );
-          // Spiralling about its long axis. A football that tumbles is a fumble.
-          ballMesh.rotation.z = time * 9.2;
+          /* Spiralling about its long axis, and stopping dead once it is in
+             his hands. A football that keeps spinning after the catch is a
+             ball nobody caught. */
+          ballMesh.rotation.z = arrive >= 1 ? ballMesh.rotation.z : time * 9.2;
         }
 
         // Flags stir in the night air rather than hanging dead on the pole.

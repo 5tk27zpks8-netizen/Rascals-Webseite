@@ -58,8 +58,27 @@ const STAGGER = 0.28;
  * cross the camera on the same frame, and the nearest thing in the picture
  * drops from filling the screen to two thirds of it in one step. That reads as
  * being thrown backwards. Offset in depth, they hand over one at a time.
+ *
+ * Spread near a third of a rank apart, which is as even as three cards can be
+ * laid out between one rank and the next: the wider they are spaced, the
+ * smaller the gap the formation ever has to jump across.
  */
-const DEPTH_STAGGER = [-0.16, 0.05, 0.17];
+/**
+ * Depth is the card's place in the running order, not its rank.
+ *
+ * Ranks make a poor depth axis. Three cards spread across one rank length sit a
+ * third apart; two cards across the same length sit half apart, and the widths
+ * alternate — so the formation hands over across a different sized gap every
+ * time, and the biggest gaps are the ones that jolt. Measured on ranks: four
+ * handovers at 21 to 25 percent, then, after evening the offsets within each
+ * rank, eight ranging from 9 to 18.
+ *
+ * Counting cards instead makes every gap exactly one card wide, so the step
+ * from one to the next is the same everywhere and as small as the spacing
+ * allows. Ranks still decide where a card stands across the field; they no
+ * longer decide how far away it is.
+ */
+const DEPTH_PER_CARD = 1;
 
 /** A card in the deck, and whether it is a player or one of the staff. */
 export type DeckEntry = { player: Player; coach?: boolean };
@@ -80,6 +99,11 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
   const host = useRef<HTMLDivElement | null>(null);
   const ranks = intoRanks(entries);
   const rows = ranks.length;
+  /* The squad starts one card in front of the camera rather than level with
+     it, or the very first card of the drive is already half faded before
+     anybody has scrolled. The travel runs to just short of the last card, so
+     the page ends on it passing rather than on an empty field. */
+  const depthSpan = Math.max(1, entries.length * DEPTH_PER_CARD - 0.4);
 
   useEffect(() => {
     const element = host.current;
@@ -110,9 +134,9 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
       const runway = box.height - window.innerHeight;
       const travel = runway > 0 ? -box.top / runway : 0;
       const clamped = Math.min(1, Math.max(0, travel));
-      /* Counted in rows now, not in players: the camera travels from the front
-         row to the back one, and each row carries three of the squad. */
-      target = clamped * (rows - 1);
+      /* Counted in cards: the camera travels from the first of the squad to
+         the last, one card at a time, whatever width the ranks happen to be. */
+      target = clamped * depthSpan;
     };
 
     /* Which ranks can be clicked.
@@ -127,15 +151,20 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
        the couple standing in front of it. Everything else is inert. */
     const byRow: HTMLElement[][] = [];
     element.querySelectorAll<HTMLElement>(".deck-card").forEach((card) => {
-      const row = Number(card.style.getPropertyValue("--row")) || 0;
-      (byRow[row] ??= []).push(card);
+      const depth = Math.round(Number(card.style.getPropertyValue("--i")) || 0);
+      (byRow[depth] ??= []).push(card);
     });
     let liveFrom = -1;
     let liveTo = -1;
 
     const applyLive = () => {
-      const from = Math.max(0, Math.ceil(drawn - 0.3));
-      const to = Math.min(byRow.length - 1, Math.floor(drawn + 2.2));
+      /* Everything the camera has not yet passed, however far off it still is.
+         The rule only exists to keep the cards behind the camera — invisible,
+         enormous, and still in front of everything — from swallowing clicks;
+         there is no reason for it to stop short of the back of the formation
+         as well. */
+      const from = Math.max(0, Math.ceil(drawn - 0.34));
+      const to = byRow.length - 1;
       if (from === liveFrom && to === liveTo) return;
       byRow.forEach((cards, row) => {
         const live = row >= from && row <= to;
@@ -192,7 +221,7 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
       element.style.removeProperty("--focus");
       byRow.forEach((cards) => cards.forEach((card) => card.classList.remove("is-live")));
     };
-  }, [rows]);
+  }, [rows, depthSpan]);
 
   if (entries.length === 0) return null;
 
@@ -200,11 +229,12 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
     <div
       className="deck"
       ref={host}
-      style={{ "--rows": rows } as React.CSSProperties}
+      style={{ "--cards": entries.length } as React.CSSProperties}
     >
       <div className="deck-stage">
         {ranks.map((rank, row) =>
           rank.map((entry, column) => {
+            const index = ranks.slice(0, row).reduce((n, r) => n + r.length, 0) + column;
             /* Centred on however many this rank holds, so a rank of two sits
                either side of the middle rather than starting where the first
                of three would have — and spread wider than the column pitch,
@@ -223,14 +253,8 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
                 key={entry.player.id}
                 style={
                   {
-                    "--row": row,
+                    "--i": (index + 1) * DEPTH_PER_CARD,
                     "--x": across.toFixed(3),
-                    /* Mirrored on alternate ranks so the offsets do not line
-                       up into a permanent diagonal down the formation. */
-                    "--dz": (row % 2 === 0
-                      ? DEPTH_STAGGER[column % DEPTH_STAGGER.length]
-                      : -DEPTH_STAGGER[column % DEPTH_STAGGER.length]
-                    ).toFixed(3),
                   } as React.CSSProperties
                 }
               >

@@ -131,14 +131,14 @@
    slice per card to travel through. Without that overhang a short page never
    reaches either end and most of the squad stays unreachable.
 
-   The slice was 78px, and one notch of a mouse wheel is about a hundred: a
-   single click of the wheel threw the camera past a whole player. At 300 a
-   notch is under a third of a card, which is the difference between flying
-   through a formation and cutting between slides. It also slows the stadium
-   behind it, because the drive reads the same page scroll. */
+   The slice is per card, not per rank: one notch of a mouse wheel is about a
+   hundred pixels, so at 245 a notch is well under half a card. That is the
+   difference between flying through a formation and cutting between slides.
+   It also sets the pace of the stadium behind it, which reads the same page
+   scroll. */
 .deck.is-deck {
   position: relative;
-  height: calc(100vh + var(--rows, 4) * 700px);
+  height: calc(100vh + var(--cards, 12) * 245px);
 }
 
 .deck.is-deck .deck-stage {
@@ -161,49 +161,75 @@
 }
 
 .deck.is-deck .deck-card {
-  /* How many rows ahead this one stands, plus its own small offset within the
-     rank. Negative once the camera is past it.
+  /* How many cards ahead this one stands. Negative once the camera is past it.
 
-     The offset is what stops a rank arriving and leaving as one object. With
-     all three crossing the camera on the same frame, the nearest thing in
-     frame jumped from filling the screen to two thirds of it in one step, once
-     per rank — and a nearest object that suddenly shrinks reads as being
-     thrown backwards, which is exactly what it felt like. Staggered in depth
-     they hand over one at a time and the motion stays forward. */
-  --rel: calc(var(--row) + var(--dz, 0) - var(--focus, 0));
+     Counted in cards rather than in ranks, so every handover in the formation
+     crosses the same sized gap. On ranks the gap alternated with the rank
+     width and the wide ones jolted; see PlayerDeck for the measurements. */
+  --rel: calc(var(--i) - var(--focus, 0));
 
   position: absolute;
   left: 50%;
   top: 50%;
-  width: clamp(210px, 18vw, 264px);
-  margin-left: calc(clamp(210px, 18vw, 264px) / -2);
-  margin-top: calc(clamp(210px, 18vw, 264px) * -0.68);
+  width: clamp(196px, 16vw, 238px);
+  margin-left: calc(clamp(196px, 16vw, 238px) / -2);
+  margin-top: calc(clamp(196px, 16vw, 238px) * -0.68);
 
   /* Three abreast, row behind row down the length of the pitch. The row the
      camera is level with sits at z=0, square on and full size; the rows ahead
      stand further downfield and fall away with the perspective.
 
-     The column pitch has to clear a card and then some, or the three run into
-     each other at the front where they are largest. The rank spacing is closer
-     than it was: at 700 the step in size between one rank and the next was
-     large enough to register as a jolt every time the front rank went by. */
-  transform:
-    translateX(calc(var(--x, 0) * clamp(238px, 23vw, 338px)))
-    translateZ(calc(var(--rel) * -470px))
-    rotateY(calc(var(--x, 0) * -5deg));
+     The column pitch is nearly twice a card wide, which is more than it takes
+     to keep the three in a rank apart. The extra air is for the ranks behind:
+     with the depth step this small, a card that sits directly behind another
+     is covered by it, and a card nobody can see is a card nobody can click.
+     Spread across, the ones further down the field show through the gaps.
 
-  /* Gone before it swells. At the old rate a card was still a third of the
-     way across the screen at a third of its opacity as it went by, which
-     reads as a smear over the field rather than as a card you have passed.
-     Now it is clear of the frame within half a step of the camera.
+     The depth step is per card and small on purpose: the jolt at each handover
+     is that step over the perspective distance, so a shallower step is a
+     gentler handover. */
+  transform:
+    translateX(calc(var(--x, 0) * clamp(300px, 30vw, 440px)))
+    translateZ(calc(var(--rel) * -132px))
+    rotateY(calc(var(--x, 0) * -5deg))
+    /* Holds its size over the last card-length instead of growing into it.
+
+       Perspective alone makes the nearest card grow all the way in and then
+       vanish, handing the eye to one that is a tenth smaller — a sawtooth, and
+       the sawtooth is what reads as being thrown backwards. Giving up exactly
+       that tenth on the final approach leaves the size of whatever is nearest
+       running flat through the handover instead of stepping down. */
+    scale(clamp(0.9, calc(0.9 + var(--rel) * 0.1), 1));
+
+  /* Gone by the time it reaches the camera, not after it.
+
+     This number sets how hard the formation jolts. A card held at full opacity
+     until it had passed was still at 1.16 times its size when it finally
+     vanished, while the nearest card left behind it was at 0.91 — so the
+     biggest thing in the picture shrank by a quarter in one frame, once per
+     rank. Measured: four jolts down the page, 21 to 25 percent each. That
+     shrink is what read as being thrown backwards.
+
+     Fading out level with the camera instead means a card leaves at its own
+     size, and what takes over is one card behind it.
+
+     The second half of the min() closes the formation off at the back. Left
+     open, a dozen cards stood on screen at once and the near ones covered the
+     middle of every card behind them — a card nobody can reach is a card
+     nobody can click. Held to about seven deep, each one comes forward into
+     the clear in its turn.
 
      Kept to one clamp over one plain variable: nesting min()/max() over a
      variable that is itself a max() is past what the engine resolves, and it
      silently does nothing. */
-  opacity: clamp(0, calc((var(--rel) + 0.42) * 3.2), 1);
+  opacity: clamp(
+    0,
+    min(calc((var(--rel) + 0.2) * 1.4), calc((6.6 - var(--rel)) * 0.5)),
+    1
+  );
 
-  /* Nearer rows draw in front. */
-  z-index: calc(1000 - round(nearest, var(--row), 1));
+  /* Nearer cards draw in front. */
+  z-index: calc(1000 - round(nearest, var(--i), 1));
 
   /* Inert unless PlayerDeck says this rank is one you can read. A card the
      camera has passed is invisible but enormous and still in front, and a
