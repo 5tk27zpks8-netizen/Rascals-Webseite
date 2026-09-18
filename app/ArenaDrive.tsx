@@ -799,7 +799,23 @@ function buildScoreboard(THREE: Three, texture: import("three").Texture, z: numb
   return group;
 }
 
-export function ArenaDrive() {
+/**
+ * A single framing, held for the whole drive.
+ *
+ * The cards that fly through this ground are CSS elements pinned to the middle
+ * of the screen: they do not live in the scene and cannot follow a camera that
+ * moves. So every move the cinematic plan makes — swinging twenty-seven units
+ * across the field, rolling the horizon, running the lens from 51mm to 64 —
+ * happens to the world while the squad stays nailed where it was. The two
+ * cannot agree, and the result reads as broken rather than as filmed.
+ *
+ * Steady mode drops all of it. The camera runs straight down the middle at one
+ * height, one lens, level, and the only thing that changes is how far down the
+ * field it has travelled — which is exactly what the cards are doing too.
+ */
+const STEADY: Shot = { at: 0, x: 0, y: 7.2, lx: 0, ly: 3.6, ahead: 46, fov: 58, roll: 0 };
+
+export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
   const canvasHost = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -960,7 +976,7 @@ export function ArenaDrive() {
       // Without tone mapping the floodlights clip the turf to a flat mint
       // green. ACES keeps the highlights and lets the grass stay grass.
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.18;
+      renderer.toneMappingExposure = 1.02;
 
       /* Shadows are what stop everything reading as pasted onto the grass: the
          posts, the pylons and the stands all sat on the pitch without touching
@@ -992,15 +1008,16 @@ export function ArenaDrive() {
       composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       composer.setSize(window.innerWidth, window.innerHeight);
       composer.addPass(new RenderPass(scene, camera));
-      /* Barely there, and high-cut. Bloom is a night lever: the lamps were the
-         only thing above the threshold then. In daylight everything is bright,
-         so the same settings put a haze over the whole picture. Kept only for
-         the sun and the glare off the hoardings. */
+      /* Bloom is a night lever. At night the lamps were the only thing over the
+         threshold; in daylight the painted yard lines are near white before it
+         is even applied, so a cut of 1.05 caught the whole pitch and made the
+         markings glow off the grass. Raised well clear of lit paint and its
+         strength halved, it now only touches the sun itself. */
       const bloom = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        0.18,
-        0.4,
-        1.05,
+        0.09,
+        0.5,
+        1.9,
       );
       composer.addPass(bloom);
 
@@ -1228,7 +1245,7 @@ export function ArenaDrive() {
          shadows are short and the ground is lit. */
       const SUN_DIR = new THREE.Vector3(0.30, 0.86, -0.42).normalize();
 
-      const sun = new THREE.DirectionalLight(0xfff4e2, 3.4);
+      const sun = new THREE.DirectionalLight(0xfff4e2, 2.6);
       sun.position.copy(SUN_DIR).multiplyScalar(260);
       sun.target.position.set(0, 0, (OWN_END_Z + OPP_END_Z) / 2);
       sun.castShadow = true;
@@ -1249,8 +1266,8 @@ export function ArenaDrive() {
       /* Sky above, grass below. This is what fills the shadowed side of
          everything in an outdoor scene, and it is why a shaded face outdoors
          is blue rather than black. */
-      scene.add(new THREE.HemisphereLight(0x9dc4ea, 0x2f4a26, 2.0));
-      scene.add(new THREE.AmbientLight(0xdfeaf6, 0.4));
+      scene.add(new THREE.HemisphereLight(0x9dc4ea, 0x2f4a26, 1.55));
+      scene.add(new THREE.AmbientLight(0xdfeaf6, 0.28));
 
       // The pylons still stand in daylight; they just are not doing anything.
       for (let i = 0; i < 5; i += 1) {
@@ -1343,9 +1360,16 @@ export function ArenaDrive() {
         // A camera that is perfectly still between scrolls reads as a
         // screenshot. A slow breath keeps the ground alive without ever
         // competing with the scroll.
-        const breath = Math.sin(time * 0.31) * 0.4;
-        const sway = Math.sin(time * 0.19 + 1.3) * 0.7;
-        const shot = sampleShot(eased);
+        /* A camera that is perfectly still between scrolls reads as a
+           screenshot, so it breathes — but only where there is nothing pinned
+           to the screen for it to disagree with. In steady mode even that goes,
+           along with the pointer parallax: a card that does not move while the
+           ground slides under the mouse is the same disagreement in miniature. */
+        const breath = steady ? 0 : Math.sin(time * 0.31) * 0.4;
+        const sway = steady ? 0 : Math.sin(time * 0.19 + 1.3) * 0.7;
+        const lead = steady ? 0 : pointer.x;
+        const tilt = steady ? 0 : pointer.y;
+        const shot = steady ? STEADY : sampleShot(eased);
 
         if (Math.abs(camera.fov - shot.fov) > 0.01) {
           camera.fov = shot.fov;
@@ -1353,16 +1377,16 @@ export function ArenaDrive() {
         }
 
         camera.position.set(
-          shot.x + pointer.x * 3.4 + sway,
-          shot.y - pointer.y * 1.2 + breath,
+          shot.x + lead * 3.4 + sway,
+          shot.y - tilt * 1.2 + breath,
           START_Z + (END_Z - START_Z) * eased,
         );
         camera.lookAt(
-          shot.lx + pointer.x * 1.8 + sway * 0.35,
+          shot.lx + lead * 1.8 + sway * 0.35,
           shot.ly,
           camera.position.z - shot.ahead,
         );
-        camera.rotation.z = shot.roll + Math.sin(time * 0.23) * 0.004;
+        camera.rotation.z = steady ? 0 : shot.roll + Math.sin(time * 0.23) * 0.004;
 
         // The dome rides with the camera: a sky you can drive out from under
         // is a ceiling, and at this travel distance it would show.
@@ -1417,7 +1441,7 @@ export function ArenaDrive() {
       page.classList.remove("is-driving");
       cleanup?.();
     };
-  }, []);
+  }, [steady]);
 
   return <div className="drive-canvas" ref={canvasHost} aria-hidden="true" />;
 }

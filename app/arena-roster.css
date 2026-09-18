@@ -195,6 +195,12 @@
   /* Nearer rows draw in front. */
   z-index: calc(1000 - round(nearest, var(--row), 1));
 
+  /* Inert unless PlayerDeck says this rank is one you can read. A card the
+     camera has passed is invisible but enormous and still in front, and a
+     zero-opacity element takes clicks like any other — so without this the
+     ranks behind the camera swallow every click meant for the squad. */
+  pointer-events: none;
+
   /* Opacity only. Naming `transform` here pins the card's raster at the scale
      it had when the layer was promoted, so every card that grows towards the
      camera is a bitmap being enlarged — soft edges and mushy type, which is
@@ -214,6 +220,10 @@
 }
 .deck.is-deck .deck-card.is-coach .rpc-player-info {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.deck.is-deck .deck-card.is-live {
+  pointer-events: auto;
 }
 
 /* Standing on grass, not floating over it: a tight contact shadow under the

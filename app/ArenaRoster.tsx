@@ -106,7 +106,7 @@ export function ArenaRoster({
 
   return (
     <div className="drive-page roster-page">
-      <ArenaDrive />
+      <ArenaDrive steady />
       <div className="drive-vignette" aria-hidden="true" />
 
       <header className="drive-hud">

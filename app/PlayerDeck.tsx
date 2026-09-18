@@ -105,7 +105,40 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
       target = clamped * (rows - 1);
     };
 
-    const write = () => element.style.setProperty("--focus", drawn.toFixed(3));
+    /* Which ranks can be clicked.
+       A card the camera has passed is invisible, but it is also enormous and
+       still in front of everything — and an element at zero opacity takes
+       pointer events exactly like any other. So the ranks behind the camera
+       were swallowing every click on the squad: nothing in the deck was
+       reachable once the first rank had gone by.
+
+       Rather than fight that per card, only the ranks you could actually read
+       are given pointer events at all: the one the camera is level with and
+       the couple standing in front of it. Everything else is inert. */
+    const byRow: HTMLElement[][] = [];
+    element.querySelectorAll<HTMLElement>(".deck-card").forEach((card) => {
+      const row = Number(card.style.getPropertyValue("--row")) || 0;
+      (byRow[row] ??= []).push(card);
+    });
+    let liveFrom = -1;
+    let liveTo = -1;
+
+    const applyLive = () => {
+      const from = Math.max(0, Math.ceil(drawn - 0.3));
+      const to = Math.min(byRow.length - 1, Math.floor(drawn + 2.2));
+      if (from === liveFrom && to === liveTo) return;
+      byRow.forEach((cards, row) => {
+        const live = row >= from && row <= to;
+        cards.forEach((card) => card.classList.toggle("is-live", live));
+      });
+      liveFrom = from;
+      liveTo = to;
+    };
+
+    const write = () => {
+      element.style.setProperty("--focus", drawn.toFixed(3));
+      applyLive();
+    };
 
     const tick = (now: number) => {
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
@@ -147,6 +180,7 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
       window.removeEventListener("resize", onScroll);
       element.classList.remove("is-deck");
       element.style.removeProperty("--focus");
+      byRow.forEach((cards) => cards.forEach((card) => card.classList.remove("is-live")));
     };
   }, [rows]);
 
