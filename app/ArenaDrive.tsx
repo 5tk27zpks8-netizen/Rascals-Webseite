@@ -5,6 +5,7 @@ import {
   FIELD_YARDS_LONG,
   FIELD_YARDS_WIDE,
   createAdBoardTexture,
+  createCloudTexture,
   createCrowdRowTexture,
   createFlagTexture,
   createSoftDotTexture,
@@ -147,7 +148,24 @@ function sampleShot(t: number): Shot {
  * dithering so the long fade does not band on a dark display, and a field of
  * stars that thins out towards the horizon the way haze thins it in life.
  */
-function buildSky(THREE: Three) {
+/**
+ * A daytime sky: gradient dome, sun, drifting cloud, and birds in it.
+ *
+ * The dome is shaded rather than textured, so it stays sharp however close the
+ * camera gets and costs one draw call. The gradient runs from a deep zenith
+ * blue down through a pale band at the horizon, which is what the air actually
+ * does — a flat blue ceiling is the clearest tell that a sky was painted
+ * rather than lit.
+ *
+ * Clouds are billboards, not geometry. A cloud that turns with the camera
+ * reads as a cloud from every angle on the drive; modelled ones would have to
+ * be built, lit and sorted for no gain at this distance.
+ *
+ * The birds are two triangles each, flapping on their own clock and circling
+ * on a slow drift. They are the only thing up there that moves against the
+ * sky, and a still sky is a photograph.
+ */
+function buildSky(THREE: Three, clouds: import("three").Texture | null) {
   const group = new THREE.Group();
 
   const dome = new THREE.Mesh(
@@ -157,9 +175,11 @@ function buildSky(THREE: Three) {
       depthWrite: false,
       fog: false,
       uniforms: {
-        uHigh: { value: new THREE.Color(0x030711) },
-        uLow: { value: new THREE.Color(0x0f2438) },
-        uGlow: { value: new THREE.Color(0x24486a) },
+        uHigh: { value: new THREE.Color(0x1d5fc0) },
+        uLow: { value: new THREE.Color(0x7fb3e0) },
+        uSun: { value: new THREE.Color(0xfff3d6) },
+        uIntensity: { value: 1.12 },
+        uSunDir: { value: new THREE.Vector3(0.30, 0.86, -0.42).normalize() },
       },
       vertexShader: `
         varying vec3 vPos;
@@ -171,23 +191,36 @@ function buildSky(THREE: Three) {
       fragmentShader: `
         uniform vec3 uHigh;
         uniform vec3 uLow;
-        uniform vec3 uGlow;
+        uniform vec3 uSun;
+        uniform vec3 uSunDir;
+        uniform float uIntensity;
         varying vec3 vPos;
 
-        /* Cheap hash dither. A gradient this dark bands into visible steps on
-           an 8-bit display; a sub-step of noise breaks the steps up. */
+        /* Cheap hash dither. A gradient this smooth bands into visible steps
+           on an 8-bit display; a sub-step of noise breaks the steps up. */
         float hash(vec2 p) {
           return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
         }
 
         void main() {
           vec3 dir = normalize(vPos);
-          float h = clamp(dir.y * 1.25 + 0.06, 0.0, 1.0);
-          vec3 col = mix(uLow, uHigh, pow(h, 0.62));
-          // Light thrown back off the air just above the rim of the bowl.
-          float rim = pow(1.0 - clamp(abs(dir.y) * 2.6, 0.0, 1.0), 3.0);
-          col += uGlow * rim * 0.4;
-          col += (hash(gl_FragCoord.xy) - 0.5) * 0.012;
+          float h = clamp(dir.y * 1.1 + 0.04, 0.0, 1.0);
+          vec3 col = mix(uLow, uHigh, pow(h, 0.78));
+
+          /* The sun itself, and the wash of light around it. Without the wash
+             the disc is a sticker on a flat blue wall. */
+          float d = max(0.0, dot(dir, normalize(uSunDir)));
+          col += uSun * pow(d, 900.0) * 1.4;
+          col += uSun * pow(d, 7.0) * 0.30;
+
+          /* Lifted a little above the colour it should end up being, because
+             the filmic curve in the output pass pulls everything down. Only a
+             little: that curve also desaturates as it brightens, so pushing
+             harder buys a whiter sky rather than a bluer one — which is the
+             trap, and the reason the colours here are deeper than they look. */
+          col *= uIntensity;
+
+          col += (hash(gl_FragCoord.xy) - 0.5) * 0.010;
           gl_FragColor = vec4(col, 1.0);
         }
       `,
@@ -195,59 +228,134 @@ function buildSky(THREE: Three) {
   );
   group.add(dome);
 
-  // Stars, thinned towards the horizon.
-  const count = 1400;
-  const positions = new Float32Array(count * 3);
-  const sizes = new Float32Array(count);
-  for (let i = 0; i < count; i += 1) {
-    const theta = Math.random() * Math.PI * 2;
-    // Biased upwards: near the horizon haze would wash them out.
-    const phi = Math.acos(Math.random() * 0.92 + 0.04);
-    const r = 470;
-    positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-    positions[i * 3 + 1] = Math.abs(r * Math.cos(phi)) + 30;
-    positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
-    sizes[i] = 0.6 + Math.random() * 1.7;
-  }
-  const starGeometry = new THREE.BufferGeometry();
-  starGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  starGeometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
-
-  const stars = new THREE.Points(
-    starGeometry,
-    new THREE.ShaderMaterial({
+  // --- cloud ----------------------------------------------------------
+  const cloudGroup = new THREE.Group();
+  if (clouds) {
+    const cloudMaterial = new THREE.MeshBasicMaterial({
+      map: clouds,
       transparent: true,
       depthWrite: false,
       fog: false,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.92,
+    });
+    for (let i = 0; i < 16; i += 1) {
+      const scale = 90 + Math.random() * 180;
+      const sprite = new THREE.Mesh(new THREE.PlaneGeometry(scale, scale * 0.52), cloudMaterial);
+      const angle = (i / 16) * Math.PI * 2 + Math.random() * 0.3;
+      const radius = 260 + Math.random() * 160;
+      /* The bowl only leaves sky between roughly ten and thirty degrees up
+         from a camera standing on the field. Higher than that and the cloud
+         deck is real, correct and permanently out of frame. */
+      sprite.position.set(
+        Math.cos(angle) * radius,
+        70 + Math.random() * 110,
+        Math.sin(angle) * radius,
+      );
+      /* Each cloud keeps its own orbit angle so the drift below can advance
+         them all without any of them sharing a position. */
+      sprite.userData.angle = angle;
+      sprite.userData.radius = radius;
+      cloudGroup.add(sprite);
+    }
+  }
+  group.add(cloudGroup);
+
+  // --- birds ------------------------------------------------------------
+  /* One buffer for the whole flock. Each bird is two triangles sharing a
+     centre vertex, and the wings are hinged in the vertex shader off a phase
+     stored per vertex, so a flock of forty costs one draw call and no
+     per-frame geometry work. */
+  const FLOCK = 42;
+  const birdPositions = new Float32Array(FLOCK * 6 * 3);
+  const birdWing = new Float32Array(FLOCK * 6);
+  const birdPhase = new Float32Array(FLOCK * 6);
+  const birdOrigin = new Float32Array(FLOCK * 6 * 3);
+
+  for (let i = 0; i < FLOCK; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 90 + Math.random() * 230;
+    const ox = Math.cos(angle) * radius;
+    const oy = 46 + Math.random() * 80;
+    const oz = Math.sin(angle) * radius;
+    const span = 1.5 + Math.random() * 1.6;
+    const phase = Math.random() * Math.PI * 2;
+
+    /* left wing: centre, tip, trailing — then the mirror for the right. */
+    const local = [
+      [0, 0, 0], [-span, 0, -span * 0.42], [0, 0, -span * 0.5],
+      [0, 0, 0], [span, 0, -span * 0.42], [0, 0, -span * 0.5],
+    ];
+    const wingFlags = [0, 1, 0, 0, -1, 0];
+
+    for (let v = 0; v < 6; v += 1) {
+      const index = i * 6 + v;
+      birdPositions[index * 3] = local[v][0];
+      birdPositions[index * 3 + 1] = local[v][1];
+      birdPositions[index * 3 + 2] = local[v][2];
+      birdOrigin[index * 3] = ox;
+      birdOrigin[index * 3 + 1] = oy;
+      birdOrigin[index * 3 + 2] = oz;
+      birdWing[index] = wingFlags[v];
+      birdPhase[index] = phase;
+    }
+  }
+
+  const birdGeometry = new THREE.BufferGeometry();
+  birdGeometry.setAttribute("position", new THREE.BufferAttribute(birdPositions, 3));
+  birdGeometry.setAttribute("aOrigin", new THREE.BufferAttribute(birdOrigin, 3));
+  birdGeometry.setAttribute("aWing", new THREE.BufferAttribute(birdWing, 1));
+  birdGeometry.setAttribute("aPhase", new THREE.BufferAttribute(birdPhase, 1));
+
+  const birds = new THREE.Mesh(
+    birdGeometry,
+    new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
+      transparent: true,
+      fog: false,
+      depthWrite: false,
       uniforms: { uTime: { value: 0 } },
       vertexShader: `
-        attribute float aSize;
-        varying float vTwinkle;
+        attribute vec3 aOrigin;
+        attribute float aWing;
+        attribute float aPhase;
         uniform float uTime;
+        varying float vFade;
+
         void main() {
-          vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          // Each star breathes on its own clock, so the field never pulses.
-          vTwinkle = 0.65 + 0.35 * sin(uTime * 0.7 + position.x * 0.09 + position.z * 0.05);
-          gl_PointSize = aSize * (300.0 / -mv.z);
+          /* The whole flock turns slowly about the ground, each bird on its
+             own radius, so they never form a rigid pattern. */
+          float turn = uTime * 0.021 + aPhase * 0.12;
+          float c = cos(turn);
+          float s = sin(turn);
+          vec3 origin = vec3(
+            aOrigin.x * c - aOrigin.z * s,
+            aOrigin.y + sin(uTime * 0.5 + aPhase) * 3.4,
+            aOrigin.x * s + aOrigin.z * c
+          );
+
+          vec3 local = position;
+          // Wings hinge about the body rather than sliding up and down.
+          local.y += abs(aWing) * sin(uTime * 5.2 + aPhase) * 1.15;
+
+          vec4 mv = modelViewMatrix * vec4(origin + local, 1.0);
+          // Faded with distance so the far side of the flock sinks into haze.
+          vFade = 1.0 - smoothstep(180.0, 460.0, -mv.z);
           gl_Position = projectionMatrix * mv;
         }
       `,
       fragmentShader: `
-        varying float vTwinkle;
+        varying float vFade;
         void main() {
-          // Round, soft-edged points; the default square is a dead giveaway.
-          float d = length(gl_PointCoord - 0.5);
-          float a = smoothstep(0.5, 0.06, d) * vTwinkle;
-          if (a < 0.01) discard;
-          gl_FragColor = vec4(vec3(0.82, 0.88, 1.0), a);
+          if (vFade < 0.02) discard;
+          gl_FragColor = vec4(vec3(0.13, 0.16, 0.22), vFade * 0.82);
         }
       `,
     }),
   );
-  group.add(stars);
+  group.add(birds);
+
   group.renderOrder = -1;
-  return { group, stars };
+  return { group, birds, clouds: cloudGroup };
 }
 
 function buildGoal(THREE: Three, endLineZ: number, outward: 1 | -1) {
@@ -352,8 +460,10 @@ function buildTerrace(
      profile has no UV layout worth mapping to. */
   const position = shell.getAttribute("position");
   const tint = new Float32Array(position.count * 3);
-  const low = new THREE.Color(0x11151e);
-  const high = new THREE.Color(0x5e6b83);
+  /* Concrete in daylight, with the roof shading the back rows. Ran the other
+     way and far darker when the only light in here came off the roof lip. */
+  const low = new THREE.Color(0xb9c3d1);
+  const high = new THREE.Color(0x6a7488);
   const mix = new THREE.Color();
   for (let i = 0; i < position.count; i += 1) {
     const t = Math.min(1, Math.max(0, (position.getY(i) - (base - 4.2)) / (top - base + 4.2)));
@@ -371,9 +481,6 @@ function buildTerrace(
       vertexColors: true,
       roughness: 0.94,
       metalness: 0,
-      /* A floor under the ramp, so the deepest steps are grey concrete in
-         shadow rather than a hole cut in the night. */
-      emissive: 0x0c121c,
     }),
   );
   concrete.receiveShadow = true;
@@ -401,7 +508,10 @@ function buildTerrace(
       /* Lifts with the concrete behind it. A row at the foot of the stand is
          in the same shadow the steps are, and the ramp has to agree or the
          people float off the structure. */
-      const lift = 0.44 + 0.56 * Math.pow(i / Math.max(1, rows - 1), 0.75);
+      /* Shaded at the back under the roof, open to the sky at the front — the
+         other way round from a night match, where the only light in the stand
+         came off the strip along the roof lip. */
+      const lift = 1.06 - 0.42 * Math.pow(i / Math.max(1, rows - 1), 0.85);
       const row = new THREE.Mesh(
         rowGeometry,
         new THREE.MeshBasicMaterial({
@@ -414,7 +524,6 @@ function buildTerrace(
              simply stand in front of the ones behind. */
           alphaTest: 0.45,
           side: THREE.DoubleSide,
-          toneMapped: false,
         }),
       );
       row.rotation.y = Math.PI / 2;
@@ -432,10 +541,10 @@ function buildTerrace(
   frontWall.receiveShadow = true;
   group.add(frontWall);
 
-  /* The band of hoardings that runs round every ground at this level. Unlit
-     and tone-mapping off: a lit board at a night match throws light back at
-     the pitch rather than taking it, and it is the one bright line between
-     the grass and the dark foot of the stand. */
+  /* The band of hoardings that runs round every ground at this level. Left
+     unlit — a printed board in open daylight is close enough to evenly lit
+     that shading it buys nothing — but tone-mapped, so it sits in the same
+     exposure as everything around it rather than glowing out of it. */
   if (boards) {
     const band = boards.clone();
     band.needsUpdate = true;
@@ -448,7 +557,7 @@ function buildTerrace(
     band.repeat.set(Math.max(1, Math.round(length / 68)), 1);
     const hoarding = new THREE.Mesh(
       new THREE.PlaneGeometry(length, 2.9),
-      new THREE.MeshBasicMaterial({ map: band, toneMapped: false }),
+      new THREE.MeshBasicMaterial({ map: band }),
     );
     hoarding.rotation.y = -Math.PI / 2;
     hoarding.position.set(-0.78, base - 2.5, 0);
@@ -457,16 +566,13 @@ function buildTerrace(
 
   // --- the roof --------------------------------------------------------
   if (roof) {
-    const steel = new THREE.MeshStandardMaterial({ color: 0x323d4e, roughness: 0.55, metalness: 0.55 });
+    const steel = new THREE.MeshStandardMaterial({ color: 0x59657a, roughness: 0.52, metalness: 0.5 });
     const roofY = top + 5.6;
     const overhang = 3.4;
 
     const deck = new THREE.Mesh(
       new THREE.BoxGeometry(depth + 6 + overhang, 0.6, length),
-      /* Not black. A roof that reads as a hole cut in the sky takes the
-         trusses under it with it, and the trusses are the only thing giving
-         the stand any depth above the crowd. */
-      new THREE.MeshStandardMaterial({ color: 0x161e2a, roughness: 0.88, emissive: 0x080d15 }),
+      new THREE.MeshStandardMaterial({ color: 0x38414f, roughness: 0.88 }),
     );
     deck.position.set((depth + 6) / 2 - overhang / 2, roofY, 0);
     group.add(deck);
@@ -478,17 +584,15 @@ function buildTerrace(
     fascia.position.set(-overhang, roofY - 1.0, 0);
     group.add(fascia);
 
-    /* Lamps along the fascia, not a strip. One continuous bright box seen
-       end-on from the pitch is a line ruled across the sky — the brightest
-       thing in frame and the least like a stadium. A run of separate lamps
-       with dark between them reads as fittings, and the gaps give the roof
-       its length as the camera travels. */
+    /* Fittings along the fascia, dark because it is the middle of the day and
+       nobody has switched them on. They are still worth having: the run of
+       them gives the roof its length as the camera travels past. */
     const lamps = Math.max(4, Math.round(length / 12));
     // Instanced: sixty identical fittings round the ground is sixty draw calls
     // for four batches' worth of work.
     const fittings = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.9, 0.3, 2.4),
-      new THREE.MeshBasicMaterial({ color: 0x6f839f, toneMapped: false }),
+      new THREE.MeshStandardMaterial({ color: 0x2c3340, roughness: 0.4, metalness: 0.3 }),
       lamps,
     );
     const place = new THREE.Object3D();
@@ -638,7 +742,13 @@ function buildPylon(THREE: Three, x: number, z: number) {
   rig.position.set(0, 47, 0);
   group.add(rig);
 
-  const lampMaterial = new THREE.MeshBasicMaterial({ color: 0xfdfbf2, toneMapped: false });
+  /* Glass, not light. The lamp faces were self-lit white, which is right for
+     a night match and reads as ten rows of switched-on bulbs at midday. */
+  const lampMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8fa2b8,
+    roughness: 0.25,
+    metalness: 0.15,
+  });
   for (let row = 0; row < 2; row += 1) {
     for (let col = 0; col < 5; col += 1) {
       const lamp = new THREE.Mesh(new THREE.CircleGeometry(0.86, 12), lampMaterial);
@@ -850,7 +960,7 @@ export function ArenaDrive() {
       // Without tone mapping the floodlights clip the turf to a flat mint
       // green. ACES keeps the highlights and lets the grass stay grass.
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.92;
+      renderer.toneMappingExposure = 1.18;
 
       /* Shadows are what stop everything reading as pasted onto the grass: the
          posts, the pylons and the stands all sat on the pitch without touching
@@ -861,7 +971,10 @@ export function ArenaDrive() {
       host.appendChild(renderer.domElement);
 
       const scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x060d18, 0.0062);
+      /* Daylight haze, not night. Pale and thin: it should soften the far
+         stand rather than swallow it, and it has to sit near the colour of the
+         sky behind it or the horizon reads as a band of smog. */
+      scene.fog = new THREE.FogExp2(0xc6dcee, 0.0016);
 
       const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 600);
       const centreZ = (OWN_END_Z + OPP_END_Z) / 2;
@@ -879,14 +992,15 @@ export function ArenaDrive() {
       composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       composer.setSize(window.innerWidth, window.innerHeight);
       composer.addPass(new RenderPass(scene, camera));
-      // The threshold has to sit above the lit turf. Painted yard lines under
-      // floodlight are already near white, so a lower cut smeared the markings
-      // into the grass instead of glowing the lamps.
+      /* Barely there, and high-cut. Bloom is a night lever: the lamps were the
+         only thing above the threshold then. In daylight everything is bright,
+         so the same settings put a haze over the whole picture. Kept only for
+         the sun and the glare off the hoardings. */
       const bloom = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        0.44,
-        0.32,
-        1.15,
+        0.18,
+        0.4,
+        1.05,
       );
       composer.addPass(bloom);
 
@@ -900,7 +1014,7 @@ export function ArenaDrive() {
         uniforms: {
           tDiffuse: { value: null },
           uTime: { value: 0 },
-          uAmount: { value: 0.022 },
+          uAmount: { value: 0.013 },
         },
         vertexShader: `
           varying vec2 vUv;
@@ -930,9 +1044,12 @@ export function ArenaDrive() {
             col.g = texture2D(tDiffuse, vUv).g;
             col.b = texture2D(tDiffuse, vUv - c * disp).b;
 
-            // Vignette, falling off smoothly rather than as a drawn ring.
+            /* Vignette, falling off smoothly rather than as a drawn ring.
+               Light-handed: a heavy one belongs to a night match, where the
+               corners of the ground really are dark. In daylight it just
+               makes the picture look like it is being viewed through a tube. */
             float vig = smoothstep(0.92, 0.22, r2 * 1.65);
-            col *= mix(0.72, 1.0, vig);
+            col *= mix(0.88, 1.0, vig);
 
             // Grain, scaled by darkness: shadows are where a sensor is noisy.
             float luma = dot(col, vec3(0.299, 0.587, 0.114));
@@ -997,7 +1114,7 @@ export function ArenaDrive() {
       // Grass surround, so the pitch does not float in the void.
       const surround = new THREE.Mesh(
         new THREE.PlaneGeometry(FIELD_WIDE + 70, FIELD_LONG + 70),
-        new THREE.MeshStandardMaterial({ color: 0x11301d, roughness: 1 }),
+        new THREE.MeshStandardMaterial({ color: 0x2f5b32, roughness: 1 }),
       );
       surround.rotation.x = -Math.PI / 2;
       surround.position.set(0, -0.06, centreZ);
@@ -1031,7 +1148,13 @@ export function ArenaDrive() {
         buildStand(THREE, crowdStrips, adTexture, -1),
       );
 
-      const sky = buildSky(THREE);
+      const cloudCanvas = createCloudTexture();
+      const cloudTexture = cloudCanvas ? new THREE.CanvasTexture(cloudCanvas) : null;
+      if (cloudTexture) {
+        cloudTexture.colorSpace = THREE.SRGBColorSpace;
+        cloudTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      }
+      const sky = buildSky(THREE, cloudTexture);
       scene.add(sky.group);
 
       scene.add(buildGoal(THREE, OWN_END_Z, 1));
@@ -1090,146 +1213,53 @@ export function ArenaDrive() {
         scene.add(flags);
       }
 
-      // --- floodlights -------------------------------------------------
-      // Night: almost nothing from the sky, so the floodlights do the work
-      // and the corners of the ground fall away into the dark.
-      /* Ambient light is the enemy of a night match: a flat fill lit every
-         corner equally and left the floodlights nothing to do, which is most
-         of why the pitch read as one even sheet of green. Cut back hard so the
-         lamps carve their own pools and the ground falls away between them. */
-      scene.add(new THREE.HemisphereLight(0x1b3450, 0x070f08, 0.34));
-      scene.add(new THREE.AmbientLight(0x101c2e, 0.22));
+      // --- daylight ------------------------------------------------------
+      /* One sun and the sky it lights, instead of ten lamps. A daytime ground
+         is lit by a single hard source and an enormous soft one — the sun and
+         the whole dome above it — and reproducing that with the floodlight rig
+         would be ten shadow-casting cones fighting each other for the same
+         surfaces at ten times the cost.
 
-      /* A cone drawn at a flat opacity is a paper triangle, however faint. A
-         beam of light is dense where you look through the most of it and
-         nothing where the surface faces you, and it dies out before it reaches
-         the grass — so the alpha is built from the viewing angle and the
-         height rather than being a constant. */
-      const shaftMaterial = new THREE.ShaderMaterial({
-        uniforms: { uStrength: { value: 0.125 }, uColor: { value: new THREE.Color(0xc6dcff) } },
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        vertexShader: `
-          varying vec3 vNormalW;
-          varying vec3 vViewW;
-          varying float vUp;
-          void main() {
-            vec4 mv = modelViewMatrix * vec4(position, 1.0);
-            vNormalW = normalize(normalMatrix * normal);
-            vViewW = normalize(-mv.xyz);
-            vUp = uv.y;
-            gl_Position = projectionMatrix * mv;
-          }
-        `,
-        fragmentShader: `
-          uniform float uStrength;
-          uniform vec3 uColor;
-          varying vec3 vNormalW;
-          varying vec3 vViewW;
-          varying float vUp;
-          void main() {
-            float rim = 1.0 - abs(dot(normalize(vNormalW), normalize(vViewW)));
-            float body = pow(clamp(rim, 0.0, 1.0), 2.6);
-            /* Dies out at both ends: nothing at the lamp housing, nothing by
-               the time it reaches the grass. A beam that stops dead at a rim
-               is a cone of paper, which is what this looked like. */
-            float fall = smoothstep(0.02, 0.58, vUp) * (1.0 - smoothstep(0.82, 1.0, vUp));
-            float a = body * fall * uStrength;
-            if (a < 0.003) discard;
-            gl_FragColor = vec4(uColor, a);
-          }
-        `,
-      });
+         Direction matches the sun painted on the dome, or the shadows fall one
+         way and the glare comes from another. */
+      /* High. At the thirty degrees this started at, the touchline stand threw
+         a shadow forty units out across the pitch and half the playing surface
+         sat in it — true to the geometry and a dull picture. Near sixty the
+         shadows are short and the ground is lit. */
+      const SUN_DIR = new THREE.Vector3(0.30, 0.86, -0.42).normalize();
 
-      const shafts: import("three").Mesh[] = [];
+      const sun = new THREE.DirectionalLight(0xfff4e2, 3.4);
+      sun.position.copy(SUN_DIR).multiplyScalar(260);
+      sun.target.position.set(0, 0, (OWN_END_Z + OPP_END_Z) / 2);
+      sun.castShadow = true;
+      /* One shadow camera has to cover the whole ground, so it gets a big map.
+         Tight near and far planes around the bowl keep the depth precision
+         usable at that span. */
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.camera.near = 40;
+      sun.shadow.camera.far = 620;
+      sun.shadow.camera.left = -170;
+      sun.shadow.camera.right = 170;
+      sun.shadow.camera.top = 210;
+      sun.shadow.camera.bottom = -210;
+      sun.shadow.bias = -0.0009;
+      sun.shadow.normalBias = 0.6;
+      scene.add(sun, sun.target);
+
+      /* Sky above, grass below. This is what fills the shadowed side of
+         everything in an outdoor scene, and it is why a shaded face outdoors
+         is blue rather than black. */
+      scene.add(new THREE.HemisphereLight(0x9dc4ea, 0x2f4a26, 2.0));
+      scene.add(new THREE.AmbientLight(0xdfeaf6, 0.4));
+
+      // The pylons still stand in daylight; they just are not doing anything.
       for (let i = 0; i < 5; i += 1) {
         const z = 12 - i * (FIELD_LONG / 4.4);
         for (const side of [-1, 1] as const) {
-          const x = side * (FIELD_WIDE / 2 + 30);
-          scene.add(buildPylon(THREE, x, z));
-          /* Wider penumbra and a softer falloff: a hard-edged pool is a
-             torch, not a floodlight ninety feet up. */
-          const lamp = new THREE.SpotLight(0xdfe9fb, 7600, 330, 0.74, 0.82, 1.8);
-          lamp.position.set(x, 46, z);
-          lamp.target.position.set(x * 0.15, 0, z - 12);
-
-          /* Only the pair over midfield casts. Ten shadow maps would be ten
-             extra passes a frame to separate overlapping shadows nobody can
-             read apart anyway; one pair from opposite sides gives the posts
-             and the stands something to stand in. */
-          if (i === 2) {
-            lamp.castShadow = true;
-            lamp.shadow.mapSize.set(1024, 1024);
-            lamp.shadow.camera.near = 12;
-            lamp.shadow.camera.far = 240;
-            lamp.shadow.bias = -0.0022;
-            lamp.shadow.normalBias = 0.9;
-            lamp.shadow.radius = 3;
-          }
-          scene.add(lamp, lamp.target);
-
-          const shaft = new THREE.Mesh(
-            new THREE.ConeGeometry(23, 54, 44, 6, true),
-            shaftMaterial.clone(),
-          );
-          shaft.position.set(x * 0.66, 24, z - 6);
-          shaft.rotation.z = side > 0 ? 0.34 : -0.34;
-          scene.add(shaft);
-          shafts.push(shaft);
+          scene.add(buildPylon(THREE, side * (FIELD_WIDE / 2 + 30), z));
         }
       }
 
-      // --- camera flashes in the stands ---------------------------------
-      // A still crowd is a photograph. A handful of flashes going off is what
-      // makes a stand read as people rather than as a texture.
-      const flashCount = 220;
-      const flashPositions = new Float32Array(flashCount * 3);
-      const flashPhase = new Float32Array(flashCount);
-      for (let i = 0; i < flashCount; i += 1) {
-        const side = Math.random() > 0.5 ? 1 : -1;
-        /* Inside the new rake: front row to back row, foot of the steps to
-           the top. A flash going off in front of the stand or above its roof
-           is the tell that the two were never the same object. */
-        flashPositions[i * 3] = side * (FIELD_WIDE / 2 + 10 + Math.random() * 21);
-        flashPositions[i * 3 + 1] = 6 + Math.random() * 15;
-        flashPositions[i * 3 + 2] = OWN_END_Z + 10 - Math.random() * (FIELD_LONG + 30);
-        flashPhase[i] = Math.random() * 100;
-      }
-      const flashGeometry = new THREE.BufferGeometry();
-      flashGeometry.setAttribute("position", new THREE.BufferAttribute(flashPositions, 3));
-      flashGeometry.setAttribute("phase", new THREE.BufferAttribute(flashPhase, 1));
-      // Each flash needs its own moment, so the timing lives per point in a
-      // shader; a shared material opacity would fire the whole stand at once.
-      const flashMaterial = new THREE.ShaderMaterial({
-        uniforms: { uTime: { value: 0 } },
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        vertexShader: `
-          attribute float phase;
-          uniform float uTime;
-          varying float vAlpha;
-          void main() {
-            vec4 mv = modelViewMatrix * vec4(position, 1.0);
-            gl_Position = projectionMatrix * mv;
-            float t = fract(uTime * 0.22 + phase);
-            vAlpha = pow(max(0.0, 1.0 - t * 16.0), 2.0);
-            gl_PointSize = (30.0 * vAlpha + 1.0) * (60.0 / max(1.0, -mv.z));
-          }
-        `,
-        fragmentShader: `
-          varying float vAlpha;
-          void main() {
-            float m = smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5));
-            if (vAlpha * m < 0.01) discard;
-            gl_FragColor = vec4(1.0, 0.96, 0.88, vAlpha * m);
-          }
-        `,
-      });
-      const flashes = new THREE.Points(flashGeometry, flashMaterial);
-      scene.add(flashes);
 
       // --- night air ----------------------------------------------------
       const dustCount = 1400;
@@ -1296,7 +1326,10 @@ export function ArenaDrive() {
            jump the camera the whole length of the field in one step. */
         const dt = Math.min(0.05, (now - lastFrame) / 1000);
         lastFrame = now;
-        (sky.stars.material as import("three").ShaderMaterial).uniforms.uTime.value = time;
+        (sky.birds.material as import("three").ShaderMaterial).uniforms.uTime.value = time;
+        /* The cloud deck turns far more slowly than anything else in frame.
+           Any faster and a sky that should feel settled starts to scud. */
+        sky.clouds.rotation.y = time * 0.0035;
         filmPass.uniforms.uTime.value = time;
 
         /* The camera trails the scroll, and that lag is what makes this feel
@@ -1335,15 +1368,7 @@ export function ArenaDrive() {
         // is a ceiling, and at this travel distance it would show.
         sky.group.position.set(camera.position.x, 0, camera.position.z);
 
-        flashMaterial.uniforms.uTime.value = time;
         dust.rotation.y = time * 0.008;
-        for (const [index, shaft] of shafts.entries()) {
-          const material = shaft.material as import("three").ShaderMaterial;
-          /* Softer than it was. A beam you can see the edges of is a pane of
-             glass leaning on the stand; at this strength it is the air the
-             lamp is shining through, which is all it should ever have been. */
-          material.uniforms.uStrength.value = 0.125 + Math.sin(time * 1.2 + index) * 0.028;
-        }
         // Flags stir in the night air rather than hanging dead on the pole.
         if (flags) {
           for (const child of flags.children) {
@@ -1375,10 +1400,9 @@ export function ArenaDrive() {
         crowdStrips.forEach((texture) => texture.dispose());
         adTexture?.dispose();
         dotTexture?.dispose();
+        cloudTexture?.dispose();
         flagTexture?.dispose();
         boardTexture?.dispose();
-        flashMaterial.dispose();
-        shaftMaterial.dispose();
         composer.dispose();
         composerTarget.dispose();
         renderer.dispose();

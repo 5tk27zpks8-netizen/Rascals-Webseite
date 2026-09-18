@@ -203,6 +203,19 @@
   will-change: opacity;
 }
 
+/* ---------- Coaches ---------- */
+
+/* The staff carry the squad's card, but they have no shirt number. Left in,
+   the card falls back to "00" and reserves a column for it, which is a number
+   nobody has taking space the name needs. */
+.deck.is-deck .deck-card.is-coach .rpc-number,
+.deck.is-deck .deck-card.is-coach .rpc-player-placeholder strong {
+  display: none;
+}
+.deck.is-deck .deck-card.is-coach .rpc-player-info {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /* Standing on grass, not floating over it: a tight contact shadow under the
    card plus the long one the floodlights would throw. */
 .deck.is-deck .deck-card .rascals-player-card {

@@ -1,5 +1,6 @@
 import { ArenaDrive } from "./ArenaDrive";
-import { PlayerDeck } from "./PlayerDeck";
+import { PlayerDeck, type DeckEntry } from "./PlayerDeck";
+import type { Coach } from "./lib/coaches";
 import type { Player, PlayerUnit } from "./lib/football";
 import "./home-arena.css";
 import "./arena-roster.css";
@@ -23,6 +24,44 @@ const UNITS: { id: PlayerUnit; label: string }[] = [
   { id: "special-teams", label: "SPECIAL" },
 ];
 
+/**
+ * A coach, shaped so the squad's own card can carry them.
+ *
+ * They have no shirt number and no unit, so the card drops its number column
+ * for them (see .deck-card.is-coach) and the role goes where the position
+ * would. Building a second card for six people would mean two things to keep
+ * in step for the rest of the site's life.
+ */
+function asCard(coach: Coach): Player {
+  return {
+    id: `coach-${coach.id}`,
+    slug: "",
+    firstName: coach.firstName,
+    lastName: coach.lastName,
+    nickname: "",
+    jerseyNumber: null,
+    position: coach.role || "COACH",
+    secondaryPosition: "",
+    unit: "offense",
+    teamId: "",
+    heightCm: null,
+    weightKg: null,
+    birthDate: null,
+    joinedYear: null,
+    portrait: coach.photo,
+    bio: coach.bio,
+    instagram: "",
+    captain: false,
+    starter: false,
+    rookie: false,
+    status: "active",
+    returnDate: null,
+    active: coach.active,
+    createdAt: coach.createdAt,
+    updatedAt: coach.updatedAt,
+  };
+}
+
 /** Captains, then starters, then by shirt number. */
 function order(players: Player[]) {
   return [...players].sort((a, b) => {
@@ -36,15 +75,32 @@ function order(players: Player[]) {
   });
 }
 
-export function ArenaRoster({ players }: { players: Player[] }) {
-  const byUnit = UNITS.map((unit) => ({
-    ...unit,
-    players: order(players.filter((player) => player.unit === unit.id)),
-  }));
+export function ArenaRoster({
+  players,
+  coaches = [],
+}: {
+  players: Player[];
+  coaches?: Coach[];
+}) {
+  /* The staff lead every unit. Whichever one you pick, the drive takes you
+     past the people who run the team before it reaches the people who play
+     for it — which is the order a squad is introduced in. */
+  const staff: DeckEntry[] = [...coaches]
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.lastName.localeCompare(b.lastName, "de"))
+    .map((coach) => ({ player: asCard(coach), coach: true }));
+
+  const byUnit = UNITS.map((unit) => {
+    const squad = order(players.filter((player) => player.unit === unit.id));
+    return {
+      ...unit,
+      count: squad.length,
+      entries: [...staff, ...squad.map((player) => ({ player }))] as DeckEntry[],
+    };
+  });
 
   // Open on the unit that actually has players, so it never starts empty.
   const initial = byUnit.reduce(
-    (best, unit) => (unit.players.length > best.players.length ? unit : best),
+    (best, unit) => (unit.count > best.count ? unit : best),
     byUnit[0],
   );
 
@@ -88,19 +144,19 @@ export function ArenaRoster({ players }: { players: Player[] }) {
           {byUnit.map((unit) => (
             <label key={unit.id} htmlFor={`unit-${unit.id}`} className="roster-tab">
               {unit.label}
-              <small>{unit.players.length}</small>
+              <small>{unit.count}</small>
             </label>
           ))}
         </div>
 
         {byUnit.map((unit) => (
           <section key={unit.id} className="roster-panel" data-unit={unit.id}>
-            {unit.players.length === 0 ? (
+            {unit.entries.length === 0 ? (
               <p className="roster-empty">
                 Für diese Unit ist noch kein Spieler hinterlegt.
               </p>
             ) : (
-              <PlayerDeck players={unit.players} />
+              <PlayerDeck entries={unit.entries} />
             )}
           </section>
         ))}

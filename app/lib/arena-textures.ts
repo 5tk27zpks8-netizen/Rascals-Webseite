@@ -475,6 +475,58 @@ export function createCrowdRowTexture(variant: number): HTMLCanvasElement | null
 }
 
 /**
+ * A single cumulus, drawn to be used as a billboard.
+ *
+ * Built from overlapping soft discs rather than noise: a cloud is lumps, and
+ * stacking blurred circles with the light side towards the top gives the
+ * bulges and the shaded underside that make one read as a volume. Noise alone
+ * gives smoke.
+ */
+export function createCloudTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const W = 512;
+  const H = 256;
+  canvas.width = W;
+  canvas.height = H;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  let seed = 20260918;
+  const rnd = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+
+  const puff = (x: number, y: number, r: number, top: string, bottom: string) => {
+    const gradient = context.createRadialGradient(x, y - r * 0.32, r * 0.1, x, y, r);
+    gradient.addColorStop(0, top);
+    gradient.addColorStop(0.55, bottom);
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(x, y, r, 0, Math.PI * 2);
+    context.fill();
+  };
+
+  // The shaded base first, then the lit bulges on top of it.
+  for (let i = 0; i < 16; i += 1) {
+    const x = 80 + rnd() * (W - 160);
+    const y = H * 0.66 + (rnd() - 0.5) * 26;
+    puff(x, y, 42 + rnd() * 34, "rgba(206,216,230,0.92)", "rgba(186,198,215,0.5)");
+  }
+  for (let i = 0; i < 22; i += 1) {
+    const t = rnd();
+    const x = 90 + t * (W - 180);
+    // Highest in the middle, so the cloud has a crown rather than a flat top.
+    const lift = Math.sin(t * Math.PI) * 54;
+    const y = H * 0.62 - lift + (rnd() - 0.5) * 22;
+    puff(x, y, 34 + rnd() * 40, "rgba(255,255,255,0.99)", "rgba(240,245,251,0.62)");
+  }
+
+  return canvas;
+}
+
+/**
  * A soft round dot, for anything drawn as a point sprite.
  *
  * A PointsMaterial with no map draws hard squares. At the size the night air

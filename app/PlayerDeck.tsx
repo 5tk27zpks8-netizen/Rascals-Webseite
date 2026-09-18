@@ -27,8 +27,19 @@ import { RascalsPlayerCard } from "./team/RascalsPlayerCard";
  * swipeable row. The drive-through is an enhancement of something that works.
  */
 
-/** Three abreast: the squad lines up in rows rather than single file. */
-const ACROSS = 3;
+/**
+ * How many stand in each rank, cycled down the formation.
+ *
+ * Not a fixed three. A formation where every rank is the same width is a
+ * grid, and a grid in perspective reads as a spreadsheet however well it is
+ * lit — the eye finds the repeat immediately. Mixing threes and twos gives
+ * the ranks different silhouettes, and the narrower ones open a gap that the
+ * rank behind shows through.
+ *
+ * Five entries against a stagger that alternates on a period of two, so the
+ * two cycles only line up again every ten ranks.
+ */
+const RANKS = [3, 2, 3, 3, 2];
 
 /**
  * How far a row is nudged sideways from the one in front of it.
@@ -40,13 +51,29 @@ const ACROSS = 3;
  */
 const STAGGER = 0.28;
 
-export function PlayerDeck({ players }: { players: Player[] }) {
+/** A card in the deck, and whether it is a player or one of the staff. */
+export type DeckEntry = { player: Player; coach?: boolean };
+
+/** Deal the squad into ranks of the widths RANKS cycles through. */
+function intoRanks(entries: DeckEntry[]) {
+  const ranks: DeckEntry[][] = [];
+  let index = 0;
+  while (index < entries.length) {
+    const width = RANKS[ranks.length % RANKS.length];
+    ranks.push(entries.slice(index, index + width));
+    index += width;
+  }
+  return ranks;
+}
+
+export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
   const host = useRef<HTMLDivElement | null>(null);
-  const rows = Math.ceil(players.length / ACROSS);
+  const ranks = intoRanks(entries);
+  const rows = ranks.length;
 
   useEffect(() => {
     const element = host.current;
-    if (!element || players.length === 0) return;
+    if (!element || rows === 0) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (!window.matchMedia("(min-width: 760px)").matches) return;
 
@@ -121,9 +148,9 @@ export function PlayerDeck({ players }: { players: Player[] }) {
       element.classList.remove("is-deck");
       element.style.removeProperty("--focus");
     };
-  }, [players.length, rows]);
+  }, [rows]);
 
-  if (players.length === 0) return null;
+  if (entries.length === 0) return null;
 
   return (
     <div
@@ -132,31 +159,36 @@ export function PlayerDeck({ players }: { players: Player[] }) {
       style={{ "--rows": rows } as React.CSSProperties}
     >
       <div className="deck-stage">
-        {players.map((player, index) => {
-          const row = Math.floor(index / ACROSS);
-          const column = index % ACROSS;
-          /* The last row is rarely full. Centring it on however many it holds
-             stops a squad of ten from ending on one card hanging off to the
-             left where the row's first column happens to be. */
-          const inRow = Math.min(ACROSS, players.length - row * ACROSS);
-          const across =
-            column - (inRow - 1) / 2 + (row % 2 === 0 ? -STAGGER : STAGGER);
+        {ranks.map((rank, row) =>
+          rank.map((entry, column) => {
+            /* Centred on however many this rank holds, so a rank of two sits
+               either side of the middle rather than starting where the first
+               of three would have — and spread wider than the column pitch,
+               because a pair left on the three-wide spacing reads as a rank
+               with a card missing out of the middle. Opening them out uses
+               the width and leaves a gap for the rank behind to show through,
+               which is the whole reason for mixing the widths. */
+            const spread = rank.length === 2 ? 1.7 : 1;
+            const across =
+              (column - (rank.length - 1) / 2) * spread +
+              (row % 2 === 0 ? -STAGGER : STAGGER);
 
-          return (
-            <div
-              className="deck-card"
-              key={player.id}
-              style={
-                {
-                  "--row": row,
-                  "--x": across.toFixed(3),
-                } as React.CSSProperties
-              }
-            >
-              <RascalsPlayerCard player={player} />
-            </div>
-          );
-        })}
+            return (
+              <div
+                className={entry.coach ? "deck-card is-coach" : "deck-card"}
+                key={entry.player.id}
+                style={
+                  {
+                    "--row": row,
+                    "--x": across.toFixed(3),
+                  } as React.CSSProperties
+                }
+              >
+                <RascalsPlayerCard player={entry.player} />
+              </div>
+            );
+          }),
+        )}
       </div>
     </div>
   );

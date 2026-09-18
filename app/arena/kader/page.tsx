@@ -1,3 +1,4 @@
+import { listActiveCoaches } from "../../lib/coaches";
 import { listPublicTeamPlayers } from "../../lib/public-team-players";
 import { ArenaRoster } from "../../ArenaRoster";
 
@@ -10,6 +11,9 @@ export const metadata = {
 
 /** Preview: the Arena drive carrying nothing but the player cards. */
 export default async function ArenaRosterPreviewPage() {
-  const players = await listPublicTeamPlayers().catch(() => []);
-  return <ArenaRoster players={players} />;
+  const [players, coaches] = await Promise.all([
+    listPublicTeamPlayers().catch(() => []),
+    listActiveCoaches().catch(() => []),
+  ]);
+  return <ArenaRoster players={players} coaches={coaches} />;
 }
