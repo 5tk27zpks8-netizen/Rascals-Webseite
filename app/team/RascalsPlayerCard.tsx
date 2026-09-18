@@ -1,4 +1,10 @@
 import type { Player } from "../lib/football";
+/* The card carries its own look. It used to be pulled in by the two team
+   pages instead, which held for as long as those were the only places the
+   card appeared — on the Arena roster, where nothing imports it, the card
+   lost its aspect ratio and every one of them grew to five thousand pixels
+   tall. A component's stylesheet belongs to the component. */
+import "./team.css";
 import "./inactive-player-stamp.css";
 
 export const PLAYER_CARD_TEMPLATE = "RASCALS" as const;

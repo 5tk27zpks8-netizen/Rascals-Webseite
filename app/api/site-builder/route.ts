@@ -67,7 +67,7 @@ function legacyHomeSections(template: BuilderPage): BuilderSection[] {
   stats.variant = "legacy-strip";
   stats.eyebrow = "";
   stats.title = "";
-  stats.style.background = "#dc1726";
+  stats.style.background = "#e7192d";
   stats.style.textColor = "#ffffff";
   stats.style.accentColor = "#ffffff";
   stats.style.paddingTop = 0;
@@ -107,7 +107,7 @@ function legacyHomeSections(template: BuilderPage): BuilderSection[] {
       ...clone(story.style),
       background: "#07172b",
       textColor: "#ffffff",
-      accentColor: "#dc1726",
+      accentColor: "#e7192d",
       paddingTop: 128,
       paddingBottom: 128,
     },
