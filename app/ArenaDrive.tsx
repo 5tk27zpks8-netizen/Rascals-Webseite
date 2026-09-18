@@ -50,9 +50,14 @@ const OPP_GOAL_Z = -100 * YARD;
 const OWN_END_Z = 10 * YARD;
 const OPP_END_Z = OPP_GOAL_Z - 10 * YARD;
 
-/** Own 20, to a few yards deep in the opposing end zone. */
+/** Own 20, to just over the opposing goal line. */
 const START_Z = OWN_GOAL_Z - 20 * YARD;
-const END_Z = OPP_GOAL_Z - 6 * YARD;
+/* The eight, not six yards deep in the end zone. The drive used to run on to
+   four yards short of the end line, where the posts fill the frame and there
+   is nothing of the end zone left in front of the camera to be looked at.
+   Coming to rest short of the line leaves all ten yards of it laid out ahead
+   under the posts, which is the picture the whole page drives towards. */
+const END_Z = OPP_GOAL_Z + 8 * YARD;
 
 type Three = typeof import("three");
 
@@ -87,7 +92,14 @@ const SHOTS: Shot[] = [
   { at: 0.45, x: 27, y: 9.2, lx: -12, ly: 2.6, ahead: 40, fov: 58, roll: 0.021 },
   { at: 0.615, x: -22, y: 17, lx: 9, ly: 1.4, ahead: 56, fov: 53, roll: -0.016 },
   { at: 0.78, x: 13, y: 6.8, lx: -6, ly: 3.2, ahead: 44, fov: 60, roll: 0.015 },
-  { at: 0.97, x: 0, y: 4.4, lx: 0, ly: 8, ahead: 40, fov: 54, roll: 0 },
+  /* Arriving, and looking at what it arrived in. `ahead` decides this shot:
+     the field ends seventeen units past the goal line, so aiming much beyond
+     that lands the middle of the frame out on the grass behind the ground —
+     which is how the drive came to finish on an empty green slab under the
+     posts. Nineteen puts the aim on the end line, and a shallow tilt from
+     seven and a half keeps the end zone laid out in perspective rather than
+     passing underneath. */
+  { at: 0.97, x: 0, y: 9, lx: 0, ly: 0.9, ahead: 28, fov: 56, roll: 0 },
 ];
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -1024,8 +1036,12 @@ export function ArenaDrive() {
 
       scene.add(buildGoal(THREE, OWN_END_Z, 1));
       scene.add(buildGoal(THREE, OPP_END_Z, -1));
-      scene.add(buildEndStand(THREE, crowdStrips, adTexture, OWN_END_Z + 26, 1));
-      scene.add(buildEndStand(THREE, crowdStrips, adTexture, OPP_END_Z - 26, -1));
+      /* Fourteen units back from the end line, not twenty-six. At twenty-six
+         the bowl had a band of bare grass behind each end wide enough to read
+         as a gap in the ground, and the shot that ends the drive looks
+         straight down it. A stand at this level sits close behind the posts. */
+      scene.add(buildEndStand(THREE, crowdStrips, adTexture, OWN_END_Z + 14, 1));
+      scene.add(buildEndStand(THREE, crowdStrips, adTexture, OPP_END_Z - 14, -1));
 
       // The board carries whatever the schedule says is next. It is drawn
       // once with a placeholder and repainted when the fetch lands, so a slow

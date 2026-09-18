@@ -6,8 +6,8 @@
    and scrolling carries the camera forward past them.
 
    PlayerDeck writes one number, --focus: the fractional index of
-   the card the camera is level with. Each card works out its own
-   depth from that and its own --i, so a scroll frame costs one
+   the row the camera is level with. Each card works out its own
+   depth from that and its own --row, so a scroll frame costs one
    property write.
 
    Until that class arrives — no JS, reduced motion, narrow screen
@@ -138,7 +138,7 @@
    behind it, because the drive reads the same page scroll. */
 .deck.is-deck {
   position: relative;
-  height: calc(100vh + var(--count, 10) * 300px);
+  height: calc(100vh + var(--rows, 4) * 700px);
 }
 
 .deck.is-deck .deck-stage {
@@ -161,8 +161,8 @@
 }
 
 .deck.is-deck .deck-card {
-  /* How many cards ahead this one is. Negative once the camera has passed it. */
-  --rel: calc(var(--i) - var(--focus, 0));
+  /* How many rows ahead this one stands. Negative once the camera is past it. */
+  --rel: calc(var(--row) - var(--focus, 0));
 
   position: absolute;
   left: 50%;
@@ -171,13 +171,16 @@
   margin-left: calc(clamp(210px, 18vw, 264px) / -2);
   margin-top: calc(clamp(210px, 18vw, 264px) * -0.68);
 
-  /* Posted across the width of the pitch and down its length. The card the
-     camera is level with sits at z=0, square on and full size; the ones ahead
-     stand further downfield and fall away with the perspective. */
+  /* Three abreast, row behind row down the length of the pitch. The row the
+     camera is level with sits at z=0, square on and full size; the rows ahead
+     stand further downfield and fall away with the perspective.
+
+     The column pitch has to clear a card and then some, or the three run into
+     each other at the front where they are largest. */
   transform:
-    translateX(calc(var(--lane, 0) * clamp(170px, 17vw, 280px)))
-    translateZ(calc(var(--rel) * -640px))
-    rotateY(calc(var(--lane, 0) * -6deg));
+    translateX(calc(var(--x, 0) * clamp(238px, 23vw, 338px)))
+    translateZ(calc(var(--rel) * -700px))
+    rotateY(calc(var(--x, 0) * -5deg));
 
   /* Gone before it swells. At the old rate a card was still a third of the
      way across the screen at a third of its opacity as it went by, which
@@ -189,8 +192,8 @@
      silently does nothing. */
   opacity: clamp(0, calc((var(--rel) + 0.42) * 3.2), 1);
 
-  /* Nearer the camera draws in front. */
-  z-index: calc(1000 - round(nearest, var(--i), 1));
+  /* Nearer rows draw in front. */
+  z-index: calc(1000 - round(nearest, var(--row), 1));
 
   /* Opacity only. Naming `transform` here pins the card's raster at the scale
      it had when the layer was promoted, so every card that grows towards the

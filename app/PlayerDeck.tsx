@@ -7,15 +7,19 @@ import { RascalsPlayerCard } from "./team/RascalsPlayerCard";
 /**
  * The squad standing out on the field, and you drive through them.
  *
- * The cards are not a row you pan along: they are posted down the length of the
- * pitch, spread across its width the way players are, and scrolling carries the
- * camera forward past them. One card is always closest — square on, full size,
- * readable — while the next ones stand further downfield, smaller and dimmer,
- * and the one you have passed slips behind you and goes.
+ * The cards are not a row you pan along: they stand three abreast in ranks
+ * posted down the length of the pitch, and scrolling carries the camera
+ * forward past them. One rank is always closest — square on, full size,
+ * readable — while the ranks behind it stand further downfield, smaller and
+ * dimmer, and the one you have passed slips behind you and goes.
+ *
+ * Three at a time rather than one: single file meant the squad arrived as a
+ * long queue of cards at every depth at once, which is busier to look at and
+ * three times as far to scroll.
  *
  * Only one number crosses from JavaScript to CSS: `--focus`, the fractional
- * index of the card the camera is level with. Every card works out its own
- * depth from that and its own index, so a scroll frame costs one
+ * index of the rank the camera is level with. Every card works out its own
+ * depth from that and its own row, so a scroll frame costs one
  * custom-property write — no per-card style writes, no React render.
  *
  * Without JavaScript, with reduced motion, or on a narrow screen the class
@@ -23,22 +27,22 @@ import { RascalsPlayerCard } from "./team/RascalsPlayerCard";
  * swipeable row. The drive-through is an enhancement of something that works.
  */
 
+/** Three abreast: the squad lines up in rows rather than single file. */
+const ACROSS = 3;
+
 /**
- * Lanes across the width of the pitch.
+ * How far a row is nudged sideways from the one in front of it.
  *
- * Every card changes side from the one before it and no two neighbours share a
- * lane, so the squad reads as standing about the field rather than queued down
- * one stripe of it. The magnitudes are wide on purpose: perspective squeezes a
- * lane towards the middle the further downfield it is, so a sequence that
- * looks generous flat on the page comes out as a huddle once it has depth.
- *
- * Eleven of them, a prime count, so the cycle does not land the same lane
- * under the same card as the squad grows.
+ * Without it the three columns line up into three straight corridors running
+ * away from the camera, which is a spreadsheet in perspective. Alternating the
+ * rows by a fraction of a column breaks the corridors without breaking the
+ * rows — the same offset a real formation has.
  */
-const LANES = [0, 1.9, -1.45, 1.1, -2.05, 1.55, -0.85, 2.1, -1.75, 0.6, -1.2];
+const STAGGER = 0.28;
 
 export function PlayerDeck({ players }: { players: Player[] }) {
   const host = useRef<HTMLDivElement | null>(null);
+  const rows = Math.ceil(players.length / ACROSS);
 
   useEffect(() => {
     const element = host.current;
@@ -69,7 +73,9 @@ export function PlayerDeck({ players }: { players: Player[] }) {
       const runway = box.height - window.innerHeight;
       const travel = runway > 0 ? -box.top / runway : 0;
       const clamped = Math.min(1, Math.max(0, travel));
-      target = clamped * (players.length - 1);
+      /* Counted in rows now, not in players: the camera travels from the front
+         row to the back one, and each row carries three of the squad. */
+      target = clamped * (rows - 1);
     };
 
     const write = () => element.style.setProperty("--focus", drawn.toFixed(3));
@@ -115,7 +121,7 @@ export function PlayerDeck({ players }: { players: Player[] }) {
       element.classList.remove("is-deck");
       element.style.removeProperty("--focus");
     };
-  }, [players.length]);
+  }, [players.length, rows]);
 
   if (players.length === 0) return null;
 
@@ -123,23 +129,34 @@ export function PlayerDeck({ players }: { players: Player[] }) {
     <div
       className="deck"
       ref={host}
-      style={{ "--count": players.length } as React.CSSProperties}
+      style={{ "--rows": rows } as React.CSSProperties}
     >
       <div className="deck-stage">
-        {players.map((player, index) => (
-          <div
-            className="deck-card"
-            key={player.id}
-            style={
-              {
-                "--i": index,
-                "--lane": LANES[index % LANES.length],
-              } as React.CSSProperties
-            }
-          >
-            <RascalsPlayerCard player={player} />
-          </div>
-        ))}
+        {players.map((player, index) => {
+          const row = Math.floor(index / ACROSS);
+          const column = index % ACROSS;
+          /* The last row is rarely full. Centring it on however many it holds
+             stops a squad of ten from ending on one card hanging off to the
+             left where the row's first column happens to be. */
+          const inRow = Math.min(ACROSS, players.length - row * ACROSS);
+          const across =
+            column - (inRow - 1) / 2 + (row % 2 === 0 ? -STAGGER : STAGGER);
+
+          return (
+            <div
+              className="deck-card"
+              key={player.id}
+              style={
+                {
+                  "--row": row,
+                  "--x": across.toFixed(3),
+                } as React.CSSProperties
+              }
+            >
+              <RascalsPlayerCard player={player} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
