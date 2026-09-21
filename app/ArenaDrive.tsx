@@ -561,6 +561,9 @@ type CrowdFaces = import("three").Texture[];
 /** One person's worth of seat, in scene units. A unit is about 0.54m here. */
 const SEAT_PITCH = 0.95;
 
+/** How far the touchline stands stand back, leaving the team areas their room. */
+const SIDELINE_DEPTH = 13;
+
 /**
  * A head, with its sides pointed at the right corner of the face sheet.
  *
@@ -643,6 +646,7 @@ function buildCrowd(
   type Seat = { x: number; y: number; z: number; turn: number; lean: number;
                 height: number; girth: number; shirt: number; face: number };
   const seats: Seat[] = [];
+  const empties: Array<{ x: number; y: number; z: number; row: number }> = [];
 
   for (let row = 0; row < rows; row += 1) {
     /* Each row offset by a third of a seat from the one in front, so a
@@ -658,9 +662,20 @@ function buildCrowd(
       if (toAisle > aislePitch / 2 - 0.85) continue;
 
       /* An empty seat in eight, and emptier towards the back corners, which is
-         where a ground actually thins out. */
+         where a ground actually thins out.
+
+         An empty seat is not an empty space. Left as a gap it shows bare
+         concrete, and a stand pocked with holes reads worse than a full one —
+         which is why the emptiness has to come with the seat that nobody is
+         in. Only the empty ones get one: a seat behind an occupied one is
+         entirely hidden by its occupant, so drawing twenty-two thousand of
+         them to see five thousand would be paying four times over. */
       const backness = row / Math.max(1, rows - 1);
-      if (rand() < 0.11 + backness * 0.1) continue;
+      if (rand() < 0.11 + backness * 0.1) {
+        empties.push({ x: row * TERRACE_TREAD + TERRACE_TREAD * 0.52,
+                       y: base + row * TERRACE_RISER, z, row });
+        continue;
+      }
 
       const height = 0.9 + rand() * 0.22;
       seats.push({
@@ -737,6 +752,64 @@ function buildCrowd(
     head.setColorAt(head.count, colour.setRGB(shade, shade, shade));
     head.count += 1;
   });
+
+  /* The seats nobody is in, in the bands a real bowl is laid out in. Stands
+     are not one colour: they are blocks, and the blocks are what you read as
+     structure from the far side of a ground. */
+  if (empties.length > 0) {
+    const seatMesh = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.1, 0.5, 0.66),
+      new THREE.MeshStandardMaterial({ roughness: 0.74 }),
+      empties.length,
+    );
+    seatMesh.count = 0;
+    empties.forEach((seat) => {
+      position.set(seat.x, seat.y + 0.3, seat.z);
+      quaternion.identity();
+      scale.set(1, 1, 1);
+      matrix.compose(position, quaternion, scale);
+      seatMesh.setMatrixAt(seatMesh.count, matrix);
+      /* Banded by row, club colours through the middle of the rake where a
+         ground puts them. */
+      const band = seat.row % 7;
+      seatMesh.setColorAt(seatMesh.count,
+        colour.setHex(band === 3 ? 0x9e210f : band === 4 ? 0x9e210f : 0x21254b));
+      seatMesh.count += 1;
+    });
+    seatMesh.instanceMatrix.needsUpdate = true;
+    if (seatMesh.instanceColor) seatMesh.instanceColor.needsUpdate = true;
+    seatMesh.receiveShadow = true;
+    seatMesh.computeBoundingSphere();
+    group.add(seatMesh);
+  }
+
+  /* A handrail up every gangway. Two thin runs climbing the rake, which is a
+     trivial amount of geometry and one of the strongest signals that a stand
+     is a built structure rather than a ramp with people on it — the diagonals
+     cut across the horizontal banding of the rows and give the rake its
+     pitch. */
+  const rakeAngle = Math.atan2(TERRACE_RISER, TERRACE_TREAD);
+  const rakeRun = Math.hypot(rows * TERRACE_TREAD, rows * TERRACE_RISER);
+  const railGeometry = new THREE.BoxGeometry(rakeRun, 0.1, 0.1);
+  const railMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8f98a6, roughness: 0.42, metalness: 0.55,
+  });
+  const postGeometry = new THREE.BoxGeometry(0.1, 1.0, 0.1);
+  for (let a = 0; a < aisles; a += 1) {
+    const centre = -half + aislePitch * (a + 0.5);
+    for (const offset of [-0.82, 0.82]) {
+      const rail = new THREE.Mesh(railGeometry, railMaterial);
+      rail.position.set(rows * TERRACE_TREAD / 2, base + rows * TERRACE_RISER / 2 + 1.0, centre + offset);
+      rail.rotation.z = rakeAngle;
+      rail.castShadow = true;
+      group.add(rail);
+      for (let r = 1; r < rows; r += 3) {
+        const post = new THREE.Mesh(postGeometry, railMaterial);
+        post.position.set(r * TERRACE_TREAD, base + r * TERRACE_RISER + 0.5, centre + offset);
+        group.add(post);
+      }
+    }
+  }
 
   for (const mesh of [torso, ...heads]) {
     mesh.instanceMatrix.needsUpdate = true;
@@ -930,6 +1003,354 @@ function buildTerrace(
 }
 
 /** A raked stand down one touchline. */
+/* ============================================================
+   THE SIDELINE.
+
+   There was nothing here. Between the touchline and the front wall of the
+   stand lay a flat green plane, and that emptiness is the single largest
+   difference between this ground and a televised one. A broadcast frame of
+   American football is carried along its bottom edge: a wall of players in
+   jerseys, coaches behind them, benches, coolers, carts, a kicking net, the
+   chain crew, a camera operator. It is the busiest strip of the picture and
+   it was the only strip with nothing in it.
+
+   None of it needs rigging or animation. It is furniture and standing people,
+   and standing people at this distance are the same boxes the crowd is made
+   of — so the sideline costs a handful of instanced draws and no new asset.
+
+   Everything is laid out from the touchline outwards in the bands a real
+   sideline uses, because the order is what makes it read:
+
+     0.0 - 1.8   the white border, which nobody may stand on
+     1.8 - 4.5   the players, loosely clustered, all facing the field
+     4.5 - 7.0   coaches and staff, a step back from the players
+     7.0 - 10.0  benches, coolers, carts, the kicking net
+    10.0 - 13.0  clear, then the wall and the stand behind it
+   ============================================================ */
+
+/** Home jerseys at one end of the bench, and the visitors' at the other. */
+const JERSEY_HOME = [0x21254b, 0x21254b, 0x2a2f5c, 0x9e210f];
+const JERSEY_AWAY = [0xd8dce4, 0xc7ccd6, 0xe6e9ee, 0x8c929e];
+/** Coaching staff: dark shells and polos, the way a touchline actually looks. */
+const STAFF_KIT = [0x1a1f2b, 0x232936, 0x2f3646, 0x3c4454, 0x151922];
+
+function buildSideline(
+  THREE: Three,
+  options: {
+    /** Distance from the middle of the field out to the touchline. */
+    touchline: number;
+    /** Which side of the field this is: +1 or -1 in x. */
+    side: 1 | -1;
+    /** The stretch of field this sideline runs along. */
+    fromZ: number;
+    toZ: number;
+    faces: CrowdFaces;
+    seed: number;
+  },
+) {
+  const { touchline, side, fromZ, toZ, faces, seed } = options;
+  const group = new THREE.Group();
+
+  let state = seed >>> 0;
+  const rand = () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+
+  const zMin = Math.min(fromZ, toZ);
+  const zMax = Math.max(fromZ, toZ);
+  const zSpan = zMax - zMin;
+  /** Distance out from the touchline, signed into world x. */
+  const out = (depth: number) => side * (touchline + depth);
+
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const euler = new THREE.Euler();
+  const colour = new THREE.Color();
+
+  /* Everyone on this side faces the field, which is a quarter turn one way or
+     the other depending on which touchline they are standing on. */
+  const facing = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+
+  // --- the people ------------------------------------------------------
+
+  type Person = {
+    z: number; depth: number; turn: number;
+    height: number; kit: number; staff: boolean; face: number;
+  };
+  const people: Person[] = [];
+
+  /* A team area, not a picket line.
+
+     Fifty players spread evenly along ninety metres is a fence. A real squad
+     occupies the middle third of its own half of the touchline and stands
+     shoulder to shoulder in it, two and three deep, because that is where the
+     benches and the coaches are — and the density is the thing a televised
+     frame actually shows. So the band is narrowed to the middle of the
+     sideline and the count raised to fill it.
+
+     Within that band they cluster rather than space out: around a coach
+     talking, around the bench, thinner where the chain crew needs room. An
+     evenly spaced line is the giveaway that says "placed by a loop". */
+  const teamFrom = zMin + zSpan * 0.16;
+  const teamSpan = zSpan * 0.68;
+  const clusters = Math.max(4, Math.round(teamSpan / 11));
+  for (let c = 0; c < clusters; c += 1) {
+    const centre = teamFrom + teamSpan * ((c + 0.5) / clusters) + (rand() - 0.5) * 4;
+    const size = 6 + Math.floor(rand() * 6);
+    for (let i = 0; i < size; i += 1) {
+      people.push({
+        z: centre + (rand() - 0.5) * 6.5,
+        depth: 2.0 + rand() * 3.0,
+        /* Not quite square to the play. A touchline where every helmet points
+           the same way reads as a fence. */
+        turn: facing + (rand() - 0.5) * 0.7,
+        height: 0.96 + rand() * 0.1,
+        kit: 0,
+        staff: false,
+        face: faces.length > 0 ? (rand() * faces.length) | 0 : 0,
+      });
+    }
+  }
+
+  /* THE REST OF THE TOUCHLINE, WHICH IS NOT EMPTY EITHER.
+
+     Concentrating the squad into its own third is right, and on its own it
+     made things worse: the camera travels the full length of this ground, so
+     for most of the drive it was flying past bare grass where a moment before
+     there had been people. A real perimeter is never bare. Stewards stand at
+     intervals the whole way round facing the crowd — not the play, which is
+     the detail that gives them away as stewards — with photographers and
+     media down by the ends.
+
+     Sparse, evenly spread, and turned the other way. They cost almost nothing
+     and they stop the bottom of the frame emptying out between benches. */
+  const perimeter = Math.max(6, Math.round(zSpan / 13));
+  for (let i = 0; i < perimeter; i += 1) {
+    people.push({
+      z: zMin + zSpan * ((i + 0.5) / perimeter) + (rand() - 0.5) * 5,
+      depth: 1.9 + rand() * 0.7,
+      // Backs to the field, watching the stand. That is the job.
+      turn: facing + Math.PI + (rand() - 0.5) * 0.5,
+      height: 0.95 + rand() * 0.1,
+      kit: 0,
+      staff: true,
+      face: faces.length > 0 ? (rand() * faces.length) | 0 : 0,
+    });
+  }
+
+  // Coaching staff, a step back from the players and far fewer of them.
+  const staffCount = Math.max(5, Math.round(teamSpan / 9));
+  for (let i = 0; i < staffCount; i += 1) {
+    people.push({
+      z: teamFrom + rand() * teamSpan,
+      depth: 4.8 + rand() * 2.0,
+      turn: facing + (rand() - 0.5) * 0.9,
+      height: 0.94 + rand() * 0.1,
+      kit: 0,
+      staff: true,
+      face: faces.length > 0 ? (rand() * faces.length) | 0 : 0,
+    });
+  }
+
+  const players = people.filter((p) => !p.staff);
+  const staff = people.filter((p) => p.staff);
+
+  /* A standing person, in three parts. Seated crowd geometry will not do: a
+     person on their feet is mostly legs, and the proportion is what the eye
+     uses to tell standing from sitting at a distance where nothing else is
+     legible. A unit is about 0.54m, so this is a 1.8m adult. */
+  const legsGeometry = new THREE.BoxGeometry(0.42, 1.55, 0.62);
+  const torsoGeometry = new THREE.BoxGeometry(0.52, 1.25, 0.86);
+  const headGeometry = makeCrowdHeadGeometry(THREE);
+  /* A helmet, not a head: wider, deeper, and with no face on it. It is the
+     single most recognisable silhouette in the sport and it is what tells a
+     player from a coach at two hundred units. */
+  const helmetGeometry = new THREE.BoxGeometry(0.44, 0.44, 0.44);
+
+  const instanced = (
+    geometry: import("three").BufferGeometry,
+    material: import("three").Material,
+    count: number,
+  ) => {
+    const mesh = new THREE.InstancedMesh(geometry, material, Math.max(1, count));
+    mesh.count = 0;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  };
+
+  const playerLegs = instanced(legsGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.8 }), players.length);
+  const playerTorso = instanced(torsoGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.72 }), players.length);
+  const helmets = instanced(helmetGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.32, metalness: 0.12 }), players.length);
+  const staffLegs = instanced(legsGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.86 }), staff.length);
+  const staffTorso = instanced(torsoGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.84 }), staff.length);
+  const staffHeads = (faces.length > 0 ? faces : [null]).map((map, index) =>
+    instanced(headGeometry,
+      new THREE.MeshStandardMaterial({ map, roughness: 0.8 }),
+      staff.filter((p) => p.face === index).length));
+
+  const place = (
+    mesh: import("three").InstancedMesh,
+    x: number, y: number, z: number,
+    turn: number, sx: number, sy: number, sz: number,
+    hex: number,
+  ) => {
+    position.set(x, y, z);
+    euler.set(0, turn, 0);
+    quaternion.setFromEuler(euler);
+    scale.set(sx, sy, sz);
+    matrix.compose(position, quaternion, scale);
+    mesh.setMatrixAt(mesh.count, matrix);
+    mesh.setColorAt(mesh.count, colour.setHex(hex));
+    mesh.count += 1;
+  };
+
+  /* Home kit on the near half of the sideline and whites on the far half, so
+     the two squads read as two squads rather than as one long mixed queue. */
+  for (const p of players) {
+    const x = out(p.depth);
+    const h = p.height;
+    const homeHalf = (p.z - zMin) / zSpan < 0.5;
+    const palette = homeHalf ? JERSEY_HOME : JERSEY_AWAY;
+    const jersey = palette[(Math.abs(Math.round(p.z * 7)) % palette.length)];
+    // Pants: white at home, navy on the road, which is the way round it is.
+    const pants = homeHalf ? 0xdfe3ea : 0x262c3d;
+    /* The helmet is its own colour and has to be. Painted the same navy as
+       the jersey it disappears into the shoulders, and a player without a
+       helmet silhouette is just another box on a touchline full of boxes —
+       which is exactly how the first pass of this read. Red at home against
+       the navy, silver on the road against the whites. */
+    const helmet = homeHalf ? 0x9e210f : 0xa8b0bd;
+    place(playerLegs, x, 0.78 * h, p.z, p.turn, 1, h, 1, pants);
+    place(playerTorso, x, (1.55 + 0.62) * h, p.z, p.turn, 1, h, 1, jersey);
+    place(helmets, x, (1.55 + 1.25 + 0.22) * h, p.z, p.turn, 1, 1, 1, helmet);
+  }
+
+  for (const p of staff) {
+    const x = out(p.depth);
+    const h = p.height;
+    const kit = STAFF_KIT[(Math.abs(Math.round(p.z * 11)) % STAFF_KIT.length)];
+    place(staffLegs, x, 0.78 * h, p.z, p.turn, 0.94, h, 0.94, 0x20242e);
+    place(staffTorso, x, (1.55 + 0.62) * h, p.z, p.turn, 0.94, h, 0.94, kit);
+    const head = staffHeads[p.face] ?? staffHeads[0];
+    place(head, x, (1.55 + 1.25 + 0.2) * h, p.z, p.turn, 1, 1, 1, 0xffffff);
+  }
+
+  for (const mesh of [playerLegs, playerTorso, helmets, staffLegs, staffTorso, ...staffHeads]) {
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    group.add(mesh);
+  }
+
+  // --- the furniture ----------------------------------------------------
+
+  /* EVERYTHING REPEATED IS INSTANCED, AND THAT IS NOT A DETAIL.
+
+     The first pass of this built every bench section, cooler, crate, net post
+     and tripod as its own Mesh with its own material: about sixty objects a
+     touchline, a hundred and twenty across the ground, each one a draw call
+     and a material of its own. The crowd behind them — eight thousand people —
+     costs sixteen. Furniture is the most repetitive thing on a touchline and
+     it was the only thing here not taking advantage of that. */
+  const kit = (
+    geometry: import("three").BufferGeometry,
+    material: import("three").Material,
+    count: number,
+  ) => {
+    const mesh = new THREE.InstancedMesh(geometry, material, Math.max(1, count));
+    mesh.count = 0;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  };
+
+  /* One material for all of it. Every piece takes its colour from its
+     instance, so a shared material is not a compromise here — it is the whole
+     point of instancing them. */
+  const painted = new THREE.MeshStandardMaterial({ roughness: 0.82 });
+
+  const benchRuns = Math.max(2, Math.round(zSpan / 22));
+  const coolerRuns = Math.max(3, Math.round(zSpan / 18));
+
+  const benchSeats = kit(new THREE.BoxGeometry(1.1, 0.16, 7.4), painted, benchRuns);
+  const benchBacks = kit(new THREE.BoxGeometry(0.16, 0.9, 7.4), painted, benchRuns);
+  const benchLegs = kit(new THREE.BoxGeometry(0.9, 0.85, 0.2), painted, benchRuns * 2);
+  const coolers = kit(new THREE.BoxGeometry(0.72, 0.95, 0.72), painted, coolerRuns);
+  const crates = kit(new THREE.BoxGeometry(0.62, 0.34, 0.9), painted, coolerRuns);
+  const netPosts = kit(new THREE.BoxGeometry(0.16, 5.2, 0.16), painted, 4);
+  const tripods = kit(new THREE.BoxGeometry(0.5, 1.5, 0.5), painted, 2);
+  const cameraBodies = kit(new THREE.BoxGeometry(1.5, 0.62, 0.62), painted, 2);
+  const markerPoles = kit(new THREE.BoxGeometry(0.12, 2.6, 0.12), painted, 2);
+  const markerBoards = kit(new THREE.BoxGeometry(0.1, 0.8, 0.8), painted, 2);
+
+  /* Benches, in runs rather than one continuous slab — a touchline bench is
+     sectional and the joins are visible from the far side of a ground. */
+  for (let i = 0; i < benchRuns; i += 1) {
+    const z = zMin + zSpan * ((i + 0.5) / benchRuns);
+    place(benchSeats, out(8.1), 0.86, z, 0, 1, 1, 1, 0x2b3242);
+    place(benchBacks, out(8.7), 1.3, z, 0, 1, 1, 1, 0x232936);
+    place(benchLegs, out(8.1), 0.42, z - 3.1, 0, 1, 1, 1, 0x1b202b);
+    place(benchLegs, out(8.1), 0.42, z + 3.1, 0, 1, 1, 1, 0x1b202b);
+  }
+
+  /* Coolers and bottle crates, which is the orange the eye finds first on any
+     touchline in the sport. */
+  for (let i = 0; i < coolerRuns; i += 1) {
+    const z = zMin + rand() * zSpan;
+    place(coolers, out(9.6), 0.48, z, 0, 1, 1, 1, rand() < 0.6 ? 0xd4601c : 0xb8351f);
+    place(crates, out(9.6), 0.17, z + 1.4, 0, 1, 1, 1, 0x39404f);
+  }
+
+  /* The kicking net behind the bench: a tall frame that is nearly all
+     silhouette, and one of the few things on a touchline that breaks the
+     horizontal line of the wall behind it. */
+  const nets = new THREE.Group();
+  for (const z of [zMin + zSpan * 0.22, zMin + zSpan * 0.78]) {
+    place(netPosts, out(10.4), 2.6, z - 2.3, 0, 1, 1, 1, 0x2b3242);
+    place(netPosts, out(10.4), 2.6, z + 2.3, 0, 1, 1, 1, 0x2b3242);
+    const net = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 4.2, 4.6),
+      new THREE.MeshStandardMaterial({
+        color: 0x161b25, roughness: 0.95, transparent: true, opacity: 0.55,
+      }),
+    );
+    net.position.set(out(10.4), 2.9, z);
+    nets.add(net);
+  }
+  group.add(nets);
+
+  /* A broadcast camera on its tripod, which is the object that says this is
+     being televised more than anything else on the touchline. */
+  for (const z of [zMin + zSpan * 0.4, zMin + zSpan * 0.62]) {
+    place(tripods, out(11.4), 0.75, z, 0, 1, 1, 1, 0x1b202b);
+    place(cameraBodies, out(11.4), 1.78, z, facing, 1, 1, 1, 0x2f3646);
+  }
+
+  /* The chain crew's markers, in the orange nothing else on a field is. */
+  for (const z of [zMin + zSpan * 0.46, zMin + zSpan * 0.56]) {
+    place(markerPoles, out(1.5), 1.3, z, 0, 1, 1, 1, 0xe2711d);
+    place(markerBoards, out(1.5), 2.5, z, 0, 1, 1, 1, 0xe2711d);
+  }
+
+  for (const mesh of [benchSeats, benchBacks, benchLegs, coolers, crates,
+                      netPosts, tripods, cameraBodies, markerPoles, markerBoards]) {
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    group.add(mesh);
+  }
+  return group;
+}
+
 function buildStand(
   THREE: Three,
   boards: import("three").Texture | null,
@@ -945,7 +1366,11 @@ function buildStand(
     faces,
     seed: side > 0 ? 0x5eed01 : 0x5eed02,
   });
-  group.position.set(side * (FIELD_WIDE / 2 + 8), 0, (OWN_END_Z + OPP_END_Z) / 2);
+  /* Set back far enough that a sideline fits in front of it. At the eight
+     units this used to sit at there were four metres between the touchline
+     and the wall — a corridor, not a team area, and everything a televised
+     touchline carries would have been standing on the paint. */
+  group.position.set(side * (FIELD_WIDE / 2 + SIDELINE_DEPTH), 0, (OWN_END_Z + OPP_END_Z) / 2);
   group.rotation.y = side > 0 ? 0 : Math.PI;
   return group;
 }
@@ -1495,6 +1920,19 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         adTexture.colorSpace = THREE.SRGBColorSpace;
         adTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
+
+      /* The team areas, which is where a televised frame of this sport spends
+         most of its bottom third. */
+      scene.add(
+        buildSideline(THREE, {
+          touchline: FIELD_WIDE / 2, side: 1, fromZ: OPP_END_Z + 22, toZ: OWN_END_Z - 22,
+          faces: crowdFaces, seed: 0x51de01,
+        }),
+        buildSideline(THREE, {
+          touchline: FIELD_WIDE / 2, side: -1, fromZ: OPP_END_Z + 22, toZ: OWN_END_Z - 22,
+          faces: crowdFaces, seed: 0x51de02,
+        }),
+      );
 
       scene.add(
         buildStand(THREE, adTexture, crowdFaces, 1),
