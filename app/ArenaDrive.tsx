@@ -166,66 +166,162 @@ function sampleShot(t: number): Shot {
  * on a slow drift. They are the only thing up there that moves against the
  * sky, and a still sky is a photograph.
  */
+/**
+ * The sky's material, made once and used twice.
+ *
+ * It is the dome you look at, and it is also the thing the scene is lit by —
+ * see buildSkyEnvironment. Those two have to be the same sky or the sun in a
+ * reflection points somewhere the sun is not, so there is one definition of it
+ * and both take a material from here.
+ */
+function makeSkyMaterial(THREE: Three, forLighting = false) {
+  /* THE SAME SKY, BUT NOT THE SAME NUMBERS — AND THIS IS NOT A FUDGE.
+     
+     The colours below are deliberately deeper than the sky should be, because
+     the filmic curve at the end of the pipeline desaturates as it brightens
+     and pulls them back. That compensation is correct for a dome you look
+     straight at, once, through that curve.
+     
+     It is wrong for a dome you are gathering light from. Indirect light lands
+     in the midtones, where the curve barely desaturates at all, so the
+     compensation is applied a second time and never taken off: measured, the
+     bowl gained +16.5 levels of blue against +2.1 of red, which is a cast, not
+     daylight. A shaded face outdoors is blue; it is not that blue, because the
+     sky it sees is washed with sun.
+     
+     So the lighting copy undoes the compensation instead of inheriting it:
+     half a step back towards daylight white, and none of the lift. Same
+     gradient, same sun, same place in the sky — just the sky's real colour
+     rather than the one drawn to survive the curve. */
+  const daylight = new THREE.Color(0xe3ebf4);
+  const high = new THREE.Color(0x1d5fc0);
+  const low = new THREE.Color(0x7fb3e0);
+  if (forLighting) {
+    high.lerp(daylight, 0.5);
+    low.lerp(daylight, 0.5);
+  }
+
+  return new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    fog: false,
+    uniforms: {
+      uHigh: { value: high },
+      uLow: { value: low },
+      uSun: { value: new THREE.Color(0xfff3d6) },
+      uIntensity: { value: forLighting ? 1 : 1.12 },
+      uSunDir: { value: new THREE.Vector3(0.30, 0.86, -0.42).normalize() },
+    },
+    vertexShader: `
+      varying vec3 vPos;
+      void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uHigh;
+      uniform vec3 uLow;
+      uniform vec3 uSun;
+      uniform vec3 uSunDir;
+      uniform float uIntensity;
+      varying vec3 vPos;
+
+      /* Cheap hash dither. A gradient this smooth bands into visible steps
+         on an 8-bit display; a sub-step of noise breaks the steps up. */
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+
+      void main() {
+        vec3 dir = normalize(vPos);
+        float h = clamp(dir.y * 1.1 + 0.04, 0.0, 1.0);
+        vec3 col = mix(uLow, uHigh, pow(h, 0.78));
+
+        /* The sun itself, and the wash of light around it. Without the wash
+           the disc is a sticker on a flat blue wall. */
+        float d = max(0.0, dot(dir, normalize(uSunDir)));
+        col += uSun * pow(d, 900.0) * 1.4;
+        col += uSun * pow(d, 7.0) * 0.30;
+
+        /* Lifted a little above the colour it should end up being, because
+           the filmic curve in the output pass pulls everything down. Only a
+           little: that curve also desaturates as it brightens, so pushing
+           harder buys a whiter sky rather than a bluer one — which is the
+           trap, and the reason the colours here are deeper than they look. */
+        col *= uIntensity;
+
+        col += (hash(gl_FragCoord.xy) - 0.5) * 0.010;
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `,
+  });
+}
+
+/**
+ * THE SKY, TURNED INTO LIGHT.
+ *
+ * Everything in here was lit by three analytic lights and nothing else: a sun,
+ * a hemisphere term and a flat ambient. That is why it read as a render rather
+ * than as a photograph, and it is not something an effect pass can fix. A
+ * standard material with no environment has nothing to reflect, so every
+ * surface returns the same wash from every angle — which is the definition of
+ * looking like plastic.
+ *
+ * Outdoors, almost nothing you see is lit by the sun directly. It is lit by
+ * the sky, and the sky is not one colour: it is bright near the sun, deep
+ * overhead, pale at the horizon, and the ground throws green back up into
+ * everything above it. A hemisphere light approximates that with two colours
+ * and no direction at all.
+ *
+ * So the sky is rendered — the same dome, from makeSkyMaterial, so the sun in
+ * a reflection is where the sun is — into a prefiltered radiance map, together
+ * with a disc of turf to carry the bounce off the pitch. Every standard
+ * material in the bowl then samples the actual sky for its own normal and its
+ * own roughness.
+ *
+ * It costs one render of two objects at setup and nothing per frame, and it
+ * downloads nothing: no HDRI file, no second request, no licence to carry.
+ */
+function buildSkyEnvironment(THREE: Three, renderer: import("three").WebGLRenderer) {
+  const source = new THREE.Scene();
+
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(520, 32, 20), makeSkyMaterial(THREE, true));
+  source.add(dome);
+
+  /* The pitch, as a light source. Leave it out and everything in the bowl is
+     lit from below by pale blue sky through the floor, which is the single
+     most synthetic thing an outdoor scene can do — undersides go cold and
+     faces lose the green kick that says "standing on grass". Unlit on purpose:
+     this disc is radiance to be gathered, not a surface to be shaded. */
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(500, 24),
+    new THREE.MeshBasicMaterial({ color: 0x5c7a3a, side: THREE.DoubleSide, fog: false }),
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.5;
+  source.add(ground);
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const target = pmrem.fromScene(source, 0, 1, 1200);
+
+  /* The render target's texture outlives all of this; everything that was only
+     needed to draw into it does not. */
+  dome.geometry.dispose();
+  (dome.material as import("three").Material).dispose();
+  ground.geometry.dispose();
+  ground.material.dispose();
+  pmrem.dispose();
+
+  return target;
+}
+
 function buildSky(THREE: Three, clouds: import("three").Texture | null) {
   const group = new THREE.Group();
 
   const dome = new THREE.Mesh(
     new THREE.SphereGeometry(520, 40, 24),
-    new THREE.ShaderMaterial({
-      side: THREE.BackSide,
-      depthWrite: false,
-      fog: false,
-      uniforms: {
-        uHigh: { value: new THREE.Color(0x1d5fc0) },
-        uLow: { value: new THREE.Color(0x7fb3e0) },
-        uSun: { value: new THREE.Color(0xfff3d6) },
-        uIntensity: { value: 1.12 },
-        uSunDir: { value: new THREE.Vector3(0.30, 0.86, -0.42).normalize() },
-      },
-      vertexShader: `
-        varying vec3 vPos;
-        void main() {
-          vPos = position;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 uHigh;
-        uniform vec3 uLow;
-        uniform vec3 uSun;
-        uniform vec3 uSunDir;
-        uniform float uIntensity;
-        varying vec3 vPos;
-
-        /* Cheap hash dither. A gradient this smooth bands into visible steps
-           on an 8-bit display; a sub-step of noise breaks the steps up. */
-        float hash(vec2 p) {
-          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-        }
-
-        void main() {
-          vec3 dir = normalize(vPos);
-          float h = clamp(dir.y * 1.1 + 0.04, 0.0, 1.0);
-          vec3 col = mix(uLow, uHigh, pow(h, 0.78));
-
-          /* The sun itself, and the wash of light around it. Without the wash
-             the disc is a sticker on a flat blue wall. */
-          float d = max(0.0, dot(dir, normalize(uSunDir)));
-          col += uSun * pow(d, 900.0) * 1.4;
-          col += uSun * pow(d, 7.0) * 0.30;
-
-          /* Lifted a little above the colour it should end up being, because
-             the filmic curve in the output pass pulls everything down. Only a
-             little: that curve also desaturates as it brightens, so pushing
-             harder buys a whiter sky rather than a bluer one — which is the
-             trap, and the reason the colours here are deeper than they look. */
-          col *= uIntensity;
-
-          col += (hash(gl_FragCoord.xy) - 0.5) * 0.010;
-          gl_FragColor = vec4(col, 1.0);
-        }
-      `,
-    }),
+    makeSkyMaterial(THREE),
   );
   group.add(dome);
 
@@ -1008,6 +1104,25 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          sky behind it or the horizon reads as a band of smog. */
       scene.fog = new THREE.FogExp2(0xc6dcee, 0.0016);
 
+      /* The sky, as the thing that lights the bowl. See buildSkyEnvironment.
+         Set on the scene rather than per material so every standard surface in
+         here picks it up, including the ones built before this line runs. */
+      const environment = buildSkyEnvironment(THREE, renderer);
+      scene.environment = environment.texture;
+      /* Scaled so the picture keeps the brightness it had. The point of this
+         change is not a brighter stadium — it is the same amount of light
+         arriving with a direction, a sun in it and a green bounce off the
+         grass, instead of arriving flat from everywhere. A brighter frame
+         would flatter the change and prove nothing about it.
+         
+         So this is measured, not chosen. Two frames rendered at 1.0 and 0.6
+         against the frame this replaces, over the pitch and the stands
+         separately: the added luminance is linear in this number and crosses
+         zero at 0.41 on the pitch and 0.425 on the stands. At 0.41 the light
+         level is the one that was there before and only its structure has
+         changed, which is the whole claim. */
+      scene.environmentIntensity = 0.41;
+
       const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 600);
       const centreZ = (OWN_END_Z + OPP_END_Z) / 2;
 
@@ -1293,8 +1408,15 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          and the ground read as an overcast evening whatever the sun was doing
          to the grass. Raising the sky term is what actually lights a stadium
          in the middle of the afternoon. */
-      scene.add(new THREE.HemisphereLight(0xa8cdf0, 0x3c5c31, 2.35));
-      scene.add(new THREE.AmbientLight(0xe6effa, 0.46));
+      /* Both of these used to carry the daylight on their own, at 2.35 and
+         0.46, because there was nothing else to carry it. The environment does
+         that job now and does it properly, so what is left here is a floor
+         rather than the light itself: deep inside a stand, under the roof and
+         behind fifteen rows of concrete, a prefiltered map at this resolution
+         has very little to hand back, and without a small constant term those
+         pockets crush to black. */
+      scene.add(new THREE.HemisphereLight(0xa8cdf0, 0x3c5c31, 0.42));
+      scene.add(new THREE.AmbientLight(0xe6effa, 0.1));
 
       // The pylons still stand in daylight; they just are not doing anything.
       for (let i = 0; i < 5; i += 1) {
@@ -1467,6 +1589,10 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         boardTexture?.dispose();
         composer.dispose();
         composerTarget.dispose();
+        /* The prefiltered sky is a render target and holds GPU memory of its
+           own; the scene dropping its reference is not enough to free it. */
+        scene.environment = null;
+        environment.dispose();
         renderer.dispose();
         renderer.domElement.remove();
         page.classList.remove("is-driving");
