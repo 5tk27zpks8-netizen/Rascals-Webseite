@@ -565,6 +565,102 @@ export function createAdBoardTexture(): HTMLCanvasElement | null {
 }
 
 /** A club flag: brand red with the wordmark. */
+/**
+ * The other flag: the badge instead of the wordmark.
+ *
+ * Every second flag round the roof carries this one. A roofline of identical
+ * flags is bunting — it repeats, and once the eye finds the repeat it stops
+ * reading them as flags at all. Alternating two designs breaks the period
+ * without needing twenty-six different ones, and it is also how a real ground
+ * flies them: the name on some, the crest on the rest.
+ *
+ * Drawn bold and simple. A flag is a small, moving, side-lit thing seen from a
+ * hundred units away, so it is the shapes that carry — the sweep and the
+ * helmet — and not any detail inside them.
+ */
+/**
+ * A single spark, as a soft round blob.
+ *
+ * Nothing more is needed: a spark on screen is two or three pixels, and every
+ * bit of structure drawn inside one is thrown away by the sampler before it
+ * arrives. What matters is the falloff — hot and tight in the middle, out to
+ * nothing at the rim — because that is what makes a few hundred of them stack
+ * into a plume with a bright core instead of a flat cloud of dots.
+ */
+export function createSparkTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const S = 64;
+  canvas.width = S;
+  canvas.height = S;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  const gradient = context.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(0.25, "rgba(255,244,214,0.92)");
+  gradient.addColorStop(0.6, "rgba(255,180,90,0.32)");
+  gradient.addColorStop(1, "rgba(255,120,40,0)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, S, S);
+  return canvas;
+}
+
+export function createFlagCrestTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const W = 512;
+  const H = 320;
+  const SCALE = 2;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.scale(SCALE, SCALE);
+
+  // Navy field with a red bar down the hoist, the other way round from the
+  // wordmark flag so the two read apart at a glance.
+  context.fillStyle = "#151a38";
+  context.fillRect(0, 0, W, H);
+  context.fillStyle = "#c2172a";
+  context.fillRect(0, 0, W * 0.17, H);
+
+  context.save();
+  context.translate(W * 0.60, H * 0.46);
+  context.scale(1.5, 1.5);
+
+  // The sweep.
+  context.fillStyle = "#e7192d";
+  context.beginPath();
+  context.moveTo(-88, 24);
+  context.quadraticCurveTo(-16, -58, 88, -34);
+  context.quadraticCurveTo(14, 10, -78, 44);
+  context.closePath();
+  context.fill();
+
+  // The helmet over it.
+  context.fillStyle = "#ffffff";
+  context.beginPath();
+  context.arc(10, 4, 40, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = "#151a38";
+  context.beginPath();
+  context.arc(10, 4, 28, 0, Math.PI * 2);
+  context.fill();
+  // The facemask, as three bars.
+  context.fillStyle = "#ffffff";
+  for (let i = 0; i < 3; i += 1) {
+    context.fillRect(-2, -8 + i * 10, 34, 4);
+  }
+  context.restore();
+
+  context.fillStyle = "rgba(255,255,255,0.9)";
+  context.font = "900 26px Impact, sans-serif";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.letterSpacing = "8px";
+  context.fillText("RASCALS", W * 0.60, H * 0.88);
+  return canvas;
+}
+
 export function createFlagTexture(): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
   const W = 512;

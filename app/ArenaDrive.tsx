@@ -7,6 +7,8 @@ import {
   FIELD_YARDS_WIDE,
   createAdBoardTexture,
   createCloudTexture,
+  createFlagCrestTexture,
+  createSparkTexture,
   createFlagTexture,
   createSoftDotTexture,
   createCrowdFaceTexture,
@@ -461,23 +463,71 @@ function buildGoal(THREE: Three, endLineZ: number, outward: 1 | -1) {
   const goal = new THREE.Group();
   const setBack = 6;
 
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.34, 10, 28), material);
+  /* THE JOINTS, WHICH IS WHERE THIS WAS COMING APART.
+     
+     Every tube here met the next one by butting a flat end cap against the
+     side of a round pipe, and each of those meetings left a visible defect.
+     The crossbar ended exactly on the uprights' centre lines, so the outer
+     half of each upright hung off the end of it with nothing behind — the step
+     you could see against the sky. The arm ended on the pole's axis the same
+     way, and the pole's flat top cap sat half a tube proud of the arm resting
+     on it.
+     
+     A real goal post is welded, and a weld is a fillet: material bridging the
+     angle between two pipes. So every junction gets a ball slightly fatter
+     than the tubes it joins, and every tube is run a little past its partner's
+     centre line rather than stopping on it. Nothing is butted any more; the
+     balls swallow the intersections, and there is no angle from which an end
+     cap can be seen. */
+  const TUBE = 0.26;
+  const WELD = 0.34;
+  /* Radial segments. These are the thinnest things in the scene held against
+     the brightest part of it, which is the worst case for a faceted silhouette
+     — a hexagonal edge on a post reads immediately where the same count on a
+     floodlight pylon never would. */
+  const SIDES = 32;
+
+  const weld = (x: number, y: number, z: number) => {
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(WELD, 16, 12), material);
+    ball.position.set(x, y, z);
+    return ball;
+  };
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.34, 10, SIDES), material);
   base.position.set(0, 5, outward * setBack);
 
-  // The arm from the pole out over the end line.
-  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, setBack, 24), material);
+  /* The arm runs from inside the pole out past the crossbar's axis, rather
+     than stopping on it. */
+  const armLength = setBack + TUBE * 2;
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, armLength, SIDES), material);
   arm.rotation.x = Math.PI / 2;
   arm.position.set(0, 10, outward * (setBack / 2));
 
-  const crossbar = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 6.2 * YARD, 28), material);
+  const halfSpan = 3.1 * YARD;
+  /* Long enough to pass through both uprights instead of ending on them. */
+  const crossbar = new THREE.Mesh(
+    new THREE.CylinderGeometry(TUBE, TUBE, halfSpan * 2 + TUBE * 2, SIDES),
+    material,
+  );
   crossbar.rotation.z = Math.PI / 2;
   crossbar.position.set(0, 10, 0);
-  goal.add(base, arm, crossbar);
 
-  for (const x of [-3.1 * YARD, 3.1 * YARD]) {
-    const upright = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 17, 24), material);
-    upright.position.set(x, 18.5, 0);
-    goal.add(upright);
+  goal.add(base, arm, crossbar);
+  // The elbow where the arm leaves the pole, and where it meets the crossbar.
+  goal.add(weld(0, 10, outward * setBack), weld(0, 10, 0));
+
+  for (const x of [-halfSpan, halfSpan]) {
+    /* Rooted below the crossbar's axis rather than starting on it, so the
+       upright's own end cap is buried inside the bar and the weld. */
+    const upright = new THREE.Mesh(new THREE.CylinderGeometry(TUBE, TUBE, 17, SIDES), material);
+    upright.position.set(x, 10 - TUBE + 17 / 2, 0);
+    goal.add(upright, weld(x, 10, 0));
+    /* A cap on top. A pipe cut square against the sky is the other place this
+       gave itself away — the ring of the end face catches the light along one
+       edge and reads as a break in the post. */
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(TUBE, 16, 8), material);
+    cap.position.set(x, 10 - TUBE + 17, 0);
+    goal.add(cap);
   }
 
   goal.traverse((node) => {
@@ -1768,10 +1818,215 @@ function buildEndStand(
  * actually flies them, they break the roofline instead of the stand, and they
  * are the one thing in the scene that moves against the sky.
  */
-function buildFlags(THREE: Three, flag: import("three").Texture) {
+/**
+ * PYROTECHNICS BEHIND THE STANDS.
+ *
+ * Red and blue jets firing upwards from behind the roofline, the way a ground
+ * fires them on a matchday — the launchers are out of sight and only the
+ * plumes clear the stand. Putting them behind rather than in front is what
+ * keeps them reading as a stadium effect instead of as a filter over the
+ * picture: they rise into the sky, they are occluded by the roof on their way
+ * up, and nothing they do touches the field.
+ *
+ * ALL OF THE MOTION IS IN THE VERTEX SHADER, and that is the point rather than
+ * an optimisation note. A few thousand sparks moved from JavaScript would be a
+ * few thousand buffer writes on every frame of a page whose whole problem, for
+ * most of its life, was frames that cost too much. Here each spark carries its
+ * own seed and its own lane, the shader works out where that spark is at the
+ * current time, and the per-frame cost on the CPU is one uniform.
+ *
+ * The arc is deliberately not a straight line. A real jet leaves fast, loses
+ * against gravity, and the tail spreads as it slows — so height goes as
+ * `v*t - g*t*t` and the lateral spread grows with the square root of age.
+ * Straight lines at constant speed read as rain going the wrong way.
+ */
+function buildPyro(THREE: Three, spark: import("three").Texture | null) {
+  const group = new THREE.Group();
+
+  /* Where the launchers stand: behind both ends and out at the corners, clear
+     of anything the camera flies past. The blue and red alternate so the two
+     colours read as a set rather than as two separate effects. */
+  /* BEHIND the stands means behind them, which the first placement was not.
+     A terrace is twenty-two units deep and its back wall sits at the end stand
+     position plus that depth, so launchers thirty-four units out were standing
+     inside the seating. Fifty-four clears it with room. */
+  /* BEHIND the stands means behind them, which the first placement was not.
+     A terrace is twenty-two units deep and its back wall sits at the end stand
+     position plus that depth, so launchers thirty-four units out were standing
+     inside the seating.
+
+     And behind the ends alone is not enough. The camera travels the length of
+     this ground: the near end's launchers spend the whole drive behind it,
+     and the far end's are the better part of two hundred units away, which is
+     a long way for a plume sixty units tall. So the touchlines get a row each
+     as well, spaced down the field, and those are the ones that carry — they
+     rise on both sides of the frame the whole way through. */
+  const jets: Array<{ x: number; z: number; hex: number }> = [];
+  const backOwn = OWN_END_Z + 54;
+  const backOpp = OPP_END_Z - 54;
+  const wide = FIELD_WIDE / 2 + SIDELINE_DEPTH + 10;
+  // Clear of the touchline stands, which are deeper than the ends.
+  const flank = FIELD_WIDE / 2 + SIDELINE_DEPTH + 15 * TERRACE_TREAD + 12;
+  let n = 0;
+  const fire = (x: number, z: number) => {
+    jets.push({ x, z, hex: n % 2 === 0 ? 0xff3418 : 0x2f6bff });
+    n += 1;
+  };
+  for (const z of [backOwn, backOpp]) {
+    for (const x of [-wide, -wide * 0.45, wide * 0.45, wide]) fire(x, z);
+  }
+  for (let i = 0; i < 6; i += 1) {
+    const z = OWN_END_Z - 18 - i * ((OWN_END_Z - OPP_END_Z - 36) / 5);
+    fire(-flank, z);
+    fire(flank, z);
+  }
+
+  const PER_JET = 220;
+  const total = jets.length * PER_JET;
+
+  const position = new Float32Array(total * 3);
+  const colour = new Float32Array(total * 3);
+  const seed = new Float32Array(total);
+  const lane = new Float32Array(total * 2);
+  const power = new Float32Array(total);
+
+  const tint = new THREE.Color();
+  let i = 0;
+  for (const [index, jet] of jets.entries()) {
+    tint.setHex(jet.hex);
+    for (let p = 0; p < PER_JET; p += 1) {
+      position[i * 3] = jet.x;
+      position[i * 3 + 1] = 4;
+      position[i * 3 + 2] = jet.z;
+      colour[i * 3] = tint.r;
+      colour[i * 3 + 1] = tint.g;
+      colour[i * 3 + 2] = tint.b;
+      /* Spread through the cycle so a jet is a continuous plume rather than a
+         single shell going up and everything going dark between. The offset
+         per jet keeps the eight from firing in lockstep. */
+      seed[i] = (p / PER_JET + index * 0.37) % 1;
+      const angle = Math.random() * Math.PI * 2;
+      lane[i * 2] = Math.cos(angle);
+      lane[i * 2 + 1] = Math.sin(angle);
+      power[i] = 0.7 + Math.random() * 0.55;
+      i += 1;
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(position, 3));
+  geometry.setAttribute("aColour", new THREE.BufferAttribute(colour, 3));
+  geometry.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
+  geometry.setAttribute("aLane", new THREE.BufferAttribute(lane, 2));
+  geometry.setAttribute("aPower", new THREE.BufferAttribute(power, 1));
+  /* The bounds have to be stated. Every spark sits at its launcher's position
+     in the buffer and only moves in the shader, so a computed bounding sphere
+     would be a flat disc at ground level and the whole effect would vanish the
+     moment that disc left the frustum. */
+  geometry.boundingSphere = new THREE.Sphere(
+    new THREE.Vector3(0, 30, (backOwn + backOpp) / 2),
+    Math.abs(backOwn - backOpp) / 2 + wide + 70,
+  );
+
+  const material = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: {
+      uTime: { value: 0 },
+      uSpark: { value: spark },
+      uSize: { value: 340 },
+    },
+    vertexShader: `
+      attribute vec3 aColour;
+      attribute float aSeed;
+      attribute vec2 aLane;
+      attribute float aPower;
+      uniform float uTime;
+      uniform float uSize;
+      varying vec3 vColour;
+      varying float vFade;
+
+      void main() {
+        // Age within this spark's own cycle, in seconds.
+        float cycle = 5.6;
+        float age = mod(uTime * 0.33 + aSeed, 1.0) * cycle;
+
+        /* Fast enough to clear the roof, which the first attempt was not.
+           Height goes as v*v/(2*g), so at fifteen a plume topped out at twenty
+           units against an end-stand roof at twenty-three — the whole effect
+           was firing into the back of a grandstand. Twenty-six tops out near
+           sixty-three, which puts the visible part of the arc well above the
+           roofline where it belongs. */
+        float v = 26.0 * aPower;
+        float g = 5.4;
+        float rise = max(0.0, v * age - 0.5 * g * age * age);
+
+        /* The tail spreads as the spark slows, which is what a jet does — and
+           on the square root of age rather than on age, or the plume comes out
+           as a cone with straight sides. */
+        float spread = sqrt(age) * 1.9 * aPower;
+
+        vec3 offset = vec3(aLane.x * spread, rise, aLane.y * spread);
+        vec4 world = modelMatrix * vec4(position + offset, 1.0);
+        vec4 view = viewMatrix * world;
+
+        // Bright at the muzzle, gone by the top of the arc.
+        vFade = smoothstep(0.0, 0.18, age) * (1.0 - smoothstep(0.35, 1.0, age / cycle));
+        vColour = aColour;
+
+        gl_PointSize = uSize * aPower / max(1.0, -view.z);
+        gl_Position = projectionMatrix * view;
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D uSpark;
+      varying vec3 vColour;
+      varying float vFade;
+      void main() {
+        vec2 uv = gl_PointCoord - 0.5;
+        // A round falloff, so a spark is a spark and not a lit square.
+        float d = 1.0 - smoothstep(0.12, 0.5, length(uv));
+        if (d <= 0.001 || vFade <= 0.001) discard;
+        /* The core runs hot towards white, the way burning metal does; a spark
+           that stays its own colour all the way through looks like paint. */
+        /* The core runs hot towards white, the way burning metal does — but
+           only just. At three quarters white the sparks came out colourless
+           against a bright sky, which defeats the entire point of firing red
+           and blue ones. A third keeps the hot centre and lets the colour
+           through around it.
+
+           And the whole thing is lifted, because this is additive light over
+           a daylit sky rather than over a night one: what reads instantly at
+           a night match is nearly invisible at a bright kickoff. */
+        vec3 col = mix(vColour, vec3(1.0), pow(d, 3.0) * 0.33);
+        float a = vFade * d * 1.6;
+        gl_FragColor = vec4(col * a, min(1.0, a));
+      }
+    `,
+  });
+
+  const points = new THREE.Points(geometry, material);
+  points.frustumCulled = true;
+  group.add(points);
+  group.userData.material = material;
+  return group;
+}
+
+function buildFlags(
+  THREE: Three,
+  flag: import("three").Texture,
+  crest: import("three").Texture | null,
+) {
   const group = new THREE.Group();
   const geometry = new THREE.PlaneGeometry(4.4, 2.8);
+  /* Two cloths, alternating round the roof. A roofline of identical flags is
+     bunting: it repeats, and once the eye finds the period it stops reading
+     them as flags. */
   const material = new THREE.MeshStandardMaterial({ map: flag, side: THREE.DoubleSide, roughness: 0.85 });
+  const crestMaterial = crest
+    ? new THREE.MeshStandardMaterial({ map: crest, side: THREE.DoubleSide, roughness: 0.85 })
+    : material;
   const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x9aa7b8, roughness: 0.5, metalness: 0.5 });
   const poleGeometry = new THREE.CylinderGeometry(0.11, 0.11, 8.4, 8);
 
@@ -1791,7 +2046,7 @@ function buildFlags(THREE: Three, flag: import("three").Texture) {
       pole.position.set(x, roofY + 4.2, z);
       group.add(pole);
 
-      const cloth = new THREE.Mesh(geometry, material);
+      const cloth = new THREE.Mesh(geometry, (i + (side > 0 ? 0 : 1)) % 2 === 0 ? material : crestMaterial);
       cloth.position.set(x + side * 2.3, roofY + 6.6, z);
       cloth.userData.phase = i * 0.7 + (side > 0 ? 1.6 : 0);
       group.add(cloth);
@@ -2507,13 +2762,29 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
           .catch(() => undefined);
       }
 
+      /* The pyro, behind the stands. Added before the flags so the plumes sit
+         behind the roofline they are supposed to rise past. */
+      const sparkCanvas = createSparkTexture();
+      const sparkTexture = sparkCanvas ? new THREE.CanvasTexture(sparkCanvas) : null;
+      if (sparkTexture) sparkTexture.colorSpace = THREE.SRGBColorSpace;
+      const pyro = buildPyro(THREE, sparkTexture);
+      scene.add(pyro);
+      const pyroMaterial = pyro.userData.material as import("three").ShaderMaterial;
+
+      const crestCanvas = createFlagCrestTexture();
+      const crestTexture = crestCanvas ? new THREE.CanvasTexture(crestCanvas) : null;
+      if (crestTexture) {
+        crestTexture.colorSpace = THREE.SRGBColorSpace;
+        crestTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      }
+
       const flagCanvas = createFlagTexture();
       const flagTexture = flagCanvas ? new THREE.CanvasTexture(flagCanvas) : null;
       if (flagTexture) flagTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       let flags: import("three").Group | null = null;
       if (flagTexture) {
         flagTexture.colorSpace = THREE.SRGBColorSpace;
-        flags = buildFlags(THREE, flagTexture);
+        flags = buildFlags(THREE, flagTexture, crestTexture);
         scene.add(flags);
       }
 
@@ -2706,6 +2977,10 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         // is a ceiling, and at this travel distance it would show.
         sky.group.position.set(camera.position.x, 0, camera.position.z);
 
+        /* One uniform a frame for a few thousand sparks. The arcs themselves
+           are worked out in the vertex shader — see buildPyro. */
+        pyroMaterial.uniforms.uTime.value = time;
+
         dust.rotation.y = time * 0.008;
         // Flags stir in the night air rather than hanging dead on the pole.
         if (flags) {
@@ -2739,6 +3014,9 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         dotTexture?.dispose();
         cloudTexture?.dispose();
         flagTexture?.dispose();
+        crestTexture?.dispose();
+        sparkTexture?.dispose();
+        pyroMaterial.dispose();
         boardTexture?.dispose();
         crowdFaces.forEach((texture) => texture.dispose());
         zoneTexture?.dispose();
