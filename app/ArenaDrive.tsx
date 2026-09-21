@@ -10,6 +10,7 @@ import {
   createFlagTexture,
   createSoftDotTexture,
   createCrowdFaceTexture,
+  createTeamZoneTexture,
   createScoreboardTexture,
   createTurfNormalTexture,
   createTurfRoughnessTexture,
@@ -811,6 +812,58 @@ function buildCrowd(
     }
   }
 
+  /* VOMITORIES — the openings people actually arrive through.
+
+     A stand with no way into it is a grandstand drawn from the outside. Every
+     real one is punched through at intervals, and the openings do more for the
+     read than their size suggests: they are the only true black in a stand, so
+     they give the rake something to be in front of, and they break an unbroken
+     field of heads into the bays the architecture actually has.
+
+     This terrace is a rake that simply ends at the top — there is no rear wall
+     standing above the last row to cut a hole in, which the first attempt at
+     this assumed and which would have left a black box floating over the back
+     step. So the opening is built rather than cut: two piers, a dark recess
+     between them and a lintel across, standing at the head of the gangway. A
+     portal reads as a portal because of its frame, not because of its hole.
+
+     Every second gangway gets one. More than that and the stand becomes a
+     colonnade. */
+  const pierGeometry = new THREE.BoxGeometry(3.2, 3.1, 0.62);
+  const concrete = new THREE.MeshStandardMaterial({ color: 0x78818f, roughness: 0.93 });
+  const mouthGeometry = new THREE.BoxGeometry(3.0, 2.9, 2.5);
+  const mouthMaterial = new THREE.MeshStandardMaterial({
+    /* Nearly black, and fully rough. A tunnel mouth in daylight returns almost
+       nothing; anything lighter reads as a painted rectangle. */
+    color: 0x0a0d13,
+    roughness: 1,
+    metalness: 0,
+  });
+  const lintelGeometry = new THREE.BoxGeometry(3.4, 0.55, 3.9);
+  for (let a = 0; a < aisles; a += 2) {
+    const centre = -half + aislePitch * (a + 0.5);
+    const backX = rows * TERRACE_TREAD + 0.9;
+    const footY = base + rows * TERRACE_RISER;
+
+    const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+    mouth.position.set(backX + 0.5, footY + 1.45, centre);
+    group.add(mouth);
+
+    for (const side of [-1, 1]) {
+      const pier = new THREE.Mesh(pierGeometry, concrete);
+      pier.position.set(backX, footY + 1.55, centre + side * 1.8);
+      pier.castShadow = true;
+      pier.receiveShadow = true;
+      group.add(pier);
+    }
+
+    const lintel = new THREE.Mesh(lintelGeometry, concrete);
+    lintel.position.set(backX, footY + 3.35, centre);
+    lintel.castShadow = true;
+    lintel.receiveShadow = true;
+    group.add(lintel);
+  }
+
   for (const mesh of [torso, ...heads]) {
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -1034,6 +1087,14 @@ const JERSEY_AWAY = [0xd8dce4, 0xc7ccd6, 0xe6e9ee, 0x8c929e];
 /** Coaching staff: dark shells and polos, the way a touchline actually looks. */
 const STAFF_KIT = [0x1a1f2b, 0x232936, 0x2f3646, 0x3c4454, 0x151922];
 
+/* Stewards, and they are not dark. Every steward at every ground wears hi-vis,
+   for the same reason it exists anywhere else — so that one glance finds them.
+   Painted in the coaches' navy they were thin dark posts along the touchline
+   that read as fence uprights; in yellow they read instantly as what they are,
+   and they give the bottom of the frame the one colour nothing else in this
+   ground has. */
+const STEWARD_KIT = [0xd8d128, 0xe2d743, 0xc9c223];
+
 function buildSideline(
   THREE: Three,
   options: {
@@ -1045,10 +1106,11 @@ function buildSideline(
     fromZ: number;
     toZ: number;
     faces: CrowdFaces;
+    zone: import("three").Texture | null;
     seed: number;
   },
 ) {
-  const { touchline, side, fromZ, toZ, faces, seed } = options;
+  const { touchline, side, fromZ, toZ, faces, zone, seed } = options;
   const group = new THREE.Group();
 
   let state = seed >>> 0;
@@ -1070,15 +1132,22 @@ function buildSideline(
   const euler = new THREE.Euler();
   const colour = new THREE.Color();
 
-  /* Everyone on this side faces the field, which is a quarter turn one way or
-     the other depending on which touchline they are standing on. */
-  const facing = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+  /* Everyone on this side faces the field — and this was a quarter turn out.
+
+     Rotating about Y maps local +x to (cos, 0, -sin). These figures are built
+     facing local -x, the same way the crowd's heads are, so a person standing
+     on the +x touchline is already looking at the pitch at a turn of zero, and
+     one on the -x side needs a half turn. At the quarter turn this started on,
+     the whole touchline was staring down the field past the play — every
+     player, every coach, and both broadcast cameras aimed along the sideline
+     instead of at it. */
+  const facing = side > 0 ? 0 : Math.PI;
 
   // --- the people ------------------------------------------------------
 
   type Person = {
     z: number; depth: number; turn: number;
-    height: number; kit: number; staff: boolean; face: number;
+    height: number; kit: number; staff: boolean; steward: boolean; face: number;
   };
   const people: Person[] = [];
 
@@ -1110,6 +1179,7 @@ function buildSideline(
         height: 0.96 + rand() * 0.1,
         kit: 0,
         staff: false,
+        steward: false,
         face: faces.length > 0 ? (rand() * faces.length) | 0 : 0,
       });
     }
@@ -1137,6 +1207,7 @@ function buildSideline(
       height: 0.95 + rand() * 0.1,
       kit: 0,
       staff: true,
+      steward: true,
       face: faces.length > 0 ? (rand() * faces.length) | 0 : 0,
     });
   }
@@ -1151,6 +1222,7 @@ function buildSideline(
       height: 0.94 + rand() * 0.1,
       kit: 0,
       staff: true,
+      steward: false,
       face: faces.length > 0 ? (rand() * faces.length) | 0 : 0,
     });
   }
@@ -1158,17 +1230,47 @@ function buildSideline(
   const players = people.filter((p) => !p.staff);
   const staff = people.filter((p) => p.staff);
 
-  /* A standing person, in three parts. Seated crowd geometry will not do: a
-     person on their feet is mostly legs, and the proportion is what the eye
-     uses to tell standing from sitting at a distance where nothing else is
-     legible. A unit is about 0.54m, so this is a 1.8m adult. */
-  const legsGeometry = new THREE.BoxGeometry(0.42, 1.55, 0.62);
-  const torsoGeometry = new THREE.BoxGeometry(0.52, 1.25, 0.86);
+  /* A PERSON, NOT A STACK OF BOXES.
+
+     The touchline holds about two hundred and fifty figures. The crowd holds
+     eight thousand four hundred. That ratio is the whole argument: geometry
+     that would be reckless in a stand is free out here, so the people the
+     camera passes closest to are the ones that can afford to be shaped, and
+     they were the ones built out of the fewest parts.
+
+     Boxes were the complaint and the complaint was right. What fixes it is not
+     more triangles everywhere but the right ones in the right places:
+
+       Two legs with a gap between them. One block from hip to ankle reads as a
+       plinth however tall it is; the gap is what says "standing".
+       A waist. A torso that tapers has a direction and a front; a rectangle
+       has neither.
+       And the shoulder pads, which are the point. Wide, square shoulders over
+       a narrow waist is the silhouette of this sport and nothing else — it is
+       what separates a player from a coach at two hundred units, and it is
+       exactly what a box cannot do.
+
+     About a hundred and forty triangles a player. At two hundred and fifty
+     people that is thirty-five thousand across the whole touchline, against
+     the hundred thousand the crowd's heads alone cost. */
+  const legGeometry = new THREE.CylinderGeometry(0.15, 0.10, 1.55, 6);
+  const armGeometry = new THREE.CylinderGeometry(0.11, 0.085, 1.02, 5);
+
+  /* Chest wider than waist, and squashed front-to-back so the section is an
+     oval rather than a post. */
+  const torsoGeometry = new THREE.CylinderGeometry(0.33, 0.25, 1.0, 8);
+  torsoGeometry.scale(0.66, 1, 1);
+  /* The pads. Deliberately square and deliberately too wide — on a real player
+     they are, and it is the one proportion that has to survive being three
+     pixels tall. */
+  const padGeometry = new THREE.BoxGeometry(0.5, 0.3, 1.02);
+
   const headGeometry = makeCrowdHeadGeometry(THREE);
-  /* A helmet, not a head: wider, deeper, and with no face on it. It is the
-     single most recognisable silhouette in the sport and it is what tells a
-     player from a coach at two hundred units. */
-  const helmetGeometry = new THREE.BoxGeometry(0.44, 0.44, 0.44);
+  /* A helmet, not a head: rounded, with no face on it, and a bar across the
+     front where a facemask goes. */
+  const helmetGeometry = new THREE.IcosahedronGeometry(0.24, 1);
+  helmetGeometry.scale(0.96, 0.94, 1);
+  const maskGeometry = new THREE.BoxGeometry(0.1, 0.16, 0.34);
 
   const instanced = (
     geometry: import("three").BufferGeometry,
@@ -1182,14 +1284,26 @@ function buildSideline(
     return mesh;
   };
 
-  const playerLegs = instanced(legsGeometry,
-    new THREE.MeshStandardMaterial({ roughness: 0.8 }), players.length);
+  /* Two instances per person for the paired limbs, which is why these are
+     sized at twice the head count. Cheaper than merging a left and a right
+     into one geometry, and it keeps each limb its own transform. */
+  const playerLegs = instanced(legGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.8 }), players.length * 2);
+  const playerArms = instanced(armGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.74 }), players.length * 2);
   const playerTorso = instanced(torsoGeometry,
     new THREE.MeshStandardMaterial({ roughness: 0.72 }), players.length);
+  const playerPads = instanced(padGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.66 }), players.length);
   const helmets = instanced(helmetGeometry,
-    new THREE.MeshStandardMaterial({ roughness: 0.32, metalness: 0.12 }), players.length);
-  const staffLegs = instanced(legsGeometry,
-    new THREE.MeshStandardMaterial({ roughness: 0.86 }), staff.length);
+    new THREE.MeshStandardMaterial({ roughness: 0.28, metalness: 0.16 }), players.length);
+  const masks = instanced(maskGeometry,
+    new THREE.MeshStandardMaterial({ color: 0x20242c, roughness: 0.5, metalness: 0.3 }),
+    players.length);
+  const staffLegs = instanced(legGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.86 }), staff.length * 2);
+  const staffArms = instanced(armGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.84 }), staff.length * 2);
   const staffTorso = instanced(torsoGeometry,
     new THREE.MeshStandardMaterial({ roughness: 0.84 }), staff.length);
   const staffHeads = (faces.length > 0 ? faces : [null]).map((map, index) =>
@@ -1229,26 +1343,87 @@ function buildSideline(
        which is exactly how the first pass of this read. Red at home against
        the navy, silver on the road against the whites. */
     const helmet = homeHalf ? 0x9e210f : 0xa8b0bd;
-    place(playerLegs, x, 0.78 * h, p.z, p.turn, 1, h, 1, pants);
-    place(playerTorso, x, (1.55 + 0.62) * h, p.z, p.turn, 1, h, 1, jersey);
-    place(helmets, x, (1.55 + 1.25 + 0.22) * h, p.z, p.turn, 1, 1, 1, helmet);
+
+    /* Limbs sit either side of the centre line, and the offset is rotated with
+       the person rather than applied in world space — otherwise everyone's
+       legs swing round to the same compass bearing whichever way they face. */
+    const sin = Math.sin(p.turn);
+    const cos = Math.cos(p.turn);
+    const sideways = (offset: number): [number, number] => [
+      x + offset * -sin,
+      p.z + offset * -cos,
+    ];
+
+    for (const offset of [-0.2, 0.2]) {
+      const [lx, lz] = sideways(offset);
+      place(playerLegs, lx, 0.78 * h, lz, p.turn, 1, h, 1, pants);
+    }
+    for (const offset of [-0.42, 0.42]) {
+      const [ax, az] = sideways(offset);
+      place(playerArms, ax, (1.55 + 0.72) * h, az, p.turn, 1, h, 1, jersey);
+    }
+    place(playerTorso, x, (1.55 + 0.5) * h, p.z, p.turn, 1, h, 1, jersey);
+    place(playerPads, x, (1.55 + 1.02) * h, p.z, p.turn, 1, 1, 1, jersey);
+    place(helmets, x, (1.55 + 1.32) * h, p.z, p.turn, 1, 1, 1, helmet);
+    // The facemask, a little proud of the front of the helmet.
+    const [mx, mz] = [x + 0.2 * cos, p.z - 0.2 * sin];
+    place(masks, mx, (1.55 + 1.28) * h, mz, p.turn, 1, 1, 1, 0x20242c);
   }
 
   for (const p of staff) {
     const x = out(p.depth);
     const h = p.height;
-    const kit = STAFF_KIT[(Math.abs(Math.round(p.z * 11)) % STAFF_KIT.length)];
-    place(staffLegs, x, 0.78 * h, p.z, p.turn, 0.94, h, 0.94, 0x20242e);
-    place(staffTorso, x, (1.55 + 0.62) * h, p.z, p.turn, 0.94, h, 0.94, kit);
+    const palette = p.steward ? STEWARD_KIT : STAFF_KIT;
+    const kit = palette[(Math.abs(Math.round(p.z * 11)) % palette.length)];
+    const sin = Math.sin(p.turn);
+    const cos = Math.cos(p.turn);
+    const sideways = (offset: number): [number, number] => [
+      x + offset * -sin,
+      p.z + offset * -cos,
+    ];
+    for (const offset of [-0.17, 0.17]) {
+      const [lx, lz] = sideways(offset);
+      place(staffLegs, lx, 0.78 * h, lz, p.turn, 0.94, h, 0.94, 0x20242e);
+    }
+    for (const offset of [-0.32, 0.32]) {
+      const [ax, az] = sideways(offset);
+      place(staffArms, ax, (1.55 + 0.72) * h, az, p.turn, 0.94, h, 0.94, kit);
+    }
+    /* No pads on the staff, and that is the tell. A coach is a narrow figure
+       next to a squad of wide ones, which is how you read a touchline. */
+    place(staffTorso, x, (1.55 + 0.5) * h, p.z, p.turn, 0.9, h, 0.9, kit);
     const head = staffHeads[p.face] ?? staffHeads[0];
-    place(head, x, (1.55 + 1.25 + 0.2) * h, p.z, p.turn, 1, 1, 1, 0xffffff);
+    place(head, x, (1.55 + 1.16) * h, p.z, p.turn, 1, 1, 1, 0xffffff);
   }
 
-  for (const mesh of [playerLegs, playerTorso, helmets, staffLegs, staffTorso, ...staffHeads]) {
+  for (const mesh of [playerLegs, playerArms, playerTorso, playerPads, helmets, masks,
+                      staffLegs, staffArms, staffTorso, ...staffHeads]) {
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
     group.add(mesh);
+  }
+
+  /* The painted team area. It lies on the grass rather than being part of the
+     turf texture, because the turf ends at the touchline and this is outside
+     it — and because a strip that can be positioned separately can follow the
+     benches when they move. */
+  if (zone) {
+    const strip = zone.clone();
+    strip.needsUpdate = true;
+    strip.wrapS = THREE.RepeatWrapping;
+    strip.wrapT = THREE.ClampToEdgeWrapping;
+    /* Repeated along its length rather than stretched to it. A badge pulled
+       out to ninety metres is a smear, and a smear is what gets noticed. */
+    strip.repeat.set(Math.max(1, Math.round(teamSpan / 46)), 1);
+    const mat = new THREE.Mesh(
+      new THREE.PlaneGeometry(4.6, teamSpan),
+      new THREE.MeshStandardMaterial({ map: strip, roughness: 0.92 }),
+    );
+    mat.rotation.x = -Math.PI / 2;
+    mat.position.set(out(6.6), 0.02, teamFrom + teamSpan / 2);
+    mat.receiveShadow = true;
+    group.add(mat);
   }
 
   // --- the furniture ----------------------------------------------------
@@ -1472,10 +1647,14 @@ function buildFlags(THREE: Three, flag: import("three").Texture) {
 
   // The lip of the touchline roofs, worked out the same way the terrace does.
   const roofY = 4.4 + 15 * TERRACE_RISER + 5.6;
-  const lipX = FIELD_WIDE / 2 + 8 - 3.4;
+  /* The lip moved when the stands did. This still read 8 after the touchline
+     stands were set back to make room for the team areas, which left every
+     flag in the ground hanging five units inboard of the roof it is supposed
+     to stand on. */
+  const lipX = FIELD_WIDE / 2 + SIDELINE_DEPTH - 3.4;
 
-  for (let i = 0; i < 9; i += 1) {
-    const z = 4 - i * 23;
+  for (let i = 0; i < 13; i += 1) {
+    const z = 8 - i * 17;
     for (const side of [-1, 1] as const) {
       const x = side * lipX;
       const pole = new THREE.Mesh(poleGeometry, poleMaterial);
@@ -1605,7 +1784,31 @@ function buildScoreboard(THREE: Three, texture: import("three").Texture, z: numb
  * height, one lens, level, and the only thing that changes is how far down the
  * field it has travelled — which is exactly what the cards are doing too.
  */
-const STEADY: Shot = { at: 0, x: 0, y: 7.2, lx: 0, ly: 3.6, ahead: 46, fov: 58, roll: 0 };
+/* A BROADCAST FRAMING, AND WHY IT IS SAFE TO HAVE ONE.
+ *
+ * Dead centre and level is a safe picture and a dull one — and it had a second
+ * problem that only showed once there was something to look at. The team
+ * areas, the benches, the painted zone, the people: all of it lives along the
+ * touchlines, and a camera flying down the middle of the field keeps both
+ * touchlines pinned to the edges of the frame a hundred units away. The most
+ * worked-on part of the ground was the part the camera never looked at.
+ *
+ * Television solves this by not standing in the middle. The standard shot in
+ * this sport is high and off to one side, angled back across the pitch, so the
+ * near touchline runs along the bottom of the frame and the far stand fills
+ * the back of it. That is the framing, and it is the single strongest thing
+ * that makes a picture read as coverage rather than as a render.
+ *
+ * It is safe here — where the old cinematic plan was not — because the offset
+ * is a constant. The cards that fly through this ground are pinned to the
+ * screen and cannot follow a camera that moves, so every lateral move the old
+ * plan made slid the world under a squad that stayed nailed in place, and that
+ * disagreement is what read as being thrown backwards. Nothing below is a
+ * function of the scroll. The camera sits at one x, one height, one lens and
+ * one angle, and the only thing that changes as you scroll is how far down the
+ * field it has travelled — which is exactly what the cards are doing too.
+ */
+const STEADY: Shot = { at: 0, x: 23, y: 9.4, lx: -7, ly: 3.2, ahead: 46, fov: 58, roll: 0 };
 
 export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
   const canvasHost = useRef<HTMLDivElement | null>(null);
@@ -2055,16 +2258,23 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         adTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
 
+      const zoneCanvas = createTeamZoneTexture();
+      const zoneTexture = zoneCanvas ? new THREE.CanvasTexture(zoneCanvas) : null;
+      if (zoneTexture) {
+        zoneTexture.colorSpace = THREE.SRGBColorSpace;
+        zoneTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      }
+
       /* The team areas, which is where a televised frame of this sport spends
          most of its bottom third. */
       scene.add(
         buildSideline(THREE, {
           touchline: FIELD_WIDE / 2, side: 1, fromZ: OPP_END_Z + 22, toZ: OWN_END_Z - 22,
-          faces: crowdFaces, seed: 0x51de01,
+          faces: crowdFaces, zone: zoneTexture, seed: 0x51de01,
         }),
         buildSideline(THREE, {
           touchline: FIELD_WIDE / 2, side: -1, fromZ: OPP_END_Z + 22, toZ: OWN_END_Z - 22,
-          faces: crowdFaces, seed: 0x51de02,
+          faces: crowdFaces, zone: zoneTexture, seed: 0x51de02,
         }),
       );
 
@@ -2114,7 +2324,16 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         boardTexture = new THREE.CanvasTexture(boardCanvas);
         boardTexture.colorSpace = THREE.SRGBColorSpace;
         boardTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        /* Two boards, one behind each end, sharing a single texture. A ground
+           this size has a board at both ends and the drive travels the length
+           of it — with one, the second half of the journey is played out in
+           front of an empty sky. Sharing the texture means the repaint below
+           lands on both at once and they cannot disagree about the score. */
         scene.add(buildScoreboard(THREE, boardTexture, OPP_END_Z - 82));
+        const nearBoard = buildScoreboard(THREE, boardTexture, OWN_END_Z + 82);
+        // Turned to face back down the field, since it stands behind the camera's start.
+        nearBoard.rotation.y = Math.PI;
+        scene.add(nearBoard);
         /* A stadium board shows what happened, not what is scheduled: the last
            game that was actually played, with its real score and the side it
            was played against.
@@ -2385,6 +2604,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         flagTexture?.dispose();
         boardTexture?.dispose();
         crowdFaces.forEach((texture) => texture.dispose());
+        zoneTexture?.dispose();
         ao.dispose();
         composer.dispose();
         composerTarget.dispose();

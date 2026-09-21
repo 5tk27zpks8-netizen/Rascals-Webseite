@@ -718,6 +718,77 @@ export function createCrowdFaceTexture(variant: number): HTMLCanvasElement | nul
   return canvas;
 }
 
+/**
+ * The team area, painted on the grass.
+ *
+ * A televised touchline is not bare turf between the paint and the benches:
+ * the team area is marked out, and on a home ground it carries the club. It
+ * is also the one place a club badge sits flat enough to read from the far
+ * side of a stadium, which is why every ground that can afford it puts one
+ * there.
+ *
+ * Drawn long and thin because that is the shape of the strip it lies on, and
+ * repeated along it rather than stretched — a badge stretched to ninety metres
+ * is a smear, and a smear is what the eye notices.
+ */
+export function createTeamZoneTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const W = 1024;
+  const H = 128;
+  canvas.width = W;
+  canvas.height = H;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  /* Lighter than the club navy, and that is on purpose. This strip is only
+     ever seen at a grazing angle with ambient occlusion and a broadcast grade
+     on top of it, and at the true navy it came out as a dark stain on the
+     grass rather than as a marked-out area. Lifting it is what keeps it
+     reading as paint. */
+  context.fillStyle = "#33386b";
+  context.fillRect(0, 0, W, H);
+
+  // Keylines, top and bottom. Thick, because thin lines vanish at that angle.
+  context.fillStyle = "#c22a15";
+  context.fillRect(0, 0, W, 13);
+  context.fillRect(0, H - 13, W, 13);
+
+  context.fillStyle = "#ffffff";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.font = '900 58px Impact, "Arial Narrow", sans-serif';
+  context.letterSpacing = "16px";
+  context.fillText("HELLENSTEIN RASCALS", W * 0.5, H * 0.53);
+
+  /* The badge, twice, at the quarters. Simple enough to survive being read at
+     a glancing angle from a hundred units away: the helmet shape and the
+     sweep, not the full mark. */
+  const badge = (cx: number) => {
+    context.save();
+    context.translate(cx, H * 0.5);
+    context.fillStyle = "#9e210f";
+    context.beginPath();
+    context.moveTo(-34, 10);
+    context.quadraticCurveTo(-6, -22, 34, -14);
+    context.quadraticCurveTo(6, 4, -30, 18);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#ffffff";
+    context.beginPath();
+    context.arc(6, 2, 16, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#21254b";
+    context.beginPath();
+    context.arc(6, 2, 11, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  };
+  badge(W * 0.14);
+  badge(W * 0.86);
+
+  return canvas;
+}
+
 export type ScoreboardData = {
   opponent?: string;
   /** The line under the score — the date the result was earned. */
