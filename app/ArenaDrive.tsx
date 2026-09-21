@@ -1382,6 +1382,55 @@ function buildStand(
  * black, which is what made the far background read as nothing at all. A
  * stadium is a closed bowl, so both ends get a bank of seats and a roof.
  */
+/**
+ * THE CORNERS, WHICH WERE SKY.
+ *
+ * Four grandstands standing apart are not a stadium, they are four
+ * grandstands. Looking down the field from the kickoff you could see daylight
+ * straight through both near corners, and nothing else in the ground gives it
+ * away as quickly — a bowl is the thing that makes a crowd feel like one crowd
+ * rather than four separate blocks of people.
+ *
+ * A real corner is curved and this one is a chamfer: one straight terrace set
+ * at forty-five degrees with its front face passing through the point where
+ * the two neighbouring fronts would meet. From the field that closes the gap
+ * and continues the rake, which is all it has to do; the approximation only
+ * shows from directly above, where nobody on this page ever is.
+ *
+ * Rotating about Y by an angle sends local +x — the direction a terrace's rake
+ * climbs, away from the pitch — to (cos, 0, -sin), so each corner's angle is
+ * whichever one points that diagonal outwards.
+ */
+function buildCornerStand(
+  THREE: Three,
+  boards: import("three").Texture | null,
+  faces: CrowdFaces,
+  x: number,
+  z: number,
+  seed: number,
+) {
+  const group = buildTerrace(THREE, {
+    length: 82,
+    /* Two rows shorter than the touchlines. A corner that matches the main
+       stand for height reads as a mistake in the geometry rather than as
+       architecture — real bowls step down into their corners. */
+    rows: 13,
+    base: 4.4,
+    roof: true,
+    boards,
+    faces,
+    seed,
+  });
+  group.position.set(x, 0, z);
+  const outX = Math.sign(x);
+  const outZ = Math.sign(z || 1);
+  group.rotation.y =
+    outX > 0
+      ? (outZ > 0 ? -Math.PI / 4 : Math.PI / 4)
+      : (outZ > 0 ? (-3 * Math.PI) / 4 : (3 * Math.PI) / 4);
+  return group;
+}
+
 function buildEndStand(
   THREE: Three,
   boards: import("three").Texture | null,
@@ -2001,6 +2050,17 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          straight down it. A stand at this level sits close behind the posts. */
       scene.add(buildEndStand(THREE, adTexture, crowdFaces, OWN_END_Z + 14, 1));
       scene.add(buildEndStand(THREE, adTexture, crowdFaces, OPP_END_Z - 14, -1));
+
+      /* Close the bowl. The four corner chamfers meet the touchline fronts at
+         x = ±(half the field + the sideline) and the end fronts at the z the
+         end stands sit on, so the ring is continuous from the pitch. */
+      const cornerX = FIELD_WIDE / 2 + SIDELINE_DEPTH;
+      scene.add(
+        buildCornerStand(THREE, adTexture, crowdFaces, cornerX, OWN_END_Z + 14, 0xc02e01),
+        buildCornerStand(THREE, adTexture, crowdFaces, -cornerX, OWN_END_Z + 14, 0xc02e02),
+        buildCornerStand(THREE, adTexture, crowdFaces, cornerX, OPP_END_Z - 14, 0xc02e03),
+        buildCornerStand(THREE, adTexture, crowdFaces, -cornerX, OPP_END_Z - 14, 0xc02e04),
+      );
 
       // The board carries whatever the schedule says is next. It is drawn
       // once with a placeholder and repainted when the fetch lands, so a slow
