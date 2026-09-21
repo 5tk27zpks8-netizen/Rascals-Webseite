@@ -1652,6 +1652,60 @@ function buildStand(
  * climbs, away from the pitch — to (cos, 0, -sin), so each corner's angle is
  * whichever one points that diagonal outwards.
  */
+/**
+ * THE PLAYERS' TUNNEL.
+ *
+ * The one opening in a ground that everybody can point to. A stadium has many
+ * ways in and only one that matters, and its absence is felt rather than
+ * noticed: a bowl with no tunnel is a bowl whose teams have no way of having
+ * arrived.
+ *
+ * It is built at field level in the end the drive travels towards, so it is in
+ * shot for most of the journey rather than behind the camera. The mouth is the
+ * deepest black in the scene on purpose — a tunnel in daylight returns almost
+ * nothing, and it is that contrast against a sunlit wall that reads as depth
+ * rather than as a painted rectangle.
+ */
+function buildPlayerTunnel(THREE: Three, z: number) {
+  const group = new THREE.Group();
+
+  const concrete = new THREE.MeshStandardMaterial({ color: 0x6e7684, roughness: 0.94 });
+  const trim = new THREE.MeshStandardMaterial({ color: 0x21254b, roughness: 0.7 });
+
+  /* The opening. Deep rather than flat, so that from an angle you see into it
+     and the near edge casts across the far wall — a plane painted black stays
+     black from every direction and gives the trick away immediately. */
+  const mouth = new THREE.Mesh(
+    new THREE.BoxGeometry(7.4, 4.6, 9),
+    new THREE.MeshStandardMaterial({ color: 0x05070b, roughness: 1 }),
+  );
+  mouth.position.set(0, 2.3, z - 4);
+  group.add(mouth);
+
+  // The jambs and the head, which is what makes an opening rather than a hole.
+  for (const side of [-1, 1]) {
+    const jamb = new THREE.Mesh(new THREE.BoxGeometry(1.8, 5.6, 1.6), concrete);
+    jamb.position.set(side * 4.6, 2.8, z);
+    jamb.castShadow = true;
+    jamb.receiveShadow = true;
+    group.add(jamb);
+  }
+
+  const head = new THREE.Mesh(new THREE.BoxGeometry(11, 1.5, 1.6), concrete);
+  head.position.set(0, 5.35, z);
+  head.castShadow = true;
+  head.receiveShadow = true;
+  group.add(head);
+
+  /* The club's band across the head of it, which every ground that has a
+     tunnel puts there. */
+  const band = new THREE.Mesh(new THREE.BoxGeometry(11.2, 0.9, 0.3), trim);
+  band.position.set(0, 5.35, z + 0.85);
+  group.add(band);
+
+  return group;
+}
+
 function buildCornerStand(
   THREE: Three,
   boards: import("three").Texture | null,
@@ -2379,6 +2433,10 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          straight down it. A stand at this level sits close behind the posts. */
       scene.add(buildEndStand(THREE, adTexture, crowdFaces, OWN_END_Z + 14, 1));
       scene.add(buildEndStand(THREE, adTexture, crowdFaces, OPP_END_Z - 14, -1));
+
+      /* The way out onto the field, set in the end the drive travels towards
+         so it is in shot for the journey rather than behind the camera. */
+      scene.add(buildPlayerTunnel(THREE, OPP_END_Z - 13));
 
       /* Close the bowl. The four corner chamfers meet the touchline fronts at
          x = ±(half the field + the sideline) and the end fronts at the z the
