@@ -57,8 +57,8 @@
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(126% 82% at 50% 48%, transparent 40%, rgba(3, 9, 16, 0.7) 100%),
-    linear-gradient(180deg, rgba(3, 9, 16, 0.88) 0%, transparent 20%, transparent 70%, rgba(3, 9, 16, 0.94) 100%);
+    radial-gradient(126% 82% at 50% 48%, transparent 46%, rgba(10, 22, 38, 0.36) 100%),
+    linear-gradient(180deg, rgba(10, 22, 38, 0.6) 0%, transparent 18%, transparent 74%, rgba(10, 22, 38, 0.66) 100%);
 }
 
 /* Without the drive there is no fixed scene to darken. */

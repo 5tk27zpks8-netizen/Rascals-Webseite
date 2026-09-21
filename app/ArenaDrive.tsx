@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { subscribeDrive, type DriveFrame } from "./lib/drive-scroll";
 import {
   FIELD_YARDS_LONG,
   FIELD_YARDS_WIDE,
@@ -69,8 +70,15 @@ const END_Z = OPP_GOAL_Z + 8 * YARD;
  * near the centre line happens behind a card and is never seen. Out here it
  * lands clear of the squad rather than under it.
  */
-const CATCH_X = 12.5;
-const CATCH_Z = OPP_GOAL_Z - 5 * YARD;
+/* Off the middle, but not so far off that the formation stands in front of
+   him on the way in — at twelve and a half he spent the whole approach behind
+   the right-hand column of cards and only cleared them after the catch was
+   over. */
+const CATCH_X = 6;
+/* Close enough to the end of the camera's travel to fill a third of the frame
+   when it stops. Further back and the catch is a gesture from a figure too
+   small to read it on. */
+const CATCH_Z = OPP_GOAL_Z - 2 * YARD;
 
 type Three = typeof import("three");
 
@@ -801,8 +809,12 @@ function buildBall(THREE: Three, hide: import("three").Texture | null) {
       metalness: 0.05,
     }),
   );
-  // A prolate spheroid: long on its own z, which is the axis it spins about.
-  ball.scale.set(0.62, 0.62, 1.05);
+  /* A prolate spheroid: long on its own z, which is the axis it spins about.
+     Sized against the receiver rather than against the sky it spends most of
+     the drive in — at its old scale it was a third of his height, and the
+     catch ended with a ball bigger than his head covering his face. A real
+     one is about a sixth of a man, and that is what this is. */
+  ball.scale.set(0.33, 0.33, 0.56);
   ball.castShadow = true;
   const pivot = new THREE.Group();
   pivot.add(ball);
@@ -810,65 +822,214 @@ function buildBall(THREE: Three, hide: import("three").Texture | null) {
 }
 
 /**
- * The receiver waiting in the end zone, arms up for the catch.
+ * THE RECEIVER, AND HE ACTUALLY CATCHES IT.
  *
- * In the club's own kit: navy jersey and pants, a white helmet, red on the
- * sleeves and down the leg. Built from primitives on purpose — at the distance
- * the drive ever sees him he is a silhouette, and a figure that reaches for
- * realism and misses is worse than one that reads as a marker. What makes him
- * read as a footballer rather than a person is the shoulder pads and the
- * helmet, so those carry the size.
+ * A wide receiver squared up to the throw in the club's kit: white helmet with
+ * the red centre stripe, navy jersey over shoulder pads, white pants with the
+ * navy and red stripe down the leg, navy socks, black cleats.
  *
- * Returns where his hands are, because the throw has to end exactly there and
- * a hand position copied into two places is a hand position that drifts apart.
+ * He used to be a marker — a stack of capsules that read as a person-shaped
+ * object at a distance and as a toy up close, which is where the drive
+ * actually leaves him. Three things carry a footballer instead of a figure,
+ * and this build spends its geometry on exactly those:
+ *
+ *   THE SILHOUETTE. Shoulder pads that break well outside the arms, a chest
+ *   that tapers hard to the waist, and a helmet a size too big for a head.
+ *   That outline is recognisable before any detail resolves, and no amount of
+ *   detail rescues it if the outline is wrong.
+ *
+ *   THE MUSCLE. Limbs are not tubes. Calves, thighs, biceps and forearms each
+ *   carry their own swell laid over the shaft, so the light breaks along a leg
+ *   instead of running flat down it.
+ *
+ *   THE FACEMASK. The single most legible piece of football equipment there
+ *   is: dark bars across a pale shell, which the eye reads as a helmet from
+ *   any distance at all.
+ *
+ * ---------------------------------------------------------------------
+ * ARTICULATED, BECAUSE THE CATCH IS THE POINT
+ *
+ * He is jointed at the shoulders and the elbows, so the last stretch of the
+ * page is him taking the ball: arms reaching, hands meeting it, elbows folding
+ * it in to the chest.
+ *
+ * The ball is aimed at `catchAnchor`, which hangs off the left elbow midway to
+ * the right glove. It is not a position anybody maintains — it is wherever the
+ * hands are, because it is parented to them. Pose the arms however you like
+ * and the ball still arrives exactly between the gloves, which is the one
+ * thing a catch cannot get wrong.
  */
 function buildReceiver(THREE: Three, x: number, z: number) {
   const group = new THREE.Group();
   const SCALE = 1.5;
 
-  const navy = new THREE.MeshStandardMaterial({ color: 0x1b2b57, roughness: 0.74 });
-  const red = new THREE.MeshStandardMaterial({ color: 0xc4152a, roughness: 0.72 });
-  const white = new THREE.MeshStandardMaterial({ color: 0xeef1f6, roughness: 0.42, metalness: 0.08 });
-  const skin = new THREE.MeshStandardMaterial({ color: 0xb98a63, roughness: 0.85 });
+  const navy = new THREE.MeshStandardMaterial({ color: 0x17255a, roughness: 0.68, metalness: 0.02 });
+  const red = new THREE.MeshStandardMaterial({ color: 0xc4152a, roughness: 0.62, metalness: 0.03 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xf2f5fa, roughness: 0.5, metalness: 0.02 });
+  /* The shell is lacquered, so it takes a highlight the cloth never does.
+     That specular streak is most of what says "helmet" at distance. */
+  const shell = new THREE.MeshStandardMaterial({ color: 0xf6f8fc, roughness: 0.16, metalness: 0.22 });
+  const mask = new THREE.MeshStandardMaterial({ color: 0x2b3038, roughness: 0.34, metalness: 0.85 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xa97249, roughness: 0.78, metalness: 0 });
+  const boot = new THREE.MeshStandardMaterial({ color: 0x14161c, roughness: 0.42, metalness: 0.1 });
 
-  const add = (
+  const put = (
+    parent: import("three").Object3D,
     geometry: import("three").BufferGeometry,
     material: import("three").Material,
     px: number,
     py: number,
     pz: number,
     rot?: [number, number, number],
+    scale?: [number, number, number],
   ) => {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(px, py, pz);
     if (rot) mesh.rotation.set(rot[0], rot[1], rot[2]);
+    if (scale) mesh.scale.set(scale[0], scale[1], scale[2]);
     mesh.castShadow = true;
-    group.add(mesh);
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
   };
 
-  // Legs and hips, with the red stripe down the outside of each leg.
-  add(new THREE.CapsuleGeometry(0.19, 1.5, 4, 8), navy, -0.22, 0.85, 0);
-  add(new THREE.CapsuleGeometry(0.19, 1.5, 4, 8), navy, 0.22, 0.85, 0);
-  add(new THREE.BoxGeometry(0.06, 1.3, 0.1), red, -0.4, 0.95, 0);
-  add(new THREE.BoxGeometry(0.06, 1.3, 0.1), red, 0.4, 0.95, 0);
-  add(new THREE.BoxGeometry(0.86, 0.42, 0.5), navy, 0, 1.78, 0);
+  // ---------------------------------------------------------------- legs
+  /* Built once and shared left/right. Two meshes over one geometry is two
+     draw calls either way; it is the upload that is worth not doing twice. */
+  const thighGeo = new THREE.CapsuleGeometry(0.185, 0.62, 5, 12);
+  const calfGeo = new THREE.CapsuleGeometry(0.155, 0.6, 5, 12);
+  const swellGeo = new THREE.SphereGeometry(0.2, 12, 10);
 
-  // Jersey and the pads that make the shape a footballer's.
-  add(new THREE.CapsuleGeometry(0.46, 0.74, 4, 10), navy, 0, 2.44, 0);
-  add(new THREE.BoxGeometry(1.5, 0.42, 0.66), navy, 0, 2.9, 0);
-  add(new THREE.BoxGeometry(1.54, 0.12, 0.68), red, 0, 2.66, 0);
+  for (const side of [-1, 1] as const) {
+    const leg = new THREE.Group();
+    leg.position.set(side * 0.26, 0, 0);
+    group.add(leg);
 
-  // Arms up and slightly forward, red cuffs, hands open towards the throw.
-  add(new THREE.CapsuleGeometry(0.15, 1.2, 4, 8), navy, -0.78, 3.52, 0.2, [0.34, 0, 0.22]);
-  add(new THREE.CapsuleGeometry(0.15, 1.2, 4, 8), navy, 0.78, 3.52, 0.2, [0.34, 0, -0.22]);
-  add(new THREE.SphereGeometry(0.17, 10, 8), white, -0.98, 4.18, 0.42);
-  add(new THREE.SphereGeometry(0.17, 10, 8), white, 0.98, 4.18, 0.42);
+    // Cleat, and the ankle above it.
+    put(leg, new THREE.BoxGeometry(0.26, 0.11, 0.56), boot, 0, 0.055, 0.08);
+    put(leg, new THREE.CapsuleGeometry(0.1, 0.12, 4, 8), boot, 0, 0.19, 0.01);
+    // Sock to the knee.
+    put(leg, calfGeo, navy, 0, 0.72, 0);
+    // Calf muscle, set behind the shin rather than around it.
+    put(leg, swellGeo, navy, 0, 0.86, -0.06, undefined, [0.72, 1.16, 0.68]);
+    // Knee.
+    put(leg, new THREE.SphereGeometry(0.175, 12, 10), white, 0, 1.18, 0.01);
+    // Thigh in the pants, and the quad over the front of it.
+    put(leg, thighGeo, white, 0, 1.66, 0);
+    put(leg, swellGeo, white, 0, 1.72, 0.07, undefined, [0.78, 1.14, 0.7]);
+    // The stripe down the outside: navy under red, as on the shirt.
+    /* Sitting on the surface of the leg rather than standing off it. At the
+       old offset the box cleared the capsule by a good fraction of its own
+       width and read as a fin bolted to his thigh. */
+    put(leg, new THREE.BoxGeometry(0.04, 1.0, 0.09), navy, side * 0.168, 1.6, 0.02);
+    put(leg, new THREE.BoxGeometry(0.022, 1.0, 0.095), red, side * 0.172, 1.6, 0.02);
+  }
 
-  // Head, white helmet, red centre stripe, facemask.
-  add(new THREE.SphereGeometry(0.28, 14, 12), skin, 0, 3.18, 0);
-  add(new THREE.SphereGeometry(0.36, 16, 14), white, 0, 3.26, -0.02);
-  add(new THREE.BoxGeometry(0.1, 0.06, 0.7), red, 0, 3.6, -0.02);
-  add(new THREE.TorusGeometry(0.21, 0.035, 6, 12), white, 0, 3.14, 0.31, [1.35, 0, 0]);
+  // ---------------------------------------------------------------- hips and waist
+  put(group, new THREE.CapsuleGeometry(0.36, 0.2, 5, 14), white, 0, 2.1, 0, [Math.PI / 2, 0, 0], [1, 1, 0.62]);
+  /* The belt line. A footballer's waist is the narrowest thing on him and the
+     pads are the widest — that contrast is the silhouette. */
+  put(group, new THREE.CylinderGeometry(0.3, 0.34, 0.16, 16), navy, 0, 2.34, 0, undefined, [1, 1, 0.66]);
+
+  // ---------------------------------------------------------------- torso
+  const torso = new THREE.Group();
+  torso.position.set(0, 2.42, 0);
+  group.add(torso);
+
+  // Ribcage, wider at the chest than at the waist.
+  put(torso, new THREE.CapsuleGeometry(0.4, 0.42, 6, 16), navy, 0, 0.44, 0, undefined, [1.06, 1, 0.68]);
+  // Chest plate: the pads' front, sitting proud of the jersey.
+  put(torso, new THREE.BoxGeometry(0.86, 0.52, 0.3), navy, 0, 0.72, 0.16);
+  // The pads themselves, breaking outside the shoulders.
+  put(torso, new THREE.BoxGeometry(1.6, 0.34, 0.66), navy, 0, 0.98, 0);
+  for (const side of [-1, 1] as const) {
+    // Rounded caps on the ends, which is what stops the pads reading as a plank.
+    put(torso, new THREE.SphereGeometry(0.31, 14, 12), navy, side * 0.75, 0.93, 0, undefined, [1, 0.8, 1.02]);
+  }
+  // The red band across the chest, and the white one under it.
+  put(torso, new THREE.BoxGeometry(0.86, 0.09, 0.3), red, 0, 0.52, 0.165);
+  put(torso, new THREE.BoxGeometry(0.86, 0.04, 0.3), white, 0, 0.45, 0.167);
+
+  // ---------------------------------------------------------------- arms
+  const upperGeo = new THREE.CapsuleGeometry(0.135, 0.5, 5, 12);
+  const foreGeo = new THREE.CapsuleGeometry(0.115, 0.46, 5, 12);
+  const shoulders: import("three").Group[] = [];
+  const elbows: import("three").Group[] = [];
+
+  for (const side of [-1, 1] as const) {
+    /* Pivot at the shoulder. The arm is authored hanging straight down, so a
+       rotation about X is the only thing that ever has to be reasoned about:
+       negative swings it up and forward, towards the throw. */
+    const shoulder = new THREE.Group();
+    shoulder.position.set(side * 0.62, 0.86, 0);
+    torso.add(shoulder);
+
+    // Deltoid, then the sleeve over the bicep, then the bicep itself.
+    put(shoulder, new THREE.SphereGeometry(0.19, 12, 10), navy, 0, -0.04, 0);
+    put(shoulder, upperGeo, navy, 0, -0.3, 0);
+    put(shoulder, new THREE.SphereGeometry(0.15, 12, 10), navy, 0, -0.26, 0.04, undefined, [1, 1.15, 1]);
+    // Sleeve cuff: red over white, the shirt's own trim.
+    put(shoulder, new THREE.CylinderGeometry(0.132, 0.132, 0.1, 12), red, 0, -0.52, 0);
+    put(shoulder, new THREE.CylinderGeometry(0.134, 0.134, 0.04, 12), white, 0, -0.58, 0);
+
+    const elbow = new THREE.Group();
+    elbow.position.set(0, -0.62, 0);
+    shoulder.add(elbow);
+
+    put(elbow, new THREE.SphereGeometry(0.125, 12, 10), skin, 0, 0, 0);
+    put(elbow, foreGeo, skin, 0, -0.3, 0);
+    // Forearm swell, on the thumb side.
+    put(elbow, new THREE.SphereGeometry(0.12, 12, 10), skin, 0, -0.2, 0.03, undefined, [1, 1.3, 1]);
+    // Glove: a flattened palm rather than a ball, so it reads as a hand.
+    put(elbow, new THREE.SphereGeometry(0.17, 12, 10), navy, 0, -0.62, 0.05, undefined, [0.92, 1.12, 0.6]);
+    put(elbow, new THREE.BoxGeometry(0.2, 0.06, 0.2), red, 0, -0.5, 0.05);
+
+    shoulders.push(shoulder);
+    elbows.push(elbow);
+  }
+
+  /* Where the ball is going. Hung off the left elbow and pushed half the
+     shoulder width across, so it sits midway between the two gloves whatever
+     the arms are doing. Never positioned by hand, never kept in step with
+     anything — it is the hands. */
+  const catchAnchor = new THREE.Object3D();
+  catchAnchor.position.set(0.62, -0.66, 0.14);
+  elbows[0].add(catchAnchor);
+
+  // ---------------------------------------------------------------- head
+  const head = new THREE.Group();
+  /* High enough that the helmet stands clear of the pads. Set level with
+     them the head vanished into the shoulders, which is the one proportion
+     that makes a figure read as a toy rather than an athlete. */
+  head.position.set(0, 1.24, 0);
+  torso.add(head);
+
+  // Neck, and the roll of padding at the back of the collar.
+  put(head, new THREE.CylinderGeometry(0.13, 0.17, 0.32, 12), skin, 0, -0.14, 0);
+  put(head, new THREE.TorusGeometry(0.19, 0.07, 8, 14), navy, 0, -0.1, -0.02, [Math.PI / 2, 0, 0]);
+  // Jaw and face, inside the shell.
+  put(head, new THREE.SphereGeometry(0.2, 14, 12), skin, 0, 0.12, 0.03);
+  // The shell: a sphere pulled back and down over the skull.
+  put(head, new THREE.SphereGeometry(0.31, 20, 16), shell, 0, 0.16, -0.03, undefined, [1.04, 1.02, 1.1]);
+  // The red centre stripe over the crown.
+  put(head, new THREE.BoxGeometry(0.075, 0.05, 0.62), red, 0, 0.44, -0.04);
+  // Ear hole, which breaks the blank side of the shell.
+  for (const side of [-1, 1] as const) {
+    put(head, new THREE.CylinderGeometry(0.06, 0.06, 0.04, 10), mask, side * 0.29, 0.13, -0.02, [0, 0, Math.PI / 2]);
+  }
+  /* The facemask. Three bars across and one down the middle, standing off the
+     face — the one piece of kit that says football from any distance. */
+  const barGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.44, 8);
+  for (const [i, y] of [0.2, 0.06, -0.06].entries()) {
+    put(head, barGeo, mask, 0, y, 0.27 - i * 0.012, [0, 0, Math.PI / 2]);
+  }
+  put(head, new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8), mask, 0, 0.07, 0.28);
+  // The cage's returns, tying the bars back to the shell.
+  for (const side of [-1, 1] as const) {
+    put(head, new THREE.CylinderGeometry(0.022, 0.022, 0.3, 8), mask, side * 0.21, 0.07, 0.2, [0.5, 0, 0]);
+  }
+  // Chinstrap.
+  put(head, new THREE.TorusGeometry(0.2, 0.022, 6, 14), white, 0, 0.02, 0.06, [1.2, 0, 0]);
 
   group.scale.setScalar(SCALE);
   group.position.set(x, 0, z);
@@ -878,15 +1039,47 @@ function buildReceiver(THREE: Three, x: number, z: number) {
      source put his back, and his facemask, to the viewer. */
   group.rotation.y = 0;
 
-  /* Between the hands and a little in front of them, which is where a ball
-     being caught actually sits. Worked out in the same space the parts were
-     placed in, then taken through the group's own scale and turn. */
-  const catchPoint = new THREE.Vector3(0, 4.3, 0.55)
-    .applyEuler(group.rotation)
-    .multiplyScalar(SCALE)
-    .add(group.position);
+  /**
+   * Pose him, from waiting to holding it.
+   *
+   * One number runs the whole catch. At 0 he is squared up with his arms high
+   * and open, hands apart, watching it in. At 1 the elbows have folded and the
+   * ball is against his chest. Everything in between is the catch itself, and
+   * because the ball is aimed at his hands rather than at a fixed point, it
+   * stays in them the whole way through.
+   */
+  const pose = (reach: number) => {
+    const t = Math.min(1, Math.max(0, reach));
+    /* Both joints rotate about X, and the arm is authored hanging straight
+       down, so the direction of a segment turned by φ is (0, -cos φ, -sin φ).
+       Worth writing down, because the first pass got the tuck badly wrong by
+       reasoning about it loosely: bending the elbow *further* in the same
+       direction as the shoulder carried the forearm straight past horizontal
+       and on up, which put his hands above his head and finished the catch
+       with the ball across his face.
 
-  return { group, catchPoint };
+       Reaching, at t=0: shoulder -2.46 points the upper arm up and forward,
+       and an almost straight elbow carries the hands overhead into the ball.
+
+       Tucked, at t=1: shoulder -0.41 drops the upper arm back to near vertical
+       at his side, and -1.8 at the elbow folds the forearm up and in — so the
+       hands finish at chest height, a little in front of the shirt, which is
+       where a secured ball actually sits. */
+    for (const [i, shoulder] of shoulders.entries()) {
+      const side = i === 0 ? -1 : 1;
+      shoulder.rotation.x = -2.46 + t * 2.05;
+      shoulder.rotation.z = side * (0.34 - t * 0.28);
+    }
+    for (const elbow of elbows) {
+      elbow.rotation.x = -0.1 - t * 1.7;
+    }
+    // He gives with it rather than letting it hit him.
+    torso.rotation.x = t * 0.15;
+    head.rotation.x = -0.24 + t * 0.2;
+  };
+  pose(0);
+
+  return { group, catchAnchor, pose };
 }
 
 /** The board behind the far end zone, carrying the real next fixture. */
@@ -984,15 +1177,11 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
     const captionOut = page.querySelector<HTMLElement>("[data-hud-caption]");
 
     let disposed = false;
-    let frame = 0;
+    let unsubscribeDrive: (() => void) | undefined;
     let progress = 0;
     let eased = 0;
     let cleanup: (() => void) | undefined;
 
-    const readProgress = () => {
-      const total = scrollTotal();
-      progress = total > 0 ? Math.min(1, Math.max(0, window.scrollY / total)) : 0;
-    };
 
     /** Down and distance, so the overlay reads like a broadcast, not a scrollbar. */
     const downFor = (value: number) => {
@@ -1102,7 +1291,10 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       // Without tone mapping the floodlights clip the turf to a flat mint
       // green. ACES keeps the highlights and lets the grass stay grass.
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.02;
+      /* ACES desaturates as it brightens, so this is deliberately a small
+         step: the last time the exposure was pushed to carry the daylight on
+         its own the sky went white. The light belongs in the lights. */
+      renderer.toneMappingExposure = 1.12;
 
       /* Shadows are what stop everything reading as pasted onto the grass: the
          posts, the pylons and the stands all sat on the pitch without touching
@@ -1306,7 +1498,11 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       let ballPivot: import("three").Group | null = null;
       let ballMesh: import("three").Mesh | null = null;
       let ballTexture: import("three").CanvasTexture | null = null;
-      let catchPoint: import("three").Vector3 | null = null;
+      let catchAnchor: import("three").Object3D | null = null;
+      /* Reused every frame: allocating a Vector3 per frame is garbage the
+         collector has to come back for mid-drive. */
+      const handPoint = new THREE.Vector3();
+      let poseReceiver: ((reach: number) => void) | null = null;
       if (steady) {
         const hideCanvas = createBallTexture();
         ballTexture = hideCanvas ? new THREE.CanvasTexture(hideCanvas) : null;
@@ -1320,7 +1516,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         scene.add(ballPivot);
         const receiver = buildReceiver(THREE, CATCH_X, CATCH_Z);
         scene.add(receiver.group);
-        catchPoint = receiver.catchPoint;
+        catchAnchor = receiver.catchAnchor;
+        poseReceiver = receiver.pose;
       }
 
       scene.add(buildGoal(THREE, OWN_END_Z, 1));
@@ -1415,8 +1612,16 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       /* Sky above, grass below. This is what fills the shadowed side of
          everything in an outdoor scene, and it is why a shaded face outdoors
          is blue rather than black. */
-      scene.add(new THREE.HemisphereLight(0x9dc4ea, 0x2f4a26, 1.55));
-      scene.add(new THREE.AmbientLight(0xdfeaf6, 0.28));
+      /* Sky fill, and it carries the daylight rather than the sun does.
+
+         Everything the drive looks at but the pitch is in its own shade: the
+         crowd sits under a roof, the stands face inwards, the far side is
+         backlit. With the fill this low all of that fell to the ambient term
+         and the ground read as an overcast evening whatever the sun was doing
+         to the grass. Raising the sky term is what actually lights a stadium
+         in the middle of the afternoon. */
+      scene.add(new THREE.HemisphereLight(0xa8cdf0, 0x3c5c31, 2.35));
+      scene.add(new THREE.AmbientLight(0xe6effa, 0.46));
 
       // The pylons still stand in daylight; they just are not doing anything.
       for (let i = 0; i < 5; i += 1) {
@@ -1473,38 +1678,33 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         bloom.setSize(window.innerWidth, window.innerHeight);
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-        readProgress();
       };
 
       window.addEventListener("pointermove", onPointerMove, { passive: true });
-      window.addEventListener("scroll", readProgress, { passive: true });
       window.addEventListener("resize", onResize);
-      readProgress();
-      eased = progress;
 
-      const start = performance.now();
-      let lastFrame = start;
-      const tick = () => {
-        frame = requestAnimationFrame(tick);
-        const now = performance.now();
-        const time = (now - start) / 1000;
-        /* Capped, so a tab that was in the background does not come back and
-           jump the camera the whole length of the field in one step. */
-        const dt = Math.min(0.05, (now - lastFrame) / 1000);
-        lastFrame = now;
+      /* The scene draws inside the drive's frame rather than in a loop of its
+         own, and that is the point of the rewrite.
+
+         It used to keep a private requestAnimationFrame loop and a private
+         integrator chasing its own reading of the scroll, while the squad
+         pinned in front of it kept a second pair. Two smoothed numbers for one
+         motion drift, and ground sliding under a settled foreground is what
+         read as being thrown backwards.
+
+         Now drive-scroll smooths once and hands the result to everything on
+         the same frame. The camera is a strictly increasing function of that
+         one number, so travelling backwards is not something that needs
+         guarding against — there is no expression here that can produce it. */
+      const tick = (drive: DriveFrame) => {
+        const time = drive.time;
+        const dt = drive.dt;
+        eased = progress = drive.progress;
         (sky.birds.material as import("three").ShaderMaterial).uniforms.uTime.value = time;
         /* The cloud deck turns far more slowly than anything else in frame.
            Any faster and a sky that should feel settled starts to scud. */
         sky.clouds.rotation.y = time * 0.0035;
         filmPass.uniforms.uTime.value = time;
-
-        /* The camera trails the scroll, and that lag is what makes this feel
-           like travelling rather than like dragging a slider. Expressed per
-           second rather than per frame: a flat factor per frame settles twice
-           as fast on a 120Hz screen as on a 60Hz one, so the drive had a
-           different weight on every machine. Same rate as the cards in front
-           of it, so the two move as one thing. */
-        eased += (progress - eased) * (1 - Math.exp(-3.6 * dt));
 
         // A camera that is perfectly still between scrolls reads as a
         // screenshot. A slow breath keeps the ground alive without ever
@@ -1520,14 +1720,21 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         const tilt = steady ? 0 : pointer.y;
         const shot = steady ? STEADY : sampleShot(eased);
 
-        /* The weave. Tied to how far down the field the camera has come, not
-           to the clock: a path rather than a wobble. Stop scrolling and it
-           stops too, which matters because the squad is pinned to the screen
-           and cannot follow anything that moves on its own. The aim carries
-           the same offset, so this is a sideways dolly down a winding line and
-           never a turn — a turn is what the cards could not survive. */
-        const weave = steady ? Math.sin(eased * Math.PI * 2.6) * 2.4 : 0;
-        const weaveRise = steady ? Math.sin(eased * Math.PI * 1.7) * 0.5 : 0;
+        /* There is no weave here any more, and its absence is deliberate.
+
+           The camera used to wind down the field on a sine of the scroll while
+           the squad stayed pinned to the screen. The ground swung, the cards
+           did not, and a foreground that refuses to follow its background is
+           read as a shove — at exactly the two or three places down the page
+           where that sine was steepest.
+
+           The winding is still there. It moved into the formation itself, in
+           PlayerDeck: the cards are laid out along a curve instead of the
+           camera being flown along one. You thread the same snaking column,
+           and because the curve is baked into where the cards stand rather
+           than into how the camera moves, nothing in the picture can disagree
+           with anything else. In steady mode the camera now travels in a
+           straight line and changes nothing but its distance down the field. */
 
         if (Math.abs(camera.fov - shot.fov) > 0.01) {
           camera.fov = shot.fov;
@@ -1535,13 +1742,13 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         }
 
         camera.position.set(
-          shot.x + lead * 3.4 + sway + weave,
-          shot.y - tilt * 1.2 + breath + weaveRise,
+          shot.x + lead * 3.4 + sway,
+          shot.y - tilt * 1.2 + breath,
           START_Z + (END_Z - START_Z) * eased,
         );
         camera.lookAt(
-          shot.lx + lead * 1.8 + sway * 0.35 + weave,
-          shot.ly + weaveRise,
+          shot.lx + lead * 1.8 + sway * 0.35,
+          shot.ly,
           camera.position.z - shot.ahead,
         );
         camera.rotation.z = steady ? 0 : shot.roll + Math.sin(time * 0.23) * 0.004;
@@ -1556,7 +1763,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
            it arrives exactly when the drive does. The arc is a parabola over
            that lead, and the spin axis is laid along the flight so it spirals
            rather than tumbling. */
-        if (ballPivot && ballMesh && catchPoint) {
+        if (ballPivot && ballMesh && catchAnchor) {
           const flight = Math.min(1, Math.max(0, eased));
 
           /* Two places the ball could be, and a blend between them.
@@ -1566,35 +1773,56 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
              couple of pixels across and lost — and high and wide enough to sit
              in the corner of the frame the squad never occupies.
 
-             Over the last stretch that gives way to a fixed point in the
-             world: the receiver's hands. Blending into his hands rather than
-             flying a path that happens to pass near them is what makes the
-             catch land, every time, whatever the page height works out to. */
+             Over the last stretch that gives way to his hands. Not to a point
+             near his hands: to the hands themselves. `catchAnchor` hangs off
+             his left elbow, so wherever the arms swing to, that is where the
+             ball is aimed, and the two cannot come apart. */
           const lead = 31 - 10 * flight;
           const drift = 9.6 - 6.2 * flight;
-          const carriedX = drift + weave * 0.6;
+          const carriedX = drift;
           const carriedY = 13.4 - 6.2 * flight + Math.sin(Math.PI * flight) * 2.4;
           const carriedZ = camera.position.z - lead;
 
-          const t = Math.min(1, Math.max(0, (flight - 0.66) / 0.34));
-          const arrive = t * t * (3 - 2 * t);
+          /* The last stretch of the page is the catch, and it runs in two
+             beats so the eye can read it.
 
-          const bx = carriedX + (catchPoint.x - carriedX) * arrive;
-          const by = carriedY + (catchPoint.y - carriedY) * arrive;
-          const bz = carriedZ + (catchPoint.z - carriedZ) * arrive;
+             `arrive` brings the ball in: from three quarters of the way down
+             the page it leaves the camera's carry and closes on his hands,
+             easing rather than sliding so it settles instead of stopping.
+
+             `secure` is the catch itself, held back until the ball is almost
+             there. Over the final stretch the arms come down out of the reach,
+             the elbows fold, and the ball ends against his chest — which is
+             what a caught ball does, and is the last thing the page shows. */
+          const t = Math.min(1, Math.max(0, (flight - 0.74) / 0.26));
+          const arrive = t * t * (3 - 2 * t);
+          const g = Math.min(1, Math.max(0, (flight - 0.93) / 0.07));
+          const secure = g * g * (3 - 2 * g);
+
+          if (poseReceiver) poseReceiver(secure);
+          /* Asked for after the pose, so it is this frame's hand position and
+             not the previous one's — a frame of lag here is the ball hanging
+             off his fingertips. */
+          catchAnchor.updateWorldMatrix(true, false);
+          const hands = catchAnchor.getWorldPosition(handPoint);
+
+          const bx = carriedX + (hands.x - carriedX) * arrive;
+          const by = carriedY + (hands.y - carriedY) * arrive;
+          const bz = carriedZ + (hands.z - carriedZ) * arrive;
           ballPivot.position.set(bx, by, bz);
 
           /* Pointed where it is going, and tipping from climbing to falling as
-             it passes the top of the arc. */
+             it passes the top of the arc. Once he has it, it stops being a
+             thrown ball and is tucked across his body instead. */
           ballPivot.rotation.set(
-            -0.5 + flight * 0.95,
-            Math.atan2(bx, Math.max(1, camera.position.z - bz)) * -0.8,
-            0,
+            -0.5 + flight * 0.95 + secure * 0.5,
+            Math.atan2(bx, Math.max(1, camera.position.z - bz)) * -0.8 + secure * 1.1,
+            secure * 0.4,
           );
-          /* Spiralling about its long axis, and stopping dead once it is in
-             his hands. A football that keeps spinning after the catch is a
-             ball nobody caught. */
-          ballMesh.rotation.z = arrive >= 1 ? ballMesh.rotation.z : time * 9.2;
+          /* Spiralling about its long axis, and winding down as it reaches
+             him rather than stopping on a frame. A football that keeps
+             spinning after the catch is a ball nobody caught. */
+          ballMesh.rotation.z += dt * 9.2 * (1 - secure);
         }
 
         // Flags stir in the night air rather than hanging dead on the pole.
@@ -1610,12 +1838,12 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         paintOverlay();
         composer.render();
       };
-      tick();
+
+      unsubscribeDrive = subscribeDrive(tick);
 
       cleanup = () => {
-        cancelAnimationFrame(frame);
+        unsubscribeDrive?.();
         window.removeEventListener("pointermove", onPointerMove);
-        window.removeEventListener("scroll", readProgress);
         window.removeEventListener("resize", onResize);
         scene.traverse((object) => {
           const mesh = object as import("three").Mesh;

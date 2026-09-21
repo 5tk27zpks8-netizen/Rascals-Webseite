@@ -175,56 +175,60 @@
   margin-left: calc(clamp(196px, 16vw, 238px) / -2);
   margin-top: calc(clamp(196px, 16vw, 238px) * -0.68);
 
-  /* Three abreast, row behind row down the length of the pitch. The row the
-     camera is level with sits at z=0, square on and full size; the rows ahead
-     stand further downfield and fall away with the perspective.
+  /* Two and three abreast, rank behind rank down the length of the pitch. The
+     card the camera is level with sits at z=0; the ones ahead stand further
+     downfield and fall away with the perspective.
+
+     Pure perspective, and nothing fighting it.
+
+     There used to be a scale() on the end of this list, giving back exactly
+     the tenth the perspective gained over the final card-length, so that the
+     nearest card held its size through the handover instead of stepping down
+     to its replacement. It worked — the sawtooth measured flat afterwards —
+     but it bought that by freezing the whole near field: cards stopped growing
+     as they arrived, which is the one cue that says you are moving forward.
+     A fly-through whose foreground is the same size every frame is a slideshow.
+
+     The handover is handled below instead, by crossfading over a full card
+     length rather than by flattening the size. Nothing here now scales against
+     the projection, so a card only ever grows as it comes towards you.
 
      The column pitch is nearly twice a card wide, which is more than it takes
-     to keep the three in a rank apart. The extra air is for the ranks behind:
-     with the depth step this small, a card that sits directly behind another
-     is covered by it, and a card nobody can see is a card nobody can click.
-     Spread across, the ones further down the field show through the gaps.
-
-     The depth step is per card and small on purpose: the jolt at each handover
-     is that step over the perspective distance, so a shallower step is a
-     gentler handover. */
+     to keep a rank apart. The extra air is for the ranks behind: with a depth
+     step this small a card directly behind another is covered by it, and a
+     card nobody can see is a card nobody can click. Spread across, the ones
+     further down the field show through the gaps. */
   transform:
     translateX(calc(var(--x, 0) * clamp(300px, 30vw, 440px)))
-    translateZ(calc(var(--rel) * -132px))
-    rotateY(calc(var(--x, 0) * -5deg))
-    /* Holds its size over the last card-length instead of growing into it.
+    translateZ(calc(var(--rel) * -104px))
+    rotateY(calc(var(--x, 0) * -5deg));
 
-       Perspective alone makes the nearest card grow all the way in and then
-       vanish, handing the eye to one that is a tenth smaller — a sawtooth, and
-       the sawtooth is what reads as being thrown backwards. Giving up exactly
-       that tenth on the final approach leaves the size of whatever is nearest
-       running flat through the handover instead of stepping down. */
-    scale(clamp(0.9, calc(0.9 + var(--rel) * 0.1), 1));
+  /* Dissolving as it arrives, over a full card length.
 
-  /* Gone by the time it reaches the camera, not after it.
+     This is what hides the handover, and it is worth being exact about why it
+     works. At 1150px of perspective and a 104px step, a card's drawn size is
+     1150/(1150 + 104·rel): 0.92 at one card out, 1.00 as it reaches the
+     camera. Fading from opaque at rel 1 to gone at rel 0.05 means the card
+     arriving into the front of the picture is always at 0.92 and always at
+     full strength, while the one it replaces spends that entire card-length
+     growing and dissolving in front of it.
 
-     This number sets how hard the formation jolts. A card held at full opacity
-     until it had passed was still at 1.16 times its size when it finally
-     vanished, while the nearest card left behind it was at 0.91 — so the
-     biggest thing in the picture shrank by a quarter in one frame, once per
-     rank. Measured: four jolts down the page, 21 to 25 percent each. That
-     shrink is what read as being thrown backwards.
-
-     Fading out level with the camera instead means a card leaves at its own
-     size, and what takes over is one card behind it.
+     So the picture is in a steady state: something is always at the front, at
+     the same size, at the same weight. Nothing pops, nothing steps down, and
+     unlike the frozen-scale version every individual card still visibly grows
+     as it comes at you.
 
      The second half of the min() closes the formation off at the back. Left
      open, a dozen cards stood on screen at once and the near ones covered the
-     middle of every card behind them — a card nobody can reach is a card
-     nobody can click. Held to about seven deep, each one comes forward into
-     the clear in its turn.
+     middle of every card behind them. Held to about seven deep, each comes
+     forward into the clear in its turn.
 
      Kept to one clamp over one plain variable: nesting min()/max() over a
      variable that is itself a max() is past what the engine resolves, and it
      silently does nothing. */
   opacity: clamp(
     0,
-    min(calc((var(--rel) + 0.2) * 1.4), calc((6.6 - var(--rel)) * 0.5)),
+    min(calc((var(--rel) - 0.05) * 1.06), calc((7.2 - var(--rel)) * 0.42)),
     1
   );
 
@@ -278,11 +282,15 @@
   position: absolute;
   inset: 0;
   z-index: 500;
+  /* Depth haze, not nightfall. At its old weight — more than four fifths
+     opaque at the corners — a stadium lit for a bright afternoon arrived
+     looking like an evening kickoff, because the only part of the picture at
+     full daylight was the middle of the screen. */
   background: radial-gradient(
-    ellipse 70% 58% at 50% 44%,
-    transparent 40%,
-    rgba(5, 13, 24, 0.55) 78%,
-    rgba(5, 13, 24, 0.86) 100%
+    ellipse 76% 64% at 50% 44%,
+    transparent 48%,
+    rgba(14, 28, 46, 0.24) 80%,
+    rgba(14, 28, 46, 0.42) 100%
   );
   pointer-events: none;
 }
