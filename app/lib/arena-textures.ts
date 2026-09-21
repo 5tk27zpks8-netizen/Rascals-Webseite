@@ -363,116 +363,6 @@ export function createTurfRoughnessTexture(): HTMLCanvasElement | null {
   return canvas;
 }
 
-/**
- * One row of a crowd, drawn to tile.
- *
- * The stand used to be a single crowd texture stretched over a plane the whole
- * length of the ground: 22000 specks smeared across two hundred scene units,
- * which at a grazing angle from the pitch reads as a pixel pattern and nothing
- * else. A crowd is rows of people standing on steps, so this draws one row —
- * heads and shoulders on a transparent strip — and the stand repeats it up the
- * rake. Each row is then at its own height and its own depth, so the rows
- * occlude each other the way real ones do as the camera travels past.
- *
- * The strip carries an empty gangway at its left edge. Every variant puts the
- * gangway in the same place, so when the rows stack the gaps line up into the
- * vertical aisles a terrace actually has, while the people in them differ.
- */
-export function createCrowdRowTexture(variant: number): HTMLCanvasElement | null {
-  const canvas = document.createElement("canvas");
-  const W = 512;
-  const H = 52;
-  const SCALE = 2;
-  canvas.width = W * SCALE;
-  canvas.height = H * SCALE;
-  const context = canvas.getContext("2d");
-  if (!context) return null;
-  context.scale(SCALE, SCALE);
-
-  /* Deterministic per variant, so a reload gives the same ground back and the
-     four strips stay recognisably different from one another. */
-  let seed = 1337 + variant * 7919;
-  const rnd = () => {
-    seed = (seed * 1664525 + 1013904223) % 4294967296;
-    return seed / 4294967296;
-  };
-
-  // Coats first, club colours sparingly: a terrace is mostly dark clothing
-  // with the red showing through it, not a wall of replica shirts.
-  const coats = [
-    "#222a3a", "#2b3446", "#333c4f", "#1b2130", "#3d4658",
-    "#4a5266", "#2a3346", "#191f2b", "#525b70", "#39435a",
-  ];
-  const CLUB = ["#e7192d", "#b8162a", "#f2f5fa", "#d8dee8", "#1d4f96"];
-  const SKIN = ["#c79a78", "#a97a54", "#e0b795", "#8a5f3e", "#d8ab86", "#6f4a30"];
-
-  const GANGWAY = 36;
-  const STEP = 17.4;
-
-  for (let x = GANGWAY + STEP / 2; x < W - 2; x += STEP) {
-    // A regional ground is well attended, not sold out. The gaps are what let
-    // the step behind show through and prove the rake is really there.
-    if (rnd() < 0.09) continue;
-
-    const jitter = (rnd() - 0.5) * 3.4;
-    const cx = x + jitter;
-    const scale = 0.86 + rnd() * 0.3;
-    const shoulder = H - 30 * scale;
-
-    const club = rnd() < 0.17;
-    context.fillStyle = club ? CLUB[Math.floor(rnd() * CLUB.length)] : coats[Math.floor(rnd() * coats.length)];
-
-    // Shoulders: a torso that widens towards the bottom, so a packed row reads
-    // as bodies pressed together rather than as a line of posts.
-    context.beginPath();
-    context.moveTo(cx - 5.4 * scale, shoulder + 2);
-    context.quadraticCurveTo(cx, shoulder - 3.4 * scale, cx + 5.4 * scale, shoulder + 2);
-    context.lineTo(cx + 7.6 * scale, H);
-    context.lineTo(cx - 7.6 * scale, H);
-    context.closePath();
-    context.fill();
-
-    // Head.
-    context.fillStyle = SKIN[Math.floor(rnd() * SKIN.length)];
-    context.beginPath();
-    context.arc(cx, shoulder - 5.6 * scale, 3.9 * scale, 0, Math.PI * 2);
-    context.fill();
-
-    // Hair or a hat on most of them, which is what stops a row of heads
-    // looking like a row of identical beads.
-    if (rnd() < 0.72) {
-      context.fillStyle = rnd() < 0.3 ? "#e7192d" : ["#1a1a1f", "#3a2a1c", "#6b6155", "#141820"][Math.floor(rnd() * 4)];
-      context.beginPath();
-      context.arc(cx, shoulder - 6.8 * scale, 3.9 * scale, Math.PI, Math.PI * 2);
-      context.fill();
-    }
-
-    // A few with their arms up. One in fifteen is enough to read as movement.
-    if (rnd() < 0.07) {
-      context.strokeStyle = context.fillStyle;
-      context.lineWidth = 2.1 * scale;
-      context.lineCap = "round";
-      context.beginPath();
-      context.moveTo(cx - 5 * scale, shoulder + 3);
-      context.lineTo(cx - 8.2 * scale, shoulder - 8 * scale);
-      context.moveTo(cx + 5 * scale, shoulder + 3);
-      context.lineTo(cx + 8.2 * scale, shoulder - 8 * scale);
-      context.stroke();
-    }
-  }
-
-  // The row sits down into its step: the last few pixels darken so the people
-  // meet the concrete instead of ending on a cut line.
-  const foot = context.createLinearGradient(0, H - 9, 0, H);
-  foot.addColorStop(0, "rgba(0,0,0,0)");
-  foot.addColorStop(1, "rgba(0,0,0,0.75)");
-  context.fillStyle = foot;
-  context.globalCompositeOperation = "source-atop";
-  context.fillRect(0, H - 9, W, 9);
-  context.globalCompositeOperation = "source-over";
-
-  return canvas;
-}
 
 /**
  * A single cumulus, drawn to be used as a billboard.
@@ -719,9 +609,10 @@ export type ScoreboardData = {
 /**
  * The stadium scoreboard behind the far end zone.
  *
- * It is the one place in the scene that carries live information, so the
- * ground is not just scenery: whatever the schedule says is the next game is
- * what the board is showing.
+ * It is the one place in the scene that carries real information, so the
+ * ground is not just scenery. It shows what a stadium board shows after the
+ * whistle: the last game actually played, both sides named, with the score it
+ * finished on.
  */
 export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
@@ -770,11 +661,22 @@ export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement
   label("RASCALS", W * 0.24);
   label((data.opponent ?? "GAST").toUpperCase(), W * 0.76);
 
+  /* The score, which this used to refuse to show.
+     
+     The two numbers were written here as the literal string "0", so the board
+     read 0:0 under every result the schedule could hand it. The caller had
+     been passing the real figures the whole time and they were dropped on the
+     floor at the last step — the one line of this file that the whole board
+     exists for. */
+  const score = (value: number | undefined) => String(Math.max(0, Math.round(value ?? 0)));
   context.fillStyle = "#f2f8ff";
-  context.font = '900 108px Impact, "Arial Narrow", sans-serif';
   context.letterSpacing = "4px";
-  context.fillText("0", W * 0.24, 246);
-  context.fillText("0", W * 0.76, 246);
+  /* Three digits still have to fit the same box a single digit sits in, so a
+     56-point win does not run into the colon. */
+  const digits = Math.max(score(data.home).length, score(data.away).length);
+  context.font = `900 ${digits > 2 ? 84 : 108}px Impact, "Arial Narrow", sans-serif`;
+  context.fillText(score(data.home), W * 0.24, 246);
+  context.fillText(score(data.away), W * 0.76, 246);
 
   context.fillStyle = "#f4a72a";
   context.font = '900 64px Impact, "Arial Narrow", sans-serif';

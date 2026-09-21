@@ -7,7 +7,6 @@ import {
   FIELD_YARDS_WIDE,
   createAdBoardTexture,
   createCloudTexture,
-  createCrowdRowTexture,
   createFlagTexture,
   createSoftDotTexture,
   createScoreboardTexture,
@@ -487,7 +486,6 @@ function buildGoal(THREE: Three, endLineZ: number, outward: 1 | -1) {
 }
 
 /** The four crowd strips a terrace stacks up its rake. */
-type CrowdStrips = import("three").Texture[];
 
 /** Rows of seats, the depth of one step, and the height of one. */
 const TERRACE_RISER = 1.08;
@@ -518,18 +516,179 @@ const TERRACE_TILE = 19;
  * stand, the front edge sits at x = 0 — so the same terrace serves a touchline
  * and an end by being turned.
  */
+/**
+ * THE CROWD, AS PEOPLE RATHER THAN AS WALLPAPER.
+ *
+ * Every stand was filled by painting rows of spectators onto flat planes: one
+ * plane per row, a canvas strip repeated along it, cut out with an alphaTest.
+ * That is the single most childish thing in the bowl and no amount of light
+ * was going to rescue it, because a painted plane has no silhouette to catch
+ * the light with. Worse, since the sky became the scene's light source the
+ * crowd was the one thing in here that could not receive it at all — it was
+ * drawn unlit, by definition.
+ *
+ * So the stands are filled with geometry now: a torso and a head each, two
+ * instanced draws for the whole ground. What that buys is not detail — nobody
+ * can see detail on a spectator two hundred units away — it is the three
+ * things a painted strip cannot do at any resolution:
+ *
+ *   they occlude each other, so the rows read as depth instead of as layers;
+ *   they are lit, so the stand darkens properly under its own roof;
+ *   and they differ, so the block reads as a crowd instead of as a pattern.
+ *
+ * Variation is the whole job, and it is cheap: a shirt colour per person, a
+ * height, a shoulder angle, and — the one that does the most work — empty
+ * seats. A stand that is a hundred per cent full is the tell that gives away
+ * every fake crowd; leaving a seat in eight empty, and cutting the gangways
+ * out properly, is what makes it read as a ground with people in it.
+ */
+
+/* A home crowd: mostly coats, denim and grey, with a real share of the club's
+   own colours through it. The list is the weighting — four of these twenty are
+   navy or red, so the club comes up a fifth of the time. A third, which is
+   where this started, turns the stand into a flag. */
+const CROWD_SHIRTS = [
+  0x2b3244, 0x39404f, 0x1e2330, 0x4a5160, 0x6e7686, 0x8b93a1,
+  0x9fa8b5, 0xc9ced6, 0xe6e9ee, 0x3c4a63, 0x55637d, 0x7a6a58,
+  0x4f5a48, 0x6b5f52, 0x2f3a33, 0x8a8f99,
+  0x21254b, 0x21254b, 0x9e210f, 0xb8351f,
+];
+
+const CROWD_SKIN = [0xc79a74, 0xa9764f, 0x7d5334, 0xe0b48f, 0x5c3b25, 0x8e6a4a];
+
+/** One person's worth of seat, in scene units. A unit is about 0.54m here. */
+const SEAT_PITCH = 0.95;
+
+/**
+ * Fill a terrace with people.
+ *
+ * Seeded rather than random: the same stand comes out the same way on every
+ * load, so a screenshot taken to compare two builds is comparing the builds
+ * and not two different crowds.
+ */
+function buildCrowd(
+  THREE: Three,
+  options: { rows: number; length: number; base: number; seed: number },
+) {
+  const { rows, length, base, seed } = options;
+  const group = new THREE.Group();
+
+  /* A small deterministic generator. Nothing clever — it only has to be
+     repeatable and not obviously periodic across a few thousand draws. */
+  let state = seed >>> 0;
+  const rand = () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+
+  const half = length / 2;
+  const usable = length - 3.2;
+  const perRow = Math.max(1, Math.floor(usable / SEAT_PITCH));
+  const capacity = perRow * rows;
+
+  /* Torso and head are two instanced meshes over one set of transforms rather
+     than one merged mesh, which keeps this free of a geometry-merging helper
+     for the sake of a single extra draw call. */
+  const torso = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.55, 1.1, 0.83),
+    new THREE.MeshStandardMaterial({ roughness: 0.86, metalness: 0 }),
+    capacity,
+  );
+  const head = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(0.19, 0),
+    new THREE.MeshStandardMaterial({ roughness: 0.78, metalness: 0 }),
+    capacity,
+  );
+
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const euler = new THREE.Euler();
+  const colour = new THREE.Color();
+
+  /* The gangways, cut where the hoardings already tile, so the aisles line up
+     with the architecture instead of landing wherever they fall. */
+  const aisles = Math.max(1, Math.round(length / TERRACE_TILE));
+  const aislePitch = length / aisles;
+
+  let n = 0;
+  for (let row = 0; row < rows; row += 1) {
+    /* Each row offset by a third of a seat from the one in front, so a
+       spectator looks between the two heads ahead rather than at the back of
+       one — which is both how seating is actually laid out and what stops the
+       stand reading as a grid. */
+    const stagger = (row % 3) * (SEAT_PITCH / 3);
+    for (let seat = 0; seat < perRow; seat += 1) {
+      const z = -half + 1.6 + stagger + seat * SEAT_PITCH;
+
+      // In a gangway? Then nobody is standing there.
+      const toAisle = Math.abs(((z + half) % aislePitch) - aislePitch / 2);
+      if (toAisle > aislePitch / 2 - 0.85) continue;
+
+      /* An empty seat in eight, and emptier towards the back corners, which is
+         where a ground actually thins out. */
+      const backness = row / Math.max(1, rows - 1);
+      if (rand() < 0.11 + backness * 0.1) continue;
+
+      const height = 0.9 + rand() * 0.22;
+      position.set(
+        row * TERRACE_TREAD + TERRACE_TREAD * 0.46,
+        base + row * TERRACE_RISER + 0.62 * height,
+        z,
+      );
+      euler.set(0, (rand() - 0.5) * 0.5, (rand() - 0.5) * 0.08);
+      quaternion.setFromEuler(euler);
+      scale.set(1, height, 0.92 + rand() * 0.16);
+      matrix.compose(position, quaternion, scale);
+      torso.setMatrixAt(n, matrix);
+
+      position.y = base + row * TERRACE_RISER + 1.29 * height;
+      scale.set(1, 1, 1);
+      matrix.compose(position, quaternion, scale);
+      head.setMatrixAt(n, matrix);
+
+      torso.setColorAt(n, colour.setHex(CROWD_SHIRTS[(rand() * CROWD_SHIRTS.length) | 0]));
+      head.setColorAt(n, colour.setHex(CROWD_SKIN[(rand() * CROWD_SKIN.length) | 0]));
+      n += 1;
+    }
+  }
+
+  for (const mesh of [torso, head]) {
+    mesh.count = n;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    /* Lit, and taking the roof's shadow — that is the point of the exercise.
+       Not casting, though: a spectator contributes nothing to a shadow map
+       spread across the whole ground, and eleven thousand of them contribute
+       it eleven thousand times. */
+    mesh.receiveShadow = true;
+    mesh.castShadow = false;
+    /* An InstancedMesh derives its bounds from the geometry, not from where
+       the instances actually are, so without this the whole stand is culled
+       the moment the origin leaves the frustum. */
+    mesh.computeBoundingSphere();
+    group.add(mesh);
+  }
+
+  return group;
+}
+
 function buildTerrace(
   THREE: Three,
-  crowd: CrowdStrips,
   options: {
     length: number;
     rows: number;
     base: number;
     roof: boolean;
     boards: import("three").Texture | null;
+    /* Picks this stand's crowd. Different per stand so the two touchlines are
+       not the same people twice, fixed per stand so a build can be compared
+       against another build rather than against a reshuffle. */
+    seed: number;
   },
 ) {
-  const { length, rows, base, roof, boards } = options;
+  const { length, rows, base, roof, boards, seed } = options;
   const group = new THREE.Group();
   const depth = rows * TERRACE_TREAD;
   const top = base + rows * TERRACE_RISER;
@@ -585,49 +744,7 @@ function buildTerrace(
   group.add(concrete);
 
   // --- the crowd ------------------------------------------------------
-  if (crowd.length > 0) {
-    const rowGeometry = new THREE.PlaneGeometry(length, 2.05);
-    /* Cloned per terrace, because the repeat count belongs to the stand and
-       not to the strip: a touchline and an end are different lengths, and the
-       four strips are shared between them. Rounded, so a whole number of
-       gangways fits and the aisles land in the same place on every row. */
-    const tiles = Math.max(1, Math.round(length / TERRACE_TILE));
-    const strips = crowd.map((source) => {
-      const texture = source.clone();
-      texture.needsUpdate = true;
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.repeat.set(tiles, 1);
-      return texture;
-    });
-    for (let i = 0; i < rows; i += 1) {
-      const texture = strips[i % strips.length];
-      /* Lifts with the concrete behind it. A row at the foot of the stand is
-         in the same shadow the steps are, and the ramp has to agree or the
-         people float off the structure. */
-      /* Shaded at the back under the roof, open to the sky at the front — the
-         other way round from a night match, where the only light in the stand
-         came off the strip along the roof lip. */
-      const lift = 1.06 - 0.42 * Math.pow(i / Math.max(1, rows - 1), 0.85);
-      const row = new THREE.Mesh(
-        rowGeometry,
-        new THREE.MeshBasicMaterial({
-          map: texture,
-          color: new THREE.Color(lift * 0.92, lift * 0.94, lift),
-          transparent: true,
-          /* Cut out rather than blended: sixty transparent strips would have
-             to be sorted every frame and would still show through each other
-             at a grazing angle. A cutout writes depth, so the front rows
-             simply stand in front of the ones behind. */
-          alphaTest: 0.45,
-          side: THREE.DoubleSide,
-        }),
-      );
-      row.rotation.y = Math.PI / 2;
-      row.position.set(i * TERRACE_TREAD + TERRACE_TREAD * 0.42, base + i * TERRACE_RISER + 0.92, 0);
-      group.add(row);
-    }
-  }
+  group.add(buildCrowd(THREE, { rows, length, base, seed }));
 
   // --- the front wall and the hoardings --------------------------------
   const frontWall = new THREE.Mesh(
@@ -731,16 +848,16 @@ function buildTerrace(
 /** A raked stand down one touchline. */
 function buildStand(
   THREE: Three,
-  crowd: CrowdStrips,
   boards: import("three").Texture | null,
   side: 1 | -1,
 ) {
-  const group = buildTerrace(THREE, crowd, {
+  const group = buildTerrace(THREE, {
     length: FIELD_LONG + 40,
     rows: 15,
     base: 4.4,
     roof: true,
     boards,
+    seed: side > 0 ? 0x5eed01 : 0x5eed02,
   });
   group.position.set(side * (FIELD_WIDE / 2 + 8), 0, (OWN_END_Z + OPP_END_Z) / 2);
   group.rotation.y = side > 0 ? 0 : Math.PI;
@@ -756,17 +873,17 @@ function buildStand(
  */
 function buildEndStand(
   THREE: Three,
-  crowd: CrowdStrips,
   boards: import("three").Texture | null,
   z: number,
   outward: 1 | -1,
 ) {
-  const group = buildTerrace(THREE, crowd, {
+  const group = buildTerrace(THREE, {
     length: FIELD_WIDE + 46,
     rows: 12,
     base: 4.4,
     roof: true,
     boards,
+    seed: outward > 0 ? 0x5eed03 : 0x5eed04,
   });
   group.position.set(0, 0, z);
   // Turned a quarter so the rake climbs away from the end line.
@@ -1269,21 +1386,6 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       scene.add(surround);
 
       // --- stands and flags -------------------------------------------
-      /* Four strips, dealt round the rows of every terrace. One would stack
-         the same heads into columns all the way up the rake; four is enough
-         that the eye stops finding the repeat, and it is four textures rather
-         than sixty. */
-      const crowdStrips: import("three").Texture[] = [];
-      for (let i = 0; i < 4; i += 1) {
-        const canvas = createCrowdRowTexture(i);
-        if (!canvas) continue;
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.ClampToEdgeWrapping;
-        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        crowdStrips.push(texture);
-      }
       const boardCanvasAds = createAdBoardTexture();
       const adTexture = boardCanvasAds ? new THREE.CanvasTexture(boardCanvasAds) : null;
       if (adTexture) {
@@ -1292,8 +1394,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       }
 
       scene.add(
-        buildStand(THREE, crowdStrips, adTexture, 1),
-        buildStand(THREE, crowdStrips, adTexture, -1),
+        buildStand(THREE, adTexture, 1),
+        buildStand(THREE, adTexture, -1),
       );
 
       const cloudCanvas = createCloudTexture();
@@ -1314,8 +1416,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          the bowl had a band of bare grass behind each end wide enough to read
          as a gap in the ground, and the shot that ends the drive looks
          straight down it. A stand at this level sits close behind the posts. */
-      scene.add(buildEndStand(THREE, crowdStrips, adTexture, OWN_END_Z + 14, 1));
-      scene.add(buildEndStand(THREE, crowdStrips, adTexture, OPP_END_Z - 14, -1));
+      scene.add(buildEndStand(THREE, adTexture, OWN_END_Z + 14, 1));
+      scene.add(buildEndStand(THREE, adTexture, OPP_END_Z - 14, -1));
 
       // The board carries whatever the schedule says is next. It is drawn
       // once with a placeholder and repainted when the fetch lands, so a slow
@@ -1327,13 +1429,22 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         boardTexture.colorSpace = THREE.SRGBColorSpace;
         boardTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         scene.add(buildScoreboard(THREE, boardTexture, OPP_END_Z - 82));
-        /* A stadium board shows what happened, not what is scheduled: the
-           last game that was actually played, with its real score. The list
-           arrives oldest first, so the last finished game is the last match. */
+        /* A stadium board shows what happened, not what is scheduled: the last
+           game that was actually played, with its real score and the side it
+           was played against.
+
+           Picked by date rather than by the order the list happens to arrive
+           in. The endpoint sorts on COALESCE(kickoff,'9999-12-31'), so a
+           finished game with no kickoff recorded sorts past every real one and
+           would be handed back as "the last match" — a fixture nobody can date
+           taking the board over from a result everyone watched. Taking the
+           newest actual date skips those. */
         void fetch("/api/public/games")
           .then((response) => (response.ok ? response.json() : null))
           .then((data: { items?: Array<Record<string, unknown>> } | null) => {
-            const played = (data?.items ?? []).filter((item) => String(item.status ?? "") === "final");
+            const played = (data?.items ?? [])
+              .filter((item) => String(item.status ?? "") === "final" && item.kickoff)
+              .sort((a, b) => String(a.kickoff).localeCompare(String(b.kickoff)));
             const last = played[played.length - 1];
             if (!last || disposed || !boardTexture) return;
             const home = String(last.homeAway ?? "") === "home";
@@ -1581,7 +1692,6 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
           else material?.dispose?.();
         });
         turfTexture?.dispose();
-        crowdStrips.forEach((texture) => texture.dispose());
         adTexture?.dispose();
         dotTexture?.dispose();
         cloudTexture?.dispose();
