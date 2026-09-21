@@ -1913,6 +1913,49 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
             col.g = texture2D(tDiffuse, vUv).g;
             col.b = texture2D(tDiffuse, vUv - c * disp).b;
 
+            /* THE BROADCAST GRADE.
+
+               This is a colour grade and nothing more — it moves no geometry
+               and it is worth saying plainly, because a grade is exactly the
+               kind of change that can be mistaken for progress. It earns its
+               place only now that there is something built to grade.
+
+               Televised football does not look like a raw render, and the
+               differences are consistent enough to be written down. Shadows
+               run cool and highlights run warm, because a camera balanced for
+               daylight puts sky in the shade and sun in the light. Contrast
+               sits higher than linear, so the paint separates from the grass.
+               And the grass itself is pulled back: turf on a broadcast is a
+               muted olive-green, never the saturated green a shader hands you,
+               and leaving it bright is the single thing that most makes a
+               rendered pitch look like plastic. */
+            float luma0 = dot(col, vec3(0.2126, 0.7152, 0.0722));
+
+            // Split tone: cool in the shadows, warm in the highlights.
+            vec3 shadowTint = vec3(0.96, 0.99, 1.06);
+            vec3 highTint   = vec3(1.045, 1.007, 0.965);
+            col *= mix(shadowTint, highTint, smoothstep(0.18, 0.78, luma0));
+
+            /* A gentle S-curve. Filmic contrast, not a crushed one — and
+               gentler than it first was: at a third strength the grade took
+               sixteen per cent off the pitch, which is a mood change rather
+               than a grade. Ten is the difference between turf and neon. */
+            col = clamp(col, 0.0, 1.0);
+            col = col * col * (3.0 - 2.0 * col) * 0.24 + col * 0.76;
+
+            /* Hold the green back. Only the green, and only where it actually
+               dominates, so the red hoardings and the navy stands keep their
+               colour while the pitch stops glowing. */
+            float greenness = clamp((col.g - max(col.r, col.b)) * 2.4, 0.0, 1.0);
+            float grey = dot(col, vec3(0.2126, 0.7152, 0.0722));
+            col = mix(col, vec3(grey), greenness * 0.2);
+            col = mix(col, col * vec3(0.985, 0.965, 0.945), greenness * 0.42);
+
+            // Everything else a touch richer, which is what a broadcast does.
+            float g2 = dot(col, vec3(0.2126, 0.7152, 0.0722));
+            col = mix(vec3(g2), col, 1.08);
+            col = clamp(col, 0.0, 1.0);
+
             /* Vignette, falling off smoothly rather than as a drawn ring.
                Light-handed: a heavy one belongs to a night match, where the
                corners of the ground really are dark. In daylight it just
