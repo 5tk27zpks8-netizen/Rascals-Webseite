@@ -5,14 +5,29 @@
    the pitch, spread across its width and posted down its length,
    and scrolling carries the camera forward past them.
 
-   PlayerDeck writes one number, --focus: the fractional index of
-   the row the camera is level with. Each card works out its own
-   depth from that and its own --row, so a scroll frame costs one
-   property write.
+   PlayerDeck positions the handful of cards actually in frame by
+   writing their transform and opacity directly, and takes the rest
+   out of the document. Nothing here moves; this file holds only
+   what stays the same while the camera travels.
 
    Until that class arrives — no JS, reduced motion, narrow screen
    — this is a plain swipeable row of the same markup.
    ============================================================ */
+
+/* The drive is this page's easing, and it should be the only one.
+
+   `html { scroll-behavior: smooth }` is set site-wide, which is right for
+   anchor jumps everywhere else. It does not touch wheel or touch scrolling —
+   that was a wrong call earlier and it is worth being precise about, because
+   it is not the cause of the back-and-forth. What it does animate is the
+   scrolls the browser performs itself: Page Down, Home, End, dragging the
+   scrollbar track. On this page those would be eased by the browser and then
+   eased again by the drive reading the result, which is sluggish rather than
+   broken — but there is no reason to pay for it when the drive is already
+   doing the job. */
+html:has(.roster-page) {
+  scroll-behavior: auto;
+}
 
 .roster-page {
   position: relative;
@@ -194,13 +209,6 @@
 }
 
 .deck.is-deck .deck-card {
-  /* How many cards ahead this one stands. Negative once the camera is past it.
-
-     Counted in cards rather than in ranks, so every handover in the formation
-     crosses the same sized gap. On ranks the gap alternated with the rank
-     width and the wide ones jolted; see PlayerDeck for the measurements. */
-  --rel: calc(var(--i) - var(--focus, 0));
-
   position: absolute;
   left: 50%;
   top: 50%;
@@ -208,78 +216,33 @@
   margin-left: calc(clamp(196px, 16vw, 238px) / -2);
   margin-top: calc(clamp(196px, 16vw, 238px) * -0.6917);
 
-  /* Two and three abreast, rank behind rank down the length of the pitch. The
-     card the camera is level with sits at z=0; the ones ahead stand further
-     downfield and fall away with the perspective.
+  /* NO transform, opacity or z-index here, and that is deliberate.
 
-     Pure perspective, and nothing fighting it.
+     They used to live in this rule, derived by the engine from one inherited
+     custom property: `--rel: calc(var(--i) - var(--focus))`, feeding a
+     three-function transform and an `opacity: clamp(0, min(calc(), calc()), 1)`.
+     It was documented as costing "one property write per scroll frame", which
+     was true and beside the point — that one write invalidates every card that
+     inherits it, and each has to re-resolve those calc chains.
 
-     There used to be a scale() on the end of this list, giving back exactly
-     the tenth the perspective gained over the final card-length, so that the
-     nearest card held its size through the handover instead of stepping down
-     to its replacement. It worked — the sawtooth measured flat afterwards —
-     but it bought that by freezing the whole near field: cards stopped growing
-     as they arrived, which is the one cue that says you are moving forward.
-     A fly-through whose foreground is the same size every frame is a slideshow.
+     Measured on this page: a single --focus write costs 57 to 99ms of style
+     recalculation with seventy-two cards on the stage. The 60fps budget is
+     16.7ms. It falls to 8ms at eight cards and 2ms at none, so the cost is the
+     per-card resolution, not the write.
 
-     The handover is handled below instead, by crossfading over a full card
-     length rather than by flattening the size. Nothing here now scales against
-     the projection, so a card only ever grows as it comes towards you.
+     PlayerDeck now positions the handful of cards that are actually in frame
+     by writing their transform and opacity directly, and takes the rest out of
+     the document with display:none so the engine never considers them. What is
+     left here is only what does not change while scrolling. */
 
-     The column pitch is nearly twice a card wide, which is more than it takes
-     to keep a rank apart. The extra air is for the ranks behind: with a depth
-     step this small a card directly behind another is covered by it, and a
-     card nobody can see is a card nobody can click. Spread across, the ones
-     further down the field show through the gaps. */
-  transform:
-    translateX(calc(var(--x, 0) * clamp(300px, 30vw, 440px)))
-    translateZ(calc(var(--rel) * -104px))
-    rotateY(calc(var(--x, 0) * -5deg));
-
-  /* Dissolving as it arrives, over a full card length.
-
-     This is what hides the handover, and it is worth being exact about why it
-     works. At 1150px of perspective and a 104px step, a card's drawn size is
-     1150/(1150 + 104·rel): 0.92 at one card out, 1.00 as it reaches the
-     camera. Fading from opaque at rel 1 to gone at rel 0.05 means the card
-     arriving into the front of the picture is always at 0.92 and always at
-     full strength, while the one it replaces spends that entire card-length
-     growing and dissolving in front of it.
-
-     So the picture is in a steady state: something is always at the front, at
-     the same size, at the same weight. Nothing pops, nothing steps down, and
-     unlike the frozen-scale version every individual card still visibly grows
-     as it comes at you.
-
-     The second half of the min() closes the formation off at the back. Left
-     open, a dozen cards stood on screen at once and the near ones covered the
-     middle of every card behind them. Held to about seven deep, each comes
-     forward into the clear in its turn.
-
-     Kept to one clamp over one plain variable: nesting min()/max() over a
-     variable that is itself a max() is past what the engine resolves, and it
-     silently does nothing. */
-  opacity: clamp(
-    0,
-    min(calc((var(--rel) - 0.05) * 1.06), calc((7.2 - var(--rel)) * 0.42)),
-    1
-  );
-
-  /* Nearer cards draw in front. */
-  z-index: calc(1000 - round(nearest, var(--i), 1));
-
-  /* Inert unless PlayerDeck says this rank is one you can read. A card the
-     camera has passed is invisible but enormous and still in front, and a
-     zero-opacity element takes clicks like any other — so without this the
-     ranks behind the camera swallow every click meant for the squad. */
   pointer-events: none;
 
   /* Opacity only. Naming `transform` here pins the card's raster at the scale
-     it had when the layer was promoted, so every card that grows towards the
-     camera is a bitmap being enlarged — soft edges and mushy type, which is
-     most of what read as unclean. Left off, the type is re-drawn at the size
-     it is actually being shown. */
+     it had when the layer was promoted, so every card growing towards the
+     camera is a bitmap being enlarged — soft edges and mushy type. Left off,
+     the type is re-drawn at the size it is actually shown. */
   will-change: opacity;
+  backface-visibility: hidden;
 }
 
 .deck.is-deck .deck-card.is-live {

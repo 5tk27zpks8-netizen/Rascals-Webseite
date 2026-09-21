@@ -15,10 +15,16 @@ import "./showcase/showcase.css";
  * forward past them — the near ones growing and dissolving as they reach you,
  * the far ones waiting their turn down the field.
  *
- * Only one number crosses from JavaScript to CSS: `--focus`, the fractional
- * index of the card the camera is level with. Every card works out its own
- * depth from that and its own index, so a scroll frame costs one custom
- * property write — no per-card style writes, no React render.
+ * A scroll frame touches only the handful of cards actually in frame: their
+ * transform and opacity are written straight onto them, and everything else is
+ * taken out of the document with display:none. No React render is involved at
+ * any point.
+ *
+ * It used to be one custom property instead — `--focus` — with the cards
+ * deriving their own transforms from it in CSS. That reads better and is three
+ * to six times too slow: one write to an inherited property invalidates all
+ * seventy-two cards, and re-resolving their calc chains measured 57 to 99ms
+ * against a 16.7ms budget. Eight direct writes beat one elegant one.
  *
  * ---------------------------------------------------------------------
  * THE DECK DOES NOT SMOOTH ANYTHING
@@ -36,7 +42,7 @@ import "./showcase/showcase.css";
  * frame, by construction.
  *
  * Without JavaScript, with reduced motion, or on a narrow screen the class
- * never arrives, `--focus` stays unset, and the same markup is a plain
+ * never arrives, nothing is ever written, and the same markup is a plain
  * swipeable row. The fly-through is an enhancement of something that works.
  */
 
@@ -115,20 +121,58 @@ const DEPTH_PER_CARD = 1;
 const FORMATION_SPAN = 0.8;
 
 /**
- * The band of the formation that takes clicks, in card-lengths ahead of the
- * camera.
+ * THE GEOMETRY OF A PASS-BY, AND WHY IT IS SHAPED LIKE THIS.
  *
- * The near edge sits past the card currently dissolving in the lens — see the
- * note in the effect below, which is the whole reason this is a band. At 0.6 a
- * card is a little over half faded in, which is the point it becomes something
- * a person would aim at rather than something they are looking through.
+ * The formation used to dissolve cards in the middle of the screen. Measured,
+ * that produced a sawtooth: the dominant card grew as it came in, vanished,
+ * and was replaced — at the same place on screen — by one a card-length
+ * further away and therefore smaller. Thirteen to thirty pixels smaller, once
+ * per card, seventy-two times down the page.
  *
- * The far edge is where cards are still a reasonable target: beyond four and a
- * half lengths they are small, heavily overlapped by the ones in front, and
- * anyone trying to hit one is more likely to catch a neighbour.
+ * Something shrinking where something bigger just was is not read as a
+ * handover. It is read as the world jumping backwards, and that is exactly
+ * what it was reported as: constant back-and-forth, like a fault.
+ *
+ * The fix is not to flatten the sizes — that was tried, and it freezes the
+ * near field into a slideshow. It is to stop anything ever shrinking in place:
+ *
+ *   A card holds near the centre while it is far off and readable, then slides
+ *   sideways out of frame as it reaches the camera, growing the whole way. The
+ *   centre it vacates is taken by the next card, which arrives at the same
+ *   distance and therefore the same size.
+ *
+ * So the middle of the screen always holds a card of the same size, every card
+ * only ever grows, and nothing is ever replaced by something smaller. The
+ * motion the eye follows is a card passing you, which is what it is.
  */
-const LIVE_NEAR = 0.6;
-const LIVE_FAR = 4.5;
+
+/** Depth between consecutive cards, in CSS pixels of translateZ. */
+const DEPTH_STEP = 230;
+
+/** How far a card is thrown sideways by the time it reaches the camera. */
+const EXIT_X = 950;
+
+/** How sharply that sideways move happens. Higher holds the centre longer. */
+const EXIT_CURVE = 1.7;
+
+/** The lateral spread of the column itself, so it is not single file. */
+const COLUMN_X = 96;
+
+/** Where a card is at its most readable — far enough to be whole, near enough to read. */
+const FOCAL_REL = 1;
+
+/** Fades: in from the far end, and out only once it is leaving the frame anyway. */
+const FADE_IN_FAR = 5.6;
+const FADE_IN_NEAR = 4;
+const FADE_OUT = 0.24;
+
+/** Rendered at all. Anything outside is display:none and costs nothing. */
+const RENDER_FAR = 6.2;
+const RENDER_NEAR = -0.15;
+
+/** Takes clicks. Excludes the one sweeping out of frame past the lens. */
+const LIVE_NEAR = 0.34;
+const LIVE_FAR = 5;
 
 /** A card in the deck, and whether it is a player or one of the staff. */
 export type DeckEntry = { player: Player; coach?: boolean };
@@ -228,96 +272,119 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
 
     element.classList.add("is-deck");
 
-    /* Which cards can be clicked — a window, not a half-line.
+    /* Every card's fixed facts, worked out once.
 
-       An element's opacity has nothing to do with whether it takes a click, and
-       in a formation seen in perspective that is a trap with two sides to it.
-
-       Behind the camera: a card that has passed is transparent but enormous and
-       drawn in front of everything, so it swallows every click aimed at the
-       squad. That was the first half of this rule and it was right.
-
-       But the same is true of the card *dissolving* in front of the camera. It
-       is a card-length from the lens, covering most of the screen, carrying the
-       highest z-index of anything on it — and by the time anyone has decided to
-       click it, it is down to a fifth of its opacity. So people aimed at the
-       card they could actually read, one step further down the field, and hit
-       the ghost in front of it instead. Cards "not all clickable", reported and
-       never properly fixed, because the rule only closed one end.
-
-       So: only the cards that are genuinely readable are interactive — from far
-       enough ahead that the dissolving one is excluded, to far enough back that
-       the tiny ones at the end of the formation are not stealing clicks either.
-       Every card passes through this window, and while it is in it, it is the
-       thing you can see and the thing you can hit. */
-    const byDepth: HTMLElement[][] = [];
-    element.querySelectorAll<HTMLElement>(".deck-card").forEach((card) => {
-      const depth = Math.round(Number(card.style.getPropertyValue("--i")) || 0);
-      (byDepth[depth] ??= []).push(card);
+       The per-frame job is then pure arithmetic over this array: no DOM
+       queries, no reading back styles, no allocation. */
+    const cards = [...element.querySelectorAll<HTMLElement>(".deck-card")].map((node) => {
+      const depth = Math.round(Number(node.dataset.depth) || 0);
+      return {
+        node,
+        depth,
+        /* Which way it leaves. Alternating, so the picture does not drift to
+           one side, with the pair-wise swap breaking the strict left-right-
+           left metronome that would otherwise be audible. */
+        side: depth % 4 === 0 || depth % 4 === 1 ? -1 : 1,
+        lane: Number(node.dataset.lane) || 0,
+        /* Not `false`. The first frame has to be allowed to write, and it only
+           writes on a change — so starting at a value the card might legally
+           compute means the write is skipped and the card keeps whatever the
+           stylesheet gave it. Starting from "not yet known" makes the first
+           frame unconditional, which is what it has to be. */
+        shown: null as boolean | null,
+        live: false,
+      };
     });
 
-    let liveFrom = -1;
-    let liveTo = -1;
-    /* Negative infinity rather than NaN, and this is not a style preference.
-       Every comparison against NaN is false, including the one below, so a NaN
-       seed meant the first write never cleared its own threshold and `--focus`
-       was never set at all: the formation stood still for the whole page while
-       the stadium flew past it. Seeding below every possible value makes the
-       first frame unconditionally a write. */
-    let written = Number.NEGATIVE_INFINITY;
+    /* The perspective the stage actually has, read once rather than duplicated
+       as a number in two files that can drift apart. Screen offsets are
+       divided by the projection factor so the maths below is in screen pixels
+       — where the frame edge is — rather than in local space, where "off the
+       side of the screen" depends on how far away the card happens to be. */
+    const stage = element.querySelector<HTMLElement>(".deck-stage");
+    const perspective =
+      Number.parseFloat(getComputedStyle(stage ?? element).perspective) || 1150;
 
     const unsubscribe = subscribeDrive((drive) => {
-      /* A hidden squad — the tabs keep all three decks in the document and
-         show one — has no box worth measuring and nothing to draw. Skipping
-         here is also what keeps the per-frame layout read down to the one
-         deck that is actually on screen. */
       if (element.offsetParent === null) return;
 
       const box = element.getBoundingClientRect();
       const runway = element.offsetHeight - window.innerHeight;
       if (runway <= 0) return;
 
-      /* The deck's own stretch of the document, in the same pixels the engine
-         hands out. `box.top` is measured against the real scroll position, so
-         adding the real scroll gives the deck's fixed offset in the document,
-         and the smoothed position is then read against that. Mixing the two —
-         a smoothed position against a box measured at the smoothed position —
-         is a feedback loop, and it is worth being explicit about which is
-         which. */
       const deckTop = box.top + drive.rawScroll;
       const travelled = (drive.scroll - deckTop) / runway / FORMATION_SPAN;
-      const clamped = Math.min(1, Math.max(0, travelled));
+      const focus = Math.min(1, Math.max(0, travelled)) * depthSpan;
 
-      /* Counted in cards: the camera travels from the first of the squad to
-         the last, one card at a time, whatever width the ranks happen to be.
-         Increasing in `drive.scroll`, which is the whole reason a backwards
-         step cannot appear here. */
-      const focus = clamped * depthSpan;
+      for (const card of cards) {
+        const rel = card.depth - focus;
 
-      if (Math.abs(focus - written) >= 0.0005) {
-        element.style.setProperty("--focus", focus.toFixed(3));
-        written = focus;
-      }
+        /* Out of range: taken out of the document entirely. This is the
+           performance half of the rewrite. Measured on this page, a scroll
+           frame that restyles all seventy-two cards costs 57 to 99ms of style
+           recalculation — three to six times the whole 60fps budget, on the
+           CPU, before anything is drawn. The same frame with eight costs 8ms.
+           Depth is what decides which eight, so the rest are display:none and
+           the engine never looks at them. */
+        const shown = rel < RENDER_FAR && rel > RENDER_NEAR;
+        if (shown !== card.shown) {
+          card.node.style.display = shown ? "" : "none";
+          card.shown = shown;
+        }
+        if (!shown) continue;
 
-      /* In card-lengths ahead of the camera: past the one dissolving in the
-         lens, up to where they are still big enough to aim at. */
-      const from = Math.max(0, Math.ceil(focus + LIVE_NEAR));
-      const to = Math.floor(focus + LIVE_FAR);
-      if (from !== liveFrom || to !== liveTo) {
-        byDepth.forEach((cards, depth) => {
-          const live = depth >= from && depth <= to;
-          cards.forEach((card) => card.classList.toggle("is-live", live));
-        });
-        liveFrom = from;
-        liveTo = to;
+        const depthPx = rel * DEPTH_STEP;
+        // How much the projection shrinks something at this depth.
+        const projection = perspective / (perspective + depthPx);
+
+        /* The sideways sweep, in screen pixels, then converted back into the
+           card's own space. Nothing until it is nearer than the focal
+           distance; from there it accelerates out of frame. */
+        const approach = Math.max(0, FOCAL_REL - rel);
+        const screenX =
+          card.side * (COLUMN_X * card.lane + EXIT_X * Math.pow(approach, EXIT_CURVE));
+        const localX = screenX / projection;
+
+        /* A touch of turn as it goes by, so the card shows its edge rather
+           than staying a flat plate facing the lens all the way past. */
+        const turn = card.side * Math.min(18, approach * 17);
+
+        const fadeIn =
+          rel >= FADE_IN_FAR
+            ? 0
+            : rel <= FADE_IN_NEAR
+              ? 1
+              : (FADE_IN_FAR - rel) / (FADE_IN_FAR - FADE_IN_NEAR);
+        const fadeOut = rel <= 0 ? 0 : rel >= FADE_OUT ? 1 : rel / FADE_OUT;
+        const opacity = Math.min(fadeIn, fadeOut);
+
+        card.node.style.transform =
+          `translate3d(${localX.toFixed(1)}px,0,${(-depthPx).toFixed(1)}px) rotateY(${turn.toFixed(2)}deg)`;
+        card.node.style.opacity = opacity.toFixed(3);
+        card.node.style.zIndex = String(1000 - card.depth);
+
+        /* Clickable while it is a thing you would aim at: not the one sweeping
+           across the lens, not the ones too small and overlapped to hit. */
+        const live = rel >= LIVE_NEAR && rel <= LIVE_FAR;
+        if (live !== card.live) {
+          card.node.classList.toggle("is-live", live);
+          card.live = live;
+        }
       }
     });
 
     return () => {
       unsubscribe();
       element.classList.remove("is-deck");
-      element.style.removeProperty("--focus");
-      byDepth.forEach((cards) => cards.forEach((card) => card.classList.remove("is-live")));
+      /* Everything this effect wrote, taken back off — so the markup returns
+         to the plain swipeable row it is without JavaScript. */
+      for (const card of cards) {
+        card.node.classList.remove("is-live");
+        card.node.style.removeProperty("display");
+        card.node.style.removeProperty("transform");
+        card.node.style.removeProperty("opacity");
+        card.node.style.removeProperty("z-index");
+      }
     };
   }, [rows, depthSpan]);
 
@@ -350,12 +417,8 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
               <div
                 className={entry.coach ? "deck-card is-coach" : "deck-card"}
                 key={entry.player.id}
-                style={
-                  {
-                    "--i": (index + 1) * DEPTH_PER_CARD,
-                    "--x": across.toFixed(3),
-                  } as React.CSSProperties
-                }
+                data-depth={index + 1}
+                data-lane={across.toFixed(3)}
               >
                 <ShowcaseCard
                   player={entry.player}
