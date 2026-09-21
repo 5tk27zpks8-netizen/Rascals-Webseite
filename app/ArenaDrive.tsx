@@ -1914,31 +1914,34 @@ function buildScoreboard(THREE: Three, texture: import("three").Texture, z: numb
  * height, one lens, level, and the only thing that changes is how far down the
  * field it has travelled — which is exactly what the cards are doing too.
  */
-/* A BROADCAST FRAMING, AND WHY IT IS SAFE TO HAVE ONE.
+/* STRAIGHT DOWN THE MIDDLE, AND LEVEL.
  *
- * Dead centre and level is a safe picture and a dull one — and it had a second
- * problem that only showed once there was something to look at. The team
- * areas, the benches, the painted zone, the people: all of it lives along the
- * touchlines, and a camera flying down the middle of the field keeps both
- * touchlines pinned to the edges of the frame a hundred units away. The most
- * worked-on part of the ground was the part the camera never looked at.
+ * You walk through the middle of the field. The camera sits on the centre
+ * line, looks along it, and the only thing that changes as you scroll is how
+ * far down the ground it has travelled.
  *
- * Television solves this by not standing in the middle. The standard shot in
- * this sport is high and off to one side, angled back across the pitch, so the
- * near touchline runs along the bottom of the frame and the far stand fills
- * the back of it. That is the framing, and it is the single strongest thing
- * that makes a picture read as coverage rather than as a render.
+ * It was angled in from one side for a while, on the reasoning that television
+ * never stands in the middle and that the touchlines — where the benches, the
+ * team areas and most of the work are — sit at the edges of a centred frame.
+ * That reasoning was about the stadium. This page is a squad presentation, the
+ * cards fly straight at you down the centre of the screen, and a pitch running
+ * diagonally behind them fights that rather than framing it. Centred is what
+ * was asked for and centred is what the page is actually for.
  *
- * It is safe here — where the old cinematic plan was not — because the offset
- * is a constant. The cards that fly through this ground are pinned to the
- * screen and cannot follow a camera that moves, so every lateral move the old
- * plan made slid the world under a squad that stayed nailed in place, and that
- * disagreement is what read as being thrown backwards. Nothing below is a
- * function of the scroll. The camera sits at one x, one height, one lens and
- * one angle, and the only thing that changes as you scroll is how far down the
- * field it has travelled — which is exactly what the cards are doing too.
+ * Nothing here is a function of the scroll, which is the part that matters and
+ * the part that has to stay true whatever the framing. The cards are pinned to
+ * the screen and cannot follow a camera that moves, so any lateral movement
+ * slides the world under a squad that stays nailed in place — that
+ * disagreement is what once read as being thrown backwards. One x, one height,
+ * one lens, level. Only the distance down the field changes, which is exactly
+ * what the cards are doing too.
+ *
+ * The cost is honest and worth stating: the touchlines are further from the
+ * middle of the frame this way, so the team areas read as detail along the
+ * edges rather than as the subject. They are still there, and the end stand
+ * and both scoreboards still arrive head on.
  */
-const STEADY: Shot = { at: 0, x: 23, y: 9.4, lx: -7, ly: 3.2, ahead: 46, fov: 58, roll: 0 };
+const STEADY: Shot = { at: 0, x: 0, y: 7.6, lx: 0, ly: 3.5, ahead: 46, fov: 58, roll: 0 };
 
 export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
   const canvasHost = useRef<HTMLDivElement | null>(null);
