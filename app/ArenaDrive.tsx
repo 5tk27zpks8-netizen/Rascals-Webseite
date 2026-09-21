@@ -1477,6 +1477,56 @@ function buildSideline(
     place(benchLegs, out(8.1), 0.42, z + 3.1, 0, 1, 1, 1, 0x1b202b);
   }
 
+  /* THE BENCHES, WITH PEOPLE ON THEM.
+
+     An empty bench on a touchline full of standing players is stranger than no
+     bench at all — it is the one piece of furniture whose whole purpose is
+     visible, and leaving it bare says nobody has sat down all game. Seated
+     figures are the same parts as standing ones with the legs cut to the
+     height of the seat, which is all a seated person is from this distance:
+     the same shoulders, lower down, with less leg under them.
+
+     Not every section and not shoulder to shoulder. A bench with every place
+     taken looks staged; a bench with three or four on it looks like a game. */
+  const seatedLegs = kit(legGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.8 }), benchRuns * 10);
+  const seatedTorso = kit(torsoGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.72 }), benchRuns * 5);
+  const seatedPads = kit(padGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.66 }), benchRuns * 5);
+  const seatedHelmets = kit(helmetGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.28, metalness: 0.16 }), benchRuns * 5);
+
+  for (let i = 0; i < benchRuns; i += 1) {
+    const benchZ = zMin + zSpan * ((i + 0.5) / benchRuns);
+    // Only the benches inside the team area get anybody on them.
+    if (benchZ < teamFrom || benchZ > teamFrom + teamSpan) continue;
+    const sitting = 2 + Math.floor(rand() * 3);
+    const homeHalf = (benchZ - zMin) / zSpan < 0.5;
+    const palette = homeHalf ? JERSEY_HOME : JERSEY_AWAY;
+    const helmetHex = homeHalf ? 0x9e210f : 0xa8b0bd;
+    const pantsHex = homeHalf ? 0xdfe3ea : 0x262c3d;
+    for (let n = 0; n < sitting; n += 1) {
+      const z = benchZ - 2.8 + (n + rand() * 0.5) * (5.6 / Math.max(1, sitting));
+      const jersey = palette[(Math.abs(Math.round(z * 5)) % palette.length)];
+      const turn = facing + (rand() - 0.5) * 0.4;
+      const sin = Math.sin(turn);
+      const cos = Math.cos(turn);
+      const seatX = out(8.1);
+      /* Knees forward of the seat, which is what stops a seated figure looking
+         like a standing one sunk into the bench. */
+      const kneeX = seatX - 0.5 * cos;
+      const kneeZ = z + 0.5 * sin;
+      for (const offset of [-0.18, 0.18]) {
+        place(seatedLegs, kneeX + offset * -sin, 0.5, kneeZ + offset * -cos,
+          turn, 1, 0.64, 1, pantsHex);
+      }
+      place(seatedTorso, seatX, 1.52, z, turn, 1, 0.94, 1, jersey);
+      place(seatedPads, seatX, 2.02, z, turn, 1, 1, 1, jersey);
+      place(seatedHelmets, seatX, 2.32, z, turn, 1, 1, 1, helmetHex);
+    }
+  }
+
   /* Coolers and bottle crates, which is the orange the eye finds first on any
      touchline in the sport. */
   for (let i = 0; i < coolerRuns; i += 1) {
@@ -1510,14 +1560,40 @@ function buildSideline(
     place(cameraBodies, out(11.4), 1.78, z, facing, 1, 1, 1, 0x2f3646);
   }
 
-  /* The chain crew's markers, in the orange nothing else on a field is. */
-  for (const z of [zMin + zSpan * 0.46, zMin + zSpan * 0.56]) {
+  /* The chain crew's markers, in the orange nothing else on a field is — and
+     somebody holding each one. A marker standing on its own is a traffic cone;
+     the whole reason those poles are recognisable is that there is a person
+     attached to them, and at this distance the pole plus a figure beside it is
+     the entire read. They wear the officials' stripes rather than a kit. */
+  const crewLegs = kit(legGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.84 }), 4);
+  const crewTorso = kit(torsoGeometry,
+    new THREE.MeshStandardMaterial({ roughness: 0.8 }), 2);
+  const crewHeads = (faces.length > 0 ? faces : [null]).map((map) =>
+    kit(headGeometry, new THREE.MeshStandardMaterial({ map, roughness: 0.8 }), 2));
+
+  for (const [i, z] of [zMin + zSpan * 0.46, zMin + zSpan * 0.56].entries()) {
     place(markerPoles, out(1.5), 1.3, z, 0, 1, 1, 1, 0xe2711d);
     place(markerBoards, out(1.5), 2.5, z, 0, 1, 1, 1, 0xe2711d);
+
+    const turn = facing;
+    const sin = Math.sin(turn);
+    const cos = Math.cos(turn);
+    const px = out(2.3);
+    const pz = z + 0.9;
+    for (const offset of [-0.16, 0.16]) {
+      place(crewLegs, px + offset * -sin, 0.78, pz + offset * -cos,
+        turn, 0.94, 1, 0.94, 0x2a2f38);
+    }
+    place(crewTorso, px, 2.05, pz, turn, 0.92, 1, 0.92, 0xdfe3ea);
+    const head = crewHeads[i % crewHeads.length];
+    place(head, px, 2.71, pz, turn, 1, 1, 1, 0xffffff);
   }
 
   for (const mesh of [benchSeats, benchBacks, benchLegs, coolers, crates,
-                      netPosts, tripods, cameraBodies, markerPoles, markerBoards]) {
+                      netPosts, tripods, cameraBodies, markerPoles, markerBoards,
+                      seatedLegs, seatedTorso, seatedPads, seatedHelmets,
+                      crewLegs, crewTorso, ...crewHeads]) {
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
