@@ -597,6 +597,127 @@ export function createFlagTexture(): HTMLCanvasElement | null {
 
 /** What the scoreboard shows: the last game that was actually played. It
  *  falls back to a blank board rather than inventing a result. */
+/**
+ * A spectator's head, as four sides on one small sheet.
+ *
+ * The crowd's heads were plain tinted solids, which is fine at two hundred
+ * units and poor at twenty — the closest rows of the end stand are the ones
+ * the camera actually reaches, and there they read as coloured pebbles.
+ *
+ * A face fixes that for almost nothing, because it replaces the head's
+ * geometry rather than adding to it. A cube takes a texture; a sphere at a
+ * useful resolution does not come cheap. Twelve triangles with a face beats
+ * twenty without one, so the crowd gets faces AND gets lighter.
+ *
+ * The sheet is a 2×2 atlas and the cube's UVs pick a quadrant per side:
+ *
+ *     ┌──────────┬──────────┐
+ *     │   face   │   back   │
+ *     ├──────────┼──────────┤
+ *     │   side   │   top    │
+ *     └──────────┴──────────┘
+ *
+ * Nothing here is drawn finely. At the size a spectator occupies, a face is
+ * two dark marks under a mass of hair, and anything more detailed is sampled
+ * away before it reaches the screen — worse, detail that survives at the front
+ * row turns into noise across the rest of the stand. Hair mass, brow shadow
+ * and eye sockets are what carry at distance, so those are what this draws.
+ */
+export function createCrowdFaceTexture(variant: number): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const Q = 64; // one quadrant
+  canvas.width = Q * 2;
+  canvas.height = Q * 2;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  /* Skin and hair travel together, because a variant is a person and not a
+     swatch: pale skin under black hair and dark skin under grey hair both
+     occur, but they have to be chosen, not multiplied out at random. */
+  const people = [
+    { skin: "#d9a880", hair: "#2b2018", brow: "#8a6244" },
+    { skin: "#a97a52", hair: "#171213", brow: "#6d4a2f" },
+    { skin: "#7a5436", hair: "#221a16", brow: "#4e341f" },
+    { skin: "#e6c4a0", hair: "#6e604f", brow: "#a3805c" },
+  ];
+  const person = people[Math.abs(variant) % people.length];
+
+  const quad = (col: number, row: number, draw: () => void) => {
+    context.save();
+    context.translate(col * Q, row * Q);
+    context.beginPath();
+    context.rect(0, 0, Q, Q);
+    context.clip();
+    draw();
+    context.restore();
+  };
+
+  // --- the face -------------------------------------------------------
+  quad(0, 0, () => {
+    context.fillStyle = person.skin;
+    context.fillRect(0, 0, Q, Q);
+
+    // Hair across the top, with a slightly uneven line so it is not a band.
+    context.fillStyle = person.hair;
+    context.beginPath();
+    context.moveTo(0, 0);
+    context.lineTo(Q, 0);
+    context.lineTo(Q, Q * 0.3);
+    context.quadraticCurveTo(Q * 0.5, Q * (0.2 + (variant % 3) * 0.05), 0, Q * 0.32);
+    context.closePath();
+    context.fill();
+
+    /* Eye sockets rather than eyes. Two dark patches under the brow is what
+       a face reduces to at this size; drawing pupils only adds something for
+       the sampler to throw away. */
+    context.fillStyle = "rgba(0,0,0,0.42)";
+    context.fillRect(Q * 0.19, Q * 0.40, Q * 0.20, Q * 0.10);
+    context.fillRect(Q * 0.61, Q * 0.40, Q * 0.20, Q * 0.10);
+
+    // The brow's shadow, which is what actually reads as a face.
+    context.fillStyle = person.brow;
+    context.globalAlpha = 0.5;
+    context.fillRect(0, Q * 0.34, Q, Q * 0.06);
+    context.globalAlpha = 1;
+
+    // A mouth, barely.
+    context.fillStyle = "rgba(0,0,0,0.26)";
+    context.fillRect(Q * 0.36, Q * 0.68, Q * 0.28, Q * 0.05);
+  });
+
+  // --- the back of the head --------------------------------------------
+  quad(1, 0, () => {
+    context.fillStyle = person.hair;
+    context.fillRect(0, 0, Q, Q);
+    // A neck below the hairline, or the back of a head is a solid block.
+    context.fillStyle = person.skin;
+    context.fillRect(Q * 0.3, Q * 0.82, Q * 0.4, Q * 0.18);
+  });
+
+  // --- the sides --------------------------------------------------------
+  quad(0, 1, () => {
+    context.fillStyle = person.skin;
+    context.fillRect(0, 0, Q, Q);
+    context.fillStyle = person.hair;
+    context.fillRect(0, 0, Q, Q * 0.36);
+    // Sideburn down towards the jaw, which is what gives a profile its shape.
+    context.fillRect(Q * 0.06, Q * 0.36, Q * 0.16, Q * 0.22);
+    // An ear, as a shadow rather than a shape.
+    context.fillStyle = "rgba(0,0,0,0.20)";
+    context.fillRect(Q * 0.42, Q * 0.44, Q * 0.14, Q * 0.18);
+  });
+
+  // --- the top ----------------------------------------------------------
+  quad(1, 1, () => {
+    context.fillStyle = person.hair;
+    context.fillRect(0, 0, Q, Q);
+    context.fillStyle = "rgba(255,255,255,0.07)";
+    context.fillRect(Q * 0.3, Q * 0.2, Q * 0.4, Q * 0.3);
+  });
+
+  return canvas;
+}
+
 export type ScoreboardData = {
   opponent?: string;
   /** The line under the score — the date the result was earned. */

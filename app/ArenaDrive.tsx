@@ -9,6 +9,7 @@ import {
   createCloudTexture,
   createFlagTexture,
   createSoftDotTexture,
+  createCrowdFaceTexture,
   createScoreboardTexture,
   createTurfNormalTexture,
   createTurfRoughnessTexture,
@@ -554,10 +555,51 @@ const CROWD_SHIRTS = [
   0x21254b, 0x21254b, 0x9e210f, 0xb8351f,
 ];
 
-const CROWD_SKIN = [0xc79a74, 0xa9764f, 0x7d5334, 0xe0b48f, 0x5c3b25, 0x8e6a4a];
+/** The face sheets, drawn once and shared by every stand in the ground. */
+type CrowdFaces = import("three").Texture[];
 
 /** One person's worth of seat, in scene units. A unit is about 0.54m here. */
 const SEAT_PITCH = 0.95;
+
+/**
+ * A head, with its sides pointed at the right corner of the face sheet.
+ *
+ * BoxGeometry gives every side the whole texture, which would put a face on
+ * the back of every skull in the ground. The UVs are rewritten so each side
+ * reads its own quadrant of the atlas that createCrowdFaceTexture draws.
+ *
+ * Side order in BoxGeometry is +x, -x, +y, -y, +z, -z, four UV pairs each. In
+ * a terrace's local space the rake climbs along +x away from the pitch, so the
+ * field — and the thing every spectator in the ground is looking at — is at
+ * -x. That side gets the face.
+ */
+function makeCrowdHeadGeometry(THREE: Three) {
+  const geometry = new THREE.BoxGeometry(0.34, 0.38, 0.32);
+  const uv = geometry.getAttribute("uv");
+  // Which quadrant each side takes: [column, row] into the 2×2 sheet.
+  const quadrants: Array<[number, number]> = [
+    [0, 1], // +x  away from the pitch — a side
+    [0, 0], // -x  towards the pitch — the face
+    [1, 1], // +y  the top of the head
+    [1, 1], // -y  under the chin; nobody sees it, and the top is closest
+    [0, 1], // +z  a side
+    [0, 1], // -z  a side
+  ];
+  for (let side = 0; side < 6; side += 1) {
+    const [col, row] = quadrants[side];
+    for (let corner = 0; corner < 4; corner += 1) {
+      const i = side * 4 + corner;
+      /* The existing UV is 0..1 across the side; squeeze it into the
+         quadrant's half of the sheet, inset slightly so bilinear filtering
+         cannot reach across into the neighbouring quadrant. */
+      const u = uv.getX(i) * 0.48 + 0.01 + col * 0.5;
+      const v = uv.getY(i) * 0.48 + 0.01 + (1 - row) * 0.5;
+      uv.setXY(i, u, v);
+    }
+  }
+  uv.needsUpdate = true;
+  return geometry;
+}
 
 /**
  * Fill a terrace with people.
@@ -568,9 +610,9 @@ const SEAT_PITCH = 0.95;
  */
 function buildCrowd(
   THREE: Three,
-  options: { rows: number; length: number; base: number; seed: number },
+  options: { rows: number; length: number; base: number; seed: number; faces: CrowdFaces },
 ) {
-  const { rows, length, base, seed } = options;
+  const { rows, length, base, seed, faces } = options;
   const group = new THREE.Group();
 
   /* A small deterministic generator. Nothing clever — it only has to be
@@ -584,35 +626,24 @@ function buildCrowd(
   const half = length / 2;
   const usable = length - 3.2;
   const perRow = Math.max(1, Math.floor(usable / SEAT_PITCH));
-  const capacity = perRow * rows;
-
-  /* Torso and head are two instanced meshes over one set of transforms rather
-     than one merged mesh, which keeps this free of a geometry-merging helper
-     for the sake of a single extra draw call. */
-  const torso = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.55, 1.1, 0.83),
-    new THREE.MeshStandardMaterial({ roughness: 0.86, metalness: 0 }),
-    capacity,
-  );
-  const head = new THREE.InstancedMesh(
-    new THREE.IcosahedronGeometry(0.19, 0),
-    new THREE.MeshStandardMaterial({ roughness: 0.78, metalness: 0 }),
-    capacity,
-  );
-
-  const matrix = new THREE.Matrix4();
-  const position = new THREE.Vector3();
-  const quaternion = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
-  const euler = new THREE.Euler();
-  const colour = new THREE.Color();
 
   /* The gangways, cut where the hoardings already tile, so the aisles line up
      with the architecture instead of landing wherever they fall. */
   const aisles = Math.max(1, Math.round(length / TERRACE_TILE));
   const aislePitch = length / aisles;
 
-  let n = 0;
+  /* WHO SITS WHERE IS WORKED OUT BEFORE ANYTHING IS ALLOCATED.
+     
+     Heads carry a face now, and a face is a texture, and an InstancedMesh has
+     exactly one material — so a crowd with three faces in it is three meshes,
+     and each needs to know its own count before it can be built. Deciding the
+     whole stand into a list first costs one array and removes the alternative,
+     which is allocating every head mesh at the full capacity of the stand and
+     leaving two thirds of three matrix buffers empty. */
+  type Seat = { x: number; y: number; z: number; turn: number; lean: number;
+                height: number; girth: number; shirt: number; face: number };
+  const seats: Seat[] = [];
+
   for (let row = 0; row < rows; row += 1) {
     /* Each row offset by a third of a seat from the one in front, so a
        spectator looks between the two heads ahead rather than at the back of
@@ -632,36 +663,88 @@ function buildCrowd(
       if (rand() < 0.11 + backness * 0.1) continue;
 
       const height = 0.9 + rand() * 0.22;
-      position.set(
-        row * TERRACE_TREAD + TERRACE_TREAD * 0.46,
-        base + row * TERRACE_RISER + 0.62 * height,
+      seats.push({
+        x: row * TERRACE_TREAD + TERRACE_TREAD * 0.46,
+        y: base + row * TERRACE_RISER,
         z,
-      );
-      euler.set(0, (rand() - 0.5) * 0.5, (rand() - 0.5) * 0.08);
-      quaternion.setFromEuler(euler);
-      scale.set(1, height, 0.92 + rand() * 0.16);
-      matrix.compose(position, quaternion, scale);
-      torso.setMatrixAt(n, matrix);
-
-      position.y = base + row * TERRACE_RISER + 1.29 * height;
-      scale.set(1, 1, 1);
-      matrix.compose(position, quaternion, scale);
-      head.setMatrixAt(n, matrix);
-
-      torso.setColorAt(n, colour.setHex(CROWD_SHIRTS[(rand() * CROWD_SHIRTS.length) | 0]));
-      head.setColorAt(n, colour.setHex(CROWD_SKIN[(rand() * CROWD_SKIN.length) | 0]));
-      n += 1;
+        /* Turned to face the pitch, give or take. Wider than the torso's old
+           half-radian, because a head that is never quite square to the field
+           is what stops a stand of cubes reading as a shelf of boxes — but not
+           so wide that a third of the ground is looking at the car park. */
+        turn: (rand() - 0.5) * 0.62,
+        lean: (rand() - 0.5) * 0.08,
+        height,
+        girth: 0.92 + rand() * 0.16,
+        shirt: CROWD_SHIRTS[(rand() * CROWD_SHIRTS.length) | 0],
+        face: faces.length > 0 ? (rand() * faces.length) | 0 : 0,
+      });
     }
   }
 
-  for (const mesh of [torso, head]) {
-    mesh.count = n;
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const euler = new THREE.Euler();
+  const colour = new THREE.Color();
+
+  const torso = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.55, 1.1, 0.83),
+    new THREE.MeshStandardMaterial({ roughness: 0.86, metalness: 0 }),
+    seats.length,
+  );
+
+  /* One head mesh per face, each holding only the people who wear it.
+
+     If no sheet was drawn at all — a canvas the browser would not give us —
+     the crowd keeps its heads and loses only the faces, rather than throwing
+     on the first person placed. A stand of plain heads is what this looked
+     like last week; a stand that crashes the drive is not a trade worth
+     making for a texture. */
+  const headGeometry = makeCrowdHeadGeometry(THREE);
+  const sheets = faces.length > 0 ? faces : [null];
+  const heads = sheets.map((map, index) => {
+    const mesh = new THREE.InstancedMesh(
+      headGeometry,
+      new THREE.MeshStandardMaterial({ map, roughness: 0.8, metalness: 0 }),
+      /* At least one slot: an InstancedMesh built with room for nobody has no
+         buffer to hand back if a seat is later assigned to it. */
+      Math.max(1, seats.filter((s) => s.face === index).length),
+    );
+    mesh.count = 0;
+    return mesh;
+  });
+
+  seats.forEach((seat, i) => {
+    euler.set(0, seat.turn, seat.lean);
+    quaternion.setFromEuler(euler);
+
+    position.set(seat.x, seat.y + 0.62 * seat.height, seat.z);
+    scale.set(1, seat.height, seat.girth);
+    matrix.compose(position, quaternion, scale);
+    torso.setMatrixAt(i, matrix);
+    torso.setColorAt(i, colour.setHex(seat.shirt));
+
+    position.y = seat.y + 1.32 * seat.height;
+    scale.set(1, 1, 1);
+    matrix.compose(position, quaternion, scale);
+    const head = heads[seat.face];
+    head.setMatrixAt(head.count, matrix);
+    /* Skin is painted into the face sheet, so this is not a skin tone — it is
+       how much light the head is standing in, varied a little so a row of the
+       same face does not repeat as a stripe across the stand. */
+    const shade = 0.86 + ((i * 2654435761) % 1000) / 1000 * 0.24;
+    head.setColorAt(head.count, colour.setRGB(shade, shade, shade));
+    head.count += 1;
+  });
+
+  for (const mesh of [torso, ...heads]) {
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     /* Lit, and taking the roof's shadow — that is the point of the exercise.
        Not casting, though: a spectator contributes nothing to a shadow map
-       spread across the whole ground, and eleven thousand of them contribute
-       it eleven thousand times. */
+       spread across the whole ground, and eight thousand of them contribute
+       it eight thousand times. */
     mesh.receiveShadow = true;
     mesh.castShadow = false;
     /* An InstancedMesh derives its bounds from the geometry, not from where
@@ -682,13 +765,14 @@ function buildTerrace(
     base: number;
     roof: boolean;
     boards: import("three").Texture | null;
+    faces: CrowdFaces;
     /* Picks this stand's crowd. Different per stand so the two touchlines are
        not the same people twice, fixed per stand so a build can be compared
        against another build rather than against a reshuffle. */
     seed: number;
   },
 ) {
-  const { length, rows, base, roof, boards, seed } = options;
+  const { length, rows, base, roof, boards, seed, faces } = options;
   const group = new THREE.Group();
   const depth = rows * TERRACE_TREAD;
   const top = base + rows * TERRACE_RISER;
@@ -744,7 +828,7 @@ function buildTerrace(
   group.add(concrete);
 
   // --- the crowd ------------------------------------------------------
-  group.add(buildCrowd(THREE, { rows, length, base, seed }));
+  group.add(buildCrowd(THREE, { rows, length, base, seed, faces }));
 
   // --- the front wall and the hoardings --------------------------------
   const frontWall = new THREE.Mesh(
@@ -849,6 +933,7 @@ function buildTerrace(
 function buildStand(
   THREE: Three,
   boards: import("three").Texture | null,
+  faces: CrowdFaces,
   side: 1 | -1,
 ) {
   const group = buildTerrace(THREE, {
@@ -857,6 +942,7 @@ function buildStand(
     base: 4.4,
     roof: true,
     boards,
+    faces,
     seed: side > 0 ? 0x5eed01 : 0x5eed02,
   });
   group.position.set(side * (FIELD_WIDE / 2 + 8), 0, (OWN_END_Z + OPP_END_Z) / 2);
@@ -874,6 +960,7 @@ function buildStand(
 function buildEndStand(
   THREE: Three,
   boards: import("three").Texture | null,
+  faces: CrowdFaces,
   z: number,
   outward: 1 | -1,
 ) {
@@ -883,6 +970,7 @@ function buildEndStand(
     base: 4.4,
     roof: true,
     boards,
+    faces,
     seed: outward > 0 ? 0x5eed03 : 0x5eed04,
   });
   group.position.set(0, 0, z);
@@ -1386,6 +1474,21 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       scene.add(surround);
 
       // --- stands and flags -------------------------------------------
+      /* Three faces for eight thousand people. That is enough: at the size a
+         spectator occupies you are reading hair mass and skin, not features,
+         and the variation the eye actually picks up comes from the shirt
+         colours, the heights and the empty seats. A fourth sheet would cost a
+         draw call per stand to be noticed by nobody. */
+      const crowdFaces: import("three").Texture[] = [];
+      for (let i = 0; i < 3; i += 1) {
+        const canvas = createCrowdFaceTexture(i);
+        if (!canvas) continue;
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        crowdFaces.push(texture);
+      }
+
       const boardCanvasAds = createAdBoardTexture();
       const adTexture = boardCanvasAds ? new THREE.CanvasTexture(boardCanvasAds) : null;
       if (adTexture) {
@@ -1394,8 +1497,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       }
 
       scene.add(
-        buildStand(THREE, adTexture, 1),
-        buildStand(THREE, adTexture, -1),
+        buildStand(THREE, adTexture, crowdFaces, 1),
+        buildStand(THREE, adTexture, crowdFaces, -1),
       );
 
       const cloudCanvas = createCloudTexture();
@@ -1416,8 +1519,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          the bowl had a band of bare grass behind each end wide enough to read
          as a gap in the ground, and the shot that ends the drive looks
          straight down it. A stand at this level sits close behind the posts. */
-      scene.add(buildEndStand(THREE, adTexture, OWN_END_Z + 14, 1));
-      scene.add(buildEndStand(THREE, adTexture, OPP_END_Z - 14, -1));
+      scene.add(buildEndStand(THREE, adTexture, crowdFaces, OWN_END_Z + 14, 1));
+      scene.add(buildEndStand(THREE, adTexture, crowdFaces, OPP_END_Z - 14, -1));
 
       // The board carries whatever the schedule says is next. It is drawn
       // once with a placeholder and repainted when the fetch lands, so a slow
@@ -1697,6 +1800,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         cloudTexture?.dispose();
         flagTexture?.dispose();
         boardTexture?.dispose();
+        crowdFaces.forEach((texture) => texture.dispose());
         composer.dispose();
         composerTarget.dispose();
         /* The prefiltered sky is a render target and holds GPU memory of its
