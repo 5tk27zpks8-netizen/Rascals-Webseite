@@ -1698,13 +1698,14 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       // Postprocessing is what separates a lit scene from a photographed one:
       // without bloom the floodlights and the board are just bright pixels,
       // with it they throw light into the air around them.
-      const [THREE, { EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }, { ShaderPass }] = await Promise.all([
+      const [THREE, { EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }, { ShaderPass }, { GTAOPass }] = await Promise.all([
         import("three"),
         import("three/examples/jsm/postprocessing/EffectComposer.js"),
         import("three/examples/jsm/postprocessing/RenderPass.js"),
         import("three/examples/jsm/postprocessing/UnrealBloomPass.js"),
         import("three/examples/jsm/postprocessing/OutputPass.js"),
         import("three/examples/jsm/postprocessing/ShaderPass.js"),
+        import("three/examples/jsm/postprocessing/GTAOPass.js"),
       ]);
       if (disposed) return;
 
@@ -1753,7 +1754,13 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          changed, which is the whole claim. */
       scene.environmentIntensity = 0.41;
 
-      const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 600);
+      /* Near at one unit, not a tenth of one. Nothing in this scene ever comes
+         within half a metre of the lens — the nearest thing is the turf a few
+         units ahead — and a near plane ten times closer than it needs to be
+         throws away a decade of depth precision across the whole ground. That
+         precision is what screen-space occlusion reconstructs position from,
+         so at 0.1 the pass was computing occlusion from noise. */
+      const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 1, 600);
       const centreZ = (OWN_END_Z + OPP_END_Z) / 2;
 
       /* The composer renders into its own target, so the renderer's own
@@ -1769,6 +1776,41 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       composer.setSize(window.innerWidth, window.innerHeight);
       composer.addPass(new RenderPass(scene, camera));
+
+      /* AMBIENT OCCLUSION, AND WHY IT IS THE LAST BIG ONE.
+
+         Everything in this bowl sat on the grass without touching it. A
+         directional sun casts shadows, and shadows are what tell you where a
+         thing is; occlusion is what tells you how much of a thing there is.
+         Without it a stand is a painted ramp, a bench floats a millimetre
+         above the turf, a crowd is a pattern rather than eight thousand
+         objects each shading its neighbour, and a helmet has no weight.
+
+         It is not a filter over the picture. It darkens exactly the creases
+         the geometry already has — under the bench, between the rows, in the
+         gangways, where the wall meets the ground — so it only has something
+         to work with because the geometry is there. Adding it before the
+         sideline and the seating would have been the fake-progress version of
+         this: a blur that darkens corners in a scene with no corners.
+
+         The radius is in world units and has to be scaled to the ground, not
+         to a room. The default is sized for furniture; at the 2.8 units this
+         started on — about a metre and a half — the occlusion was real and
+         invisible, because the camera watches this from fifty units away and
+         a metre and a half of contact covers a pixel there. Measured, it moved
+         the stands by 1.7%, which is a no-op dressed as a feature. Nine units
+         is the gap between rows of a stand and the depth of a roof, which is
+         the scale the shading actually has to work at here. */
+      const ao = new GTAOPass(scene, camera, window.innerWidth, window.innerHeight);
+      ao.output = GTAOPass.OUTPUT.Default;
+      ao.updateGtaoMaterial({
+        radius: 9,
+        distanceExponent: 1.2,
+        thickness: 3.5,
+        scale: 1.35,
+        samples: 12,
+      });
+      composer.addPass(ao);
       /* Bloom is a night lever. At night the lamps were the only thing over the
          threshold; in daylight the painted yard lines are near white before it
          is even applied, so a cut of 1.05 caught the whole pitch and made the
@@ -2123,6 +2165,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         renderer.setSize(window.innerWidth, window.innerHeight);
         composer.setSize(window.innerWidth, window.innerHeight);
         bloom.setSize(window.innerWidth, window.innerHeight);
+        ao.setSize(window.innerWidth, window.innerHeight);
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
       };
@@ -2239,6 +2282,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         flagTexture?.dispose();
         boardTexture?.dispose();
         crowdFaces.forEach((texture) => texture.dispose());
+        ao.dispose();
         composer.dispose();
         composerTarget.dispose();
         /* The prefiltered sky is a render target and holds GPU memory of its
