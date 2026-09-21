@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Player } from "./lib/football";
-import { subscribeDrive } from "./lib/drive-scroll";
-import { RascalsPlayerCard } from "./team/RascalsPlayerCard";
+import { holdDrive, releaseDrive, subscribeDrive } from "./lib/drive-scroll";
+import { PlayerDetailPanel } from "./showcase/PlayerDetailPanel";
+import { ShowcaseCard } from "./showcase/ShowcaseCard";
+import "./showcase/showcase.css";
 
 /**
  * The squad standing out on the field, and you fly through them.
@@ -112,6 +114,22 @@ const DEPTH_PER_CARD = 1;
  */
 const FORMATION_SPAN = 0.8;
 
+/**
+ * The band of the formation that takes clicks, in card-lengths ahead of the
+ * camera.
+ *
+ * The near edge sits past the card currently dissolving in the lens — see the
+ * note in the effect below, which is the whole reason this is a band. At 0.6 a
+ * card is a little over half faded in, which is the point it becomes something
+ * a person would aim at rather than something they are looking through.
+ *
+ * The far edge is where cards are still a reasonable target: beyond four and a
+ * half lengths they are small, heavily overlapped by the ones in front, and
+ * anyone trying to hit one is more likely to catch a neighbour.
+ */
+const LIVE_NEAR = 0.6;
+const LIVE_FAR = 4.5;
+
 /** A card in the deck, and whether it is a player or one of the staff. */
 export type DeckEntry = { player: Player; coach?: boolean };
 
@@ -129,6 +147,18 @@ function intoRanks(entries: DeckEntry[]) {
 
 export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
   const host = useRef<HTMLDivElement | null>(null);
+  /* Which player's dossier is up, if any. Kept here rather than above the
+     three decks because only one of them is ever on screen, so only one can
+     ever have been clicked — and a single owner is one fewer thing to keep in
+     step than a shared store would be. */
+  const [opened, setOpened] = useState<DeckEntry | null>(null);
+  const openCard = useCallback(
+    (player: Player) => {
+      setOpened(entries.find((entry) => entry.player.id === player.id) ?? null);
+    },
+    [entries],
+  );
+  const closeCard = useCallback(() => setOpened(null), []);
   const ranks = intoRanks(entries);
   const rows = ranks.length;
   /* The squad starts one card in front of the camera rather than level with
@@ -143,6 +173,53 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
      has faded out. */
   const depthSpan = Math.max(1, entries.length * DEPTH_PER_CARD + 1.2);
 
+  /* Pin the page while the dossier is open, and hand the drive back its
+     position on the way out.
+
+     Pinning is `position: fixed` on the body, which is the only approach that
+     also stops a phone's rubber-band scrolling. It costs the scroll position,
+     so that is saved and restored — with smooth scrolling switched off for the
+     restore, or the page would glide back to where it already is.
+
+     `holdDrive` has to bracket this. A pinned body reports scrollY of zero,
+     and the drive reads scrollY every frame, so without the hold the stadium
+     would fly back to the start of the field behind the open panel. */
+  useEffect(() => {
+    if (!opened) return;
+    const y = window.scrollY;
+    const body = document.body;
+    const root = document.documentElement;
+    const previous = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+    };
+
+    holdDrive();
+    body.style.position = "fixed";
+    body.style.top = `-${y}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+
+    return () => {
+      body.style.position = previous.position;
+      body.style.top = previous.top;
+      body.style.left = previous.left;
+      body.style.right = previous.right;
+      body.style.width = previous.width;
+
+      const smooth = root.style.scrollBehavior;
+      root.style.scrollBehavior = "auto";
+      window.scrollTo(0, y);
+      root.style.scrollBehavior = smooth;
+
+      releaseDrive(y);
+    };
+  }, [opened]);
+
   useEffect(() => {
     const element = host.current;
     if (!element || rows === 0) return;
@@ -151,15 +228,28 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
 
     element.classList.add("is-deck");
 
-    /* Which cards can be clicked.
+    /* Which cards can be clicked — a window, not a half-line.
 
-       A card the camera has passed is transparent, but it is also enormous
-       and still in front of everything — and an element at zero opacity takes
-       pointer events exactly like any other. So the cards behind the camera
-       were swallowing every click meant for the squad.
+       An element's opacity has nothing to do with whether it takes a click, and
+       in a formation seen in perspective that is a trap with two sides to it.
 
-       Rather than fight that per card, only the ones still in front of the
-       camera are given pointer events at all. Everything else is inert. */
+       Behind the camera: a card that has passed is transparent but enormous and
+       drawn in front of everything, so it swallows every click aimed at the
+       squad. That was the first half of this rule and it was right.
+
+       But the same is true of the card *dissolving* in front of the camera. It
+       is a card-length from the lens, covering most of the screen, carrying the
+       highest z-index of anything on it — and by the time anyone has decided to
+       click it, it is down to a fifth of its opacity. So people aimed at the
+       card they could actually read, one step further down the field, and hit
+       the ghost in front of it instead. Cards "not all clickable", reported and
+       never properly fixed, because the rule only closed one end.
+
+       So: only the cards that are genuinely readable are interactive — from far
+       enough ahead that the dissolving one is excluded, to far enough back that
+       the tiny ones at the end of the formation are not stealing clicks either.
+       Every card passes through this window, and while it is in it, it is the
+       thing you can see and the thing you can hit. */
     const byDepth: HTMLElement[][] = [];
     element.querySelectorAll<HTMLElement>(".deck-card").forEach((card) => {
       const depth = Math.round(Number(card.style.getPropertyValue("--i")) || 0);
@@ -167,6 +257,7 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
     });
 
     let liveFrom = -1;
+    let liveTo = -1;
     /* Negative infinity rather than NaN, and this is not a style preference.
        Every comparison against NaN is false, including the one below, so a NaN
        seed meant the first write never cleared its own threshold and `--focus`
@@ -208,14 +299,17 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
         written = focus;
       }
 
-      /* Everything the camera has not yet passed, however far off it is. */
-      const from = Math.max(0, Math.ceil(focus - 0.34));
-      if (from !== liveFrom) {
+      /* In card-lengths ahead of the camera: past the one dissolving in the
+         lens, up to where they are still big enough to aim at. */
+      const from = Math.max(0, Math.ceil(focus + LIVE_NEAR));
+      const to = Math.floor(focus + LIVE_FAR);
+      if (from !== liveFrom || to !== liveTo) {
         byDepth.forEach((cards, depth) => {
-          const live = depth >= from;
+          const live = depth >= from && depth <= to;
           cards.forEach((card) => card.classList.toggle("is-live", live));
         });
         liveFrom = from;
+        liveTo = to;
       }
     });
 
@@ -263,12 +357,22 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
                   } as React.CSSProperties
                 }
               >
-                <RascalsPlayerCard player={entry.player} />
+                <ShowcaseCard
+                  player={entry.player}
+                  coach={entry.coach}
+                  onOpen={openCard}
+                />
               </div>
             );
           }),
         )}
       </div>
+
+      <PlayerDetailPanel
+        player={opened?.player ?? null}
+        coach={Boolean(opened?.coach)}
+        onClose={closeCard}
+      />
     </div>
   );
 }

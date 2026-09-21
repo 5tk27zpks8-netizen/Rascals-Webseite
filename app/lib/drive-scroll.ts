@@ -94,6 +94,7 @@ let started = 0;
 let lastFrameAt = 0;
 let smoothed = 0;
 let primed = false;
+let frozenAt: number | null = null;
 
 const scrollableHeight = () =>
   Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -145,7 +146,17 @@ function tick(now: number) {
   lastFrameAt = now;
 
   const total = scrollableHeight();
-  const target = Math.min(Math.max(currentScroll(), 0), total);
+  /* Frozen, and it has to be frozen here rather than by whoever opened the
+     overlay.
+
+     Locking the page for a modal means pinning the body, and a pinned body
+     reports a scroll position of zero. The drive reads that every frame, so
+     without this the moment a player card opened its panel the camera would
+     set off for the start of the field and glide the whole way back. Holding
+     the reading instead leaves the picture exactly where the viewer left it,
+     which is the one thing an overlay over a scene must not disturb. */
+  const target =
+    frozenAt !== null ? frozenAt : Math.min(Math.max(currentScroll(), 0), total);
 
   if (!primed || elapsed > 0.5) {
     /* Level with the page rather than gliding into it.
@@ -181,6 +192,27 @@ function tick(now: number) {
      subscriber its own recomputed reading is how the two layers came apart
      in the first place. */
   for (const listener of listeners) listener(frame);
+}
+
+/**
+ * Hold the drive still, and let it go again.
+ *
+ * For overlays that pin the page — a player's detail panel, anything modal.
+ * The drive keeps drawing and keeps breathing; it simply stops taking new
+ * positions from a scrollbar that is no longer telling the truth.
+ *
+ * `releaseDrive` takes the position to resume from, because the page will have
+ * been restored to it a moment earlier and reading the scrollbar on this frame
+ * may still return the pinned zero. Passing it explicitly means the handover
+ * cannot land a frame early and lurch.
+ */
+export function holdDrive() {
+  frozenAt = smoothed;
+}
+
+export function releaseDrive(resumeAt?: number) {
+  if (typeof resumeAt === "number") smoothed = resumeAt;
+  frozenAt = null;
 }
 
 /**
