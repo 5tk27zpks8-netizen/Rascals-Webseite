@@ -578,33 +578,6 @@ export function createAdBoardTexture(): HTMLCanvasElement | null {
  * hundred units away, so it is the shapes that carry — the sweep and the
  * helmet — and not any detail inside them.
  */
-/**
- * A single spark, as a soft round blob.
- *
- * Nothing more is needed: a spark on screen is two or three pixels, and every
- * bit of structure drawn inside one is thrown away by the sampler before it
- * arrives. What matters is the falloff — hot and tight in the middle, out to
- * nothing at the rim — because that is what makes a few hundred of them stack
- * into a plume with a bright core instead of a flat cloud of dots.
- */
-export function createSparkTexture(): HTMLCanvasElement | null {
-  const canvas = document.createElement("canvas");
-  const S = 64;
-  canvas.width = S;
-  canvas.height = S;
-  const context = canvas.getContext("2d");
-  if (!context) return null;
-
-  const gradient = context.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
-  gradient.addColorStop(0, "rgba(255,255,255,1)");
-  gradient.addColorStop(0.25, "rgba(255,244,214,0.92)");
-  gradient.addColorStop(0.6, "rgba(255,180,90,0.32)");
-  gradient.addColorStop(1, "rgba(255,120,40,0)");
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, S, S);
-  return canvas;
-}
-
 export function createFlagCrestTexture(): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
   const W = 512;

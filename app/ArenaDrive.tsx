@@ -8,7 +8,6 @@ import {
   createAdBoardTexture,
   createCloudTexture,
   createFlagCrestTexture,
-  createSparkTexture,
   createFlagTexture,
   createSoftDotTexture,
   createCrowdFaceTexture,
@@ -503,7 +502,15 @@ function buildGoal(THREE: Three, endLineZ: number, outward: 1 | -1) {
   arm.rotation.x = Math.PI / 2;
   arm.position.set(0, 10, outward * (setBack / 2));
 
-  const halfSpan = 3.1 * YARD;
+  /* Wider than the rule book, on purpose and by request.
+     
+     Eighteen feet six is the regulation width and 3.1 yards a side is exactly
+     that. This is 3.45, which puts the uprights about twenty and a half feet
+     apart — a couple of feet over. The posts frame the shot at the end of the
+     drive and at true width they read narrow from the middle of the field,
+     which is a thing that happens to correct measurements seen through a wide
+     lens rather than a mistake in them. */
+  const halfSpan = 3.45 * YARD;
   /* Long enough to pass through both uprights instead of ending on them. */
   const crossbar = new THREE.Mesh(
     new THREE.CylinderGeometry(TUBE, TUBE, halfSpan * 2 + TUBE * 2, SIDES),
@@ -1818,255 +1825,6 @@ function buildEndStand(
  * actually flies them, they break the roofline instead of the stand, and they
  * are the one thing in the scene that moves against the sky.
  */
-/**
- * PYROTECHNICS BEHIND THE STANDS — COMETS, NOT FOUNTAINS.
- *
- * The first version of this fired a spread of sparks from each launcher, which
- * is a Roman candle: a wide cone of glowing dots. What a stadium actually
- * fires before a game are comets — single shots that climb almost vertically,
- * very fast and very high, each one dragging a long bright tail of burning
- * material behind it that trails off into smoke. The difference is not the
- * brightness or the colour, it is the SHAPE: narrow streaks reaching well
- * above the roofline, not a bush of sparks sitting on it.
- *
- * So the particles are no longer independent. They are strung into shots.
- *
- * Every shot owns a run of particles, and a particle's place in that run is
- * its lag: the head is the shot itself, and each particle behind it is the
- * same trajectory sampled a little earlier in time. That is what a tail is —
- * not a separate effect, but where the comet was a fraction of a second ago —
- * and computing it as a delay rather than as a shape means the tail bends,
- * stretches and compresses correctly on its own as the shot climbs and slows.
- *
- * The scatter is small and grows with the lag, so the tail frays behind the
- * head instead of the whole thing spraying. The head runs white-hot and tight;
- * further back the particles cool towards their shell colour, grow, and dim
- * into smoke.
- *
- * ALL OF THE MOTION IS STILL IN THE VERTEX SHADER. A few thousand particles
- * moved from JavaScript would be a few thousand buffer writes on every frame
- * of a page whose whole problem, for most of its life, was frames that cost
- * too much. The per-frame cost on the CPU is one uniform.
- */
-function buildPyro(THREE: Three, spark: import("three").Texture | null) {
-  const group = new THREE.Group();
-
-  /* Launchers. Behind both ends and, more usefully, down both touchlines —
-     the camera travels the length of this ground, so the ends alone would put
-     every shot either behind the camera or two hundred units away. */
-  const jets: Array<{ x: number; z: number; hex: number }> = [];
-  const backOwn = OWN_END_Z + 54;
-  const backOpp = OPP_END_Z - 54;
-  const wide = FIELD_WIDE / 2 + SIDELINE_DEPTH + 10;
-  const flank = FIELD_WIDE / 2 + SIDELINE_DEPTH + 15 * TERRACE_TREAD + 12;
-
-  /* The club's two colours, and a white for the leading shells. Real salvos
-     are not evenly mixed — white shells punctuate a colour rather than sharing
-     the sky equally with it. */
-  const SHELLS = [0xff2a12, 0x2f6bff, 0xff2a12, 0x2f6bff, 0xfff0e0, 0xff2a12, 0x2f6bff];
-
-  let n = 0;
-  const fire = (x: number, z: number) => {
-    jets.push({ x, z, hex: SHELLS[n % SHELLS.length] });
-    n += 1;
-  };
-  for (const z of [backOwn, backOpp]) {
-    for (const x of [-wide, -wide * 0.5, 0, wide * 0.5, wide]) fire(x, z);
-  }
-  /* Eleven a side, and they run past both ends of the field rather than
-     stopping at them.
-
-     The launchers stand ninety-five units out, and at this lens the frame only
-     reaches that far across once you are a hundred and seven units down the
-     field — so at any moment it is the DISTANT launchers that are in shot and
-     the near ones are off both edges. With seven a side spread between the end
-     zones there were only ever two or three contributing, which is a couple of
-     streaks rather than a salvo. More of them, spread further, keeps a set of
-     them at the distance where they actually land in the picture. */
-  for (let i = 0; i < 11; i += 1) {
-    const z = OWN_END_Z + 30 - i * ((OWN_END_Z - OPP_END_Z + 60) / 10);
-    fire(-flank, z);
-    fire(flank, z);
-  }
-
-  /** Shots in the air per launcher, and how many particles make one tail. */
-  const SHOTS = 5;
-  const TRAIL = 40;
-  const total = jets.length * SHOTS * TRAIL;
-
-  const position = new Float32Array(total * 3);
-  const colour = new Float32Array(total * 3);
-  const shot = new Float32Array(total);
-  const trail = new Float32Array(total);
-  const jitter = new Float32Array(total * 3);
-  const power = new Float32Array(total);
-
-  const tint = new THREE.Color();
-  let i = 0;
-  for (const [index, jet] of jets.entries()) {
-    tint.setHex(jet.hex);
-    for (let sh = 0; sh < SHOTS; sh += 1) {
-      /* Each launcher's shots spread through its cycle, and each launcher
-         offset against the others, so the salvo ripples along the stand
-         instead of every tube going off on the same beat. */
-      const phase = (sh / SHOTS + index * 0.137) % 1;
-      const strength = 0.86 + ((index * 7 + sh * 13) % 9) / 9 * 0.3;
-      for (let t = 0; t < TRAIL; t += 1) {
-        position[i * 3] = jet.x;
-        position[i * 3 + 1] = 3;
-        position[i * 3 + 2] = jet.z;
-        colour[i * 3] = tint.r;
-        colour[i * 3 + 1] = tint.g;
-        colour[i * 3 + 2] = tint.b;
-        shot[i] = phase;
-        trail[i] = t / (TRAIL - 1);
-        // A small random direction per particle; the shader scales it by lag.
-        jitter[i * 3] = Math.random() * 2 - 1;
-        jitter[i * 3 + 1] = Math.random() * 2 - 1;
-        jitter[i * 3 + 2] = Math.random() * 2 - 1;
-        power[i] = strength;
-        i += 1;
-      }
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(position, 3));
-  geometry.setAttribute("aColour", new THREE.BufferAttribute(colour, 3));
-  geometry.setAttribute("aShot", new THREE.BufferAttribute(shot, 1));
-  geometry.setAttribute("aTrail", new THREE.BufferAttribute(trail, 1));
-  geometry.setAttribute("aJitter", new THREE.BufferAttribute(jitter, 3));
-  geometry.setAttribute("aPower", new THREE.BufferAttribute(power, 1));
-  /* The bounds have to be stated. Every particle sits at its launcher in the
-     buffer and only moves in the shader, so a computed bounding sphere would
-     be a flat disc at ground level and the whole salvo would vanish the moment
-     that disc left the frustum. */
-  geometry.boundingSphere = new THREE.Sphere(
-    new THREE.Vector3(0, 55, (backOwn + backOpp) / 2),
-    Math.abs(backOwn - backOpp) / 2 + flank + 120,
-  );
-
-  const material = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    uniforms: {
-      uTime: { value: 0 },
-      uSpark: { value: spark },
-      uSize: { value: 960 },
-    },
-    vertexShader: `
-      attribute vec3 aColour;
-      attribute float aShot;
-      attribute float aTrail;
-      attribute vec3 aJitter;
-      attribute float aPower;
-      uniform float uTime;
-      uniform float uSize;
-      varying vec3 vColour;
-      varying float vFade;
-      varying float vHeat;
-
-      void main() {
-        // One launcher's cycle: climb, burn out, reload.
-        float cycle = 7.0;
-        float shotAge = mod(uTime / cycle + aShot, 1.0) * cycle;
-
-        /* A particle IS the head, delayed. Its own age is the shot's age minus
-           how far back down the tail it sits, so the trail is simply where the
-           comet was a moment ago — and it stretches and compresses by itself
-           as the shot accelerates away and then slows. */
-        float lag = aTrail * 1.7;
-        float age = shotAge - lag;
-        if (age < 0.0) {
-          // Not fired yet: park it out of sight rather than at the muzzle.
-          gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
-          gl_PointSize = 0.0;
-          vFade = 0.0;
-          return;
-        }
-
-        /* Fast and steep. A comet clears the roof in well under a second and
-           tops out far above it — height goes as v*v/(2*g), so thirty puts the
-           apex near eighty-three units against a roofline at twenty-six. */
-        float v = 30.0 * aPower;
-        float g = 5.4;
-        float rise = v * age - 0.5 * g * age * age;
-
-        /* Barely any sideways travel, which is the whole difference between a
-           comet and a fountain — and what there is grows with the lag, so the
-           tail frays out behind the head instead of the shot spraying. */
-        vec3 drift = aJitter * (0.35 + lag * 1.5);
-        // Smoke rises and drifts as it cools; the far tail wanders a little.
-        drift.y *= 0.4;
-
-        vec3 world = position + vec3(drift.x, rise + drift.y, drift.z);
-        vec4 view = viewMatrix * modelMatrix * vec4(world, 1.0);
-
-        /* Heat: one at the head, nothing at the end of the tail. It drives
-           colour, size and brightness together, because those three are what
-           separate a burning head from the smoke behind it. */
-        vHeat = pow(1.0 - aTrail, 2.2);
-
-        // The shot burns out as it nears the top rather than stopping dead.
-        float burn = 1.0 - smoothstep(0.68, 1.0, shotAge / cycle);
-        float ignite = smoothstep(0.0, 0.12, age);
-        vFade = burn * ignite * mix(0.22, 1.0, vHeat);
-        vColour = aColour;
-
-        /* SIZED FROM THE ARITHMETIC, NOT BY EYE, because by eye it vanished.
-           
-           gl_PointSize is in pixels and falls off with distance, so a factor
-           that looks generous in the source is a sub-pixel dot on screen: at
-           the first setting a comet head came out at 1.1px at a hundred and
-           sixty units and 0.8px at two hundred and twenty. It was there and it
-           was invisible. Worse, the head was made SMALLER than its tail —
-           physically right, and exactly backwards for something that has to
-           survive being three pixels tall.
-           
-           The tail is forty particles spread over the distance the comet
-           covered in the last 1.7 seconds, which works out at roughly one unit
-           apart mid-climb — about five pixels at this range. So particles of
-           about that size close the gaps into a continuous streak, and the
-           trail compresses on its own as the shot slows near the top, which is
-           what a real one does. */
-        float size = mix(1.35, 0.85, vHeat) * uSize * aPower;
-        gl_PointSize = size / max(1.0, -view.z);
-        gl_Position = projectionMatrix * view;
-      }
-    `,
-    fragmentShader: `
-      uniform sampler2D uSpark;
-      varying vec3 vColour;
-      varying float vFade;
-      varying float vHeat;
-      void main() {
-        vec2 uv = gl_PointCoord - 0.5;
-        float r = length(uv);
-        /* The head is a hard little point; the tail is a soft puff. Using one
-           falloff for both is what made the first attempt read as a cloud of
-           identical dots rather than as a comet with smoke behind it. */
-        float core = 1.0 - smoothstep(0.04, 0.34, r);
-        float soft = 1.0 - smoothstep(0.0, 0.5, r);
-        float d = mix(soft * 0.5, core, vHeat);
-        if (d <= 0.002 || vFade <= 0.002) discard;
-
-        /* White-hot where it is burning, the shell's own colour behind it.
-           Real comets do this: you read the colour off the tail, never off
-           the head. */
-        vec3 col = mix(vColour, vec3(1.0), pow(vHeat, 1.5) * 0.85);
-        float a = vFade * d * 2.2;
-        gl_FragColor = vec4(col * a, min(1.0, a));
-      }
-    `,
-  });
-
-  const points = new THREE.Points(geometry, material);
-  group.add(points);
-  group.userData.material = material;
-  return group;
-}
-
 function buildFlags(
   THREE: Three,
   flag: import("three").Texture,
@@ -2816,15 +2574,6 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
           .catch(() => undefined);
       }
 
-      /* The pyro, behind the stands. Added before the flags so the plumes sit
-         behind the roofline they are supposed to rise past. */
-      const sparkCanvas = createSparkTexture();
-      const sparkTexture = sparkCanvas ? new THREE.CanvasTexture(sparkCanvas) : null;
-      if (sparkTexture) sparkTexture.colorSpace = THREE.SRGBColorSpace;
-      const pyro = buildPyro(THREE, sparkTexture);
-      scene.add(pyro);
-      const pyroMaterial = pyro.userData.material as import("three").ShaderMaterial;
-
       const crestCanvas = createFlagCrestTexture();
       const crestTexture = crestCanvas ? new THREE.CanvasTexture(crestCanvas) : null;
       if (crestTexture) {
@@ -3031,10 +2780,6 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         // is a ceiling, and at this travel distance it would show.
         sky.group.position.set(camera.position.x, 0, camera.position.z);
 
-        /* One uniform a frame for a few thousand sparks. The arcs themselves
-           are worked out in the vertex shader — see buildPyro. */
-        pyroMaterial.uniforms.uTime.value = time;
-
         dust.rotation.y = time * 0.008;
         // Flags stir in the night air rather than hanging dead on the pole.
         if (flags) {
@@ -3069,8 +2814,6 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         cloudTexture?.dispose();
         flagTexture?.dispose();
         crestTexture?.dispose();
-        sparkTexture?.dispose();
-        pyroMaterial.dispose();
         boardTexture?.dispose();
         crowdFaces.forEach((texture) => texture.dispose());
         zoneTexture?.dispose();
