@@ -2150,6 +2150,30 @@ const UPPER_ROWS_CORNER = 12;
 /** The roof rides on the upper tier now, not the lower. */
 const STAND_ROOF_Y = UPPER_BASE + UPPER_ROWS_SIDE * TERRACE_RISER + 5.6;
 
+/**
+ * Where the board over the far end hangs.
+ *
+ * Derived, every number of it. The leading edge of the end roof is the front
+ * of the end stand set back by the upper tier and pulled in by the roof's
+ * own overhang — the same expression buildRoofRing uses for its inner ring —
+ * and the board hangs off that edge, far enough below the roof to be under it
+ * and high enough above the top row to be over the crowd rather than in it.
+ *
+ * Written down instead, it drifts: this board spent two rebuilds sealed inside
+ * the back of the stand because its old placement was a constant chosen when
+ * the stands were half this size.
+ */
+const END_ROOF_EDGE_Z = OPP_END_Z - 14 - UPPER_SETBACK + 3.4;
+const BOARD_PLACE = {
+  z: END_ROOF_EDGE_Z + 2.2,
+  /* Fourteen below the roof rather than ten. At ten the board is framed well
+     from the own twenty and runs into the HUD bar by the halfway line, because
+     a fixed board climbs the frame as the camera closes on it. Four units
+     lower costs nothing at the start and keeps it clear the whole way down. */
+  y: STAND_ROOF_Y - 14,
+  width: 40,
+};
+
 function buildTieredStand(
   THREE: Three,
   options: {
@@ -2664,39 +2688,71 @@ function buildTouchdownCall(THREE: Three, texture: import("three").Texture) {
   return mesh;
 }
 
-/** The board behind the far end zone, carrying the real next fixture. */
-function buildScoreboard(THREE: Three, texture: import("three").Texture, z: number) {
+/**
+ * The board over the far end, carrying the real next fixture.
+ *
+ * IT USED TO STAND BEHIND THE GROUND, AND THE GROUND GREW PAST IT.
+ *
+ * Its place was written down as a fixed eighty-two units beyond the end line,
+ * at a fixed height of forty — right when the stands were low and single-tier.
+ * Then they went two-tier and gained a roof, and nobody moved the board. It
+ * ended up twenty-three units behind the back of the upper tier with its top
+ * edge a unit BELOW the roof: sealed inside the building, lit, textured,
+ * repainted on every fetch, and visible to nobody. Exactly the drift that put
+ * the flags in the wrong place twice.
+ *
+ * Standing it behind the ground cannot be made to work. For the bottom of the
+ * board to clear the leading edge of the end roof from a camera at eye height
+ * on the field, it would have to start at about y 67 — higher than the
+ * stadium. So it comes inside, where a real ground hangs one: off the front
+ * edge of the end roof, above the end seating, facing back down the field.
+ *
+ * Every number below is derived from the stands themselves, so a stand that
+ * moves again takes the board with it.
+ */
+function buildScoreboard(
+  THREE: Three,
+  texture: import("three").Texture,
+  place: { z: number; y: number; width: number },
+) {
   const group = new THREE.Group();
-  /* High enough to clear the end stand in front of it. At its old height the
-     roof truss of that stand ran straight through the score, which is the one
-     thing on the board anybody reads. */
-  const BOARD_Y = 40;
+  /* The face keeps the proportions the texture is drawn at; the frame is a
+     touch larger all round, which is the frame. */
+  const FACE_RATIO = 27 / 72;
+  const faceWidth = place.width;
+  const faceHeight = faceWidth * FACE_RATIO;
+  const frameWidth = faceWidth * (76 / 72);
+  const frameHeight = faceHeight * (30 / 27);
 
   const frame = new THREE.Mesh(
-    new THREE.BoxGeometry(76, 30, 2.4),
+    new THREE.BoxGeometry(frameWidth, frameHeight, 2.4),
     new THREE.MeshStandardMaterial({ color: 0x0b111b, roughness: 0.8 }),
   );
-  frame.position.set(0, BOARD_Y, 0);
   group.add(frame);
 
   const face = new THREE.Mesh(
-    new THREE.PlaneGeometry(72, 27),
-    // Fog off: a bright board cuts through night haze instead of dissolving
-    // into it, which is what makes it read as a light source.
+    new THREE.PlaneGeometry(faceWidth, faceHeight),
+    // Fog off: a bright board cuts through haze instead of dissolving into
+    // it, which is what makes it read as a light source.
     new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, fog: false }),
   );
-  face.position.set(0, BOARD_Y, 1.3);
+  face.position.z = 1.3;
   group.add(face);
 
-  const legs = new THREE.MeshStandardMaterial({ color: 0x151d2a, roughness: 0.9 });
-  for (const x of [-26, 26]) {
-    const stalk = BOARD_Y - 15;
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.6, stalk, 16), legs);
-    leg.position.set(x, stalk / 2, 0);
-    group.add(leg);
+  /* HUNG, NOT STOOD. The legs it used to stand on made sense under a board
+     planted on the ground behind the stadium; a board under a roof hangs from
+     it, and the two hangers are what say so. */
+  const steel = new THREE.MeshStandardMaterial({ color: 0x151d2a, roughness: 0.9 });
+  const drop = STAND_ROOF_Y - place.y - frameHeight / 2;
+  if (drop > 0) {
+    for (const x of [-frameWidth * 0.31, frameWidth * 0.31]) {
+      const hanger = new THREE.Mesh(new THREE.BoxGeometry(0.7, drop, 0.7), steel);
+      hanger.position.set(x, frameHeight / 2 + drop / 2, 0);
+      group.add(hanger);
+    }
   }
 
-  group.position.z = z;
+  group.position.set(0, place.y, place.z);
   return group;
 }
 
@@ -3360,16 +3416,16 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         boardTexture = new THREE.CanvasTexture(boardCanvas);
         boardTexture.colorSpace = THREE.SRGBColorSpace;
         boardTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        /* Two boards, one behind each end, sharing a single texture. A ground
-           this size has a board at both ends and the drive travels the length
-           of it — with one, the second half of the journey is played out in
-           front of an empty sky. Sharing the texture means the repaint below
-           lands on both at once and they cannot disagree about the score. */
-        scene.add(buildScoreboard(THREE, boardTexture, OPP_END_Z - 82));
-        const nearBoard = buildScoreboard(THREE, boardTexture, OWN_END_Z + 82);
-        // Turned to face back down the field, since it stands behind the camera's start.
-        nearBoard.rotation.y = Math.PI;
-        scene.add(nearBoard);
+        /* ONE BOARD, AT THE END THE DRIVE IS DRIVING TOWARDS.
+
+           There were two, on the reasoning that a ground this size has one at
+           each end. It does — but this camera starts at the own twenty and
+           travels away from it, looking down the field for the whole page. The
+           near board stood at z +99 with the camera never closer than -34 and
+           never turning round, so it was rendered, lit and repainted on every
+           fetch for a view that does not exist. The one that is left is the one
+           the drive actually arrives at. */
+        scene.add(buildScoreboard(THREE, boardTexture, BOARD_PLACE));
         /* A stadium board shows what happened, not what is scheduled: the last
            game that was actually played, with its real score and the side it
            was played against.
