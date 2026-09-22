@@ -9,6 +9,7 @@ import {
   createCloudTexture,
   createClothTexture,
   createFlagTexture,
+  createTouchdownTexture,
   createSoftDotTexture,
   createCrowdFaceTexture,
   createTeamZoneTexture,
@@ -1217,6 +1218,10 @@ function buildSideline(
   const scale = new THREE.Vector3();
   const euler = new THREE.Euler();
   const colour = new THREE.Color();
+  /* A figure is built facing local -x, so its forward axis is x, and a tip
+     about that axis swings a limb out sideways. */
+  const LEAN_AXIS = new THREE.Vector3(1, 0, 0);
+  const leanQuaternion = new THREE.Quaternion();
 
   /* Everyone on this side faces the field — and this was a quarter turn out.
 
@@ -1233,7 +1238,8 @@ function buildSideline(
 
   type Person = {
     z: number; depth: number; turn: number;
-    height: number; kit: number; staff: boolean; steward: boolean; face: number;
+    height: number; stance: number; splay: number;
+    kit: number; staff: boolean; steward: boolean; face: number;
   };
   const people: Person[] = [];
 
@@ -1263,6 +1269,12 @@ function buildSideline(
            the same way reads as a fence. */
         turn: facing + (rand() - 0.5) * 0.7,
         height: 0.96 + rand() * 0.1,
+        /* Nobody stands the way the person next to them does. Without this
+           every figure has identical feet and identical arms, and a row of
+           them reads as a rack rather than a squad — the same giveaway as an
+           evenly spaced line, one level further in. */
+        stance: 0.24 + rand() * 0.09,
+        splay: 0.05 + rand() * 0.16,
         kit: 0,
         staff: false,
         steward: false,
@@ -1291,6 +1303,11 @@ function buildSideline(
       // Backs to the field, watching the stand. That is the job.
       turn: facing + Math.PI + (rand() - 0.5) * 0.5,
       height: 0.95 + rand() * 0.1,
+      /* A steward stands to attention rather than at ease: feet closer, arms
+         nearer the body. It is a small difference and it is the reason they
+         read as staff rather than as more of the squad. */
+      stance: 0.19 + rand() * 0.05,
+      splay: 0.03 + rand() * 0.07,
       kit: 0,
       staff: true,
       steward: true,
@@ -1306,6 +1323,8 @@ function buildSideline(
       depth: 4.8 + rand() * 2.0,
       turn: facing + (rand() - 0.5) * 0.9,
       height: 0.94 + rand() * 0.1,
+      stance: 0.21 + rand() * 0.08,
+      splay: 0.04 + rand() * 0.13,
       kit: 0,
       staff: true,
       steward: false,
@@ -1339,17 +1358,35 @@ function buildSideline(
      About a hundred and forty triangles a player. At two hundred and fifty
      people that is thirty-five thousand across the whole touchline, against
      the hundred thousand the crowd's heads alone cost. */
-  const legGeometry = new THREE.CylinderGeometry(0.15, 0.10, 1.55, 6);
-  const armGeometry = new THREE.CylinderGeometry(0.11, 0.085, 1.02, 5);
+  /* LEG THICKNESS IS A GAP PROBLEM, NOT A LEG PROBLEM.
+
+     These were already two legs — 0.4 apart, each 0.3 across, which leaves a
+     tenth of a unit of daylight between them. A figure here stands about three
+     units tall and reads at some thirty pixels, so a unit is roughly ten
+     pixels and that gap is ONE. At one pixel the legs merge and every person
+     on the touchline reads as a post, which is exactly what they looked like.
+
+     Thinner legs set wider: 0.52 apart at 0.23 across leaves 0.29 of daylight,
+     close to three pixels. The shape was never wrong; the spacing was. */
+  const legGeometry = new THREE.CylinderGeometry(0.115, 0.082, 1.55, 6);
+  const armGeometry = new THREE.CylinderGeometry(0.1, 0.078, 1.02, 5);
 
   /* Chest wider than waist, and squashed front-to-back so the section is an
-     oval rather than a post. */
-  const torsoGeometry = new THREE.CylinderGeometry(0.33, 0.25, 1.0, 8);
+     oval rather than a post. Ten sides rather than eight: the two extra are
+     nearly free and they take the flat facet off the front, which is the face
+     the camera sees most of. */
+  const torsoGeometry = new THREE.CylinderGeometry(0.33, 0.25, 1.0, 10);
   torsoGeometry.scale(0.66, 1, 1);
-  /* The pads. Deliberately square and deliberately too wide — on a real player
-     they are, and it is the one proportion that has to survive being three
-     pixels tall. */
-  const padGeometry = new THREE.BoxGeometry(0.5, 0.3, 1.02);
+  /* The pads, rounded off at the ends.
+
+     These were a box, on the argument that real shoulder pads are square and
+     that the width is the proportion worth protecting. The width is — the
+     CORNERS are not. A hard right angle at each shoulder is the most
+     synthetic thing on the touchline, because nothing on a person has one.
+     An ellipsoid keeps every bit of the width and rounds the caps, which is
+     also closer to what pads look like from the side. */
+  const padGeometry = new THREE.SphereGeometry(0.5, 10, 6);
+  padGeometry.scale(0.5, 0.42, 1.04);
 
   const headGeometry = makeCrowdHeadGeometry(THREE);
   /* A helmet, not a head: rounded, with no face on it, and a bar across the
@@ -1402,10 +1439,21 @@ function buildSideline(
     x: number, y: number, z: number,
     turn: number, sx: number, sy: number, sz: number,
     hex: number,
+    /** Tip about the figure's own forward axis, for arms and stance. */
+    lean = 0,
   ) => {
     position.set(x, y, z);
+    /* Composed rather than handed to one Euler, because the lean belongs in
+       the FIGURE's frame and the turn in the world's. An Euler would make the
+       result depend on its axis order, and the order that reads right for
+       someone on the far touchline reads wrong for the one facing the other
+       way. Multiplying on the right applies the lean first, in local space. */
     euler.set(0, turn, 0);
     quaternion.setFromEuler(euler);
+    if (lean !== 0) {
+      leanQuaternion.setFromAxisAngle(LEAN_AXIS, lean);
+      quaternion.multiply(leanQuaternion);
+    }
     scale.set(sx, sy, sz);
     matrix.compose(position, quaternion, scale);
     mesh.setMatrixAt(mesh.count, matrix);
@@ -1440,13 +1488,19 @@ function buildSideline(
       p.z + offset * -cos,
     ];
 
-    for (const offset of [-0.2, 0.2]) {
-      const [lx, lz] = sideways(offset);
+    for (const sign of [-1, 1]) {
+      const [lx, lz] = sideways(sign * p.stance);
       place(playerLegs, lx, 0.78 * h, lz, p.turn, 1, h, 1, pants);
     }
-    for (const offset of [-0.42, 0.42]) {
-      const [ax, az] = sideways(offset);
-      place(playerArms, ax, (1.55 + 0.72) * h, az, p.turn, 1, h, 1, jersey);
+    /* THE ARM HANGS FROM THE SHOULDER, SO THE SHOULDER IS WHAT STAYS PUT.
+       A limb tipped about its own middle swings its top inwards as its bottom
+       swings out, which detaches it from the body it belongs to. Shifting the
+       arm out by half its length times the sine of the tip puts the top back
+       where it started, and only the hand moves. */
+    const armHalf = 0.51 * h;
+    for (const sign of [-1, 1]) {
+      const [ax, az] = sideways(sign * (0.4 + armHalf * Math.sin(p.splay)));
+      place(playerArms, ax, (1.55 + 0.72) * h, az, p.turn, 1, h, 1, jersey, sign * p.splay);
     }
     place(playerTorso, x, (1.55 + 0.5) * h, p.z, p.turn, 1, h, 1, jersey);
     place(playerPads, x, (1.55 + 1.02) * h, p.z, p.turn, 1, 1, 1, jersey);
@@ -1467,13 +1521,14 @@ function buildSideline(
       x + offset * -sin,
       p.z + offset * -cos,
     ];
-    for (const offset of [-0.17, 0.17]) {
-      const [lx, lz] = sideways(offset);
+    for (const sign of [-1, 1]) {
+      const [lx, lz] = sideways(sign * p.stance * 0.82);
       place(staffLegs, lx, 0.78 * h, lz, p.turn, 0.94, h, 0.94, 0x20242e);
     }
-    for (const offset of [-0.32, 0.32]) {
-      const [ax, az] = sideways(offset);
-      place(staffArms, ax, (1.55 + 0.72) * h, az, p.turn, 0.94, h, 0.94, kit);
+    const armHalf = 0.51 * h;
+    for (const sign of [-1, 1]) {
+      const [ax, az] = sideways(sign * (0.3 + armHalf * Math.sin(p.splay)));
+      place(staffArms, ax, (1.55 + 0.72) * h, az, p.turn, 0.94, h, 0.94, kit, sign * p.splay);
     }
     /* No pads on the staff, and that is the tell. A coach is a narrow figure
        next to a squad of wide ones, which is how you read a touchline. */
@@ -2562,6 +2617,53 @@ function buildFlags(
  * beyond that would cost geometry nobody can resolve, and a figure that tries
  * for realism and misses is worse than one that reads as a marker.
  */
+/**
+ * The call, hanging over the end zone.
+ *
+ * Tilted on purpose, and on two axes. A plane square to the camera is a
+ * caption — it sits on the picture rather than in it. Rolled a little and
+ * turned a little, it has somewhere to be: the type runs back into the scene,
+ * the crowd shows through the gaps between letters, and it reads as something
+ * hanging in the air above the end zone rather than as an overlay drawn on
+ * top of one.
+ *
+ * It writes no depth. The letters are a transparent PNG-shaped thing with
+ * holes in it, and a transparent surface that writes depth punches its own
+ * bounding box out of everything drawn after it — the crowd would vanish in a
+ * rectangle around the word.
+ */
+function buildTouchdownCall(THREE: Three, texture: import("three").Texture) {
+  const WIDTH = 26;
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    opacity: 0,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  });
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(WIDTH, WIDTH * (384 / 2048)),
+    material,
+  );
+  /* Over the end zone, above the crossbar, short of the end line so the end
+     stand is behind it rather than through it.
+
+     THE HEIGHT IS SOLVED AGAINST THE RENDERED FRAME, NOT GUESSED.
+     At 17.4 it sat 28.5 degrees above the view axis against a half field of
+     view of 29, so all that reached the picture was the underside of the
+     letters. The camera's own downward tilt was the thing I had wrong — read
+     off the crossbar's position in the frame it is 3.1 degrees, not the 5.1
+     the shot definition implies. With that, 12.2 puts the word in the upper
+     third with the goal below it. */
+  mesh.position.set(0.6, 12.2, OPP_GOAL_Z - 9);
+  mesh.rotation.set(0.05, -0.16, 0.085);
+  mesh.renderOrder = 3;
+  mesh.visible = false;
+  mesh.frustumCulled = false;
+  return mesh;
+}
+
 /** The board behind the far end zone, carrying the real next fixture. */
 function buildScoreboard(THREE: Three, texture: import("three").Texture, z: number) {
   const group = new THREE.Group();
@@ -3307,6 +3409,17 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       const flagCanvas = createFlagTexture();
       const flagTexture = flagCanvas ? new THREE.CanvasTexture(flagCanvas) : null;
       if (flagTexture) flagTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      const callCanvas = createTouchdownTexture();
+      let touchdownCall: import("three").Mesh | null = null;
+      let callTexture: import("three").CanvasTexture | null = null;
+      if (callCanvas) {
+        callTexture = new THREE.CanvasTexture(callCanvas);
+        callTexture.colorSpace = THREE.SRGBColorSpace;
+        callTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        touchdownCall = buildTouchdownCall(THREE, callTexture);
+        scene.add(touchdownCall);
+      }
+
       let flags: import("three").Group | null = null;
       if (flagTexture) {
         flagTexture.colorSpace = THREE.SRGBColorSpace;
@@ -3558,6 +3671,31 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
            is left here is the slow swing of the halyard about the mast — a
            different motion on a different timescale, and the thing that stops
            thirteen flags moving as one object. */
+        /* THE ARRIVAL.
+
+           It comes in over the last eighth of the drive, which is the stretch
+           the HUD already calls a touchdown — one number deciding both, so the
+           word in the corner and the word in the air cannot disagree.
+
+           The scale overshoots and settles rather than easing straight in. A
+           call that grows smoothly to its final size reads as a fade; one that
+           arrives slightly too big and pulls back has been thrown. */
+        if (touchdownCall) {
+          const arrival = Math.min(1, Math.max(0, (progress - 0.87) / 0.09));
+          touchdownCall.visible = arrival > 0.001;
+          if (touchdownCall.visible) {
+            const material = touchdownCall.material as import("three").MeshBasicMaterial;
+            material.opacity = Math.min(1, arrival * 1.5);
+            const overshoot = 1 + Math.sin(Math.min(1, arrival) * Math.PI) * 0.09;
+            const grow = 0.72 + 0.28 * arrival;
+            touchdownCall.scale.setScalar(grow * overshoot);
+            /* Hanging, not pinned: a slow drift on both axes once it has
+               settled, small enough to be felt rather than watched. */
+            touchdownCall.position.y = 12.2 + Math.sin(time * 0.5) * 0.34 * arrival;
+            touchdownCall.rotation.z = 0.085 + Math.sin(time * 0.37) * 0.016 * arrival;
+          }
+        }
+
         for (const source of [flags, roofRing]) {
           const times = source?.userData.times as { value: number }[] | undefined;
           if (times) for (const t of times) t.value = time;
@@ -3593,6 +3731,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         dotTexture?.dispose();
         cloudTexture?.dispose();
         flagTexture?.dispose();
+        callTexture?.dispose();
         bannerCrestTexture?.dispose();
         bannerWordTexture?.dispose();
         flagCrestTexture?.dispose();

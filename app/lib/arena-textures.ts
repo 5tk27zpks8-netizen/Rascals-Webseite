@@ -956,3 +956,59 @@ export function createClothTexture(opts: {
     },
   };
 }
+
+/**
+ * The call at the end of the drive.
+ *
+ * The whole page travels seventeen thousand pixels towards this moment and
+ * then, until now, nothing happened: the camera came to rest in front of the
+ * end stand and that was the end of it. A drive that arrives at nothing is a
+ * corridor.
+ *
+ * Drawn rather than modelled. Extruded 3D type needs a font file, a loader and
+ * a decision about bevels, and at the size this is read — a few hundred pixels
+ * across, seen once — none of that survives. What survives is weight, colour
+ * and the fact that it is hanging at an angle in the air.
+ */
+export function createTouchdownTexture(): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  const W = 2048;
+  const H = 384;
+  canvas.width = W;
+  canvas.height = H;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  const word = "TOUCHDOOOOOWN";
+  /* Italic and condensed, the same voice the player cards are set in. A
+     stadium call in an upright face reads as a label. */
+  context.font = `italic 900 ${H * 0.82}px Impact, "Arial Narrow", "Haettenschweiler", sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  /* Squeezed to fit the sheet rather than the sheet grown to fit the word:
+     thirteen characters at a readable weight is wider than any sane texture,
+     and the horizontal compression is itself right for the face. */
+  const natural = context.measureText(word).width;
+  const x = W / 2;
+  const y = H * 0.54;
+  context.save();
+  context.translate(x, y);
+  context.scale(Math.min(1, (W * 0.94) / natural), 1);
+  context.translate(-x, -y);
+
+  /* A navy shadow under it, so the white has something to sit on when it
+     passes in front of a pale crowd rather than the sky. */
+  context.fillStyle = "rgba(15, 18, 38, 0.55)";
+  context.fillText(word, x + H * 0.045, y + H * 0.05);
+  /* Red edge, then white face. Drawn as two passes rather than one stroked
+     pass: a stroke centred on the outline eats into the letterform at this
+     weight, and the counters close up. */
+  context.lineJoin = "round";
+  context.strokeStyle = "#9e210f";
+  context.lineWidth = H * 0.1;
+  context.strokeText(word, x, y);
+  context.fillStyle = "#ffffff";
+  context.fillText(word, x, y);
+  context.restore();
+  return canvas;
+}
