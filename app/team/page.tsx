@@ -30,6 +30,21 @@ export default async function TeamPage() {
           <a href="#offense">Offense</a>
           <a href="#defense">Defense</a>
         </nav>
+
+        {/* The way into the arena. It is not a fourth jump link: those move you
+            down this page, this one leaves it, and a control that does
+            something different should look like it does. The still is a real
+            frame out of the scene rather than an illustration of it, so what
+            the button shows is what opening it gives you. */}
+        <a className="arena-portal" href="/arena/kader">
+          <img src="/arena-portal.webp" alt="" width={1920} height={740} />
+          <span className="arena-portal-text">
+            <small>Teamvorstellung</small>
+            <strong>IN DIE ARENA</strong>
+            <em>Scroll dich durch das Stadion — Spieler für Spieler.</em>
+          </span>
+          <span className="arena-portal-go" aria-hidden="true">▶</span>
+        </a>
       </header>
 
       <section className="team-public-body team-public-body-v2">

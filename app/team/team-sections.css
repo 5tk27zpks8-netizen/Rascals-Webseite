@@ -1,1 +1,55 @@
 .team-public-v2{background:radial-gradient(circle at 85% 8%,rgba(158,33,15,.11),transparent 24%),radial-gradient(circle at 12% 38%,rgba(33,37,75,.22),transparent 28%),#050b13}.team-public-hero{position:relative;overflow:hidden;padding-bottom:54px}.team-public-hero:after{content:"RASCALS";position:absolute;right:-1.5vw;bottom:-2.5vw;color:rgba(255,255,255,.025);font-size:clamp(86px,16vw,250px);font-weight:1000;font-style:italic;letter-spacing:-.06em;pointer-events:none}.team-jump-nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}.team-jump-nav a{display:inline-flex;align-items:center;min-height:42px;padding:0 18px;border:1px solid rgba(255,255,255,.18);background:rgba(5,11,19,.38);color:#fff;text-decoration:none;text-transform:uppercase;font-size:11px;font-weight:900;letter-spacing:.16em;backdrop-filter:blur(10px);transition:.2s ease}.team-jump-nav a:hover{transform:translateY(-2px);border-color:#9e210f;background:#9e210f}.team-public-body-v2{padding-top:34px}.team-showcase{position:relative;margin:0 -2vw 44px;padding:54px 2vw 64px;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);scroll-margin-top:24px}.team-showcase:before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none}.team-showcase>*{position:relative;z-index:1}.team-showcase-coaches:before{background:linear-gradient(115deg,rgba(33,37,75,.34),rgba(7,16,29,.08) 55%,rgba(158,33,15,.09))}.team-showcase-offense:before{background:linear-gradient(115deg,rgba(158,33,15,.13),rgba(7,16,29,.03) 48%,rgba(33,37,75,.18))}.team-showcase-defense:before{background:linear-gradient(115deg,rgba(33,37,75,.32),rgba(4,10,17,.04) 50%,rgba(158,33,15,.1))}.team-showcase-special:before{background:linear-gradient(115deg,rgba(255,255,255,.025),rgba(33,37,75,.16))}.team-section-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,440px);gap:32px;align-items:end;margin-bottom:34px;padding-bottom:22px;border-bottom:1px solid rgba(255,255,255,.12)}.team-section-head small{display:block;margin-bottom:8px;color:var(--rascals-red);font-size:11px;font-weight:950;letter-spacing:.2em}.team-section-head h2{margin:0;color:#fff;font-size:clamp(44px,6vw,86px);line-height:.82;font-weight:1000;font-style:italic;letter-spacing:-.04em}.team-section-head p{margin:0;color:#aeb8c5;font:15px/1.65 Arial,sans-serif}.team-section-head.compact{grid-template-columns:1fr}.team-showcase .team-roster-grid,.team-showcase .coaches-public-grid{gap:22px}.team-showcase .rascals-player-card,.team-showcase .coach-public-card{border-color:rgba(255,255,255,.18)}.team-showcase-offense .rascals-player-card:hover{border-color:var(--rascals-red);box-shadow:0 32px 86px rgba(0,0,0,.68),0 0 0 1px rgba(216,43,29,.32)}.team-showcase-defense .rascals-player-card:hover{border-color:#6973b4;box-shadow:0 32px 86px rgba(0,0,0,.68),0 0 0 1px rgba(105,115,180,.3)}@media(max-width:820px){.team-section-head{grid-template-columns:1fr;gap:14px}.team-showcase{margin:0 -8px 28px;padding:38px 8px 48px}.team-jump-nav{margin-top:26px}.team-jump-nav a{flex:1;justify-content:center;min-width:100px}}
+/* THE WAY INTO THE ARENA.
+
+   Deliberately not a fourth jump link. Those three move you down this page;
+   this one leaves it for the scroll-driven presentation, and a control whose
+   behaviour differs has to look like it differs — otherwise the first click is
+   a surprise. So it is a picture rather than a word, and the picture is a real
+   frame out of the scene rather than a drawing of one: what the button shows
+   is what opening it gives you. */
+.arena-portal{position:relative;display:block;max-width:680px;margin-top:22px;border:1px solid rgba(255,255,255,.18);background:#050b13;overflow:hidden;text-decoration:none;isolation:isolate;transition:border-color .25s ease,transform .25s ease,box-shadow .25s ease}
+.arena-portal img{display:block;width:100%;height:auto;aspect-ratio:1920/740;object-fit:cover;transform:scale(1.01);transition:transform .5s cubic-bezier(.2,.7,.3,1)}
+/* The scrim, weighted to the bottom where the words are. A flat wash over the
+   whole frame would dim the stadium, which is the thing being advertised. */
+.arena-portal:before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(to top,rgba(4,9,16,.97) 0%,rgba(4,9,16,.93) 20%,rgba(4,9,16,.74) 34%,rgba(4,9,16,.14) 62%,rgba(4,9,16,.34) 100%)}
+.arena-portal-text{position:absolute;left:20px;right:76px;bottom:16px;z-index:2;display:block}
+.arena-portal-text small{display:block;margin-bottom:5px;color:var(--rascals-red);font-size:10px;font-weight:950;letter-spacing:.22em;text-transform:uppercase}
+.arena-portal-text strong{display:block;color:#fff;font-size:clamp(22px,3.4vw,32px);font-weight:1000;font-style:italic;letter-spacing:-.02em;line-height:.94}
+.arena-portal-text em{display:block;margin-top:7px;color:#c2cbd8;font:13px/1.45 Arial,sans-serif;font-style:normal}
+/* The affordance. A still frame on its own reads as a photograph; the marker
+   is what says it opens. */
+.arena-portal-go{position:absolute;right:18px;bottom:20px;z-index:2;display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(255,255,255,.34);border-radius:50%;background:rgba(5,11,19,.5);color:#fff;font-size:13px;line-height:1;padding-left:3px;backdrop-filter:blur(8px);transition:background .25s ease,border-color .25s ease,transform .25s ease}
+.arena-portal:hover,.arena-portal:focus-visible{border-color:var(--rascals-red);transform:translateY(-2px);box-shadow:0 26px 60px rgba(0,0,0,.6)}
+.arena-portal:hover img,.arena-portal:focus-visible img{transform:scale(1.06)}
+.arena-portal:hover .arena-portal-go,.arena-portal:focus-visible .arena-portal-go{background:var(--rascals-red);border-color:var(--rascals-red);transform:scale(1.08)}
+.arena-portal:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media(max-width:820px){.arena-portal{max-width:none;margin-top:18px}}
+/* THE WORDS COME OFF THE PICTURE WHEN THERE IS NO ROOM ON IT.
+
+   At phone width this card is about 150px tall, and three lines of type laid
+   over the bottom of it leave the eyebrow sitting on a bright crowd with no
+   scrim left to carry it — and the description running into the marker. No
+   amount of darkening fixes a space that is not there. Below 700 the still
+   keeps its whole frame and the text moves underneath it, which is legible at
+   any width and needs no scrim at all. */
+@media(max-width:700px){
+  /* The scrim all but goes. Its job was to carry type that is no longer on
+     the picture, and left at full strength it simply drowns the bottom half
+     of the still — darkening the thing the card exists to show. What is left
+     is a soft edge top and bottom so the frame meets the header and the text
+     strip without a hard seam. */
+  .arena-portal:before{inset:0 0 auto 0;aspect-ratio:1920/740;
+    background:linear-gradient(to top,rgba(4,9,16,.46) 0%,rgba(4,9,16,0) 20%,rgba(4,9,16,0) 78%,rgba(4,9,16,.3) 100%)}
+  .arena-portal-text{position:static;left:auto;right:auto;bottom:auto;padding:13px 62px 15px 16px;background:rgba(6,12,21,.92)}
+  .arena-portal-text em{margin-top:5px}
+  /* The marker keeps its corner. In this layout that corner is the text
+     strip, which is opaque, so it needs no scrim of its own. */
+  .arena-portal-go{right:12px;bottom:12px;width:36px;height:36px;font-size:11px}
+}
+/* Everything here is decoration on a link that already works without it. */
+@media(prefers-reduced-motion:reduce){
+  .arena-portal,.arena-portal img,.arena-portal-go{transition:none}
+  .arena-portal:hover,.arena-portal:focus-visible{transform:none}
+  .arena-portal:hover img,.arena-portal:focus-visible img{transform:scale(1.01)}
+  .arena-portal:hover .arena-portal-go,.arena-portal:focus-visible .arena-portal-go{transform:none}
+}
