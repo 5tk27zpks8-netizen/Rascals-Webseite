@@ -1070,15 +1070,26 @@ function buildTerrace(
     fascia.position.set(-overhang, roofY - 1.0, 0);
     group.add(fascia);
 
-    /* Fittings along the fascia, dark because it is the middle of the day and
-       nobody has switched them on. They are still worth having: the run of
-       them gives the roof its length as the camera travels past. */
+    /* Fittings along the fascia, and they are lit now. They used to be dark on
+       the reasoning that it is the middle of the day and nobody has switched
+       them on — which stopped being true when the bowl closed. A roofed ground
+       runs its lights through a daytime fixture because the roof puts half the
+       pitch in shade, and these are the fittings the four washes above are
+       nominally coming out of. Emissive rather than another light: a hundred
+       and twenty real lamps would be unpayable, and at this distance a lamp is
+       a bright speck whichever way it is produced. */
     const lamps = Math.max(4, Math.round(length / 12));
     // Instanced: sixty identical fittings round the ground is sixty draw calls
     // for four batches' worth of work.
     const fittings = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.9, 0.3, 2.4),
-      new THREE.MeshStandardMaterial({ color: 0x2c3340, roughness: 0.4, metalness: 0.3 }),
+      new THREE.MeshStandardMaterial({
+        color: 0x2c3340,
+        roughness: 0.4,
+        metalness: 0.3,
+        emissive: new THREE.Color(0xfff0d0),
+        emissiveIntensity: 1.6,
+      }),
       lamps,
     );
     const place = new THREE.Object3D();
@@ -1665,37 +1676,52 @@ function buildSideline(
   return group;
 }
 
-/* THE TOUCHLINE STANDS, IN TWO TIERS.
+/* A TWO-TIER STAND, AND THE SAME ONE ALL THE WAY ROUND.
  *
  * A single rake of fifteen rows is a grandstand. What makes a ground read as
  * big is the stack: a lower bowl, a band of boxes across the middle, and an
- * upper tier set back and cantilevered out over the back of the lower one. It
- * is the band that does most of the work — one horizontal line dividing the
- * crowd into two masses is what the eye reads as scale, far more than simply
- * adding rows to a single rake would.
+ * upper tier set back and cantilevered over the back of the lower one. The
+ * band does most of that work — one horizontal line dividing the crowd into
+ * two masses is what the eye reads as scale, far more than adding rows to a
+ * single rake would.
  *
- * The heights are worked out rather than chosen. The lower tier's back row
- * tops out at 19.5 and a spectator standing there reaches about 21.4, so the
- * upper tier's soffit has to clear that: at a base of 26 it would leave twenty
- * centimetres of headroom over the last row, which is a ceiling people would
- * hit. Thirty-one leaves nearly three metres.
+ * And that line has to run unbroken round the whole ground, which is what
+ * decides the row counts below. The lower tier is fourteen rows EVERYWHERE —
+ * touchlines, ends and corners alike — because the moment one side's band sits
+ * at a different height the bowl stops being one structure and goes back to
+ * being four grandstands that happen to touch. Only the upper tier varies, and
+ * it steps down from the touchlines through the ends into the corners, which
+ * is what real bowls do.
+ *
+ * The heights are worked out, not chosen. The lower tier's back row tops out
+ * at 19.5 units and a spectator standing there reaches about 21.4. At an upper
+ * base of 26 the soffit lands at 21.8 — twenty centimetres of headroom over
+ * the last row, a ceiling people would hit. Thirty-one leaves nearly three
+ * metres.
  */
 const LOWER_ROWS = 14;
 const LOWER_BASE = 4.4;
-const UPPER_ROWS = 18;
 const UPPER_BASE = 31;
-/** How far back the upper tier's front edge sits, overhanging the lower one. */
+/** How far back an upper tier's front edge sits, overhanging the lower one. */
 const UPPER_SETBACK = 15;
+/** Upper-tier depth, stepping down away from the halfway line. */
+const UPPER_ROWS_SIDE = 18;
+const UPPER_ROWS_END = 15;
+const UPPER_ROWS_CORNER = 12;
 /** The roof rides on the upper tier now, not the lower. */
-const STAND_ROOF_Y = UPPER_BASE + UPPER_ROWS * TERRACE_RISER + 5.6;
+const STAND_ROOF_Y = UPPER_BASE + UPPER_ROWS_SIDE * TERRACE_RISER + 5.6;
 
-function buildStand(
+function buildTieredStand(
   THREE: Three,
-  boards: import("three").Texture | null,
-  faces: CrowdFaces,
-  side: 1 | -1,
+  options: {
+    length: number;
+    upperRows: number;
+    boards: import("three").Texture | null;
+    faces: CrowdFaces;
+    seed: number;
+  },
 ) {
-  const length = FIELD_LONG + 40;
+  const { length, upperRows, boards, faces, seed } = options;
   const group = new THREE.Group();
 
   // The lower bowl. No roof of its own — the upper tier is its roof.
@@ -1706,7 +1732,7 @@ function buildStand(
     roof: false,
     boards,
     faces,
-    seed: side > 0 ? 0x5eed01 : 0x5eed02,
+    seed,
   }));
 
   /* The band between the tiers: a run of boxes behind glass, which is what
@@ -1752,17 +1778,35 @@ function buildStand(
   // The upper tier, set back and carrying the roof.
   const upper = buildTerrace(THREE, {
     length,
-    rows: UPPER_ROWS,
+    rows: upperRows,
     base: UPPER_BASE,
     roof: true,
     boards,
     faces,
-    seed: side > 0 ? 0x5eed11 : 0x5eed12,
+    seed: seed + 0x10,
     // Its columns have to reach the ground, not its own thirty-unit footing.
     footY: 0,
   });
   upper.position.x = UPPER_SETBACK;
   group.add(upper);
+
+  return group;
+}
+
+function buildStand(
+  THREE: Three,
+  boards: import("three").Texture | null,
+  faces: CrowdFaces,
+  side: 1 | -1,
+) {
+  const group = buildTieredStand(THREE, {
+    length: FIELD_LONG + 40,
+    upperRows: UPPER_ROWS_SIDE,
+    boards,
+    faces,
+    seed: side > 0 ? 0x5eed01 : 0x5eed02,
+  });
+
   /* Set back far enough that a sideline fits in front of it. At the eight
      units this used to sit at there were four metres between the touchline
      and the wall — a corridor, not a team area, and everything a televised
@@ -1772,32 +1816,6 @@ function buildStand(
   return group;
 }
 
-/**
- * A stand behind an end zone.
- *
- * Without these the ground simply stopped: past the end line there was open
- * black, which is what made the far background read as nothing at all. A
- * stadium is a closed bowl, so both ends get a bank of seats and a roof.
- */
-/**
- * THE CORNERS, WHICH WERE SKY.
- *
- * Four grandstands standing apart are not a stadium, they are four
- * grandstands. Looking down the field from the kickoff you could see daylight
- * straight through both near corners, and nothing else in the ground gives it
- * away as quickly — a bowl is the thing that makes a crowd feel like one crowd
- * rather than four separate blocks of people.
- *
- * A real corner is curved and this one is a chamfer: one straight terrace set
- * at forty-five degrees with its front face passing through the point where
- * the two neighbouring fronts would meet. From the field that closes the gap
- * and continues the rake, which is all it has to do; the approximation only
- * shows from directly above, where nobody on this page ever is.
- *
- * Rotating about Y by an angle sends local +x — the direction a terrace's rake
- * climbs, away from the pitch — to (cos, 0, -sin), so each corner's angle is
- * whichever one points that diagonal outwards.
- */
 /**
  * THE PLAYERS' TUNNEL.
  *
@@ -1812,6 +1830,7 @@ function buildStand(
  * nothing, and it is that contrast against a sunlit wall that reads as depth
  * rather than as a painted rectangle.
  */
+
 function buildPlayerTunnel(THREE: Three, z: number) {
   const group = new THREE.Group();
 
@@ -1860,14 +1879,14 @@ function buildCornerStand(
   z: number,
   seed: number,
 ) {
-  const group = buildTerrace(THREE, {
+  const group = buildTieredStand(THREE, {
     length: 82,
-    /* Two rows shorter than the touchlines. A corner that matches the main
+    /* The shallowest upper tier in the ground. A corner that matches the main
        stand for height reads as a mistake in the geometry rather than as
-       architecture — real bowls step down into their corners. */
-    rows: 13,
-    base: 4.4,
-    roof: true,
+       architecture — real bowls step down into their corners. The LOWER tier
+       still matches, because the band it carries has to stay level the whole
+       way round or the bowl comes apart into separate stands again. */
+    upperRows: UPPER_ROWS_CORNER,
     boards,
     faces,
     seed,
@@ -1889,11 +1908,9 @@ function buildEndStand(
   z: number,
   outward: 1 | -1,
 ) {
-  const group = buildTerrace(THREE, {
+  const group = buildTieredStand(THREE, {
     length: FIELD_WIDE + 46,
-    rows: 12,
-    base: 4.4,
-    roof: true,
+    upperRows: UPPER_ROWS_END,
     boards,
     faces,
     seed: outward > 0 ? 0x5eed03 : 0x5eed04,
@@ -1957,54 +1974,6 @@ function buildFlags(
       group.add(cloth);
     }
   }
-  return group;
-}
-
-/**
- * A floodlight pylon: a lattice mast carrying a bank of lamps.
- *
- * The lights were shining out of nothing before, which is the single clearest
- * tell that a scene is a demo. Giving the light a structure to come from is
- * what makes the ground read as built.
- */
-function buildPylon(THREE: Three, x: number, z: number) {
-  const group = new THREE.Group();
-  const steel = new THREE.MeshStandardMaterial({ color: 0x2a3444, roughness: 0.6, metalness: 0.7 });
-
-  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1.1, 46, 8), steel);
-  mast.position.y = 23;
-  group.add(mast);
-
-  // Cross braces, so the mast reads as a lattice rather than a pipe.
-  for (let i = 1; i < 6; i += 1) {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9 - i * 0.08, 0.09, 5, 10), steel);
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = i * 7.4;
-    group.add(ring);
-  }
-
-  const rig = new THREE.Mesh(new THREE.BoxGeometry(11, 5.4, 1), steel);
-  rig.position.set(0, 47, 0);
-  group.add(rig);
-
-  /* Glass, not light. The lamp faces were self-lit white, which is right for
-     a night match and reads as ten rows of switched-on bulbs at midday. */
-  const lampMaterial = new THREE.MeshStandardMaterial({
-    color: 0x8fa2b8,
-    roughness: 0.25,
-    metalness: 0.15,
-  });
-  for (let row = 0; row < 2; row += 1) {
-    for (let col = 0; col < 5; col += 1) {
-      const lamp = new THREE.Mesh(new THREE.CircleGeometry(0.86, 12), lampMaterial);
-      lamp.position.set(-4.4 + col * 2.2, 45.9 + row * 2.2, -0.6);
-      lamp.rotation.y = Math.PI;
-      group.add(lamp);
-    }
-  }
-
-  group.position.set(x, 0, z);
-  group.lookAt(0, 40, z);
   return group;
 }
 
@@ -2699,7 +2668,11 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          shadows are short and the ground is lit. */
       const SUN_DIR = new THREE.Vector3(0.30, 0.86, -0.42).normalize();
 
-      const sun = new THREE.DirectionalLight(0xfff4e2, 2.6);
+      /* Turned down from 2.6 now that the roof ring carries the pitch. It
+         still lights what it can still see — the roofs, the upper tiers, the
+         sky — and overdriving it would only blow out those while leaving the
+         shaded strip below exactly as dark. */
+      const sun = new THREE.DirectionalLight(0xfff4e2, 1.75);
       sun.position.copy(SUN_DIR).multiplyScalar(260);
       sun.target.position.set(0, 0, (OWN_END_Z + OPP_END_Z) / 2);
       sun.castShadow = true;
@@ -2738,13 +2711,52 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       scene.add(new THREE.HemisphereLight(0xa8cdf0, 0x3c5c31, 0.42));
       scene.add(new THREE.AmbientLight(0xe6effa, 0.1));
 
-      // The pylons still stand in daylight; they just are not doing anything.
-      for (let i = 0; i < 5; i += 1) {
-        const z = 12 - i * (FIELD_LONG / 4.4);
-        for (const side of [-1, 1] as const) {
-          scene.add(buildPylon(THREE, side * (FIELD_WIDE / 2 + 30), z));
-        }
+      /* THE ROOF RING, AND WHY THE SUN CANNOT DO THIS ALONE ANY MORE.
+         
+         Closing the bowl put the pitch at the bottom of a well. Worked out
+         from the geometry: the roof's leading edge stands 56 units up and 70
+         out, so from the middle of the field it cuts the sky at 38.7 degrees —
+         which the sun at 59 still clears — but from the touchline it cuts at
+         66.3, which the sun does not. Every team area, every bench, every
+         steward, the whole strip this ground spends its bottom third on, would
+         sit in permanent roof shadow lit by nothing but the sky term.
+         
+         So the ring lights it, the way a real enclosed ground does: four
+         washes angled steeply in from the roof line, one per side. They cross
+         over the middle and overlap at the edges, which is what gives a
+         floodlit pitch its soft multi-directional shadows instead of one hard
+         sun shadow — and it is why the sun below is turned down rather than
+         off. It still lights the roofs, the upper tiers and the sky; it just
+         no longer has to light the parts it can no longer reach.
+         
+         None of the four casts a shadow map. One sun already covers the ground
+         at 2048, and four more would be four extra depth passes a frame for
+         shadows that, being washes from opposite sides, would largely cancel
+         each other out anyway. */
+      const ringHeight = STAND_ROOF_Y;
+      const ringOut = FIELD_WIDE / 2 + SIDELINE_DEPTH + UPPER_SETBACK;
+      const pitchCentre = new THREE.Vector3(0, 0, (OWN_END_Z + OPP_END_Z) / 2);
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const flood = new THREE.DirectionalLight(0xf4f8ff, 0.62);
+        flood.position.set(
+          dx * ringOut,
+          ringHeight,
+          pitchCentre.z + dz * (FIELD_LONG / 2 + 30),
+        );
+        flood.target.position.copy(pitchCentre);
+        scene.add(flood, flood.target);
       }
+
+      /* The floodlight pylons are gone, and they had to go: they stood at
+         thirty units beyond the touchline, which was clear ground when the
+         stands were a single rake set back eight units — and is now solidly
+         inside a two-tier stand that reaches a hundred units out. A mast
+         embedded in the seating is worse than no mast at all.
+         
+         An enclosed bowl does not use masts anyway. It lights the pitch from a
+         ring along the roof, which is why every roofed ground looks the way it
+         does, and the fittings for it are already modelled along each roof's
+         leading edge. */
 
 
       // --- night air ----------------------------------------------------
