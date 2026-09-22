@@ -47,6 +47,12 @@ const YARD = 1.7;
 const FIELD_LONG = FIELD_YARDS_LONG * YARD;
 const FIELD_WIDE = FIELD_YARDS_WIDE * YARD;
 
+/** The club's two marks, measured off the files themselves.
+    Every panel that carries one derives its height from these, so a panel can
+    never again be cut to a shape the artwork does not fit. */
+const CREST_ASPECT = 1555 / 1011;
+const WORDMARK_ASPECT = 1649 / 311;
+
 /** Our goal line sits at z = 0; the drive runs towards negative z. */
 const OWN_GOAL_Z = 0;
 const OPP_GOAL_Z = -100 * YARD;
@@ -177,19 +183,19 @@ function sampleShot(t: number): Shot {
  */
 function makeSkyMaterial(THREE: Three, forLighting = false) {
   /* THE SAME SKY, BUT NOT THE SAME NUMBERS — AND THIS IS NOT A FUDGE.
-     
+
      The colours below are deliberately deeper than the sky should be, because
      the filmic curve at the end of the pipeline desaturates as it brightens
      and pulls them back. That compensation is correct for a dome you look
      straight at, once, through that curve.
-     
+
      It is wrong for a dome you are gathering light from. Indirect light lands
      in the midtones, where the curve barely desaturates at all, so the
      compensation is applied a second time and never taken off: measured, the
      bowl gained +16.5 levels of blue against +2.1 of red, which is a cast, not
      daylight. A shaded face outdoors is blue; it is not that blue, because the
      sky it sees is washed with sun.
-     
+
      So the lighting copy undoes the compensation instead of inheriting it:
      half a step back towards daylight white, and none of the lift. Same
      gradient, same sun, same place in the sky — just the sky's real colour
@@ -462,7 +468,7 @@ function buildGoal(THREE: Three, endLineZ: number, outward: 1 | -1) {
   const setBack = 6;
 
   /* THE JOINTS, WHICH IS WHERE THIS WAS COMING APART.
-     
+
      Every tube here met the next one by butting a flat end cap against the
      side of a round pipe, and each of those meetings left a visible defect.
      The crossbar ended exactly on the uprights' centre lines, so the outer
@@ -470,7 +476,7 @@ function buildGoal(THREE: Three, endLineZ: number, outward: 1 | -1) {
      you could see against the sky. The arm ended on the pole's axis the same
      way, and the pole's flat top cap sat half a tube proud of the arm resting
      on it.
-     
+
      A real goal post is welded, and a weld is a fillet: material bridging the
      angle between two pipes. So every junction gets a ball slightly fatter
      than the tubes it joins, and every tube is run a little past its partner's
@@ -502,7 +508,7 @@ function buildGoal(THREE: Three, endLineZ: number, outward: 1 | -1) {
   arm.position.set(0, 10, outward * (setBack / 2));
 
   /* Wider than the rule book, on purpose and by request.
-     
+
      Eighteen feet six is the regulation width and 3.1 yards a side is exactly
      that. This is 3.45, which puts the uprights about twenty and a half feet
      apart — a couple of feet over. The posts frame the shot at the end of the
@@ -693,7 +699,7 @@ function buildCrowd(
   const aislePitch = length / aisles;
 
   /* WHO SITS WHERE IS WORKED OUT BEFORE ANYTHING IS ALLOCATED.
-     
+
      Heads carry a face now, and a face is a texture, and an InstancedMesh has
      exactly one material — so a crowd with three faces in it is three meshes,
      and each needs to know its own count before it can be built. Deciding the
@@ -1832,30 +1838,50 @@ function buildRoofRing(
   group.add(lamps);
 
   /* BANNERS ROUND THE OPENING, WHERE THE TRUSSES WERE.
-     
+
      The roof used to carry a fan of trusses across its underside. They were
      structurally honest and visually wrong: seen from the field they read as a
      web of dark sticks over the crowd, and they were the busiest thing in the
      upper half of every frame. A real roof has its structure above the deck,
      not slung under it where the camera lives.
-     
+
      What hangs there instead is what actually hangs there: banners. They take
      the club's own artwork — the crest and the wordmark, the real files rather
      than something approximated in canvas — and they alternate, so the ring
      reads as a set rather than as one image repeated thirty times.
-     
+
      Two instanced draws for all of them, split by which artwork they carry,
      because a mesh can only hold one texture. */
   /* RESTRAINT IS THE POINT, AND SPACING IS HOW IT IS SET.
-     
+
      At one banner every seventeen units this ring carried forty-two of them —
      a continuous frieze round the entire roof, which is not what a stadium
      looks like. A ground hangs a handful, at intervals, and the gaps between
      them are what make the ones that are there read as deliberate. At sixty
      there are twelve, and the roof still looks like a roof. */
   const bannerSpots = walkPolygon(inner, 60);
-  const bannerGeometry = new THREE.PlaneGeometry(6.4, 8.2);
-  const backingGeometry = new THREE.PlaneGeometry(7.0, 8.8);
+
+  /* SIZED FROM THE ARTWORK, NOT GUESSED AT.
+
+     The crest file is 1555 by 1011 — half again as wide as it is tall — and it
+     was being mapped onto a panel 6.4 wide by 8.2 high. That is an aspect of
+     0.78 against 1.54, so every badge on the roof was squeezed to almost
+     exactly half its proper width. It is the kind of mistake that is invisible
+     in the source and obvious the moment anyone looks at the thing.
+
+     So the panel heights are DERIVED from the artwork's own proportions. A
+     width is chosen; the height follows. Swapping either file for one shaped
+     differently cannot bring the squash back. */
+
+  const crestWidth = 6.0;
+  const wordWidth = 6.6;
+  const bannerGeometry = new THREE.PlaneGeometry(crestWidth, crestWidth / CREST_ASPECT);
+  const wordGeometry = new THREE.PlaneGeometry(wordWidth, wordWidth / WORDMARK_ASPECT);
+  /* The cloth behind them, a shape that suits both: wide enough for the
+     wordmark, tall enough that a crest is not floating on bare navy. */
+  const backingGeometry = new THREE.PlaneGeometry(7.2, 6.0);
+  /* Hung straight off the fascia rather than floating below it. */
+  const bannerY = roofY - 2.1 - 3.0;
 
   const backings = new THREE.InstancedMesh(
     backingGeometry,
@@ -1870,7 +1896,7 @@ function buildRoofRing(
     Math.ceil(bannerSpots.length / 2),
   );
   const wordPanels = new THREE.InstancedMesh(
-    new THREE.PlaneGeometry(7.4, 1.5),
+    wordGeometry,
     new THREE.MeshStandardMaterial({
       map: wordmark, transparent: true, roughness: 0.8, side: THREE.DoubleSide,
     }),
@@ -1883,7 +1909,7 @@ function buildRoofRing(
     /* Turned to face the pitch. walkPolygon hands back the heading along the
        edge, so the face of a banner on it is that heading turned a quarter. */
     const facing = spot.angle + Math.PI / 2;
-    put.position.set(spot.x, roofY - 6.6, spot.z);
+    put.position.set(spot.x, bannerY, spot.z);
     put.rotation.set(0, facing, 0);
     put.updateMatrix();
     backings.setMatrixAt(i, put.matrix);
@@ -1894,7 +1920,7 @@ function buildRoofRing(
        its own navy backing and the banners came out as blank rectangles. */
     const nx = Math.sin(facing) * 0.12;
     const nz = Math.cos(facing) * 0.12;
-    put.position.set(spot.x + nx, roofY - 6.6, spot.z + nz);
+    put.position.set(spot.x + nx, bannerY, spot.z + nz);
     put.updateMatrix();
     if (i % 2 === 0) {
       crestPanels.setMatrixAt(crestPanels.count, put.matrix);
@@ -1970,14 +1996,14 @@ function buildPitchsideAds(
   const spots = walkPolygon(octagonPoints(front, zMin, zMax, 26), 78);
 
   const crestPanels = new THREE.InstancedMesh(
-    new THREE.PlaneGeometry(3.4, 2.2),
+    new THREE.PlaneGeometry(3.4, 3.4 / CREST_ASPECT),
     new THREE.MeshStandardMaterial({
       map: crest, transparent: true, roughness: 0.82, side: THREE.DoubleSide,
     }),
     Math.ceil(spots.length / 2),
   );
   const wordPanels = new THREE.InstancedMesh(
-    new THREE.PlaneGeometry(5.2, 1.0),
+    new THREE.PlaneGeometry(5.2, 5.2 / WORDMARK_ASPECT),
     new THREE.MeshStandardMaterial({
       map: wordmark, transparent: true, roughness: 0.82, side: THREE.DoubleSide,
     }),
@@ -2278,6 +2304,11 @@ function buildFlags(
 ) {
   const group = new THREE.Group();
   const geometry = new THREE.PlaneGeometry(4.4, 2.8);
+  /* The crest flag takes its shape from the crest file rather than sharing the
+     wordmark flag's cloth — a couple of per cent out here, but it is the same
+     mistake that squeezed the roof banners to half width, and deriving it
+     costs nothing. */
+  const crestGeometry = new THREE.PlaneGeometry(4.4, 4.4 / CREST_ASPECT);
   /* Two cloths, alternating round the roof. A roofline of identical flags is
      bunting: it repeats, and once the eye finds the period it stops reading
      them as flags. */
@@ -2285,7 +2316,7 @@ function buildFlags(
   /* The crest flags carry the club's own file rather than a drawn likeness of
      it. A badge has a specific shape that is either right or wrong, and an
      approximation from memory is wrong in a way nobody has to squint at.
-     
+
      It is a transparent PNG, so it needs something behind it — a flag you can
      see the far stand through is not a flag. The navy backing sits a hair
      behind each crest cloth. */
@@ -2322,11 +2353,11 @@ function buildFlags(
 
       const isCrest = (i + (side > 0 ? 0 : 1)) % 2 !== 0;
       if (isCrest && crest) {
-        const backing = new THREE.Mesh(geometry, backingMaterial);
+        const backing = new THREE.Mesh(crestGeometry, backingMaterial);
         backing.position.set(x + side * 2.3, roofY + 6.6, z - 0.06);
         group.add(backing);
       }
-      const cloth = new THREE.Mesh(geometry, isCrest ? crestMaterial : material);
+      const cloth = new THREE.Mesh(isCrest ? crestGeometry : geometry, isCrest ? crestMaterial : material);
       cloth.position.set(x + side * 2.3, roofY + 6.6, z);
       cloth.userData.phase = i * 0.7 + (side > 0 ? 1.6 : 0);
       group.add(cloth);
@@ -2617,7 +2648,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          arriving with a direction, a sun in it and a green bounce off the
          grass, instead of arriving flat from everywhere. A brighter frame
          would flatter the change and prove nothing about it.
-         
+
          So this is measured, not chosen. Two frames rendered at 1.0 and 0.6
          against the frame this replaces, over the pitch and the stands
          separately: the added luminance is linear in this number and crosses
@@ -2857,7 +2888,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
 
       // --- stands and flags -------------------------------------------
       /* THE CLUB'S OWN ARTWORK, LOADED RATHER THAN REDRAWN.
-      
+
          Everything else in this scene is painted onto a canvas at runtime,
          which is right for turf and crowds and hoardings — they are patterns,
          and a pattern is cheaper to generate than to ship. A badge is not a
@@ -2865,7 +2896,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          an approximation of a club's own mark drawn from memory is wrong in a
          way nobody has to squint to see. These files are already in the
          project and already served.
-      
+
          The small transparent variants, not the 4K ones: at the size a banner
          occupies these are more resolution than the screen can take, and the
          4K crest alone is 1.9MB. */
@@ -3089,7 +3120,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       scene.add(new THREE.AmbientLight(0xe6effa, 0.1));
 
       /* THE ROOF RING, AND WHY THE SUN CANNOT DO THIS ALONE ANY MORE.
-         
+
          Closing the bowl put the pitch at the bottom of a well. Worked out
          from the geometry: the roof's leading edge stands 56 units up and 70
          out, so from the middle of the field it cuts the sky at 38.7 degrees —
@@ -3097,7 +3128,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          66.3, which the sun does not. Every team area, every bench, every
          steward, the whole strip this ground spends its bottom third on, would
          sit in permanent roof shadow lit by nothing but the sky term.
-         
+
          So the ring lights it, the way a real enclosed ground does: four
          washes angled steeply in from the roof line, one per side. They cross
          over the middle and overlap at the edges, which is what gives a
@@ -3105,7 +3136,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          sun shadow — and it is why the sun below is turned down rather than
          off. It still lights the roofs, the upper tiers and the sky; it just
          no longer has to light the parts it can no longer reach.
-         
+
          None of the four casts a shadow map. One sun already covers the ground
          at 2048, and four more would be four extra depth passes a frame for
          shadows that, being washes from opposite sides, would largely cancel
@@ -3129,7 +3160,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          stands were a single rake set back eight units — and is now solidly
          inside a two-tier stand that reaches a hundred units out. A mast
          embedded in the seating is worse than no mast at all.
-         
+
          An enclosed bowl does not use masts anyway. It lights the pitch from a
          ring along the roof, which is why every roofed ground looks the way it
          does, and the fittings for it are already modelled along each roof's
