@@ -506,42 +506,57 @@ export function createAdBoardTexture(): HTMLCanvasElement | null {
   context.fillStyle = "#0b1422";
   context.fillRect(0, 0, W, H);
 
-  /* Four boards to a tile, alternating a name with a run of chevrons. A band
-     that is nothing but names is unreadable at any distance the camera ever
-     stands at; the chevrons give the eye somewhere to rest between them. */
+  /* THE NAMES GET THE ROOM; THE CHEVRONS GET WHAT IS LEFT.
+
+     This was four equal panels, which gave a nineteen-character club name a
+     256-unit box to live in. Fitted into that, it came out at 29 of these 96
+     units — and one tile of this texture covers 68 world units, so from the
+     middle of the field that name arrived with a CAP HEIGHT OF SEVEN AND A
+     HALF PIXELS. Below about twelve, minification stops resolving letters and
+     starts averaging them, which is why the band read as red smears.
+
+     The chevrons need no room at all — they are a rest between names. Giving
+     the names forty-two per cent of the tile each and the chevrons eight
+     lets the same names set around fifty units, which lands near fourteen
+     pixels. Same band, same rhythm, legible. */
   const boards: ({ kind: "name"; text: string } | { kind: "chevrons" })[] = [
     { kind: "name", text: "HELLENSTEIN RASCALS" },
     { kind: "chevrons" },
     { kind: "name", text: "RASCALS.FOOTBALL" },
     { kind: "chevrons" },
   ];
-  const panelW = W / boards.length;
+  const widths = boards.map((b) => (b.kind === "name" ? 0.42 : 0.08));
+  let x = 0;
 
   boards.forEach((board, i) => {
-    const x = i * panelW;
+    const panelW = W * widths[i];
     const name = board.kind === "name";
     context.fillStyle = name ? "#c4152a" : "#101b2c";
     context.fillRect(x + 3, 4, panelW - 6, H - 8);
 
     if (!name) {
       context.fillStyle = "rgba(231,25,45,0.5)";
-      for (let c = 0; c < 9; c += 1) {
+      const step = 27;
+      for (let c = 0; c * step + 32 < panelW - 6; c += 1) {
         context.beginPath();
-        context.moveTo(x + 16 + c * 27, 8);
-        context.lineTo(x + 32 + c * 27, 8);
-        context.lineTo(x + 22 + c * 27, H - 8);
-        context.lineTo(x + 6 + c * 27, H - 8);
+        context.moveTo(x + 16 + c * step, 8);
+        context.lineTo(x + 32 + c * step, 8);
+        context.lineTo(x + 22 + c * step, H - 8);
+        context.lineTo(x + 6 + c * step, H - 8);
         context.closePath();
         context.fill();
       }
+      x += panelW;
       return;
     }
 
     /* Fitted rather than trusted. Set at a fixed size, the longer name runs
        straight over the edge of its board and collides with the next one,
-       which is exactly what a hoarding never does. */
-    const inner = panelW - 34;
-    let size = 46;
+       which is exactly what a hoarding never does. It starts at 62 now rather
+       than 46: the panel is wide enough that the old ceiling, not the panel,
+       was what held the type down. */
+    const inner = panelW - 28;
+    let size = 62;
     context.textAlign = "center";
     context.textBaseline = "middle";
     do {
@@ -551,6 +566,7 @@ export function createAdBoardTexture(): HTMLCanvasElement | null {
 
     context.fillStyle = "#ffffff";
     context.fillText(board.text, x + panelW / 2, H / 2 + 2);
+    x += panelW;
   });
 
   // The lens glare off a lit board, strongest across the middle.
@@ -564,7 +580,6 @@ export function createAdBoardTexture(): HTMLCanvasElement | null {
   return canvas;
 }
 
-/** A club flag: brand red with the wordmark. */
 export function createFlagTexture(): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
   const W = 512;
@@ -817,6 +832,23 @@ export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement
   if (!context) return null;
   context.scale(SCALE, SCALE);
 
+  /* SIZED FOR THE DISTANCE IT IS READ FROM, NOT FOR THE CANVAS.
+
+     Every line on this board used to be set as though someone were looking at
+     the texture file. They are not: the board hangs a hundred and seventy-odd
+     units away and lands about ninety pixels tall, and a line of type set at
+     34 of these 384 units arrives with a CAP HEIGHT OF SIX PIXELS. Six pixels
+     is under the floor where minification stops resolving a letter and starts
+     averaging it, which is why the header read as a grey smear while the score
+     — the one line already big enough, at twenty pixels — read cleanly.
+
+     So the type is sized backwards from the screen. Roughly thirteen pixels of
+     cap height is the target for everything that has to be read, which on a
+     board this size means nothing smaller than about eighty of these units for
+     a heading and a hundred and fifty for the score. It leaves the board with
+     far fewer, far larger elements, which is what a real board has. */
+  const CAP = 0.72;
+
   context.fillStyle = "#05080e";
   context.fillRect(0, 0, W, H);
 
@@ -825,36 +857,58 @@ export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement
   context.lineWidth = 14;
   context.strokeRect(7, 7, W - 14, H - 14);
 
-  // Header strip.
-  context.fillStyle = "#b3121f";
-  context.fillRect(14, 14, W - 28, 62);
-  context.fillStyle = "#ffffff";
-  context.font = '900 34px Impact, "Arial Narrow", sans-serif';
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.letterSpacing = "12px";
-  context.fillText((data.competition ?? "HELLENSTEIN RASCALS").toUpperCase(), W / 2, 46);
 
-  // The two sides, with a dot-matrix wash so it reads as lamps not print.
+  /* Header strip. Tall enough to carry type that survives the trip: the strip
+     itself grows with the letters, because a 60-unit cap in a 62-unit band is
+     a line of type in a slot. */
+  /* THE VERTICAL BUDGET, SPENT ON PURPOSE.
+
+     384 units, four things in it. Enlarging the type without re-dividing the
+     space put the score's descender straight through the caption underneath
+     it — the letters got bigger and the board got worse. Each band is laid
+     out from its own cap height so the gaps are what is left over rather than
+     what was there before:
+       header strip  14 .. 116
+       labels       144 .. 196   (cap 52)
+       score        218 .. 319   (cap 101)
+       caption      336 .. 369   (cap 33) */
+  const headerH = 102;
+  context.fillStyle = "#b3121f";
+  context.fillRect(14, 14, W - 28, headerH);
+  context.fillStyle = "#ffffff";
+  const header = (data.competition ?? "HELLENSTEIN RASCALS").toUpperCase();
+  /* Fitted, not assumed: the club's name is longer than most opponents' and
+     Impact is not on every machine, so the width that actually gets measured
+     decides the size. */
+  let headerSize = 76;
+  context.letterSpacing = "6px";
+  do {
+    context.font = `900 ${headerSize}px Impact, "Arial Narrow", sans-serif`;
+    headerSize -= 2;
+  } while (headerSize > 34 && context.measureText(header).width > W - 64);
+  context.fillText(header, W / 2, 14 + headerH / 2 + 1);
+
+  // The two sides.
   const label = (text: string, x: number) => {
     context.save();
     context.fillStyle = "#f4a72a";
-    context.letterSpacing = "6px";
-    let size = 46;
-    context.font = `900 ${size}px Impact, "Arial Narrow", sans-serif`;
+    context.letterSpacing = "4px";
+    let size = 72;
     const room = W * 0.44;
-    while (context.measureText(text).width > room && size > 20) {
-      size -= 2;
+    do {
       context.font = `900 ${size}px Impact, "Arial Narrow", sans-serif`;
-    }
-    context.fillText(text, x, 148);
+      size -= 2;
+    } while (size > 30 && context.measureText(text).width > room);
+    context.fillText(text, x, 170);
     context.restore();
   };
   label("RASCALS", W * 0.24);
   label((data.opponent ?? "GAST").toUpperCase(), W * 0.76);
 
   /* The score, which this used to refuse to show.
-     
+
      The two numbers were written here as the literal string "0", so the board
      read 0:0 under every result the schedule could hand it. The caller had
      been passing the real figures the whole time and they were dropped on the
@@ -866,22 +920,31 @@ export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement
   /* Three digits still have to fit the same box a single digit sits in, so a
      56-point win does not run into the colon. */
   const digits = Math.max(score(data.home).length, score(data.away).length);
-  context.font = `900 ${digits > 2 ? 84 : 108}px Impact, "Arial Narrow", sans-serif`;
-  context.fillText(score(data.home), W * 0.24, 246);
-  context.fillText(score(data.away), W * 0.76, 246);
+  context.font = `900 ${digits > 2 ? 110 : 140}px Impact, "Arial Narrow", sans-serif`;
+  context.fillText(score(data.home), W * 0.24, 268);
+  context.fillText(score(data.away), W * 0.76, 268);
 
   context.fillStyle = "#f4a72a";
-  context.font = '900 64px Impact, "Arial Narrow", sans-serif';
-  context.fillText(":", W / 2, 238);
+  context.font = '900 88px Impact, "Arial Narrow", sans-serif';
+  context.fillText(":", W / 2, 260);
 
-  context.fillStyle = "#7f8ea3";
-  context.font = '900 26px Impact, "Arial Narrow", sans-serif';
-  context.letterSpacing = "9px";
-  context.fillText((data.kickoff ?? "LETZTES ERGEBNIS").toUpperCase().slice(0, 46), W / 2, 330);
+  /* Brighter than the grey it was. A caption at this size is carried by its
+     contrast, and #7f8ea3 on near-black loses the fight the moment the board
+     is minified. */
+  context.fillStyle = "#c9d6e6";
+  context.font = '900 46px Impact, "Arial Narrow", sans-serif';
+  context.letterSpacing = "7px";
+  context.fillText((data.kickoff ?? "LETZTES ERGEBNIS").toUpperCase().slice(0, 34), W / 2, 352);
 
-  // Lamp grid: a fine dark lattice over everything, like a real LED board.
-  context.fillStyle = "rgba(0,0,0,0.26)";
-  for (let y = 0; y < H; y += 3) context.fillRect(0, y, W, 1);
+  /* NO LAMP GRID.
+
+     There was a lattice here — a black line every three units, the whole way
+     down — to make the board read as LEDs rather than print. On the texture it
+     works. On the board it cannot: at ninety pixels tall those 128 lines land
+     two thirds of a pixel apart, so they never resolve as a grid and instead
+     average into every glyph, taking about a quarter of the contrast out of
+     the thing they were decorating. An effect that only exists at a
+     magnification the scene never shows is not an effect, it is a blur. */
   return canvas;
 }
 

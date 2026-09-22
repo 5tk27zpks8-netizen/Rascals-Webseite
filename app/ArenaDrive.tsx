@@ -2166,12 +2166,20 @@ const STAND_ROOF_Y = UPPER_BASE + UPPER_ROWS_SIDE * TERRACE_RISER + 5.6;
 const END_ROOF_EDGE_Z = OPP_END_Z - 14 - UPPER_SETBACK + 3.4;
 const BOARD_PLACE = {
   z: END_ROOF_EDGE_Z + 2.2,
-  /* Fourteen below the roof rather than ten. At ten the board is framed well
-     from the own twenty and runs into the HUD bar by the halfway line, because
-     a fixed board climbs the frame as the camera closes on it. Four units
-     lower costs nothing at the start and keeps it clear the whole way down. */
-  y: STAND_ROOF_Y - 14,
-  width: 40,
+  /* Seventeen below the roof, not ten. A fixed board climbs the frame as the
+     camera closes on it, so what is framed well from the own twenty runs into
+     the HUD bar by the halfway line — and the taller board below reaches it
+     sooner. Nineteen keeps the header clear of the bar's fade the whole way
+     down; at seventeen the club's name was still being eaten at the halfway
+     line, which is the one place a board is looked at longest. */
+  y: STAND_ROOF_Y - 19,
+  /* Fifty-two, not forty. Type is only legible at a size, and the board is
+     where the size comes from: at forty units the header arrived six pixels
+     tall, and no amount of redrawing the texture fixes a line that small.
+     Thirty per cent more board is thirty per cent more of every letter on it,
+     and fifty-two across a hundred-and-forty-unit end is what a modern ground
+     hangs anyway. */
+  width: 52,
 };
 
 function buildTieredStand(
