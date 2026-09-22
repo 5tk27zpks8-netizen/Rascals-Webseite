@@ -949,13 +949,18 @@ function buildTerrace(
     roof: boolean;
     boards: import("three").Texture | null;
     faces: CrowdFaces;
+    /* Where the roof's back columns land. A terrace standing on the ground
+       leaves this alone and they run to its own footing; an upper tier sits
+       thirty units up, and without this its columns would stop in mid-air
+       under the deck they are supposed to be holding. */
+    footY?: number;
     /* Picks this stand's crowd. Different per stand so the two touchlines are
        not the same people twice, fixed per stand so a build can be compared
        against another build rather than against a reshuffle. */
     seed: number;
   },
 ) {
-  const { length, rows, base, roof, boards, seed, faces } = options;
+  const { length, rows, base, roof, boards, seed, faces, footY } = options;
   const group = new THREE.Group();
   const depth = rows * TERRACE_TREAD;
   const top = base + rows * TERRACE_RISER;
@@ -1090,7 +1095,8 @@ function buildTerrace(
        it up never moves against what is behind it. */
     const bays = Math.max(3, Math.round(length / 21));
     const trussGeometry = new THREE.BoxGeometry(depth + 6, 0.42, 0.42);
-    const columnGeometry = new THREE.CylinderGeometry(0.42, 0.52, roofY - (base - 4.2), 8);
+    const columnFoot = footY ?? base - 4.2;
+    const columnGeometry = new THREE.CylinderGeometry(0.42, 0.52, roofY - columnFoot, 8);
     for (let i = 0; i <= bays; i += 1) {
       const z = -half + (i * length) / bays;
 
@@ -1104,7 +1110,7 @@ function buildTerrace(
       group.add(brace);
 
       const column = new THREE.Mesh(columnGeometry, steel);
-      column.position.set(depth + 4.4, (roofY + base - 4.2) / 2, z);
+      column.position.set(depth + 4.4, (roofY + columnFoot) / 2, z);
       group.add(column);
     }
   }
@@ -1659,21 +1665,104 @@ function buildSideline(
   return group;
 }
 
+/* THE TOUCHLINE STANDS, IN TWO TIERS.
+ *
+ * A single rake of fifteen rows is a grandstand. What makes a ground read as
+ * big is the stack: a lower bowl, a band of boxes across the middle, and an
+ * upper tier set back and cantilevered out over the back of the lower one. It
+ * is the band that does most of the work — one horizontal line dividing the
+ * crowd into two masses is what the eye reads as scale, far more than simply
+ * adding rows to a single rake would.
+ *
+ * The heights are worked out rather than chosen. The lower tier's back row
+ * tops out at 19.5 and a spectator standing there reaches about 21.4, so the
+ * upper tier's soffit has to clear that: at a base of 26 it would leave twenty
+ * centimetres of headroom over the last row, which is a ceiling people would
+ * hit. Thirty-one leaves nearly three metres.
+ */
+const LOWER_ROWS = 14;
+const LOWER_BASE = 4.4;
+const UPPER_ROWS = 18;
+const UPPER_BASE = 31;
+/** How far back the upper tier's front edge sits, overhanging the lower one. */
+const UPPER_SETBACK = 15;
+/** The roof rides on the upper tier now, not the lower. */
+const STAND_ROOF_Y = UPPER_BASE + UPPER_ROWS * TERRACE_RISER + 5.6;
+
 function buildStand(
   THREE: Three,
   boards: import("three").Texture | null,
   faces: CrowdFaces,
   side: 1 | -1,
 ) {
-  const group = buildTerrace(THREE, {
-    length: FIELD_LONG + 40,
-    rows: 15,
-    base: 4.4,
-    roof: true,
+  const length = FIELD_LONG + 40;
+  const group = new THREE.Group();
+
+  // The lower bowl. No roof of its own — the upper tier is its roof.
+  group.add(buildTerrace(THREE, {
+    length,
+    rows: LOWER_ROWS,
+    base: LOWER_BASE,
+    roof: false,
     boards,
     faces,
     seed: side > 0 ? 0x5eed01 : 0x5eed02,
+  }));
+
+  /* The band between the tiers: a run of boxes behind glass, which is what
+     sits there in every two-tier ground and what gives the stand its dividing
+     line. Built here rather than inside buildTerrace because it belongs to the
+     gap between two of them and to neither one. */
+  const lowerTop = LOWER_BASE + LOWER_ROWS * TERRACE_RISER;
+  const bandHeight = UPPER_BASE - 4.2 - lowerTop;
+  const bandX = UPPER_SETBACK + 1.2;
+  const concrete = new THREE.MeshStandardMaterial({ color: 0x6f7784, roughness: 0.92 });
+
+  const band = new THREE.Mesh(new THREE.BoxGeometry(2.4, bandHeight, length), concrete);
+  band.position.set(bandX, lowerTop + bandHeight / 2, 0);
+  band.castShadow = true;
+  band.receiveShadow = true;
+  group.add(band);
+
+  /* The glass. Dark and slightly reflective: from the pitch a box front is a
+     black band with the sky in it, and that near-black is the strongest
+     horizontal in the whole stand. */
+  const glass = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, bandHeight * 0.62, length - 2),
+    new THREE.MeshStandardMaterial({ color: 0x141a26, roughness: 0.18, metalness: 0.55 }),
+  );
+  glass.position.set(bandX - 1.25, lowerTop + bandHeight * 0.55, 0);
+  group.add(glass);
+
+  // Mullions, so the glazing reads as a row of boxes rather than one long pane.
+  const mullions = Math.max(6, Math.round(length / 7));
+  const mullion = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.42, bandHeight * 0.66, 0.34), concrete, mullions,
+  );
+  const put = new THREE.Object3D();
+  for (let i = 0; i < mullions; i += 1) {
+    put.position.set(bandX - 1.3, lowerTop + bandHeight * 0.55, -length / 2 + (length * (i + 0.5)) / mullions);
+    put.updateMatrix();
+    mullion.setMatrixAt(i, put.matrix);
+  }
+  mullion.instanceMatrix.needsUpdate = true;
+  mullion.castShadow = true;
+  group.add(mullion);
+
+  // The upper tier, set back and carrying the roof.
+  const upper = buildTerrace(THREE, {
+    length,
+    rows: UPPER_ROWS,
+    base: UPPER_BASE,
+    roof: true,
+    boards,
+    faces,
+    seed: side > 0 ? 0x5eed11 : 0x5eed12,
+    // Its columns have to reach the ground, not its own thirty-unit footing.
+    footY: 0,
   });
+  upper.position.x = UPPER_SETBACK;
+  group.add(upper);
   /* Set back far enough that a sideline fits in front of it. At the eight
      units this used to sit at there were four metres between the touchline
      and the wall — a corridor, not a team area, and everything a televised
@@ -1842,13 +1931,17 @@ function buildFlags(
   const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x9aa7b8, roughness: 0.5, metalness: 0.5 });
   const poleGeometry = new THREE.CylinderGeometry(0.11, 0.11, 8.4, 8);
 
-  // The lip of the touchline roofs, worked out the same way the terrace does.
-  const roofY = 4.4 + 15 * TERRACE_RISER + 5.6;
+  /* The lip of the touchline roofs. Read from the stand's own constants
+     rather than recomputed here, which is what went wrong twice: this line
+     held a hard-coded eight-unit setback after the stands moved back for the
+     team areas, and a single-tier roof height after they went two-tier. Both
+     times every flag in the ground ended up somewhere the roof was not. */
+  const roofY = STAND_ROOF_Y;
   /* The lip moved when the stands did. This still read 8 after the touchline
      stands were set back to make room for the team areas, which left every
      flag in the ground hanging five units inboard of the roof it is supposed
      to stand on. */
-  const lipX = FIELD_WIDE / 2 + SIDELINE_DEPTH - 3.4;
+  const lipX = FIELD_WIDE / 2 + SIDELINE_DEPTH + UPPER_SETBACK - 3.4;
 
   for (let i = 0; i < 13; i += 1) {
     const z = 8 - i * 17;
