@@ -1676,6 +1676,200 @@ function buildSideline(
   return group;
 }
 
+/**
+ * THE ROOF, AS ONE RING INSTEAD OF EIGHT SLABS.
+ *
+ * Every terrace used to build its own rectangular roof. Four of those meet
+ * four more at the corners, at forty-five degrees, each one carrying on past
+ * where its neighbour starts — so the corners came out as a pile of
+ * overlapping plates with wedges of sky between them. No amount of nudging
+ * eight rectangles fixes that: rectangles that meet at an angle either gap or
+ * overlap, and usually both.
+ *
+ * A stadium roof is not eight plates. It is one surface with a hole in it, and
+ * that is what this builds: an octagonal slab following the bowl's footprint,
+ * with an octagonal opening over the pitch. One piece of geometry, so the
+ * corners cannot gap — there is nothing there to gap between.
+ *
+ * The opening is what the eye actually reads. Its edge runs unbroken all the
+ * way round, and because it is a single closed path the fascia beam under it
+ * and the run of lamps along it follow the same line, mitred at the corners by
+ * construction rather than by hand.
+ */
+
+/** A rounded-off rectangle in plan, as the bowl's footprint actually is. */
+function octagonPoints(halfX: number, zMin: number, zMax: number, chamfer: number) {
+  const x = halfX;
+  const c = chamfer;
+  /* Shape space is (sx, sy) and the slab is extruded along +z, then turned a
+     quarter about X so the extrusion stands up. That turn sends (x, y, z) to
+     (x, z, -y), so shape-y has to carry NEGATED world z or the whole roof
+     comes out mirrored end for end. */
+  const pts: Array<[number, number]> = [
+    [-x + c, -zMax], [x - c, -zMax],
+    [x, -zMax + c], [x, -zMin - c],
+    [x - c, -zMin], [-x + c, -zMin],
+    [-x, -zMin - c], [-x, -zMax + c],
+  ];
+  return pts;
+}
+
+function ringShape(
+  THREE: Three,
+  outer: Array<[number, number]>,
+  inner: Array<[number, number]>,
+) {
+  const shape = new THREE.Shape();
+  outer.forEach(([px, py], i) => (i === 0 ? shape.moveTo(px, py) : shape.lineTo(px, py)));
+  shape.closePath();
+
+  const hole = new THREE.Path();
+  inner.forEach(([px, py], i) => (i === 0 ? hole.moveTo(px, py) : hole.lineTo(px, py)));
+  hole.closePath();
+  shape.holes.push(hole);
+  return shape;
+}
+
+/** Walk a closed polygon, handing back evenly spaced points and headings. */
+function walkPolygon(points: Array<[number, number]>, spacing: number) {
+  const out: Array<{ x: number; z: number; angle: number }> = [];
+  for (let i = 0; i < points.length; i += 1) {
+    const [ax, ay] = points[i];
+    const [bx, by] = points[(i + 1) % points.length];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len = Math.hypot(dx, dy);
+    const steps = Math.max(1, Math.round(len / spacing));
+    for (let s = 0; s < steps; s += 1) {
+      const t = (s + 0.5) / steps;
+      out.push({
+        x: ax + dx * t,
+        // Shape-y is negated world z; undo that coming back out.
+        z: -(ay + dy * t),
+        angle: Math.atan2(dx, -dy),
+      });
+    }
+  }
+  return out;
+}
+
+function buildRoofRing(THREE: Three, roofY: number) {
+  const group = new THREE.Group();
+
+  const steel = new THREE.MeshStandardMaterial({ color: 0x59657a, roughness: 0.52, metalness: 0.5 });
+  const sheet = new THREE.MeshStandardMaterial({ color: 0x38414f, roughness: 0.88 });
+
+  /* Worked out from the stands rather than written down, so that moving a
+     stand moves its roof with it — which is exactly the drift that has caught
+     the flags twice already. */
+  const sideFront = FIELD_WIDE / 2 + SIDELINE_DEPTH;
+  const innerX = sideFront + UPPER_SETBACK - 3.4;
+  const outerX = sideFront + UPPER_SETBACK + UPPER_ROWS_SIDE * TERRACE_TREAD + 6;
+  const innerZMax = OWN_END_Z + 14 + UPPER_SETBACK - 3.4;
+  const innerZMin = OPP_END_Z - 14 - UPPER_SETBACK + 3.4;
+  const outerZMax = OWN_END_Z + 14 + UPPER_SETBACK + UPPER_ROWS_END * TERRACE_TREAD + 6;
+  const outerZMin = OPP_END_Z - 14 - UPPER_SETBACK - UPPER_ROWS_END * TERRACE_TREAD - 6;
+
+  const inner = octagonPoints(innerX, innerZMin, innerZMax, 30);
+  const outer = octagonPoints(outerX, outerZMin, outerZMax, 46);
+
+  // --- the deck --------------------------------------------------------
+  const deck = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(ringShape(THREE, outer, inner), {
+      depth: 0.8,
+      bevelEnabled: false,
+    }),
+    sheet,
+  );
+  deck.rotation.x = -Math.PI / 2;
+  deck.position.y = roofY;
+  deck.castShadow = true;
+  deck.receiveShadow = true;
+  group.add(deck);
+
+  /* The fascia under the leading edge. A roof that ends on a cut line is a
+     plane; a roof with a beam under it is a building, and the beam is the only
+     thing in the picture that traces the opening all the way round. */
+  const fasciaOuter = octagonPoints(innerX + 1.7, innerZMin - 1.7, innerZMax + 1.7, 30);
+  const fascia = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(ringShape(THREE, fasciaOuter, inner), {
+      depth: 2.1,
+      bevelEnabled: false,
+    }),
+    steel,
+  );
+  fascia.rotation.x = -Math.PI / 2;
+  fascia.position.y = roofY;
+  fascia.castShadow = true;
+  group.add(fascia);
+
+  // --- the lamps along the opening --------------------------------------
+  const lampSpots = walkPolygon(inner, 11);
+  const lamps = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(2.4, 0.3, 0.9),
+    new THREE.MeshStandardMaterial({
+      color: 0x2c3340,
+      roughness: 0.4,
+      metalness: 0.3,
+      emissive: new THREE.Color(0xfff0d0),
+      emissiveIntensity: 1.6,
+    }),
+    lampSpots.length,
+  );
+  const put = new THREE.Object3D();
+  lampSpots.forEach((spot, i) => {
+    put.position.set(spot.x, roofY - 2.4, spot.z);
+    put.rotation.set(0, spot.angle, 0);
+    put.updateMatrix();
+    lamps.setMatrixAt(i, put.matrix);
+  });
+  lamps.instanceMatrix.needsUpdate = true;
+  lamps.computeBoundingSphere();
+  group.add(lamps);
+
+  // --- what holds it up ---------------------------------------------------
+  /* Columns round the back. They are mostly hidden behind the upper tier, and
+     they are what stops the roof reading as a lid resting on nothing when the
+     camera catches the gap between two stands. */
+  const columnSpots = walkPolygon(outer, 23);
+  const columns = new THREE.InstancedMesh(
+    new THREE.CylinderGeometry(0.42, 0.55, roofY, 8),
+    steel,
+    columnSpots.length,
+  );
+  columnSpots.forEach((spot, i) => {
+    put.position.set(spot.x, roofY / 2, spot.z);
+    put.rotation.set(0, 0, 0);
+    put.updateMatrix();
+    columns.setMatrixAt(i, put.matrix);
+  });
+  columns.instanceMatrix.needsUpdate = true;
+  columns.castShadow = true;
+  columns.computeBoundingSphere();
+  group.add(columns);
+
+  /* Trusses spanning the ring, following the opening so they fan round the
+     corners the way the structure actually would. */
+  const trussSpots = walkPolygon(inner, 19);
+  const span = outerX - innerX;
+  const trusses = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.42, 0.42, span), steel, trussSpots.length,
+  );
+  trussSpots.forEach((spot, i) => {
+    const nx = Math.sin(spot.angle + Math.PI / 2);
+    const nz = Math.cos(spot.angle + Math.PI / 2);
+    put.position.set(spot.x + nx * span * 0.5, roofY - 0.9, spot.z + nz * span * 0.5);
+    put.rotation.set(0, spot.angle + Math.PI / 2, 0);
+    put.updateMatrix();
+    trusses.setMatrixAt(i, put.matrix);
+  });
+  trusses.instanceMatrix.needsUpdate = true;
+  trusses.computeBoundingSphere();
+  group.add(trusses);
+
+  return group;
+}
+
 /* A TWO-TIER STAND, AND THE SAME ONE ALL THE WAY ROUND.
  *
  * A single rake of fifteen rows is a grandstand. What makes a ground read as
@@ -1775,12 +1969,14 @@ function buildTieredStand(
   mullion.castShadow = true;
   group.add(mullion);
 
-  // The upper tier, set back and carrying the roof.
+  /* The upper tier, set back. It no longer carries a roof of its own: the
+     ring does, in one piece, for the whole ground — see buildRoofRing. Eight
+     separate plates could not meet at the corners without gapping. */
   const upper = buildTerrace(THREE, {
     length,
     rows: upperRows,
     base: UPPER_BASE,
-    roof: true,
+    roof: false,
     boards,
     faces,
     seed: seed + 0x10,
@@ -2569,6 +2765,10 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       /* The way out onto the field, set in the end the drive travels towards
          so it is in shot for the journey rather than behind the camera. */
       scene.add(buildPlayerTunnel(THREE, OPP_END_Z - 13));
+
+      /* One roof over the whole bowl, put in after the stands so it reads as
+         sitting on them. */
+      scene.add(buildRoofRing(THREE, STAND_ROOF_Y));
 
       /* Close the bowl. The four corner chamfers meet the touchline fronts at
          x = ±(half the field + the sideline) and the end fronts at the z the
