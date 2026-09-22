@@ -7,6 +7,7 @@ import {
   FIELD_YARDS_WIDE,
   createAdBoardTexture,
   createCloudTexture,
+  createClothTexture,
   createFlagTexture,
   createSoftDotTexture,
   createCrowdFaceTexture,
@@ -52,6 +53,12 @@ const FIELD_WIDE = FIELD_YARDS_WIDE * YARD;
     never again be cut to a shape the artwork does not fit. */
 const CREST_ASPECT = 1555 / 1011;
 const WORDMARK_ASPECT = 1649 / 311;
+
+/** A roof banner's cloth. Written once, because the texture that gets printed
+    and the sheet it gets printed on have to agree — and a stretched mark is
+    exactly the bug this file has already had once. */
+const BANNER_W = 6.2;
+const BANNER_H = 9.0;
 
 /** Our goal line sits at z = 0; the drive runs towards negative z. */
 const OWN_GOAL_Z = 0;
@@ -1761,8 +1768,8 @@ function walkPolygon(points: Array<[number, number]>, spacing: number) {
 function buildRoofRing(
   THREE: Three,
   roofY: number,
-  crest: import("three").Texture | null,
-  wordmark: import("three").Texture | null,
+  crestCloth: import("three").Texture | null,
+  wordCloth: import("three").Texture | null,
 ) {
   const group = new THREE.Group();
 
@@ -1781,6 +1788,10 @@ function buildRoofRing(
   const outerZMin = OPP_END_Z - 14 - UPPER_SETBACK - UPPER_ROWS_END * TERRACE_TREAD - 6;
 
   const inner = octagonPoints(innerX, innerZMin, innerZMax, 30);
+  /* The masts stand on this same line, handed out rather than recomputed.
+     buildFlags used to work the lip out for itself, and drifted off the roof
+     twice doing it — once when the stands moved back for the team areas, once
+     when they went two-tier. One polygon, one answer. */
   const outer = octagonPoints(outerX, outerZMin, outerZMax, 46);
 
   // --- the deck --------------------------------------------------------
@@ -1861,82 +1872,91 @@ function buildRoofRing(
      there are twelve, and the roof still looks like a roof. */
   const bannerSpots = walkPolygon(inner, 60);
 
-  /* SIZED FROM THE ARTWORK, NOT GUESSED AT.
+  /* CLOTH, NOT A SIGN.
 
-     The crest file is 1555 by 1011 — half again as wide as it is tall — and it
-     was being mapped onto a panel 6.4 wide by 8.2 high. That is an aspect of
-     0.78 against 1.54, so every badge on the roof was squeezed to almost
-     exactly half its proper width. It is the kind of mistake that is invisible
-     in the source and obvious the moment anyone looks at the thing.
+     These were flat planes with a picture on them, and that is exactly how
+     they read: rectangles with a logo inside. A banner does not become a
+     banner by being given a better picture — what says cloth is the shape,
+     and a plane has none.
 
-     So the panel heights are DERIVED from the artwork's own proportions. A
-     width is chosen; the height follows. Swapping either file for one shaped
-     differently cannot bring the squash back. */
+     So each one is a subdivided sheet with drape pushed through it in the
+     vertex shader, hung off a rail, with the marks printed INTO the cloth
+     rather than floated in front of it. Two layers folding independently
+     would cross, and the badge would flicker through its own backing. */
+  /* Twelve segments across carry the folds; the drop needs only a few, since
+     the fold runs the full height and the ramp down it is smooth. */
+  const bannerGeometry = new THREE.PlaneGeometry(BANNER_W, BANNER_H, 18, 8);
 
-  const crestWidth = 6.0;
-  const wordWidth = 6.6;
-  const bannerGeometry = new THREE.PlaneGeometry(crestWidth, crestWidth / CREST_ASPECT);
-  const wordGeometry = new THREE.PlaneGeometry(wordWidth, wordWidth / WORDMARK_ASPECT);
-  /* The cloth behind them, a shape that suits both: wide enough for the
-     wordmark, tall enough that a crest is not floating on bare navy. */
-  const backingGeometry = new THREE.PlaneGeometry(7.2, 6.0);
+  const bannerCloth: Omit<ClothOptions, "hold"> & { hold: "hang" } = {
+    hold: "hang", width: BANNER_W, height: BANNER_H,
+    amplitude: 0.42, folds: 2.6, cross: 0.26, sag: 0.12, speed: 1.15,
+    instanced: true,
+  };
+  const panels = [crestCloth, wordCloth].map((map) => {
+    const material = new THREE.MeshStandardMaterial({ map, roughness: 0.84, side: THREE.DoubleSide });
+    const time = makeCloth(THREE, material, bannerCloth);
+    return { material, time };
+  });
+
   /* Hung straight off the fascia rather than floating below it. */
-  const bannerY = roofY - 2.1 - 3.0;
+  const railY = roofY - 2.1;
+  const bannerY = railY - BANNER_H / 2 - 0.25;
 
-  const backings = new THREE.InstancedMesh(
-    backingGeometry,
-    new THREE.MeshStandardMaterial({ color: 0x21254b, roughness: 0.82, side: THREE.DoubleSide }),
+  const meshes = panels.map(
+    (p, k) =>
+      new THREE.InstancedMesh(
+        bannerGeometry,
+        p.material,
+        k === 0 ? Math.ceil(bannerSpots.length / 2) : Math.floor(bannerSpots.length / 2),
+      ),
+  );
+  for (const mesh of meshes) mesh.count = 0;
+
+  /* The rail each one hangs from. Without it a banner is a sheet stopping in
+     mid-air below the roof; with it there is something holding it, and the
+     eye stops asking. */
+  const railGeometry = new THREE.CylinderGeometry(0.09, 0.09, BANNER_W + 0.5, 6);
+  railGeometry.rotateZ(Math.PI / 2);
+  const rails = new THREE.InstancedMesh(
+    railGeometry,
+    new THREE.MeshStandardMaterial({ color: 0x8d99a8, roughness: 0.5, metalness: 0.55 }),
     bannerSpots.length,
   );
-  const crestPanels = new THREE.InstancedMesh(
-    bannerGeometry,
-    new THREE.MeshStandardMaterial({
-      map: crest, transparent: true, roughness: 0.8, side: THREE.DoubleSide,
-    }),
-    Math.ceil(bannerSpots.length / 2),
-  );
-  const wordPanels = new THREE.InstancedMesh(
-    wordGeometry,
-    new THREE.MeshStandardMaterial({
-      map: wordmark, transparent: true, roughness: 0.8, side: THREE.DoubleSide,
-    }),
-    Math.floor(bannerSpots.length / 2) + 1,
-  );
-  crestPanels.count = 0;
-  wordPanels.count = 0;
 
   bannerSpots.forEach((spot, i) => {
     /* Turned to face the pitch. walkPolygon hands back the heading along the
        edge, so the face of a banner on it is that heading turned a quarter. */
     const facing = spot.angle + Math.PI / 2;
-    put.position.set(spot.x, bannerY, spot.z);
+    /* A nudge IN FRONT of the fascia, and the sign matters: a plane's normal
+       after a Y rotation is (sin, 0, cos), so the pitch-facing side is plus
+       that, not minus. Subtracted, every banner sat inside the roof it hangs
+       from and the ring came out bare. */
+    const nx = Math.sin(facing) * 0.3;
+    const nz = Math.cos(facing) * 0.3;
+
+    put.position.set(spot.x + nx, railY, spot.z + nz);
     put.rotation.set(0, facing, 0);
     put.updateMatrix();
-    backings.setMatrixAt(i, put.matrix);
+    rails.setMatrixAt(i, put.matrix);
 
-    /* A nudge IN FRONT of the backing, and the sign matters: a plane's normal
-       after a Y rotation is (sin, 0, cos), so the pitch-facing side is plus
-       that, not minus. Subtracted, every crest sat a tenth of a unit behind
-       its own navy backing and the banners came out as blank rectangles. */
-    const nx = Math.sin(facing) * 0.12;
-    const nz = Math.cos(facing) * 0.12;
     put.position.set(spot.x + nx, bannerY, spot.z + nz);
     put.updateMatrix();
-    if (i % 2 === 0) {
-      crestPanels.setMatrixAt(crestPanels.count, put.matrix);
-      crestPanels.count += 1;
-    } else {
-      wordPanels.setMatrixAt(wordPanels.count, put.matrix);
-      wordPanels.count += 1;
-    }
+    const mesh = meshes[i % 2];
+    mesh.setMatrixAt(mesh.count, put.matrix);
+    mesh.count += 1;
   });
 
-  for (const mesh of [backings, crestPanels, wordPanels]) {
+  for (const mesh of [...meshes, rails]) {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.castShadow = true;
     mesh.computeBoundingSphere();
     group.add(mesh);
   }
+  group.userData.times = panels.map((p) => p.time);
+  /* Spaced tighter than the banners: a mast is a thin thing against the sky
+     and a handful of them scattered round a ring this size reads as an
+     accident rather than a roofline. */
+  group.userData.flagSpots = walkPolygon(inner, 38);
 
   // --- what holds it up ---------------------------------------------------
   /* Columns round the back. They are mostly hidden behind the upper tier, and
@@ -2288,6 +2308,155 @@ function buildEndStand(
 }
 
 /**
+ * Turns a standard material into cloth.
+ *
+ * A flag was a PlaneGeometry with a picture on it, swinging a few degrees
+ * about its middle. That is a sign on a hinge, and it read as one: a rigid
+ * rectangle with a logo inside. No amount of texture work fixes it, because
+ * the thing that says "cloth" is not the pattern — it is the shape, and a
+ * plane has none.
+ *
+ * So the plane is subdivided and a travelling wave is pushed through it in the
+ * vertex shader. Two things make it convince:
+ *
+ *  - The amplitude RAMPS FROM THE ANCHOR. A flag is nailed to its pole and
+ *    free at the fly end, so the wave has to be zero at one edge and largest
+ *    at the other. Waving the whole sheet evenly looks like a bedsheet on a
+ *    line, not a flag on a mast.
+ *
+ *  - The NORMAL IS RECOMPUTED, analytically, from the same expression. This
+ *    is the half that actually matters. Displacing vertices while leaving the
+ *    normals pointing flat out gives you a wavy silhouette painted in flat
+ *    light — the folds are visible at the edge and invisible across the face.
+ *    Differentiating the wave costs two cosines and buys the self-shading that
+ *    makes a fold read as a fold.
+ *
+ * The plane's local frame makes the derivative exact rather than approximate:
+ * the surface is z = f(x, y) with tangents along x and y, so the normal is
+ * just (-df/dx, -df/dy, 1). No tangent basis, no finite differences.
+ *
+ * The phase comes out of the object's own position in the world, which means
+ * one material can serve every flag in the ground: no per-mesh uniform, no
+ * clone per instance, one number updated per frame. Instanced meshes read it
+ * from the instance matrix instead, so a whole ring of banners animates out of
+ * step with itself for free.
+ */
+type ClothOptions = {
+  /** "hoist" is held along its -x edge (a flag on a pole); "hang" along its
+   *  +y edge (a banner off a rail). */
+  hold: "hoist" | "hang";
+  /** Cloth width, and for a flag the distance from hoist to fly. */
+  width: number;
+  /** Cloth height, and for a banner the drop from the rail. */
+  height: number;
+  /** How far the free edge travels, in scene units. */
+  amplitude: number;
+  /** Folds across the width. */
+  folds: number;
+  /** Strength of the slower ripple down the height, against the folds. */
+  cross: number;
+  /** How far the free edge falls away under its own weight. */
+  sag: number;
+  /** Beats per second. */
+  speed: number;
+  /** True when the mesh is instanced, so the phase must come from the
+   *  instance matrix rather than the model matrix. */
+  instanced?: boolean;
+};
+
+function makeCloth(
+  THREE: Three,
+  material: import("three").MeshStandardMaterial,
+  o: ClothOptions,
+) {
+  const time = { value: 0 };
+  const origin = o.instanced ? "instanceMatrix[3].xyz" : "modelMatrix[3].xyz";
+
+  /* THE FOLD RUNS ACROSS THE WIDTH IN BOTH CASES; WHAT DIFFERS IS WHERE IT
+     GROWS FROM.
+
+     A flag is held at the hoist, so the fold is zero at the mast and largest
+     at the fly: the ramp runs along the same axis as the fold. A banner is
+     held along a rail at the top and hangs, so the fold is zero at the rail
+     and largest at the hem: the ramp runs down the drop, ACROSS the fold.
+     That is drape, and it is what separates a hanging banner from a flag —
+     getting it wrong gives a banner horizontal corrugations, which is a
+     roller blind. */
+  const ramp =
+    o.hold === "hoist"
+      ? `clamp((position.x + ${(o.width / 2).toFixed(4)}) * ${(1 / o.width).toFixed(6)}, 0.0, 1.0)`
+      : `clamp((${(o.height / 2).toFixed(4)} - position.y) * ${(1 / o.height).toFixed(6)}, 0.0, 1.0)`;
+  /* d(ramp)/dx and d(ramp)/dy: one of the two is zero, and dropping the other
+     flattens the light exactly where the cloth moves most. */
+  const dRampX = o.hold === "hoist" ? (1 / o.width).toFixed(6) : "0.0";
+  const dRampY = o.hold === "hoist" ? "0.0" : (-1 / o.height).toFixed(6);
+  const foldK = ((o.folds * Math.PI * 2) / o.width).toFixed(6);
+  const crossK = (Math.PI * 2 / Math.max(o.height, 0.001)).toFixed(6);
+  /* A flag's wave travels out to the fly; a banner's folds mostly stay put and
+     breathe. */
+  const travel = o.hold === "hoist" ? o.speed : o.speed * 0.35;
+
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uClothTime = time;
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nuniform float uClothTime;")
+      /* beginnormal_vertex runs before begin_vertex and both are inlined into
+         the same main(), so the surface is solved once here and each result is
+         used where it belongs. */
+      .replace(
+        "#include <beginnormal_vertex>",
+        `vec3 clothRoot = ${origin};
+float clothPhase = clothRoot.z * 0.31 + clothRoot.x * 0.047;
+float clothU = ${ramp};
+float clothAmp = ${o.amplitude.toFixed(4)} * clothU * clothU;
+float clothA = position.x * ${foldK} - uClothTime * ${travel.toFixed(3)} + clothPhase;
+float clothB = position.y * ${crossK} + uClothTime * ${(o.speed * 0.29).toFixed(3)} + clothPhase * 1.7;
+float clothW = sin(clothA) + ${o.cross.toFixed(3)} * sin(clothB);
+float clothZ = clothAmp * clothW;
+/* Differentiated from the expression above rather than sampled around it, so
+   the folds light correctly instead of being a wavy silhouette in flat light.
+   The plane's local frame makes this exact: the surface is z = f(x, y) with
+   tangents along x and y, so the normal is just (-df/dx, -df/dy, 1). */
+float clothDA = ${o.amplitude.toFixed(4)} * 2.0 * clothU;
+float clothDX = clothDA * ${dRampX} * clothW + clothAmp * ${foldK} * cos(clothA);
+float clothDY = clothDA * ${dRampY} * clothW
+  + clothAmp * ${o.cross.toFixed(3)} * ${crossK} * cos(clothB);
+vec3 objectNormal = normalize(vec3(-clothDX, -clothDY, 1.0));
+#ifdef USE_TANGENT
+  vec3 objectTangent = vec3( tangent.xyz );
+#endif`,
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `vec3 transformed = vec3( position );
+transformed.z += clothZ;
+/* Cloth has a fixed length, so a sheet that folds has to pull its free edge
+   back towards whatever holds it. Leave it out and the cloth stretches as it
+   moves. */
+${
+          o.hold === "hoist"
+            ? /* The fly end is dragged back towards the mast. */
+              "transformed.x -= 0.5 * clothAmp * abs(clothW);"
+            : /* The folds run ACROSS a hanging banner, so its width is what
+                 the folds eat: both edges come in towards the middle, which is
+                 what stops the sides being two ruled lines. The hem lifts as
+                 well, because the drape shortens the drop. */
+              `transformed.x -= sign(position.x) * 0.55 * clothAmp * abs(clothW);
+transformed.y += 0.3 * clothAmp * abs(clothW);`
+        }
+/* And it has weight. */
+transformed.y -= ${o.sag.toFixed(4)} * clothU * clothU;`,
+      );
+  };
+  /* Three.js keys its program cache on the material's own settings, which know
+     nothing about what onBeforeCompile just did. Without this every cloth in
+     the scene would be handed whichever variant compiled first. */
+  material.customProgramCacheKey = () =>
+    `cloth:${o.hold}:${o.width}:${o.height}:${o.amplitude}:${o.folds}:${o.cross}:${o.sag}:${o.speed}:${o.instanced ? 1 : 0}`;
+  return time;
+}
+
+/**
  * Club flags along the front edge of both roofs.
  *
  * These used to stand on the touchline at head height, which was fine when the
@@ -2300,69 +2469,80 @@ function buildEndStand(
 function buildFlags(
   THREE: Three,
   flag: import("three").Texture,
-  crest: import("three").Texture | null,
+  crestCloth: import("three").Texture | null,
+  spots: { x: number; z: number; angle: number }[],
+  roofY: number,
 ) {
   const group = new THREE.Group();
-  const geometry = new THREE.PlaneGeometry(4.4, 2.8);
-  /* The crest flag takes its shape from the crest file rather than sharing the
-     wordmark flag's cloth — a couple of per cent out here, but it is the same
-     mistake that squeezed the roof banners to half width, and deriving it
-     costs nothing. */
-  const crestGeometry = new THREE.PlaneGeometry(4.4, 4.4 / CREST_ASPECT);
+  const times: { value: number }[] = [];
+
+  /* SUBDIVIDED, BECAUSE THE WAVE LIVES IN THE VERTICES.
+     A flag is about twenty-five pixels across from the far end of the field,
+     so twenty-four segments along the span is roughly one per pixel — enough
+     that a fold is a curve rather than a crease, and well short of the point
+     where more would show. */
+  const SPAN = 5.6;
+  const DROP = 3.6;
+  const geometry = new THREE.PlaneGeometry(SPAN, DROP, 24, 10);
+  /* The crest cloth takes its shape from the crest file rather than sharing
+     the wordmark flag's proportions. */
+  const crestDrop = SPAN / CREST_ASPECT;
+  const crestGeometry = new THREE.PlaneGeometry(SPAN, crestDrop, 24, 10);
+
   /* Two cloths, alternating round the roof. A roofline of identical flags is
      bunting: it repeats, and once the eye finds the period it stops reading
      them as flags. */
-  const material = new THREE.MeshStandardMaterial({ map: flag, side: THREE.DoubleSide, roughness: 0.85 });
-  /* The crest flags carry the club's own file rather than a drawn likeness of
-     it. A badge has a specific shape that is either right or wrong, and an
-     approximation from memory is wrong in a way nobody has to squint at.
-
-     It is a transparent PNG, so it needs something behind it — a flag you can
-     see the far stand through is not a flag. The navy backing sits a hair
-     behind each crest cloth. */
-  const crestMaterial = crest
-    ? new THREE.MeshStandardMaterial({
-        map: crest, side: THREE.DoubleSide, roughness: 0.85, transparent: true,
-      })
-    : material;
-  const backingMaterial = new THREE.MeshStandardMaterial({
-    color: 0x21254b, side: THREE.DoubleSide, roughness: 0.88,
+  const material = new THREE.MeshStandardMaterial({
+    map: flag, side: THREE.DoubleSide, roughness: 0.88,
   });
-  const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x9aa7b8, roughness: 0.5, metalness: 0.5 });
-  const poleGeometry = new THREE.CylinderGeometry(0.11, 0.11, 8.4, 8);
+  const cloth: ClothOptions = {
+    hold: "hoist", width: SPAN, height: DROP,
+    amplitude: 0.72, folds: 1.35, cross: 0.42, sag: 0.4, speed: 3.4,
+  };
+  times.push(makeCloth(THREE, material, cloth));
 
-  /* The lip of the touchline roofs. Read from the stand's own constants
-     rather than recomputed here, which is what went wrong twice: this line
-     held a hard-coded eight-unit setback after the stands moved back for the
-     team areas, and a single-tier roof height after they went two-tier. Both
-     times every flag in the ground ended up somewhere the roof was not. */
-  const roofY = STAND_ROOF_Y;
-  /* The lip moved when the stands did. This still read 8 after the touchline
-     stands were set back to make room for the team areas, which left every
-     flag in the ground hanging five units inboard of the roof it is supposed
-     to stand on. */
-  const lipX = FIELD_WIDE / 2 + SIDELINE_DEPTH + UPPER_SETBACK - 3.4;
-
-  for (let i = 0; i < 13; i += 1) {
-    const z = 8 - i * 17;
-    for (const side of [-1, 1] as const) {
-      const x = side * lipX;
-      const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-      pole.position.set(x, roofY + 4.2, z);
-      group.add(pole);
-
-      const isCrest = (i + (side > 0 ? 0 : 1)) % 2 !== 0;
-      if (isCrest && crest) {
-        const backing = new THREE.Mesh(crestGeometry, backingMaterial);
-        backing.position.set(x + side * 2.3, roofY + 6.6, z - 0.06);
-        group.add(backing);
-      }
-      const cloth = new THREE.Mesh(isCrest ? crestGeometry : geometry, isCrest ? crestMaterial : material);
-      cloth.position.set(x + side * 2.3, roofY + 6.6, z);
-      cloth.userData.phase = i * 0.7 + (side > 0 ? 1.6 : 0);
-      group.add(cloth);
-    }
+  /* One sheet, not a transparent badge in front of a navy panel: two cloths
+     folding separately would cross, and the crest would flicker through its
+     own backing. The club's file is printed into the cloth instead. */
+  const crestMaterial = crestCloth
+    ? new THREE.MeshStandardMaterial({ map: crestCloth, side: THREE.DoubleSide, roughness: 0.88 })
+    : null;
+  if (crestMaterial) {
+    times.push(makeCloth(THREE, crestMaterial, { ...cloth, height: crestDrop }));
   }
+
+  const poleMaterial = new THREE.MeshStandardMaterial({
+    color: 0x9aa7b8, roughness: 0.5, metalness: 0.5,
+  });
+  const POLE_H = 9.2;
+  const poleGeometry = new THREE.CylinderGeometry(0.11, 0.11, POLE_H, 8);
+
+  spots.forEach((spot, i) => {
+    const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+    pole.position.set(spot.x, roofY + POLE_H / 2, spot.z);
+    group.add(pole);
+
+    const useCrest = i % 2 !== 0 && crestMaterial !== null;
+
+    /* THE PIVOT GOES ON THE MAST, NOT THROUGH THE CLOTH.
+       The flag used to swing about its own centre, which walked the hoist
+       edge half a unit clear of the mast at the ends of the swing — the flag
+       and the thing it is tied to visibly came apart. A mast-mounted swivel
+       holds them together, and it is what a halyard actually does. */
+    const swivel = new THREE.Group();
+    swivel.position.set(spot.x, roofY + POLE_H - 1.6, spot.z);
+    const sheet = new THREE.Mesh(
+      useCrest ? crestGeometry : geometry,
+      useCrest ? crestMaterial! : material,
+    );
+    /* Hung off the mast so the hoist edge meets it, with every flag in the
+       ground running the same way. Real grounds fly them in one wind. */
+    sheet.position.x = SPAN / 2;
+    swivel.add(sheet);
+    swivel.userData.phase = i * 0.7;
+    group.add(swivel);
+  });
+  group.userData.times = times;
   return group;
 }
 
@@ -2901,12 +3081,84 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          occupies these are more resolution than the screen can take, and the
          4K crest alone is 1.9MB. */
       const textures = new THREE.TextureLoader();
-      const clubCrest = textures.load("/rascals-logo-transparent.png");
+      /* Anything that needs the crest AFTER it has decoded registers here.
+         A Texture is an EventDispatcher but it does not announce its own
+         arrival — it only sets needsUpdate — so there is nothing to listen
+         for, and the loader's callback is the one moment the image is known
+         to exist. */
+      const onCrestReady: (() => void)[] = [];
+      const artworkArrived = () => {
+        for (const fn of onCrestReady) fn();
+      };
+      const clubCrest = textures.load("/rascals-logo-transparent.png", artworkArrived);
       clubCrest.colorSpace = THREE.SRGBColorSpace;
       clubCrest.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      const clubWordmark = textures.load("/rascals-endzone-wordmark-v3.png");
+      const clubWordmark = textures.load("/rascals-endzone-wordmark-v3.png", artworkArrived);
       clubWordmark.colorSpace = THREE.SRGBColorSpace;
       clubWordmark.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+      /* THE CLOTH THE CLUB'S MARKS ARE PRINTED ON.
+
+         Three sheets: two for the banners round the roof and one for the
+         crest flags on the masts. Each starts as plain cloth and the marks
+         are stamped in when the files decode, so nothing in the scene waits
+         on the network and nothing flies blank for longer than a fetch.
+
+         Printing INTO the cloth is what lets each of these be a single
+         opaque mesh. The alternative — a transparent badge floated in front
+         of a coloured panel — cannot survive the cloth folding, because the
+         two sheets fold independently and cross. */
+      const CREST_BOX = { cy: 0.40, w: 0.74, h: 0.44 };
+      const WORD_BOX = { cy: 0.78, w: 0.82, h: 0.16 };
+      const bannerCrest = createClothTexture({
+        aspect: BANNER_W / BANNER_H, ground: "#21254b",
+        band: { edge: "head", color: "#9e210f", size: 0.055 },
+      });
+      const bannerWord = createClothTexture({
+        aspect: BANNER_W / BANNER_H, ground: "#9e210f",
+        band: { edge: "head", color: "#21254b", size: 0.055 },
+      });
+      const flagCrest = createClothTexture({
+        aspect: CREST_ASPECT, ground: "#21254b",
+        band: { edge: "hoist", color: "#9e210f", size: 0.055 },
+      });
+
+      const asTexture = (print: { canvas: HTMLCanvasElement } | null) => {
+        if (!print) return null;
+        const t = new THREE.CanvasTexture(print.canvas);
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        return t;
+      };
+      const bannerCrestTexture = asTexture(bannerCrest);
+      const bannerWordTexture = asTexture(bannerWord);
+      const flagCrestTexture = asTexture(flagCrest);
+
+      const stampWhenReady = (
+        source: import("three").Texture,
+        aspect: number,
+        jobs: [typeof bannerCrest, import("three").CanvasTexture | null, typeof CREST_BOX][],
+      ) => {
+        const run = () => {
+          const image = source.image as CanvasImageSource | undefined;
+          if (!image) return;
+          for (const [print, texture, box] of jobs) {
+            if (!print || !texture) continue;
+            print.stamp(image, aspect, box);
+            texture.needsUpdate = true;
+          }
+        };
+        if (source.image) run();
+        else onCrestReady.push(run);
+      };
+      stampWhenReady(clubCrest, CREST_ASPECT, [
+        [bannerCrest, bannerCrestTexture, CREST_BOX],
+        [flagCrest, flagCrestTexture, { cy: 0.5, w: 0.78, h: 0.74 }],
+      ]);
+      stampWhenReady(clubWordmark, WORDMARK_ASPECT, [
+        [bannerCrest, bannerCrestTexture, WORD_BOX],
+        [bannerWord, bannerWordTexture, { cy: 0.5, w: 0.86, h: 0.30 }],
+      ]);
 
       /* Three faces for eight thousand people. That is enough: at the size a
          spectator occupies you are reading hair mass and skin, not features,
@@ -2982,7 +3234,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
 
       /* One roof over the whole bowl, put in after the stands so it reads as
          sitting on them. */
-      scene.add(buildRoofRing(THREE, STAND_ROOF_Y, clubCrest, clubWordmark));
+      const roofRing = buildRoofRing(THREE, STAND_ROOF_Y, bannerCrestTexture, bannerWordTexture);
+      scene.add(roofRing);
       scene.add(buildPitchsideAds(THREE, clubCrest, clubWordmark));
 
       /* Close the bowl. The four corner chamfers meet the touchline fronts at
@@ -3057,7 +3310,13 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       let flags: import("three").Group | null = null;
       if (flagTexture) {
         flagTexture.colorSpace = THREE.SRGBColorSpace;
-        flags = buildFlags(THREE, flagTexture, clubCrest);
+        flags = buildFlags(
+          THREE,
+          flagTexture,
+          flagCrestTexture,
+          roofRing.userData.flagSpots as { x: number; z: number; angle: number }[],
+          STAND_ROOF_Y,
+        );
         scene.add(flags);
       }
 
@@ -3294,13 +3553,21 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         sky.group.position.set(camera.position.x, 0, camera.position.z);
 
         dust.rotation.y = time * 0.008;
-        // Flags stir in the night air rather than hanging dead on the pole.
+        /* The cloth itself flutters in the vertex shader, which costs one
+           number per material per frame however many flags are flying. What
+           is left here is the slow swing of the halyard about the mast — a
+           different motion on a different timescale, and the thing that stops
+           thirteen flags moving as one object. */
+        for (const source of [flags, roofRing]) {
+          const times = source?.userData.times as { value: number }[] | undefined;
+          if (times) for (const t of times) t.value = time;
+        }
         if (flags) {
           for (const child of flags.children) {
             const phase = child.userData.phase as number | undefined;
             if (phase === undefined) continue;
-            child.rotation.y = Math.sin(time * 1.6 + phase) * 0.26;
-            child.rotation.z = Math.sin(time * 2.3 + phase) * 0.05;
+            child.rotation.y = Math.sin(time * 0.62 + phase) * 0.17;
+            child.rotation.z = Math.sin(time * 0.9 + phase) * 0.045;
           }
         }
 
@@ -3326,6 +3593,9 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         dotTexture?.dispose();
         cloudTexture?.dispose();
         flagTexture?.dispose();
+        bannerCrestTexture?.dispose();
+        bannerWordTexture?.dispose();
+        flagCrestTexture?.dispose();
         clubCrest.dispose();
         clubWordmark.dispose();
         boardTexture?.dispose();

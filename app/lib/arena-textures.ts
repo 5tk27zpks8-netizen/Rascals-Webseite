@@ -884,3 +884,75 @@ export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement
   for (let y = 0; y < H; y += 3) context.fillRect(0, y, W, 1);
   return canvas;
 }
+
+/**
+ * Cloth with the club's marks printed into it.
+ *
+ * These used to be two surfaces: the club's transparent PNG, and a coloured
+ * panel a hair behind it so you could not see the far stand through the badge.
+ * That works for a flat plane and falls apart the moment the plane becomes
+ * cloth — two sheets folding independently will cross, and the badge starts
+ * flickering through its own backing.
+ *
+ * One opaque sheet fixes it: the marks are stamped into the cloth here, so
+ * there is nothing to intersect and one mesh does the work of two.
+ *
+ * The files arrive asynchronously, so this hands back the canvas immediately —
+ * already a usable plain cloth — plus the means to stamp it when they land.
+ */
+export type ClothPrint = {
+  canvas: HTMLCanvasElement;
+  /** Draw a mark into the box given in fractions of the cloth, keeping the
+   *  proportions it was drawn in. */
+  stamp: (
+    image: CanvasImageSource,
+    imageAspect: number,
+    box: { cy: number; w: number; h: number },
+  ) => void;
+};
+
+export function createClothTexture(opts: {
+  /** Width over height of the finished cloth. */
+  aspect: number;
+  /** Cloth colour. */
+  ground: string;
+  /** A contrasting band, along the hoist for a flag or the head for a banner. */
+  band?: { edge: "hoist" | "head"; color: string; size: number };
+}): ClothPrint | null {
+  const canvas = document.createElement("canvas");
+  const W = 640;
+  const H = Math.max(2, Math.round(W / opts.aspect));
+  canvas.width = W;
+  canvas.height = H;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  context.fillStyle = opts.ground;
+  context.fillRect(0, 0, W, H);
+  if (opts.band) {
+    context.fillStyle = opts.band.color;
+    if (opts.band.edge === "hoist") context.fillRect(0, 0, W * opts.band.size, H);
+    else context.fillRect(0, 0, W, H * opts.band.size);
+  }
+  /* Weave. Barely visible up close, and the reason the cloth does not read as
+     painted sheet metal at distance. */
+  context.globalAlpha = 0.05;
+  context.fillStyle = "#ffffff";
+  for (let y = 0; y < H; y += 3) context.fillRect(0, y, W, 1);
+  context.globalAlpha = 1;
+
+  return {
+    canvas,
+    stamp(image, imageAspect, box) {
+      /* Fitted inside the box rather than stretched to it: the mark keeps the
+         proportions it was drawn in, whatever shape the cloth is. This is the
+         same discipline that stopped the roof crests being squeezed to half
+         width, applied one level further in. */
+      const boxW = W * box.w;
+      const boxH = H * box.h;
+      const w = boxW / imageAspect > boxH ? boxH * imageAspect : boxW;
+      const h = w / imageAspect;
+      context.drawImage(image, (W - w) / 2, H * box.cy - h / 2, w, h);
+    },
+  };
+}
