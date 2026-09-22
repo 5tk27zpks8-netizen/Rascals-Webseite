@@ -7,7 +7,6 @@ import {
   FIELD_YARDS_WIDE,
   createAdBoardTexture,
   createCloudTexture,
-  createFlagCrestTexture,
   createFlagTexture,
   createSoftDotTexture,
   createCrowdFaceTexture,
@@ -1753,7 +1752,12 @@ function walkPolygon(points: Array<[number, number]>, spacing: number) {
   return out;
 }
 
-function buildRoofRing(THREE: Three, roofY: number) {
+function buildRoofRing(
+  THREE: Three,
+  roofY: number,
+  crest: import("three").Texture | null,
+  wordmark: import("three").Texture | null,
+) {
   const group = new THREE.Group();
 
   const steel = new THREE.MeshStandardMaterial({ color: 0x59657a, roughness: 0.52, metalness: 0.5 });
@@ -1827,6 +1831,87 @@ function buildRoofRing(THREE: Three, roofY: number) {
   lamps.computeBoundingSphere();
   group.add(lamps);
 
+  /* BANNERS ROUND THE OPENING, WHERE THE TRUSSES WERE.
+     
+     The roof used to carry a fan of trusses across its underside. They were
+     structurally honest and visually wrong: seen from the field they read as a
+     web of dark sticks over the crowd, and they were the busiest thing in the
+     upper half of every frame. A real roof has its structure above the deck,
+     not slung under it where the camera lives.
+     
+     What hangs there instead is what actually hangs there: banners. They take
+     the club's own artwork — the crest and the wordmark, the real files rather
+     than something approximated in canvas — and they alternate, so the ring
+     reads as a set rather than as one image repeated thirty times.
+     
+     Two instanced draws for all of them, split by which artwork they carry,
+     because a mesh can only hold one texture. */
+  /* RESTRAINT IS THE POINT, AND SPACING IS HOW IT IS SET.
+     
+     At one banner every seventeen units this ring carried forty-two of them —
+     a continuous frieze round the entire roof, which is not what a stadium
+     looks like. A ground hangs a handful, at intervals, and the gaps between
+     them are what make the ones that are there read as deliberate. At sixty
+     there are twelve, and the roof still looks like a roof. */
+  const bannerSpots = walkPolygon(inner, 60);
+  const bannerGeometry = new THREE.PlaneGeometry(6.4, 8.2);
+  const backingGeometry = new THREE.PlaneGeometry(7.0, 8.8);
+
+  const backings = new THREE.InstancedMesh(
+    backingGeometry,
+    new THREE.MeshStandardMaterial({ color: 0x21254b, roughness: 0.82, side: THREE.DoubleSide }),
+    bannerSpots.length,
+  );
+  const crestPanels = new THREE.InstancedMesh(
+    bannerGeometry,
+    new THREE.MeshStandardMaterial({
+      map: crest, transparent: true, roughness: 0.8, side: THREE.DoubleSide,
+    }),
+    Math.ceil(bannerSpots.length / 2),
+  );
+  const wordPanels = new THREE.InstancedMesh(
+    new THREE.PlaneGeometry(7.4, 1.5),
+    new THREE.MeshStandardMaterial({
+      map: wordmark, transparent: true, roughness: 0.8, side: THREE.DoubleSide,
+    }),
+    Math.floor(bannerSpots.length / 2) + 1,
+  );
+  crestPanels.count = 0;
+  wordPanels.count = 0;
+
+  bannerSpots.forEach((spot, i) => {
+    /* Turned to face the pitch. walkPolygon hands back the heading along the
+       edge, so the face of a banner on it is that heading turned a quarter. */
+    const facing = spot.angle + Math.PI / 2;
+    put.position.set(spot.x, roofY - 6.6, spot.z);
+    put.rotation.set(0, facing, 0);
+    put.updateMatrix();
+    backings.setMatrixAt(i, put.matrix);
+
+    /* A nudge IN FRONT of the backing, and the sign matters: a plane's normal
+       after a Y rotation is (sin, 0, cos), so the pitch-facing side is plus
+       that, not minus. Subtracted, every crest sat a tenth of a unit behind
+       its own navy backing and the banners came out as blank rectangles. */
+    const nx = Math.sin(facing) * 0.12;
+    const nz = Math.cos(facing) * 0.12;
+    put.position.set(spot.x + nx, roofY - 6.6, spot.z + nz);
+    put.updateMatrix();
+    if (i % 2 === 0) {
+      crestPanels.setMatrixAt(crestPanels.count, put.matrix);
+      crestPanels.count += 1;
+    } else {
+      wordPanels.setMatrixAt(wordPanels.count, put.matrix);
+      wordPanels.count += 1;
+    }
+  });
+
+  for (const mesh of [backings, crestPanels, wordPanels]) {
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.castShadow = true;
+    mesh.computeBoundingSphere();
+    group.add(mesh);
+  }
+
   // --- what holds it up ---------------------------------------------------
   /* Columns round the back. They are mostly hidden behind the upper tier, and
      they are what stops the roof reading as a lid resting on nothing when the
@@ -1848,25 +1933,84 @@ function buildRoofRing(THREE: Three, roofY: number) {
   columns.computeBoundingSphere();
   group.add(columns);
 
-  /* Trusses spanning the ring, following the opening so they fan round the
-     corners the way the structure actually would. */
-  const trussSpots = walkPolygon(inner, 19);
-  const span = outerX - innerX;
-  const trusses = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.42, 0.42, span), steel, trussSpots.length,
-  );
-  trussSpots.forEach((spot, i) => {
-    const nx = Math.sin(spot.angle + Math.PI / 2);
-    const nz = Math.cos(spot.angle + Math.PI / 2);
-    put.position.set(spot.x + nx * span * 0.5, roofY - 0.9, spot.z + nz * span * 0.5);
-    put.rotation.set(0, spot.angle + Math.PI / 2, 0);
-    put.updateMatrix();
-    trusses.setMatrixAt(i, put.matrix);
-  });
-  trusses.instanceMatrix.needsUpdate = true;
-  trusses.computeBoundingSphere();
-  group.add(trusses);
+  return group;
+}
 
+/**
+ * PITCH-SIDE ADVERTISING, CARRYING THE CLUB'S OWN MARKS.
+ *
+ * The hoardings round the ground are a painted canvas strip — right for a run
+ * of repeating boards, and unable to carry the badge, because the badge is a
+ * file with transparency and the strip is a pattern generated at runtime.
+ *
+ * So the marks go in front of it: panels standing a little proud of the
+ * hoarding line, alternating the crest and the wordmark, at intervals round
+ * the whole bowl. Two instanced draws for all of them, split by which artwork
+ * they carry, since a mesh holds one texture.
+ *
+ * They follow the same octagon the stands do, so they stay on the hoarding
+ * line whatever the stands do next — which is the third time this session a
+ * derived boundary has replaced a written-down one, and for the same reason.
+ */
+function buildPitchsideAds(
+  THREE: Three,
+  crest: import("three").Texture | null,
+  wordmark: import("three").Texture | null,
+) {
+  const group = new THREE.Group();
+  if (!crest && !wordmark) return group;
+
+  const front = FIELD_WIDE / 2 + SIDELINE_DEPTH - 1.15;
+  const zMax = OWN_END_Z + 14 - 1.15;
+  const zMin = OPP_END_Z - 14 + 1.15;
+  /* Eight round the whole ground, not twenty-four. The hoarding behind these
+     already carries the club's name in text the whole way round; the badge is
+     punctuation on top of it, and punctuation every twenty-six units is just
+     more text. */
+  const spots = walkPolygon(octagonPoints(front, zMin, zMax, 26), 78);
+
+  const crestPanels = new THREE.InstancedMesh(
+    new THREE.PlaneGeometry(3.4, 2.2),
+    new THREE.MeshStandardMaterial({
+      map: crest, transparent: true, roughness: 0.82, side: THREE.DoubleSide,
+    }),
+    Math.ceil(spots.length / 2),
+  );
+  const wordPanels = new THREE.InstancedMesh(
+    new THREE.PlaneGeometry(5.2, 1.0),
+    new THREE.MeshStandardMaterial({
+      map: wordmark, transparent: true, roughness: 0.82, side: THREE.DoubleSide,
+    }),
+    Math.floor(spots.length / 2) + 1,
+  );
+  crestPanels.count = 0;
+  wordPanels.count = 0;
+
+  const put = new THREE.Object3D();
+  spots.forEach((spot, i) => {
+    // walkPolygon gives the heading along the edge; the face is a quarter off.
+    put.rotation.set(0, spot.angle + Math.PI / 2, 0);
+    /* Crest on three out of four, the wordmark on the fourth. Down here the
+       badge is the thing worth showing — the name is already printed along the
+       whole hoarding behind it. */
+    if (i % 4 !== 3) {
+      put.position.set(spot.x, 2.1, spot.z);
+      put.updateMatrix();
+      crestPanels.setMatrixAt(crestPanels.count, put.matrix);
+      crestPanels.count += 1;
+    } else {
+      put.position.set(spot.x, 1.9, spot.z);
+      put.updateMatrix();
+      wordPanels.setMatrixAt(wordPanels.count, put.matrix);
+      wordPanels.count += 1;
+    }
+  });
+
+  for (const mesh of [crestPanels, wordPanels]) {
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    group.add(mesh);
+  }
   return group;
 }
 
@@ -2138,9 +2282,21 @@ function buildFlags(
      bunting: it repeats, and once the eye finds the period it stops reading
      them as flags. */
   const material = new THREE.MeshStandardMaterial({ map: flag, side: THREE.DoubleSide, roughness: 0.85 });
+  /* The crest flags carry the club's own file rather than a drawn likeness of
+     it. A badge has a specific shape that is either right or wrong, and an
+     approximation from memory is wrong in a way nobody has to squint at.
+     
+     It is a transparent PNG, so it needs something behind it — a flag you can
+     see the far stand through is not a flag. The navy backing sits a hair
+     behind each crest cloth. */
   const crestMaterial = crest
-    ? new THREE.MeshStandardMaterial({ map: crest, side: THREE.DoubleSide, roughness: 0.85 })
+    ? new THREE.MeshStandardMaterial({
+        map: crest, side: THREE.DoubleSide, roughness: 0.85, transparent: true,
+      })
     : material;
+  const backingMaterial = new THREE.MeshStandardMaterial({
+    color: 0x21254b, side: THREE.DoubleSide, roughness: 0.88,
+  });
   const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x9aa7b8, roughness: 0.5, metalness: 0.5 });
   const poleGeometry = new THREE.CylinderGeometry(0.11, 0.11, 8.4, 8);
 
@@ -2164,7 +2320,13 @@ function buildFlags(
       pole.position.set(x, roofY + 4.2, z);
       group.add(pole);
 
-      const cloth = new THREE.Mesh(geometry, (i + (side > 0 ? 0 : 1)) % 2 === 0 ? material : crestMaterial);
+      const isCrest = (i + (side > 0 ? 0 : 1)) % 2 !== 0;
+      if (isCrest && crest) {
+        const backing = new THREE.Mesh(geometry, backingMaterial);
+        backing.position.set(x + side * 2.3, roofY + 6.6, z - 0.06);
+        group.add(backing);
+      }
+      const cloth = new THREE.Mesh(geometry, isCrest ? crestMaterial : material);
       cloth.position.set(x + side * 2.3, roofY + 6.6, z);
       cloth.userData.phase = i * 0.7 + (side > 0 ? 1.6 : 0);
       group.add(cloth);
@@ -2694,6 +2856,27 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       scene.add(surround);
 
       // --- stands and flags -------------------------------------------
+      /* THE CLUB'S OWN ARTWORK, LOADED RATHER THAN REDRAWN.
+      
+         Everything else in this scene is painted onto a canvas at runtime,
+         which is right for turf and crowds and hoardings — they are patterns,
+         and a pattern is cheaper to generate than to ship. A badge is not a
+         pattern. It has a specific shape that is either correct or wrong, and
+         an approximation of a club's own mark drawn from memory is wrong in a
+         way nobody has to squint to see. These files are already in the
+         project and already served.
+      
+         The small transparent variants, not the 4K ones: at the size a banner
+         occupies these are more resolution than the screen can take, and the
+         4K crest alone is 1.9MB. */
+      const textures = new THREE.TextureLoader();
+      const clubCrest = textures.load("/rascals-logo-transparent.png");
+      clubCrest.colorSpace = THREE.SRGBColorSpace;
+      clubCrest.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      const clubWordmark = textures.load("/rascals-endzone-wordmark-v3.png");
+      clubWordmark.colorSpace = THREE.SRGBColorSpace;
+      clubWordmark.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
       /* Three faces for eight thousand people. That is enough: at the size a
          spectator occupies you are reading hair mass and skin, not features,
          and the variation the eye actually picks up comes from the shirt
@@ -2768,7 +2951,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
 
       /* One roof over the whole bowl, put in after the stands so it reads as
          sitting on them. */
-      scene.add(buildRoofRing(THREE, STAND_ROOF_Y));
+      scene.add(buildRoofRing(THREE, STAND_ROOF_Y, clubCrest, clubWordmark));
+      scene.add(buildPitchsideAds(THREE, clubCrest, clubWordmark));
 
       /* Close the bowl. The four corner chamfers meet the touchline fronts at
          x = ±(half the field + the sideline) and the end fronts at the z the
@@ -2836,20 +3020,13 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
           .catch(() => undefined);
       }
 
-      const crestCanvas = createFlagCrestTexture();
-      const crestTexture = crestCanvas ? new THREE.CanvasTexture(crestCanvas) : null;
-      if (crestTexture) {
-        crestTexture.colorSpace = THREE.SRGBColorSpace;
-        crestTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      }
-
       const flagCanvas = createFlagTexture();
       const flagTexture = flagCanvas ? new THREE.CanvasTexture(flagCanvas) : null;
       if (flagTexture) flagTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       let flags: import("three").Group | null = null;
       if (flagTexture) {
         flagTexture.colorSpace = THREE.SRGBColorSpace;
-        flags = buildFlags(THREE, flagTexture, crestTexture);
+        flags = buildFlags(THREE, flagTexture, clubCrest);
         scene.add(flags);
       }
 
@@ -3118,7 +3295,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         dotTexture?.dispose();
         cloudTexture?.dispose();
         flagTexture?.dispose();
-        crestTexture?.dispose();
+        clubCrest.dispose();
+        clubWordmark.dispose();
         boardTexture?.dispose();
         crowdFaces.forEach((texture) => texture.dispose());
         zoneTexture?.dispose();
