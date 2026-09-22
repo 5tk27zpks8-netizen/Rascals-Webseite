@@ -72,7 +72,7 @@ export function GamedayCountdown({ heading, kicker }: { heading?: string; kicker
 
       <div className="rascals-gameday-matchup">
         <span className="rascals-gameday-team">
-          <img src="/rascals-logo-transparent-4k.png" alt="" />
+          <img src="/rascals-logo-768.webp" alt="" />
           <b>RASCALS</b>
         </span>
         <span className="rascals-gameday-vs">{home ? "VS" : "@"}</span>

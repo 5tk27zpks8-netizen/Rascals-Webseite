@@ -9,7 +9,7 @@ import "../game-detail-score.css";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const DEFAULT_RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
+const DEFAULT_RASCALS_LOGO = "/rascals-logo-768.webp";
 
 export default async function GameDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

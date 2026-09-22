@@ -175,7 +175,7 @@ type LegacyBrandSyncProps = {
 
 export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, navCtaUrl }: LegacyBrandSyncProps) {
   useLayoutEffect(() => {
-    const src = logoUrl?.trim() || "/rascals-logo-transparent-4k.png";
+    const src = logoUrl?.trim() || "/rascals-logo-768.webp";
     const top = brandTop?.trim() || "HELLENSTEIN";
     const bottom = brandBottom?.trim() || "RASCALS";
     const ctaLabel = navCtaLabel?.trim() || "Mitmachen";

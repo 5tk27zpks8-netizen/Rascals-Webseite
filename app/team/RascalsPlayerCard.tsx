@@ -33,7 +33,7 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
       <div className="rpc-brand">
         <div className="rpc-line" />
         <div className="rpc-brand-center">
-          <img src="/rascals-logo-transparent-4k.png" alt="" />
+          <img src="/rascals-logo-768.webp" alt="" />
           <b>RASCALS</b>
         </div>
         <div className="rpc-line" />
@@ -41,7 +41,7 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
 
       <img
         className="rpc-background-logo"
-        src="/rascals-logo-transparent-4k.png"
+        src="/rascals-logo-1600.webp"
         alt=""
         aria-hidden="true"
       />

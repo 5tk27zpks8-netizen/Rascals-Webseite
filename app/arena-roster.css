@@ -380,3 +380,25 @@ html:has(.roster-page) {
     gap: 16px;
   }
 }
+
+/* THE NAME SIZES ITSELF FROM THE CARD, NOT FROM THE VIEWPORT.
+
+   At 390 the card is 177 wide and a 25px surname fits. At 360 it is 162 and
+   "Dollansky" wants 149 pixels in 134. At 320 it is 142 and half the squad
+   runs out of its box. Picking breakpoints for that is guessing at which
+   names exist; the card already knows how wide it is, so the type comes from
+   there — min() keeps the current size as a ceiling, so nothing above 390
+   changes at all and everything below scales exactly in step with the card.
+
+   Scoped to the non-driving layout, so the stadium's own cards are untouched. */
+@media (max-width: 999.98px), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .deck-card .sc-card { container-type: inline-size; }
+  /* The ratios carry reserve rather than sitting on the longest name in the
+     current squad. Derived from the card's own width they are right for any
+     squad; derived from THIS squad's longest name they would be right until
+     someone signs a longer one. */
+  .deck-card .sc-name em { font-size: min(25px, 13.2cqw); }
+  .deck-card .sc-name.is-name-m em { font-size: min(22px, 11.6cqw); }
+  .deck-card .sc-name.is-name-s em { font-size: min(19px, 10.1cqw); }
+  .deck-card .sc-name i { font-size: min(13px, 7cqw); }
+}

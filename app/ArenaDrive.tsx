@@ -3183,7 +3183,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
            painted field. Drop it in and refresh the map when it lands; until
            then the painted wordmark holds the circle. */
         if (turfCanvas) {
-          void paintMidfieldMark(turfCanvas, "/rascals-logo-transparent-4k.png").then((painted) => {
+          void paintMidfieldMark(turfCanvas, "/rascals-logo-1600.webp").then((painted) => {
             if (painted && !disposed) turfTexture.needsUpdate = true;
           });
         }

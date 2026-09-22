@@ -103,7 +103,7 @@ export async function HomeArena() {
       {/* --- broadcast overlay ------------------------------------- */}
       <header className="drive-hud">
         <a className="drive-hud-brand" href="/">
-          <img src="/rascals-logo-transparent-4k.png" alt="" />
+          <img src="/rascals-logo-768.webp" alt="" />
           <span>HELLENSTEIN<br /><i>RASCALS</i></span>
         </a>
 

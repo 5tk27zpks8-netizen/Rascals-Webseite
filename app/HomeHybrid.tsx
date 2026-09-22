@@ -110,7 +110,7 @@ export function HomeHybrid() {
 
       <footer className="hy-footer">
         <div>
-          <img src="/rascals-logo-transparent-4k.png" alt="" />
+          <img src="/rascals-logo-768.webp" alt="" />
           <div>
             <strong>HELLENSTEIN RASCALS</strong>
             <small>American Football · Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</small>

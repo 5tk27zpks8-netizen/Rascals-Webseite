@@ -1,4 +1,5 @@
 import "./team-units.css";
+import { wide } from "./lib/responsive-image";
 
 /**
  * The teams block, sitting below the schedule on the homepage.
@@ -56,7 +57,7 @@ export function TeamUnits() {
         {units.map((unit, index) => (
           <article key={unit.name} data-reveal data-reveal-delay={index * 90}>
             <div className="team-unit-media">
-              <img src={unit.image} alt="" />
+              <img {...wide(unit.image)} src={unit.image} alt="" />
               <span className="team-unit-index">{String(index + 1).padStart(2, "0")}</span>
             </div>
             <h3>{unit.name}</h3>
@@ -69,7 +70,7 @@ export function TeamUnits() {
       <div className="team-squads">
         {squads.map((squad, index) => (
           <article key={squad.name} data-reveal data-reveal-delay={index * 90}>
-            <img src={squad.image} alt="" />
+            <img {...wide(squad.image)} src={squad.image} alt="" />
             <div>
               <small>{squad.tag}</small>
               <h3>{squad.name}</h3>

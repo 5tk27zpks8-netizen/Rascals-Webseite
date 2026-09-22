@@ -59,7 +59,7 @@ export default async function TeamPage() {
                 <article className="coach-public-card" key={coach.id}>
                   <div className="coach-public-photo">
                     {coach.photo ? <img src={coach.photo} alt={`${coach.firstName} ${coach.lastName}`} /> : <div className="coach-public-placeholder">R</div>}
-                    <img className="coach-public-watermark" src="/rascals-logo-transparent-4k.png" alt="" />
+                    <img className="coach-public-watermark" src="/rascals-logo-1600.webp" alt="" />
                   </div>
                   <div className="coach-public-info">
                     <span>{coach.role || "COACH"}</span>

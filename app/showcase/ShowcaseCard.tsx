@@ -73,7 +73,7 @@ export function ShowcaseCard({
           />
         ) : (
           <span className="sc-portrait-empty" aria-hidden="true">
-            <img src="/rascals-logo-transparent-4k.png" alt="" />
+            <img src="/rascals-logo-768.webp" alt="" />
           </span>
         )}
       </span>

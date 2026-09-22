@@ -1,4 +1,5 @@
 import { listActiveSponsors, type PublicSponsor } from "../lib/sponsors";
+import { wide } from "../lib/responsive-image";
 import { Header } from "../SiteShell";
 import "./sponsoring.css";
 
@@ -43,7 +44,7 @@ export default async function SponsoringPage() {
                   const card = (
                     <>
                       <div className="sponsor-logo-box">
-                        {sponsor.logo ? <img src={sponsor.logo} alt={`${sponsor.name} Logo`} /> : <div className="sponsor-placeholder">{sponsor.name}</div>}
+                        {sponsor.logo ? <img {...wide(sponsor.logo)} src={sponsor.logo} alt={`${sponsor.name} Logo`} /> : <div className="sponsor-placeholder">{sponsor.name}</div>}
                       </div>
                       <footer><span>{sponsor.name}</span><b>{sponsor.url ? "↗" : ""}</b></footer>
                     </>

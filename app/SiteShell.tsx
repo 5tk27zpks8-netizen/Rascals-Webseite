@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { wide } from "./lib/responsive-image";
 import { RascalsField } from "./RascalsField";
 import { TeamUnits } from "./TeamUnits";
 
@@ -34,7 +35,7 @@ export function Header({ page }: { page: PageName }) {
   return (
     <header className="site-header">
       <a className="brand" href="/" aria-label="Hellenstein Rascals Startseite">
-        <img src="/rascals-logo-transparent-4k.png" alt="" />
+        <img src="/rascals-logo-768.webp" alt="" />
         <span><strong>HELLENSTEIN</strong><em>RASCALS</em></span>
       </a>
       <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-controls="main-nav">
@@ -65,7 +66,7 @@ function Hero() {
   return (
     <section className="hero" data-hero-pin aria-roledescription="Karussell" aria-label="Rascals Highlights">
       <div className={`hero-slide helmet-slide ${slide === 0 ? "visible" : ""}`} aria-hidden={slide !== 0}>
-        <img src="/helmet-hero-4k.webp" alt="Rascals Footballhelm im Flutlicht" />
+        <img {...wide("/helmet-hero-4k.webp")} src="/helmet-hero-4k.webp" alt="Rascals Footballhelm im Flutlicht" />
         <div className="hero-shade" />
         <div className="hero-copy">
           <span className="eyebrow">American Football · Heidenheim</span>
@@ -79,7 +80,7 @@ function Hero() {
       </div>
 
       <div className={`hero-slide schedule-slide ${slide === 1 ? "visible" : ""}`} aria-hidden={slide !== 1}>
-        <img src="/team-entry-4k.webp" alt="Hellenstein Rascals beim Einlauf" />
+        <img {...wide("/team-entry-4k.webp")} src="/team-entry-4k.webp" alt="Hellenstein Rascals beim Einlauf" />
         <div className="hero-shade" />
         <div className="schedule-card">
           <span className="eyebrow">Kreisoberliga · Saison 2026</span>
@@ -122,7 +123,7 @@ function SponsorTicker() {
         {[0, 1].map((sequence) => (
           <div className="ticker-sequence" key={sequence} aria-hidden={sequence === 1}>
             {tickerSponsors.map((sponsor, index) => (
-              <span key={`${sequence}-${sponsor.src}-${index}`} className="sponsor-logo"><img src={sponsor.src} alt={sequence === 0 && index < sponsors.length ? sponsor.alt : ""} /></span>
+              <span key={`${sequence}-${sponsor.src}-${index}`} className="sponsor-logo"><img {...wide(sponsor.src)} src={sponsor.src} alt={sequence === 0 && index < sponsors.length ? sponsor.alt : ""} /></span>
             ))}
           </div>
         ))}
@@ -149,9 +150,9 @@ function ShopFeature({ full = false }: { full?: boolean }) {
     <section className={full ? "shop-feature page-shop" : "shop-feature"}>
       <div className="shop-copy"><span className="eyebrow" data-reveal>OFFICIAL TEAMWEAR</span><h2 data-reveal data-reveal-delay="80">WEAR THE<br /><i>RAS­CALS.</i></h2><p data-reveal data-reveal-delay="160">Zeig deine Farben – auf der Tribüne, im Training und überall dazwischen. Direkt im offiziellen RASCALS-SHOP bestellen.</p><a className="button light" href={shopUrl} target="_blank" rel="noreferrer" data-reveal data-reveal-delay="220">Zum Rascals Shop <span>↗</span></a></div>
       <div className="product-cards">
-        <a href={productUrl} target="_blank" rel="noreferrer" className="product-card product-main" data-reveal><img src={productImage} alt="Puli aus dem offiziellen RASCALS-SHOP" /><div><strong>Puli</strong><span>25,00 €</span></div></a>
-        <a href={productUrl} target="_blank" rel="noreferrer" className="product-card product-detail" data-reveal data-reveal-delay="100"><img src={productImage} alt="Detailansicht des Rascals Pulis" /><div><strong>Teamwear</strong><span>Shop ansehen</span></div></a>
-        <a href={shopUrl} target="_blank" rel="noreferrer" className="product-card product-crop" data-reveal data-reveal-delay="180"><img src={productImage} alt="Rascals Merchandise Kollektion" /><div><strong>Rascals Gear</strong><span>Alle Artikel</span></div></a>
+        <a href={productUrl} target="_blank" rel="noreferrer" className="product-card product-main" data-reveal><img {...wide(productImage)} src={productImage} alt="Puli aus dem offiziellen RASCALS-SHOP" /><div><strong>Puli</strong><span>25,00 €</span></div></a>
+        <a href={productUrl} target="_blank" rel="noreferrer" className="product-card product-detail" data-reveal data-reveal-delay="100"><img {...wide(productImage)} src={productImage} alt="Detailansicht des Rascals Pulis" /><div><strong>Teamwear</strong><span>Shop ansehen</span></div></a>
+        <a href={shopUrl} target="_blank" rel="noreferrer" className="product-card product-crop" data-reveal data-reveal-delay="180"><img {...wide(productImage)} src={productImage} alt="Rascals Merchandise Kollektion" /><div><strong>Rascals Gear</strong><span>Alle Artikel</span></div></a>
       </div>
     </section>
   );
@@ -173,7 +174,7 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
 
     <section className="story-split">
       <div className="story-image">
-        <img src="/team-victory-4k.webp" alt="Hellenstein Rascals feiern gemeinsam nach ihrem Sieg" />
+        <img {...wide("/team-victory-4k.webp")} src="/team-victory-4k.webp" alt="Hellenstein Rascals feiern gemeinsam nach ihrem Sieg" />
         <span data-reveal>NO ONE<br />FIGHTS ALONE.</span>
       </div>
       <div className="story-copy">
@@ -197,15 +198,15 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
       </div>
       <div className="news-grid">
         <article className="featured-news" data-reveal>
-          <img src="/team-players-4k.webp" alt="Rascals Spieler vor dem Spiel" />
+          <img {...wide("/team-players-4k.webp")} src="/team-players-4k.webp" alt="Rascals Spieler vor dem Spiel" />
           <div><span>TEAM · 2026</span><h3>Aufstieg in die Kreisoberliga</h3><p>Das nächste Kapitel ist geschrieben: Die Rascals stellen sich einer neuen sportlichen Herausforderung.</p></div>
         </article>
         <article className="compact-news dkms-card" data-reveal data-reveal-delay="100">
-          <img src="/dkms-action-4k.webp" alt="Rascals Spieler wirbt für die DKMS-Stammzellspende" />
+          <img {...wide("/dkms-action-4k.webp")} src="/dkms-action-4k.webp" alt="Rascals Spieler wirbt für die DKMS-Stammzellspende" />
           <div><span>GAMEDAY · 04.07.</span><h3>Football trifft Lebensretter</h3><p>Beim Heimspiel gegen Heilbronn wird der Gameday mit einer DKMS-Typisierungsaktion verbunden.</p><a href="/news">Story lesen →</a></div>
         </article>
         <article className="compact-news shop-card" data-reveal data-reveal-delay="180">
-          <img src={productImage} alt="Puli aus dem offiziellen Rascals Fanshop" />
+          <img {...wide(productImage)} src={productImage} alt="Puli aus dem offiziellen Rascals Fanshop" />
           <div><span>SHOP · ONLINE</span><h3>Offizieller RASCALS-SHOP jetzt live</h3><p>Rascals Teamwear ist ab sofort direkt über unseren RASCALS-SHOP erhältlich.</p><a href={shopUrl} target="_blank" rel="noreferrer">Shop öffnen ↗</a></div>
         </article>
       </div>
@@ -218,7 +219,7 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
 }
 
 function PageHero({ kicker, title, italic, image, className = "", children }: { kicker: string; title: string; italic: string; image: string; className?: string; children: React.ReactNode }) {
-  return <section className={`page-hero ${className}`.trim()}><img src={image} alt="" data-parallax="8" /><div className="hero-shade" /><div><span className="eyebrow" data-reveal>{kicker}</span><h1 data-reveal data-reveal-delay="80">{title}<br /><i>{italic}</i></h1><p data-reveal data-reveal-delay="180">{children}</p></div></section>;
+  return <section className={`page-hero ${className}`.trim()}><img {...wide(image)} src={image} alt="" data-parallax="8" /><div className="hero-shade" /><div><span className="eyebrow" data-reveal>{kicker}</span><h1 data-reveal data-reveal-delay="80">{title}<br /><i>{italic}</i></h1><p data-reveal data-reveal-delay="180">{children}</p></div></section>;
 }
 
 function AboutPage() {
@@ -226,7 +227,7 @@ function AboutPage() {
 }
 
 function TeamPage() {
-  return <><PageHero kicker="Roster & Coaches" title="ONE TEAM." italic="ALL IN." image="/team-juniors-new-4k.webp">Auf dem Feld zählt nicht, wo du angefangen hast – sondern was du für das Team gibst.</PageHero><section className="section team-intro"><div className="section-heading"><div><span className="eyebrow red-text">Rascals Family</span><h2>DEIN PLATZ<br /><i>IM TEAM.</i></h2></div><p>Bei den Rascals finden unterschiedliche Stärken ihre Position. Football-Erfahrung ist für den Einstieg nicht nötig; Motivation und Verlässlichkeit schon.</p></div><div className="team-panels"><article data-reveal><img src="/team-walk-4k.webp" alt="Spieler der Rascals gehen aufs Feld" /><div><span>SENIORS · AB 18</span><h3>TACKLE FOOTBALL</h3><p>Wettkampf, Technik und Athletik – mit einem Team, das dich fordert und trägt.</p></div></article><article data-reveal data-reveal-delay="120"><img src="/team-juniors-new-4k.webp" alt="Hellenstein Rascals gemeinsam auf dem Spielfeld" /><div><span>JUNIORS · 14–18</span><h3>NEXT GENERATION</h3><p>Grundlagen sicher lernen, Verantwortung übernehmen und als Spieler wachsen.</p></div></article></div></section><section className="training-band"><div><span className="eyebrow">Training</span><h2>READY TO<br /><i>SUIT UP?</i></h2></div><div className="training-details"><p><b>Montag & Donnerstag</b><span>Außentraining · Heeracker 22</span></p><p><b>Aktuelle Zeiten</b><span>Bitte vorab über Instagram bestätigen</span></p><a className="button light" href="mailto:football@hsb1846.de">Probetraining anfragen →</a></div></section></>;
+  return <><PageHero kicker="Roster & Coaches" title="ONE TEAM." italic="ALL IN." image="/team-juniors-new-4k.webp">Auf dem Feld zählt nicht, wo du angefangen hast – sondern was du für das Team gibst.</PageHero><section className="section team-intro"><div className="section-heading"><div><span className="eyebrow red-text">Rascals Family</span><h2>DEIN PLATZ<br /><i>IM TEAM.</i></h2></div><p>Bei den Rascals finden unterschiedliche Stärken ihre Position. Football-Erfahrung ist für den Einstieg nicht nötig; Motivation und Verlässlichkeit schon.</p></div><div className="team-panels"><article data-reveal><img {...wide("/team-walk-4k.webp")} src="/team-walk-4k.webp" alt="Spieler der Rascals gehen aufs Feld" /><div><span>SENIORS · AB 18</span><h3>TACKLE FOOTBALL</h3><p>Wettkampf, Technik und Athletik – mit einem Team, das dich fordert und trägt.</p></div></article><article data-reveal data-reveal-delay="120"><img {...wide("/team-juniors-new-4k.webp")} src="/team-juniors-new-4k.webp" alt="Hellenstein Rascals gemeinsam auf dem Spielfeld" /><div><span>JUNIORS · 14–18</span><h3>NEXT GENERATION</h3><p>Grundlagen sicher lernen, Verantwortung übernehmen und als Spieler wachsen.</p></div></article></div></section><section className="training-band"><div><span className="eyebrow">Training</span><h2>READY TO<br /><i>SUIT UP?</i></h2></div><div className="training-details"><p><b>Montag & Donnerstag</b><span>Außentraining · Heeracker 22</span></p><p><b>Aktuelle Zeiten</b><span>Bitte vorab über Instagram bestätigen</span></p><a className="button light" href="mailto:football@hsb1846.de">Probetraining anfragen →</a></div></section></>;
 }
 
 function SponsoringPage() {
@@ -234,21 +235,21 @@ function SponsoringPage() {
 }
 
 function NewsPage() {
-  return <><PageHero kicker="Latest Stories" title="FROM THE" italic="SIDELINE." image="/team-walk-4k.webp">News, Gamedays und Geschichten aus der Rascals Family.</PageHero><section className="section full-news"><article><img src="/team-players-4k.webp" alt="Rascals Spieler" /><div><span>SAISON · 2026</span><h2>Rascals starten in der Kreisoberliga</h2><p>Nach dem Aufstieg wartet die nächste sportliche Stufe. In der Kreisoberliga treffen die Rascals unter anderem auf Filderstadt, Heilbronn, Mannheim und die Neckar Hammers.</p><a href="https://www.hz.de/sport/mehr/sportliches-adventsgeschenk-die-hellenstein-rascals-steigen-mit-verspaetung-in-die-kreisoberliga-auf" target="_blank" rel="noreferrer">Mehr erfahren ↗</a></div></article><article><img className="dkms-news-image" src="/dkms-action-4k.webp" alt="Stäbchen rein, Spender sein – DKMS-Aktion der Hellenstein Rascals" /><div><span>COMMUNITY · 04.07.2026</span><h2>Gameday mit DKMS-Aktion</h2><p>Sportlich wichtig, menschlich noch größer: Rund um das Heimspiel gegen die Heilbronn Salt Miners findet eine Typisierungsaktion statt.</p><a href="https://www.hz.de/sport/mehr/vom-stammzellspender-zum-botschafter-wie-offensivtrainer-jonas-mueller-das-topspiel-der-rascals-zu-einem-doppelten-erfolg-machen-will" target="_blank" rel="noreferrer">Zur Story ↗</a></div></article><article><img src={productImage} alt="Rascals Fanshop Produkt" /><div><span>SHOP · ONLINE</span><h2>Offizieller RASCALS-SHOP</h2><p>Teamwear und Fanartikel im Rascals Look: Der offizielle RASCALS-SHOP ist direkt erreichbar.</p><a href={shopUrl} target="_blank" rel="noreferrer">Jetzt shoppen ↗</a></div></article></section></>;
+  return <><PageHero kicker="Latest Stories" title="FROM THE" italic="SIDELINE." image="/team-walk-4k.webp">News, Gamedays und Geschichten aus der Rascals Family.</PageHero><section className="section full-news"><article><img {...wide("/team-players-4k.webp")} src="/team-players-4k.webp" alt="Rascals Spieler" /><div><span>SAISON · 2026</span><h2>Rascals starten in der Kreisoberliga</h2><p>Nach dem Aufstieg wartet die nächste sportliche Stufe. In der Kreisoberliga treffen die Rascals unter anderem auf Filderstadt, Heilbronn, Mannheim und die Neckar Hammers.</p><a href="https://www.hz.de/sport/mehr/sportliches-adventsgeschenk-die-hellenstein-rascals-steigen-mit-verspaetung-in-die-kreisoberliga-auf" target="_blank" rel="noreferrer">Mehr erfahren ↗</a></div></article><article><img className="dkms-news-image" {...wide("/dkms-action-4k.webp")} src="/dkms-action-4k.webp" alt="Stäbchen rein, Spender sein – DKMS-Aktion der Hellenstein Rascals" /><div><span>COMMUNITY · 04.07.2026</span><h2>Gameday mit DKMS-Aktion</h2><p>Sportlich wichtig, menschlich noch größer: Rund um das Heimspiel gegen die Heilbronn Salt Miners findet eine Typisierungsaktion statt.</p><a href="https://www.hz.de/sport/mehr/vom-stammzellspender-zum-botschafter-wie-offensivtrainer-jonas-mueller-das-topspiel-der-rascals-zu-einem-doppelten-erfolg-machen-will" target="_blank" rel="noreferrer">Zur Story ↗</a></div></article><article><img {...wide(productImage)} src={productImage} alt="Rascals Fanshop Produkt" /><div><span>SHOP · ONLINE</span><h2>Offizieller RASCALS-SHOP</h2><p>Teamwear und Fanartikel im Rascals Look: Der offizielle RASCALS-SHOP ist direkt erreichbar.</p><a href={shopUrl} target="_blank" rel="noreferrer">Jetzt shoppen ↗</a></div></article></section></>;
 }
 
 function GalleryPage() {
   const [selected, setSelected] = useState<(typeof gallery)[number] | null>(null);
   useEffect(() => { const close = (event: KeyboardEvent) => event.key === "Escape" && setSelected(null); window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, []);
-  return <><PageHero kicker="Game Faces" title="UNDER THE" italic="LIGHTS." image="/helmet-hero-4k.webp">Momente, die bleiben – vom Tunnel bis zum letzten Whistle.</PageHero><section className="section gallery-section"><div className="section-heading"><div><span className="eyebrow red-text">Rascals in action</span><h2>GALLERY<br /><i>2026.</i></h2></div><p>Ein Blick hinter das Visier: Team, Emotionen und Football in Heidenheim.</p></div><div className="gallery-grid">{gallery.map((photo, index) => <button key={photo.src} onClick={() => setSelected(photo)} aria-label={`Bild ${index + 1} groß anzeigen`}><img src={photo.src} alt={photo.alt} /><span>VIEW · 0{index + 1}</span></button>)}</div></section>{selected && <div className="lightbox" role="dialog" aria-modal="true" aria-label="Großansicht"><button onClick={() => setSelected(null)} aria-label="Großansicht schließen">×</button><img src={selected.src} alt={selected.alt} /></div>}</>;
+  return <><PageHero kicker="Game Faces" title="UNDER THE" italic="LIGHTS." image="/helmet-hero-4k.webp">Momente, die bleiben – vom Tunnel bis zum letzten Whistle.</PageHero><section className="section gallery-section"><div className="section-heading"><div><span className="eyebrow red-text">Rascals in action</span><h2>GALLERY<br /><i>2026.</i></h2></div><p>Ein Blick hinter das Visier: Team, Emotionen und Football in Heidenheim.</p></div><div className="gallery-grid">{gallery.map((photo, index) => <button key={photo.src} onClick={() => setSelected(photo)} aria-label={`Bild ${index + 1} groß anzeigen`}><img {...wide(photo.src)} src={photo.src} alt={photo.alt} /><span>VIEW · 0{index + 1}</span></button>)}</div></section>{selected && <div className="lightbox" role="dialog" aria-modal="true" aria-label="Großansicht"><button onClick={() => setSelected(null)} aria-label="Großansicht schließen">×</button><img {...wide(selected.src)} src={selected.src} alt={selected.alt} /></div>}</>;
 }
 
 function JoinCta() {
-  return <section className="join-cta"><img src="/team-entry-4k.webp" alt="" data-parallax="8" /><div className="hero-shade" /><div><span className="eyebrow" data-reveal>YOUR NEXT PLAY</span><h2 data-reveal data-reveal-delay="80">READY TO JOIN<br />THE <i>FAMILY?</i></h2><p data-reveal data-reveal-delay="160">Du brauchst keine Erfahrung. Nur den Willen, Teil von etwas Größerem zu werden.</p><a className="button red" href="mailto:football@hsb1846.de" data-reveal data-reveal-delay="220">Probetraining anfragen <span>→</span></a></div></section>;
+  return <section className="join-cta"><img {...wide("/team-entry-4k.webp")} src="/team-entry-4k.webp" alt="" data-parallax="8" /><div className="hero-shade" /><div><span className="eyebrow" data-reveal>YOUR NEXT PLAY</span><h2 data-reveal data-reveal-delay="80">READY TO JOIN<br />THE <i>FAMILY?</i></h2><p data-reveal data-reveal-delay="160">Du brauchst keine Erfahrung. Nur den Willen, Teil von etwas Größerem zu werden.</p><a className="button red" href="mailto:football@hsb1846.de" data-reveal data-reveal-delay="220">Probetraining anfragen <span>→</span></a></div></section>;
 }
 
 function Footer() {
-  return <footer><div className="footer-brand"><img src="/rascals-logo-transparent-4k.png" alt="Hellenstein Rascals" /><p>American Football in Heidenheim.<br />Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</p></div><div><b>EXPLORE</b>{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div><div><b>FOLLOW</b><a href="https://www.instagram.com/hellenstein_rascals/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="https://www.facebook.com/HellensteinRascals/" target="_blank" rel="noreferrer">Facebook ↗</a><a href="mailto:football@hsb1846.de">E-Mail ↗</a></div><div><b>HOME FIELD</b><p>Heeracker 22<br />89522 Heidenheim</p></div><small>© 2026 HELLENSTEIN RASCALS · ALL GRIT. ALL HEART.</small></footer>;
+  return <footer><div className="footer-brand"><img src="/rascals-logo-768.webp" alt="Hellenstein Rascals" /><p>American Football in Heidenheim.<br />Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</p></div><div><b>EXPLORE</b>{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div><div><b>FOLLOW</b><a href="https://www.instagram.com/hellenstein_rascals/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="https://www.facebook.com/HellensteinRascals/" target="_blank" rel="noreferrer">Facebook ↗</a><a href="mailto:football@hsb1846.de">E-Mail ↗</a></div><div><b>HOME FIELD</b><p>Heeracker 22<br />89522 Heidenheim</p></div><small>© 2026 HELLENSTEIN RASCALS · ALL GRIT. ALL HEART.</small></footer>;
 }
 
 /**

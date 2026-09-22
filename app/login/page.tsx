@@ -36,7 +36,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
     <main className="admin-login-page">
       <section className="admin-login-card">
         <a className="admin-login-brand" href="/" aria-label="Zur Rascals Website">
-          <img src="/rascals-logo-transparent-4k.png" alt="" />
+          <img src="/rascals-logo-768.webp" alt="" />
           <span><b>RASCALS</b><small>TEAMBEREICH</small></span>
         </a>
 

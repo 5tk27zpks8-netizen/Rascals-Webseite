@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const metadata = { title: "Spielplan · Hellenstein Rascals", description: "Spielplan, Ergebnisse und Live-Updates der Hellenstein Rascals." };
 
-const DEFAULT_RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
+const DEFAULT_RASCALS_LOGO = "/rascals-logo-768.webp";
 type PublicGame = Awaited<ReturnType<typeof listVisibleGames>>[number];
 
 export default async function SpielplanPage() {

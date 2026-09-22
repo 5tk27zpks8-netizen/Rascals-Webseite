@@ -161,7 +161,7 @@ export function GamedayManager() {
         <label className="cms-field"><span>Spiel auswählen</span><select value={gameId} onChange={(e) => setGameId(e.target.value)}><option value="">— Spiel wählen —</option>{games.map((game) => <option key={game.id} value={game.id}>{game.status === "live" ? "LIVE · " : ""}Rascals vs {game.opponent}</option>)}</select></label>
         {actor?.role === "gameday" && <p className="cms-muted">Du siehst hier nur Spiele, für die du als Liveticker-Verantwortlicher eingeteilt wurdest.</p>}
         {currentGame && <>
-          <div className="gameday-score"><div><img src="/rascals-logo-transparent-4k.png" alt=""/><b>RASCALS</b><strong>{currentGame.rascalsScore}</strong></div><span>{currentGame.quarter || currentGame.status.toUpperCase()}</span><div>{currentGame.opponentLogo ? <img src={currentGame.opponentLogo} alt=""/> : <i>?</i>}<b>{currentGame.opponent}</b><strong>{currentGame.opponentScore}</strong></div></div>
+          <div className="gameday-score"><div><img src="/rascals-logo-768.webp" alt=""/><b>RASCALS</b><strong>{currentGame.rascalsScore}</strong></div><span>{currentGame.quarter || currentGame.status.toUpperCase()}</span><div>{currentGame.opponentLogo ? <img src={currentGame.opponentLogo} alt=""/> : <i>?</i>}<b>{currentGame.opponent}</b><strong>{currentGame.opponentScore}</strong></div></div>
           <div className="gameday-score-control">
             <div className="gameday-score-control-head"><div><small>MANUELLER PUNKTESTAND</small><h3>Punkte direkt tickern</h3></div><p>Für Nachträge oder Korrekturen während des Spiels. Der gespeicherte Stand wird direkt für den Live-Score verwendet.</p></div>
             <div className="gameday-score-edit-grid">
