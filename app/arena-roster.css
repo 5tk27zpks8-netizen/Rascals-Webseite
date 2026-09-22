@@ -279,3 +279,104 @@ html:has(.roster-page) {
     letter-spacing: 0.12em;
   }
 }
+
+/* ==========================================================================
+   THE VIEW FOR EVERYTHING THAT IS NOT DRIVING
+
+   The condition below is the exact negation of DRIVE_MEDIA in
+   app/lib/drive-mode.ts, and the two have to be edited together. Whenever the
+   stadium does not run, this layout does — phones, tablets, touchscreen
+   laptops, narrow windows, and anyone who has asked for reduced motion.
+
+   What was here before was not a mobile view; it was the deck's desktop row
+   with its 3D switched off. One flex line, sixteen thousand pixels wide for a
+   squad of seventy-two, inside a page that did not scroll vertically at all.
+   Every player was reachable and none of them was findable: no hint that the
+   row slid sideways, no sense of how far along it you were, and a downward
+   swipe — the one thing every thumb tries first — did nothing.
+
+   So: an ordinary page of ordinary cards, scrolled the ordinary way.
+   ========================================================================== */
+@media (max-width: 999.98px), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .deck-stage {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    /* Room at the foot for the unit switcher, which floats over the page. */
+    padding: 14px 14px 108px;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+  .deck-stage > * {
+    flex: none;
+    scroll-snap-align: none;
+  }
+  /* The deck no longer reserves a screen per card: nothing is travelling
+     through, so the page is just as tall as its contents. */
+  .deck,
+  .deck.is-deck {
+    height: auto;
+  }
+
+  /* THE HUD LOSES WHAT THE DRIVE GAVE IT MEANING.
+     "KICKOFF", a progress bar and "BALL ON OWN 20" describe a journey down a
+     field. With no field and no journey they are three pieces of furniture
+     that say nothing, and on a 390px header they crowd out the one thing that
+     does: who this is. */
+  .drive-hud {
+    padding: 10px 14px;
+  }
+  .drive-hud-centre,
+  .drive-hud-yard {
+    display: none;
+  }
+
+  /* The switcher is the only navigation on this page, so it gets a real bar
+     rather than three words floating over the content. */
+  .roster-switch {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* The base rule centres this with left:50% AND a translate. Setting
+       left/right alone leaves the translate in place, which drags the whole
+       bar half a screen off the left edge — which is exactly what it did. */
+    transform: none;
+    gap: 0;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: rgba(5, 9, 18, 0.93);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .roster-tab {
+    flex: 1;
+    justify-content: center;
+    /* 44px is the floor a thumb needs, and these were nowhere near it. */
+    min-height: 44px;
+    padding: 0 6px;
+    font-size: 0.7rem;
+  }
+}
+
+/* Two across once there is room for two, which halves the scroll for a squad
+   this size without making a card too small to read. */
+/* TWO ACROSS, INCLUDING ON A PHONE.
+
+   One card per row looks generous and reads as a chore: at 362 wide the card
+   is 501 tall and mostly crest, and seventy-two of them make a page thirty-
+   seven thousand pixels long — forty-four screens to see a squad. Two across
+   puts a card at about 174, still large enough for a face and a name, and
+   cuts the page to a quarter. Scanning a squad is the job here; admiring one
+   card at a time is what opening it is for. */
+@media (max-width: 999.98px), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .deck-stage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 14px 12px 108px;
+  }
+}
+@media (min-width: 700px) and (max-width: 999.98px), (min-width: 700px) and (pointer: coarse) {
+  .deck-stage {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}

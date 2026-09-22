@@ -120,6 +120,48 @@ const unifiedHeaderCss = `
   }
   .site-header.legacy-unified-header .brand strong{font-size:.76rem!important;letter-spacing:.16em!important;}
   .site-header.legacy-unified-header .brand em{font-size:1.45rem!important;}
+
+  /* THE NAV HAS TO COLLAPSE AGAIN.
+
+     The rule further up forces display:flex with no media query at all. That
+     is right for a desktop bar and wrong everywhere else, and because it
+     carries !important nothing in the shared stylesheets could take it back:
+     on a phone every legacy page loaded with its menu already open, a column
+     of links shoving the page's own content three hundred and fifty pixels
+     down, while the burger button sat above it doing nothing at all.
+
+     This restores the same behaviour the builder pages have — hidden until
+     the button says otherwise — and gives the links a target a thumb can hit
+     rather than the zero padding the desktop bar wants. */
+  .site-header.legacy-unified-header{
+    position:relative!important;
+  }
+  .site-header.legacy-unified-header .main-nav{
+    position:absolute!important;
+    left:0!important;
+    right:0!important;
+    top:100%!important;
+    display:none!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:0!important;
+    padding:10px 18px calc(18px + env(safe-area-inset-bottom, 0px))!important;
+    background:#050d18!important;
+    border-bottom:1px solid rgba(255,255,255,.12)!important;
+  }
+  .site-header.legacy-unified-header .main-nav.open{
+    display:flex!important;
+  }
+  .site-header.legacy-unified-header .main-nav a{
+    display:block!important;
+    padding:13px 0!important;
+    font-size:.82rem!important;
+    line-height:1.2!important;
+  }
+  .site-header.legacy-unified-header .main-nav .nav-cta{
+    margin-top:10px!important;
+    text-align:center!important;
+  }
 }
 `;
 

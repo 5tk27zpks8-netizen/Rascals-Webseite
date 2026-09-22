@@ -416,5 +416,10 @@ button:focus-visible {
   }
   .hero-playstate {
     margin: 0 0 0 0.7rem;
+    /* A thumb, not a mouse. Thirty clears the 24px minimum but sits on it;
+       thirty-six is the size this is actually pressed at. */
+    width: 36px;
+    height: 36px;
+    font-size: 0.72rem;
   }
 }

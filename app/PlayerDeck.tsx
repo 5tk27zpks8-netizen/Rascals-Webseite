@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { canDrive } from "./lib/drive-mode";
 import type { Player } from "./lib/football";
 import { holdDrive, releaseDrive, subscribeDrive } from "./lib/drive-scroll";
 import { PlayerDetailPanel } from "./showcase/PlayerDetailPanel";
@@ -267,8 +268,7 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
   useEffect(() => {
     const element = host.current;
     if (!element || rows === 0) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (!window.matchMedia("(min-width: 760px)").matches) return;
+    if (!canDrive()) return;
 
     element.classList.add("is-deck");
 

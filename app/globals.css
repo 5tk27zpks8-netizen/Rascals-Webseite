@@ -70,8 +70,18 @@ h1 i, h2 i { color: var(--red); font-style: italic; line-height: 1.06; padding-b
 .text-link { display: inline-flex; gap: 1rem; margin-top: 1.3rem; padding-bottom: .25rem; border-bottom: 2px solid var(--red); font-size: .75rem; font-weight: 900; text-transform: uppercase; letter-spacing: .1em; }
 .dark-link { color: var(--navy); }
 .hero-controls { position: absolute; z-index: 4; right: 4vw; top: 50%; display: grid; gap: .75rem; }
-.hero-controls button { width: 30px; height: 3px; padding: 0; border: 0; background: rgba(255,255,255,.42); cursor: pointer; transition: width .2s, background .2s; }
-.hero-controls button.active { width: 46px; background: var(--red); transform: translateX(-16px); }
+/* THE DASH RULE MUST NOT CATCH THE PAUSE BUTTON.
+
+   This styled every button inside .hero-controls, and the pause control lives
+   there too — so the control that exists to stop auto-advancing content was
+   flattened to a three-pixel dash. It is also more specific than
+   .hero-playstate, so the 30x30 that rule asks for never had a chance.
+
+   The dashes keep their three-pixel look and gain a target a thumb can hit:
+   the box grows to 24, the paint is clipped to the content box, so what you
+   see is the dash and what you press is the whole area around it. */
+.hero-controls button:not(.hero-playstate) { box-sizing: border-box; width: 30px; height: 24px; padding: 10px 0; border: 0; background: rgba(255,255,255,.42); background-clip: content-box; cursor: pointer; transition: width .2s, background .2s; }
+.hero-controls button.active:not(.hero-playstate) { width: 46px; background: var(--red); background-clip: content-box; transform: translateX(-16px); }
 .scroll-note { position: absolute; z-index: 4; left: 4vw; bottom: 2.3rem; display: flex; align-items: center; gap: 1rem; font-size: .62rem; font-weight: 900; letter-spacing: .2em; writing-mode: vertical-rl; }
 .scroll-note span { color: var(--red); font-size: 1rem; }
 
@@ -227,7 +237,10 @@ h1 i, h2 i { color: var(--red); font-style: italic; line-height: 1.06; padding-b
 footer { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 3rem; padding: 5rem 6vw 2rem; color: white; background: #030b16; }
 .footer-brand img { width: 170px; }
 footer b { display: block; margin-bottom: 1.2rem; color: var(--red); font-size: .62rem; letter-spacing: .16em; }
-footer a { display: block; margin: .65rem 0; color: rgba(255,255,255,.68); font-size: .8rem; }
+/* Padding, not margin. The gap between these was doing the spacing, which
+   looks identical and cannot be pressed: the links themselves were nineteen
+   pixels tall. Same rhythm, a target a thumb can hit. */
+footer a { display: block; margin: 0; padding: .5rem 0; color: rgba(255,255,255,.68); font-size: .8rem; }
 footer p { color: rgba(255,255,255,.55); font: .78rem/1.7 Arial, sans-serif; }
 footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; border-top: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.35); font-size: .58rem; letter-spacing: .14em; }
 
@@ -322,3 +335,11 @@ footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; bor
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* The sponsor band with nothing in it yet. The marquee is switched off — a
+   lone tile crossing the screen on an eighty-second loop reads as a fault —
+   and the tile fills the row instead of sitting at its left edge. */
+.ticker-track:has(.sponsor-logo-empty) { animation: none; width: 100%; }
+.sponsor-logo-empty { justify-items: center; gap: 4px; width: 100%; min-width: 0; text-align: center; text-decoration: none; }
+.sponsor-logo-empty strong { color: #0b1422; font-size: .8rem; font-weight: 950; letter-spacing: .14em; }
+.sponsor-logo-empty span { color: #5a6676; font-size: .72rem; letter-spacing: .04em; }

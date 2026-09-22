@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { subscribeDrive, type DriveFrame } from "./lib/drive-scroll";
+import { canDrive } from "./lib/drive-mode";
 import {
   FIELD_YARDS_LONG,
   FIELD_YARDS_WIDE,
@@ -2815,10 +2816,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
     const host = canvasHost.current;
     if (!page || !host) return;
 
-    const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    const wide = window.matchMedia("(min-width: 1000px)").matches;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!fine || !wide || reduced) return;
+    if (!canDrive()) return;
 
     page.classList.add("is-driving");
 
