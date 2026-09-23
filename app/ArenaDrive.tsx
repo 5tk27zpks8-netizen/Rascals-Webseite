@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { subscribeDrive, type DriveFrame } from "./lib/drive-scroll";
-import { canDrive } from "./lib/drive-mode";
+import { useDriveMode } from "./lib/drive-mode";
 import {
   FIELD_YARDS_LONG,
   FIELD_YARDS_WIDE,
@@ -2810,13 +2810,14 @@ const STEADY: Shot = { at: 0, x: 0, y: 7.6, lx: 0, ly: 3.5, ahead: 46, fov: 58, 
 
 export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
   const canvasHost = useRef<HTMLDivElement | null>(null);
+  const driving = useDriveMode();
 
   useEffect(() => {
     const page = document.querySelector<HTMLElement>(".drive-page");
     const host = canvasHost.current;
     if (!page || !host) return;
 
-    if (!canDrive()) return;
+    if (!driving) return;
 
     page.classList.add("is-driving");
 
@@ -3821,7 +3822,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       page.classList.remove("is-driving");
       cleanup?.();
     };
-  }, [steady]);
+  }, [steady, driving]);
 
   return <div className="drive-canvas" ref={canvasHost} aria-hidden="true" />;
 }

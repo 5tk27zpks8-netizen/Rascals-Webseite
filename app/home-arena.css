@@ -1246,6 +1246,24 @@
   .drive-page .drive-news .news-grid .featured-news {
     grid-column: auto;
   }
+  /* These read as a line of small capitals with a rule under them, which is
+     twenty pixels tall — under what a thumb can be asked to hit. The room is
+     taken above the text, not below, because the rule is painted at the
+     bottom of the padding box and would move with it. */
+  .drive-link,
+  .drive-page .drive-news .news-grid a,
+  .drive-fixture .md-link {
+    padding-top: 8px;
+  }
+  /* The same for the row of links that closes the page. The row gap comes off
+     as the links grow, so the spacing looks about as it did while each one is
+     a third taller than a fingertip needs. */
+  .drive-end-nav {
+    gap: 0 22px;
+  }
+  .drive-end-nav a {
+    padding: 7px 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

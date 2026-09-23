@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { canDrive } from "./lib/drive-mode";
+import { useDriveMode } from "./lib/drive-mode";
 import type { Player } from "./lib/football";
 import { holdDrive, releaseDrive, subscribeDrive } from "./lib/drive-scroll";
 import { PlayerDetailPanel } from "./showcase/PlayerDetailPanel";
@@ -197,6 +197,7 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
      ever have been clicked — and a single owner is one fewer thing to keep in
      step than a shared store would be. */
   const [opened, setOpened] = useState<DeckEntry | null>(null);
+  const driving = useDriveMode();
   const openCard = useCallback(
     (player: Player) => {
       setOpened(entries.find((entry) => entry.player.id === player.id) ?? null);
@@ -268,7 +269,9 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
   useEffect(() => {
     const element = host.current;
     if (!element || rows === 0) return;
-    if (!canDrive()) return;
+    /* Read live rather than once: a window dragged in past the breakpoint has
+       to give the formation back and let the plain grid through. */
+    if (!driving) return;
 
     element.classList.add("is-deck");
 
@@ -386,7 +389,7 @@ export function PlayerDeck({ entries }: { entries: DeckEntry[] }) {
         card.node.style.removeProperty("z-index");
       }
     };
-  }, [rows, depthSpan]);
+  }, [rows, depthSpan, driving]);
 
   if (entries.length === 0) return null;
 

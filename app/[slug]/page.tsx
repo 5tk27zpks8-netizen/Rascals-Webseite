@@ -62,7 +62,7 @@ export default async function ContentPage({ params }: { params: Promise<{ slug: 
 
   return (
     <main style={{minHeight:"70vh",display:"grid",placeItems:"center",background:"#050d18",color:"#fff",textAlign:"center",padding:"40px"}}>
-      <div><small style={{color:"#e7192d",fontWeight:900,letterSpacing:".18em"}}>404</small><h1>SEITE NICHT GEFUNDEN</h1><a href="/" style={{color:"#fff"}}>Zur Startseite →</a></div>
+      <div><small style={{color:"#e7192d",fontWeight:900,letterSpacing:".18em"}}>404</small><h1>SEITE NICHT GEFUNDEN</h1><a href="/" style={{display:"inline-block",marginTop:"14px",padding:"12px 18px",borderRadius:8,background:"#9e210f",color:"#fff",textDecoration:"none",fontWeight:900}}>Zur Startseite →</a></div>
     </main>
   );
 }

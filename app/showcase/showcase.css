@@ -611,7 +611,15 @@
     top: auto;
     left: 0;
     width: 100%;
+    /* `dvh`, not `vh`. On a phone browser `vh` is measured with the address
+       bar hidden, so a sheet capped in `vh` is taller than the screen it is
+       standing on whenever the bar is showing — and the head of the sheet,
+       with the name and the close button on it, is what goes off the top.
+       `dvh` is the height that is actually there. The `vh` line above it is
+       for browsers that do not know the newer unit and would otherwise have
+       no cap at all. */
     max-height: 88vh;
+    max-height: 88dvh;
     border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.6);
@@ -621,7 +629,12 @@
     from { transform: translateY(30px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
   }
-  .sc-panel-head { padding: 20px 54px 14px 18px; }
+  /* The way out of a sheet is the one control that has to be hit first time,
+     with a thumb, one-handed. 34px clears the minimum and no more; at 44 it
+     is the size every other dismiss on a phone is, and the head gives back
+     the ten pixels it takes. */
+  .sc-close { width: 44px; height: 44px; font-size: 16px; }
+  .sc-panel-head { padding: 20px 64px 14px 18px; }
   .sc-panel-scroll { padding: 16px 18px 28px; }
 }
 
