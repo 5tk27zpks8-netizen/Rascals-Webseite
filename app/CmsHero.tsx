@@ -130,7 +130,7 @@ export function CmsHero() {
       <section data-hero-pin className={`hero cms-hero cms-${cms.transition}`} aria-roledescription="Karussell" aria-label="Rascals Highlights">
         {slides.map((slide, index) => (
           <div key={slide.id} className={`hero-slide cms-hero-slide ${index === active ? "visible" : ""}`} aria-hidden={index !== active}>
-            <img {...wide(slide.image)} src={slide.image} alt={slide.title ? `${slide.title} ${slide.accent}` : "Rascals Highlight"} />
+            <img {...wide(slide.image, { eager: index === 0 })} src={slide.image} alt={slide.title ? `${slide.title} ${slide.accent}` : "Rascals Highlight"} />
             <div className="hero-shade" />
             <div className="hero-copy">
               <span className="eyebrow">{slide.eyebrow}</span>

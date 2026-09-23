@@ -209,3 +209,39 @@
     font-size: 0.72rem;
   }
 }
+
+/* ============================================================
+   A LONG WORD MUST NOT PUSH THE PAGE SIDEWAYS
+
+   Not a touch rule, so it sits outside the query above: it applies
+   wherever the viewport gets narrow enough, which on a phone means
+   somebody has zoomed in.
+
+   Measured at 200% zoom on a 390px phone — 195 CSS pixels of
+   viewport — five of six pages scrolled sideways, and the element
+   pushing hardest was almost always a single display word that
+   cannot break: "RASCALS." at 241 wide, "& ERGEBNISSE." at 277.
+   The fluid type scale floors them at a size where one word is
+   wider than the screen, and a word with nowhere to break takes
+   the page with it.
+
+   This is past what the standard asks for — WCAG's reflow rule is
+   about 320 CSS pixels, and the site is clean there — so it is not
+   a fix for a failure. It costs nothing at any normal size,
+   because a word only breaks when it otherwise would not fit, and
+   it removes a whole class of fault rather than one instance.
+
+   `anywhere` rather than `break-word`, because only `anywhere`
+   lets the intrinsic width shrink too; `break-word` breaks the
+   line but still reports the unbroken word's width to the layout,
+   which is exactly what was pushing.
+   ============================================================ */
+@media (max-width: 320px) {
+  h1, h2, h3,
+  .rascals-word,
+  .site-header .brand span,
+  .sb-brand span,
+  .rpc-player-placeholder strong {
+    overflow-wrap: anywhere;
+  }
+}

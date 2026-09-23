@@ -66,7 +66,7 @@ function Hero() {
   return (
     <section className="hero" data-hero-pin aria-roledescription="Karussell" aria-label="Rascals Highlights">
       <div className={`hero-slide helmet-slide ${slide === 0 ? "visible" : ""}`} aria-hidden={slide !== 0}>
-        <img {...wide("/helmet-hero-4k.webp")} src="/helmet-hero-4k.webp" alt="Rascals Footballhelm im Flutlicht" />
+        <img {...wide("/helmet-hero-4k.webp", { eager: true })} src="/helmet-hero-4k.webp" alt="Rascals Footballhelm im Flutlicht" />
         <div className="hero-shade" />
         <div className="hero-copy">
           <span className="eyebrow">American Football · Heidenheim</span>
