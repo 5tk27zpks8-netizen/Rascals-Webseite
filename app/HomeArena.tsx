@@ -4,6 +4,8 @@ import { DriveRoster } from "./DriveRoster";
 import { MatchdayHero } from "./MatchdayHero";
 import { DynamicHomeGames } from "./DynamicHomeGames";
 import { DynamicHomeFeeds } from "./DynamicHomeFeeds";
+import { readPublishedSiteBuilderState } from "./lib/site-builder";
+import { CLUB_LOGO } from "./ArenaRoster";
 import "./home-arena.css";
 
 /**
@@ -91,6 +93,8 @@ const figures = [
 ];
 
 export async function HomeArena() {
+  const site = await readPublishedSiteBuilderState();
+  const logo = site.theme.logoUrl?.trim() || CLUB_LOGO;
   /* The drive is a stadium, not a roster page: it must not go down because the
      squad query did. A failure here costs the card band and nothing else. */
   const players = await listPublicTeamPlayers().catch(() => []);
@@ -103,7 +107,7 @@ export async function HomeArena() {
       {/* --- broadcast overlay ------------------------------------- */}
       <header className="drive-hud">
         <a className="drive-hud-brand" href="/">
-          <img src="/rascals-logo-768.webp" alt="" />
+          <img src={logo} alt="" />
           <span>HELLENSTEIN<br /><i>RASCALS</i></span>
         </a>
 

@@ -1211,9 +1211,69 @@
    ============================================================ */
 
 @media (max-width: 999px) {
+  /* THE ARENA HAS TO LOOK LIKE THE ARENA ON A PHONE TOO.
+
+     The live stadium is a scroll-driven camera over a scene with instanced
+     crowds and a post-processing pass, and it is switched off here because a
+     phone's frame rate for it cannot be measured from this end. What was left
+     was a black page with white text on it — the Arena with the arena taken
+     out, which is not a design decision, it is an absence.
+
+     So the phone gets the same stadium as a photograph: an actual frame of
+     this scene, rendered from the Rascals' own twenty looking downfield, with
+     the scoreboard, the flags, the stands and the midfield crest in it. It is
+     fixed, so the panels travel over a ground that stays put, which is the
+     part of the drive that survives without a camera. */
   .drive-canvas {
-    position: absolute;
-    height: 100vh;
+    position: fixed;
+    inset: 0;
+    height: auto;
+    background-color: var(--drive-bg);
+    background-image: url("/arena-backdrop-780.webp");
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+  /* The scrim is what makes text on top of a photograph readable, so it comes
+     back — it is switched off elsewhere only because without the drive there
+     used to be nothing behind it. Flat rather than graduated: the layer is
+     fixed, so a gradient would darken by where a line happens to sit on the
+     screen rather than by what is behind it. At this strength the brightest
+     thing in the frame, the sky, still carries white type at about seven to
+     one. */
+  .drive-page:not(.is-driving) .drive-vignette {
+    display: block;
+  }
+  .drive-vignette {
+    background:
+      linear-gradient(180deg, rgba(3, 9, 16, 0.74) 0%, rgba(3, 9, 16, 0.78) 62%, rgba(3, 9, 16, 0.9) 100%);
+  }
+  /* A promise the phone cannot keep: there is no drive to start here. The
+     paragraph above it already says what the page is. */
+  .drive-hint {
+    display: none;
+  }
+  /* THE YARD MARKER HAD TO STOP BEING RED TYPE.
+
+     Measured over the stadium behind it, brand red at this size came out at
+     2.4 to 1 — and no red reaches four and a half against a background this
+     light, because pure red tops out below the luminance the ratio asks for.
+     The identity is in the dash, not in the lettering, so the dash stays red
+     and the words take the page's own ink. Ten point nine pixels rather than
+     nine point six, which is the floor the rest of this build holds to.
+
+     The same two numbers apply on a desktop screen, over the live stadium.
+     That is left alone here: it is the design as drawn, not a phone problem,
+     and worth deciding rather than changing in passing. */
+  .drive-eyebrow {
+    color: #dbe5f2;
+    font-size: 0.68rem;
+    letter-spacing: 0.24em;
+  }
+  /* Twelve percent of the viewport top and bottom is a screenful of nothing
+     between one panel and the next once the panels are stacked. */
+  .drive-panel {
+    padding: 56px clamp(20px, 6vw, 90px);
   }
   .drive-chain {
     display: none;
@@ -1263,6 +1323,14 @@
   }
   .drive-end-nav a {
     padding: 7px 0;
+  }
+}
+
+/* A denser screen gets the larger frame; there is no point sending it to a
+   phone that cannot show the extra pixels. */
+@media (max-width: 999px) and (min-resolution: 2dppx) {
+  .drive-canvas {
+    background-image: url("/arena-backdrop.webp");
   }
 }
 

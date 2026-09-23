@@ -16,3 +16,48 @@
 .sb-site .sb-cta.sb-variant-legacy-join{min-height:var(--sb-min,620px);padding:var(--sb-pt,0) 4vw var(--sb-pb,0);border-color:var(--sb-border,transparent);border-radius:var(--sb-radius,0);display:grid;place-items:center;text-align:center;background:var(--sb-background,#020810);color:var(--sb-text,#fff)}.sb-site .sb-variant-legacy-join .sb-cta-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.sb-site .sb-variant-legacy-join .sb-cta-shade{position:absolute;inset:0;background:rgba(2,10,21,.78);pointer-events:none}.sb-site .sb-variant-legacy-join .sb-inner{z-index:2;width:min(var(--sb-max,900px),88vw);padding:6rem 0}.sb-site .sb-variant-legacy-join h2{margin:1.1rem 0 1.7rem;font-size:clamp(var(--sb-h2-min,4rem),var(--sb-h2-fluid,7vw),var(--sb-h2-max,7.2rem));line-height:.83}.sb-site .sb-variant-legacy-join p{max-width:720px;margin:0 auto;color:color-mix(in srgb,var(--sb-text,#fff) 76%,transparent);font-size:1.05rem}.sb-site .sb-variant-legacy-join .sb-button{margin-top:2rem;background:var(--sb-accent,var(--rascals-red))}
 
 @media(max-width:800px){.sb-site .sb-variant-legacy-strip .sb-stats{grid-template-columns:repeat(2,1fr)}.sb-site .sb-variant-legacy-strip .sb-stats article{border-bottom:1px solid rgba(255,255,255,.2)}.sb-site .sb-variant-legacy-story .sb-split{grid-template-columns:1fr}.sb-site .sb-variant-legacy-story .sb-split-media{min-height:420px}.sb-site .sb-variant-legacy-story .sb-split-media img{min-height:420px}.sb-site .sb-variant-legacy-shop .sb-inner{grid-template-columns:1fr}.sb-site .sb-variant-legacy-shop .sb-cards{grid-template-columns:1fr 1fr}.sb-site .sb-variant-legacy-shop .sb-cards article:first-child{grid-column:1/-1;grid-row:auto;min-height:460px}.sb-legacy-secondary{margin-left:0;margin-top:.8rem}}
+
+/* ============================================================
+   THE STAT STRIP ON A PHONE
+
+   The strip puts a number and its label side by side, which works
+   on a desktop row four across. Two across on a phone leaves each
+   pair about a hundred and sixty pixels: "2023 GEGRÜNDET" fits on
+   one line, "11 SPIELER AUF DEM FELD" needs two, and the pair that
+   wrapped sat a line lower than the pair beside it. The band read
+   as four facts squeezed in rather than four facts stated.
+
+   Stacked, every tile is the same shape whatever its label is as
+   long as: number over label, both centred, nothing to collide
+   with. Placed here because this file is the last the layout
+   loads, so one rule settles it for the standard strip and the
+   legacy one alike.
+   ============================================================ */
+@media (max-width: 800px) {
+  .sb-site .sb-stats-section .sb-stats article {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 0;
+    padding: 18px 10px;
+    text-align: center;
+  }
+  .sb-site .sb-stats-section .sb-stats b {
+    font-size: clamp(1.5rem, 8vw, 2rem);
+    line-height: 1;
+  }
+  /* Two lines are reserved whether the label needs them or not. Without it
+     each tile centred its own pair, so a label that wrapped pushed its number
+     up and the four numbers no longer sat on one line across the row — which
+     is the same raggedness, just turned ninety degrees. */
+  .sb-site .sb-stats-section .sb-stats strong {
+    display: grid;
+    place-items: center;
+    min-height: 2.5em;
+    max-width: 15ch;
+    font-size: 0.66rem;
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+}

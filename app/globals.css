@@ -157,6 +157,10 @@ h1 i, h2 i { color: var(--red); font-style: italic; line-height: 1.06; padding-b
 .ticker-sequence { display: flex; flex: none; }
 .sponsor-logo { display: grid; place-items: center; min-width: 230px; height: 110px; padding: .8rem 1.6rem; background: linear-gradient(135deg, #fff, #f8f9fa); border-right: 1px solid rgba(7,23,43,.1); }
 .sponsor-logo img { width: 100%; max-width: 175px; height: 100%; max-height: 82px; object-fit: contain; filter: saturate(.94); transition: transform .25s ease, filter .25s ease; }
+/* A partner with no usable logo is shown by name. The tile is white and the
+   band around it sets white type, so without this the name was white on
+   white — an invisible sponsor, which is worse than no tile at all. */
+.sponsor-logo strong { color: #0b1422; font-size: .82rem; font-weight: 900; letter-spacing: .06em; line-height: 1.25; text-align: center; text-wrap: balance; }
 .sponsor-logo:hover img { transform: scale(1.06); filter: saturate(1.1); }
 .ticker-window:hover .ticker-track { animation-play-state: paused; }
 @keyframes ticker { to { transform: translate3d(-50%, 0, 0); } }
@@ -302,7 +306,12 @@ footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; bor
   .featured-news { min-height: 500px !important; }
   .sponsor-strip { grid-template-columns: 1fr; }
   .sponsor-strip > p { height: 48px; }
-  .ticker-track span { height: 90px; min-width: 185px; }
+  /* Was written for a `span` this band does not render, so it never did
+     anything. On the real tile: smaller, so more than one partner is on a
+     phone screen at a time. */
+  .sponsor-logo { height: 90px; min-width: 168px; padding: .7rem 1.1rem; }
+  .sponsor-logo img { max-width: 132px; max-height: 66px; }
+  .sponsor-logo strong { font-size: .72rem; }
   .join-cta { min-height: 650px; }
   .page-hero { height: 74svh; min-height: 580px; }
   .page-hero > div:last-child { left: 1.3rem; right: 1.3rem; bottom: 4rem; }

@@ -18,6 +18,17 @@ import "./arena-roster.css";
  * page whose scroll is already spoken for.
  */
 
+/**
+ * The mark to fall back to when the club has not put one in the CMS.
+ *
+ * It has to be the same fallback the rest of the site uses, or the arena ends
+ * up wearing a different badge from every other page — which is exactly what
+ * it did: the builder header and the legacy header both take the club's own
+ * logo out of the site settings, and only this page and the arena onepager
+ * carried the bare helmet that ships with the repository.
+ */
+export const CLUB_LOGO = "/rascals-logo-768.webp";
+
 /** The two squads that get a tab of their own. */
 const SQUADS: { id: PlayerUnit; label: string }[] = [
   { id: "offense", label: "OFFENSE" },
@@ -78,9 +89,11 @@ function order(players: Player[]) {
 export function ArenaRoster({
   players,
   coaches = [],
+  logo = CLUB_LOGO,
 }: {
   players: Player[];
   coaches?: Coach[];
+  logo?: string;
 }) {
   /* The staff lead every unit. Whichever one you pick, the drive takes you
      past the people who run the team before it reaches the people who play
@@ -126,7 +139,7 @@ export function ArenaRoster({
 
       <header className="drive-hud">
         <a className="drive-hud-brand" href="/">
-          <img src="/rascals-logo-768.webp" alt="" />
+          <img src={logo} alt="" />
           <span>HELLENSTEIN<br /><i>RASCALS</i></span>
         </a>
         <div className="drive-hud-centre">

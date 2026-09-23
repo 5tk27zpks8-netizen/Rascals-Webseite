@@ -97,15 +97,59 @@
   transform: translateX(-50%) rotate(180deg);
 }
 
-/* On narrow screens the field is cropped hard, so the numbers and the
-   per-yard hash marks turn into noise. Keep the yard lines and drop the rest. */
+/* On a phone the section is a tall column, and a field drawn across it was
+   squeezed from 1280 units into about 390: twenty-five yard lines and both
+   goal posts pressed into a picket fence with no field left in it.
+
+   So the field is turned a quarter turn and runs down the page instead. It is
+   the same drawing — the yard lines simply cross the screen the way they do
+   when you stand in an end zone and look down the pitch, which is the one view
+   of a field that is taller than it is wide. Sized from the container's own
+   height and width swapped, the 1280 by 430 drawing lands on a box of nearly
+   the same proportions, so almost nothing is stretched any more.
+
+   The numbers stay out of it: they are HTML placed by percentage over the top
+   and would not come round with the drawing. The hash marks come back, because
+   at this scale they are the texture that says football field rather than
+   noise. */
 @media (max-width: 780px) {
   .rascals-field {
+    container-type: size;
     opacity: 0.32;
   }
-  .rascals-field-numbers,
-  .rascals-field-hash {
+  .rascals-field svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100cqh;
+    height: 100cqw;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+  .rascals-field-numbers {
     display: none;
+  }
+  /* Turned upright the hash marks fall in two columns down the middle of the
+     column of text, which is where they are busiest and least wanted. Held
+     back they do what they do on a real field: read as texture, not as ruling. */
+  .rascals-field-hash {
+    opacity: 0.45;
+  }
+}
+
+/* Where `cqh` is not understood the drawing would sit unrotated at its natural
+   size, so the old behaviour is kept for those browsers: lines across, and the
+   per-yard marks dropped before they become noise. */
+@supports not (width: 100cqh) {
+  @media (max-width: 780px) {
+    .rascals-field svg {
+      position: static;
+      width: 100%;
+      height: 100%;
+      transform: none;
+    }
+    .rascals-field-hash {
+      display: none;
+    }
   }
 }
 
