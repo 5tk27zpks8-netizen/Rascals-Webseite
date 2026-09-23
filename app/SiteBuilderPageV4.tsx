@@ -11,7 +11,7 @@ import "./site-builder.css";
 import "./builder-typography.css";
 import "./builder-element-styles.css";
 
-const footballIcon="https://api.iconify.design/noto/american-football.svg";
+const footballIcon="/icons/football-color.svg";
 const legacySlugs=new Set(["ueber-uns","team","sponsoring","shop","news","galerie"]);
 type VarStyle=CSSProperties&Record<string,string|number|undefined>;
 

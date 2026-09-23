@@ -25,7 +25,7 @@ const variantLibrary:Partial<Record<BuilderSectionType,Array<{id:string;label:st
 };
 
 const iconLibrary = [
-  ["Football farbig","https://api.iconify.design/noto/american-football.svg"],["Football Outline","https://api.iconify.design/ion/american-football-outline.svg?color=%23e7192d"],["Trophy","https://api.iconify.design/mdi/trophy-outline.svg?color=%23e7192d"],["Pfeife","https://api.iconify.design/mdi/whistle-outline.svg?color=%23e7192d"],["Football Helm","https://api.iconify.design/streamline-ultimate/american-football-helmet.svg?color=%23e7192d"],["Team","https://api.iconify.design/mdi/account-group-outline.svg?color=%23e7192d"],["Shield","https://api.iconify.design/mdi/shield-check-outline.svg?color=%23e7192d"],["Heart","https://api.iconify.design/mdi/heart-outline.svg?color=%23e7192d"],["Target","https://api.iconify.design/mdi/target.svg?color=%23e7192d"],["Star","https://api.iconify.design/mdi/star-outline.svg?color=%23e7192d"],
+  ["Football farbig","/icons/football-color.svg"],["Football Outline","/icons/football.svg"],["Trophy","/icons/trophy-outline.svg"],["Pfeife","/icons/whistle.svg"],["Football Helm","/icons/helmet.svg"],["Team","/icons/team.svg"],["Shield","/icons/shield.svg"],["Heart","/icons/heart.svg"],["Target","/icons/target.svg"],["Star","/icons/star.svg"],
 ] as const;
 
 type MediaItem={key:string;url:string};

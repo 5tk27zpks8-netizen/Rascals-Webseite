@@ -16,7 +16,39 @@ export type SiteBuilderState={version:number;theme:BuilderTheme;pages:BuilderPag
 const LEGACY_KEY="site_builder";
 const DRAFT_KEY="site_builder_draft_v3";
 const PUBLISHED_KEY="site_builder_published_v3";
-const icon=(name:string,color="e7192d")=>`https://api.iconify.design/${name.replace(":","/")}.svg?color=%23${color}`;
+/* THE ICONS COME FROM THIS SERVER NOW.
+
+   These were fetched from api.iconify.design at render time — one request to
+   a third party per icon, on a phone, before the page could finish drawing
+   itself. Behind a restrictive network they simply failed and the page lost
+   content; everywhere else they cost a DNS lookup, a TLS handshake and a
+   round trip each for about half a kilobyte of artwork.
+
+   The same icons are published as data on npm, so they were extracted once
+   and now sit in /public/icons: thirteen files, eight kilobytes in total,
+   served from the same origin as everything else.
+
+   A name outside the set still falls through to the service rather than
+   rendering nothing, so an icon chosen in the CMS that nobody has localised
+   keeps working. */
+const LOCAL_ICONS:Record<string,string>={
+  "noto:american-football":"football-color",
+  "ion:american-football-outline":"football",
+  "mdi:trophy-outline":"trophy-outline",
+  "mdi:whistle-outline":"whistle",
+  "streamline-ultimate:american-football-helmet":"helmet",
+  "mdi:account-group-outline":"team",
+  "mdi:shield-check-outline":"shield",
+  "mdi:heart-outline":"heart",
+  "mdi:target":"target",
+  "mdi:star-outline":"star",
+  "bi:trophy":"trophy",
+  "mdi:map-marker-outline":"map-marker",
+  "mdi:trending-up":"trending-up",
+};
+const icon=(name:string,color="e7192d")=>LOCAL_ICONS[name]
+  ?`/icons/${LOCAL_ICONS[name]}.svg`
+  :`https://api.iconify.design/${name.replace(":","/")}.svg?color=%23${color}`;
 const sid=(name:string)=>`seed-${name}`;
 const isLight=(bg:string)=>["#fff","#ffffff","#f4f4f1","#f5f5f2"].includes(bg.toLowerCase());
 const style=(background="#050d18",align:BuilderAlign="left",minHeight=0):BuilderSectionStyle=>({background,textColor:isLight(background)?"#071421":"#ffffff",accentColor:"#e7192d",paddingTop:70,paddingBottom:70,minHeight,align,maxWidth:1600,rounded:0,border:"",borderWidth:0,borderStyle:"solid",boxShadow:"",opacity:1,headingScale:1,backgroundMode:"color",backgroundImage:"",backgroundVideo:"",backgroundGradient:"linear-gradient(135deg,#050d18,#0b1725)",overlayColor:"#020812",overlayOpacity:.45,backgroundPosition:"center",backgroundFixed:false,tablet:{paddingTop:58,paddingBottom:58,minHeight,align,maxWidth:1200,headingScale:.9},mobile:{paddingTop:42,paddingBottom:42,minHeight:0,align,maxWidth:720,headingScale:.72}});
