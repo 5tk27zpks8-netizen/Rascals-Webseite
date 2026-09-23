@@ -343,3 +343,16 @@ footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; bor
 .sponsor-logo-empty { justify-items: center; gap: 4px; width: 100%; min-width: 0; text-align: center; text-decoration: none; }
 .sponsor-logo-empty strong { color: #0b1422; font-size: .8rem; font-weight: 950; letter-spacing: .14em; }
 .sponsor-logo-empty span { color: #5a6676; font-size: .72rem; letter-spacing: .04em; }
+
+/* THE TWO LINES THAT WERE GENUINELY TOO SMALL TO READ.
+
+   The site sets a lot of short, widely tracked uppercase labels at ten or
+   eleven pixels, and those read fine — they are three words, spaced, at full
+   contrast. These two are neither: the footer's credit line is a sentence at
+   9.3px in thirty-five per cent white, and the news link is navigation. Both
+   get enough size on a phone to be read rather than recognised. */
+@media (max-width: 760px) {
+  footer small { font-size: .7rem; letter-spacing: .1em; line-height: 1.6; color: rgba(255,255,255,.5); }
+  .news-preview .featured-news a,
+  .news-preview .compact-news a { font-size: .78rem; }
+}

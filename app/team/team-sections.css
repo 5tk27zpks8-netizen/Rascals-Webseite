@@ -53,3 +53,8 @@
   .arena-portal:hover img,.arena-portal:focus-visible img{transform:scale(1.01)}
   .arena-portal:hover .arena-portal-go,.arena-portal:focus-visible .arena-portal-go{transform:none}
 }
+
+/* Matching the floor the rest of the site's labels now hold on a phone. */
+@media (max-width: 760px) {
+  .arena-portal-text small { font-size: 11px; }
+}

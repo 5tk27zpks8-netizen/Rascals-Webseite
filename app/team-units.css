@@ -164,3 +164,10 @@
     padding: 14px;
   }
 }
+
+/* "SENIORS · AB 18" is information, not ornament — it is the one line that
+   tells a reader which squad they are looking at. At .58rem it lands at nine
+   pixels on a phone, which is a size you recognise rather than read. */
+@media (max-width: 760px) {
+  .team-squads small { font-size: 0.68rem; letter-spacing: 0.16em; }
+}
