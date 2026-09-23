@@ -32,6 +32,27 @@ import "./mobile-tab-bar.css";
  * on a tap outside, and gives focus back where it came from.
  */
 
+/* PLAIN ANCHORS, ON PURPOSE — `next/link` IS BROKEN IN THIS BUILD.
+ *
+ * A tap costing a full page load is the obvious thing to fix with `Link`,
+ * which swaps only the part that changed. It was tried, and in the built
+ * worker it fails outright:
+ *
+ *   [vinext] RSC prefetch setup error: TypeError: d is not a function
+ *   TypeError: e is not a function
+ *
+ * The router takes the click — `defaultPrevented` is true — its prefetch
+ * machinery then throws, no request is ever made, and the address bar never
+ * changes. The link is simply dead, and worse than slow.
+ *
+ * It looked fine against the dev server, which is why this is written down:
+ * the failure only exists in the production bundle, so anyone tempted to
+ * "fix" these anchors again should measure against `wrangler dev` on the
+ * built output, not against `vinext dev`.
+ *
+ * So the tap reloads the page, as every other link on this site does, and the
+ * wait is attacked from the other side — see the prefetch hints below.
+ */
 type Tab = { href: string; label: string; icon: React.ReactNode };
 
 /* Drawn here rather than fetched. Five files would be five requests for a
@@ -160,6 +181,26 @@ export function MobileTabBar() {
       (opener.current ?? moreButton.current)?.focus?.();
     };
   }, [openSheet, close]);
+
+  /* WHY THERE IS NO PREFETCHING HERE.
+
+     The obvious way to take the wait out of a tap is to fetch the four
+     destinations quietly beforehand, so the tap finds the document already in
+     the browser's cache. It was built and measured, and it does nothing:
+     every public route answers with
+
+       cache-control: no-store, must-revalidate
+
+     and a response marked `no-store` is never stored, so the prefetched copy
+     is thrown away and the tap asks the server again regardless. The hints
+     went in the head, the time-to-first-byte did not move, and the only thing
+     they bought was a second render per page on the server.
+
+     It becomes worth doing the moment those routes are allowed to be cached,
+     even briefly — see the note in the commit. Until then it is cost without
+     benefit, and it is written down so the next person does not spend the
+     afternoon rediscovering it.
+   */
 
   // The admin area has its own furniture and is not part of the public site.
   if (pathname.startsWith("/admin")) return null;

@@ -109,8 +109,23 @@
     position: relative;
   }
 
+  /* THE TAP HAS TO ANSWER BEFORE THE PAGE DOES.
+
+     A tap here reloads the page, and even at its best that is a few hundred
+     milliseconds of nothing happening. Silence in that gap is what makes an
+     interface feel stuck — the finger has left the glass and the screen has
+     not acknowledged it. So the cell lights and sinks the instant it is
+     pressed, which costs nothing and is the difference between waiting and
+     wondering whether the tap registered. */
   .mtb-tab:active {
     color: #ffffff;
+    background: rgba(231, 25, 45, 0.16);
+    transform: scale(0.94);
+    transition: transform 0.06s ease, background 0.06s ease, color 0.06s ease;
+  }
+
+  .mtb-tab:active .mtb-mark {
+    color: var(--rascals-red, #e7192d);
   }
 
   .mtb-tab:focus-visible {
