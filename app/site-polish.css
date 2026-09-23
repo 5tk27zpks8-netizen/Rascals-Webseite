@@ -62,7 +62,19 @@
   justify-content:space-between!important;
   height:auto!important;
   min-height:96px!important;
-  padding:0 4vw!important;
+  /* THE BAR THAT ACTUALLY WINS.
+
+     Three places style this header — the shared stylesheet, this file and the
+     script that unifies the legacy pages — and this one carries !important on
+     every line, so it is the one a phone sees. The insets belong wherever the
+     padding is decided, which is here; putting them only in the shared
+     stylesheet changed nothing at all, which is how this was found.
+
+     The page fills the glass now (viewport-fit=cover in the root layout), so
+     without this the bar's top edge is behind the status bar and the notch,
+     and behind a rounded corner in landscape. Every inset is zero on hardware
+     that has none, so the desktop bar is untouched. */
+  padding:var(--safe-t) calc(4vw + var(--safe-r)) 0 calc(4vw + var(--safe-l))!important;
   border-bottom:1px solid rgba(255,255,255,.08)!important;
   background:#050d18!important;
   color:#fff!important;
@@ -177,6 +189,9 @@
   .sb-header{
     position:sticky!important;
     min-height:78px!important;
+    /* 4vw as before — only the insets are new, so a tablet's bar keeps the
+       side room it had. */
+    padding:var(--safe-t) calc(4vw + var(--safe-r)) 0 calc(4vw + var(--safe-l))!important;
   }
   .site-header .brand img,
   .sb-header .sb-brand img{

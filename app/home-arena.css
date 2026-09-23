@@ -80,7 +80,10 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: clamp(16px, 3vw, 44px);
-  padding: 13px clamp(16px, 3vw, 38px) 15px;
+  /* Padded past the notch and the landscape ears; every inset is zero on
+     hardware that has none, so this is the same bar on a desktop. */
+  padding: calc(13px + var(--safe-t)) calc(clamp(16px, 3vw, 38px) + var(--safe-r)) 15px
+    calc(clamp(16px, 3vw, 38px) + var(--safe-l));
   background: linear-gradient(180deg, rgba(3, 9, 16, 0.95), rgba(3, 9, 16, 0.5) 68%, transparent);
   backdrop-filter: blur(12px);
 }

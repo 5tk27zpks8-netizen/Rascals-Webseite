@@ -1,7 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "@fontsource-variable/archivo/standard.css";
 import "@fontsource-variable/archivo/standard-italic.css";
+/* First, so its tokens exist for everything below and nothing it defines
+   can land on top of a rule that was already right. */
+import "./responsive.css";
 import "./rascals-design.css";
 import "./rascals-motion.css";
 import "./globals.css";
@@ -14,11 +17,44 @@ import "./builder-background-mode.css";
 import "./builder-footer-enhancer.css";
 import "./site-polish.css";
 import "./rascals-refresh.css";
+/* Last, so the touch corrections win over the sheets they correct. */
+import "./touch.css";
 import { BuilderFooterEnhancer } from "./BuilderFooterEnhancer";
 import { ImageFocusRuntime } from "./ImageFocusRuntime";
 import { LegacyBuilderRuntime } from "./LegacyBuilderRuntime";
 import { PublicAdminLogin } from "./PublicAdminLogin";
 import { RascalsMotion } from "./RascalsMotion";
+
+/**
+ * `viewport-fit=cover` is the switch that makes a phone's own shape
+ * addressable.
+ *
+ * Without it the page is laid out inside the safe rectangle: the notch, the
+ * island and the home indicator are simply not the page's problem, and every
+ * `env(safe-area-inset-*)` reads zero. That sounds safe and looks wrong — a
+ * dark page gets a light band across the bottom where the indicator lives, and
+ * a full-bleed photograph stops short of the top of the screen.
+ *
+ * With it the page fills the glass, which is what a phone app looks like, and
+ * the insets start reporting real numbers. Everything fixed to an edge then
+ * has to pad itself with them, or it ends up underneath the hardware — so the
+ * two changes belong in the same commit, and do not make sense apart.
+ *
+ * `maximumScale` is deliberately not set: pinch zoom stays available.
+ */
+export const viewport: Viewport = {
+  /* `viewport-fit` rides along inside `width` on purpose. The framework builds
+     the meta tag from a fixed list of keys — width, height, initial-scale,
+     minimum-scale, maximum-scale, user-scalable — and has no branch for
+     `viewportFit`, so setting it the documented way produces nothing at all
+     and fails silently, which is the worst kind of not working. Written here
+     it lands in the same comma-separated list the spec asks for and the tag
+     comes out exactly as `width=device-width, viewport-fit=cover,
+     initial-scale=1`. Verified against the served HTML, not assumed. */
+  width: "device-width, viewport-fit=cover",
+  initialScale: 1,
+  themeColor: "#050d18",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();

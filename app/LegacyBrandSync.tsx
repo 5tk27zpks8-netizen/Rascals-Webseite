@@ -24,7 +24,15 @@ const unifiedHeaderCss = `
   justify-content:space-between!important;
   height:auto!important;
   min-height:96px!important;
-  padding:0 4vw!important;
+  /* The page fills the glass now (viewport-fit=cover in the root layout), so
+     this bar's top edge is behind the status bar and the notch on a phone that
+     has one, and behind the rounded corner on whichever side is up in
+     landscape. Every inset resolves to zero on hardware without them, so this
+     is the same bar on a desktop as it always was. The declarations stay
+     !important because every one in this block is: they are injected over
+     stylesheets that already styled this element, and a single non-important
+     padding here would simply lose. */
+  padding:var(--safe-t) calc(4vw + var(--safe-r)) 0 calc(4vw + var(--safe-l))!important;
   border-bottom:1px solid rgba(255,255,255,.08)!important;
   background:#050d18!important;
   color:#fff!important;
@@ -110,7 +118,7 @@ const unifiedHeaderCss = `
 @media(max-width:900px){
   .site-header.legacy-unified-header{
     min-height:78px!important;
-    padding:0 18px!important;
+    padding:var(--safe-t) calc(18px + var(--safe-r)) 0 calc(18px + var(--safe-l))!important;
   }
   .site-header.legacy-unified-header .brand img{
     width:auto!important;

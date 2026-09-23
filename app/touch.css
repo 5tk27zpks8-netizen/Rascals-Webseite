@@ -1,0 +1,135 @@
+/* ============================================================
+   THE TOUCH FLOOR
+
+   Every selector carries an `html` in front of it, and every rule sits
+   inside the touch query. The prefix is not decoration: a stylesheet
+   imported by a route lands after the ones the root layout imports, so
+   "loaded last" is not something this file can rely on. One extra type
+   selector settles it without turning into an !important.
+
+   Loaded last as well, on purpose. These rules raise controls that other
+   stylesheets have already sized, and at equal specificity the last
+   sheet wins — the first attempt lived in responsive.css, which is
+   loaded first so its tokens exist for everything, and every one of
+   these declarations lost silently to the rule it was meant to
+   override. Tokens first, corrections last.
+   ============================================================ */
+
+/* Twenty-eight controls across the site measured between 15 and 42
+   pixels tall on a phone. Wide enough, every one of them — it is
+   always the height that falls short, because a link is as tall as
+   its line of text and nothing more.
+
+   They are listed rather than swept up by a blanket rule, because a
+   blanket rule would also catch the things whose box is the design:
+   a player card, a photograph, a logo. Each one below was measured,
+   not guessed.
+
+   Two ways of finding the missing pixels:
+
+   PADDING, where the control has room around it. The text stays
+   where it was and the box grows around it.
+
+   A HALO, where the control is drawn with a line under it. Growing
+   the box would drag that line away from the words it belongs to,
+   so instead an invisible child reaches out to 44 and takes the
+   press. Nothing moves and the thumb still lands.
+
+   All of it inside the touch query, so a mouse keeps the compact
+   design it was drawn for.
+   ============================================================ */
+
+@media (pointer: coarse), (max-width: 599px) {
+  /* --- padding: room is available, so the box grows ------------- */
+  html .home-schedule-footer a,
+  html .featured-news > div > a,
+  html .compact-news > div > a,
+  html .public-admin-login,
+  html .sb-footer-column a,
+  html footer > div > a,
+  html .hy-footer nav a,
+  html .team-jump-nav a,
+  html .admin-login-footer a,
+  html .drive-link,
+  html .drive-end-nav a,
+  html .drive-hud-brand {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap);
+  }
+
+  /* Inline-flex ones keep flowing with the text around them. */
+  html .featured-news > div > a,
+  html .compact-news > div > a,
+  html .public-admin-login,
+  html .drive-link {
+    display: inline-flex;
+  }
+
+  /* The switcher under the hero. Its paint is on the content box, so
+     the pill stays four pixels tall while the button answers at 44 —
+     which is what it was already doing at 24. */
+  html .hero-controls button:not(.hero-playstate) {
+    height: var(--tap);
+    padding: 20px 0;
+  }
+  html .hero-controls .hero-playstate {
+    width: var(--tap);
+    height: var(--tap);
+  }
+
+  /* --- halo: the drawn box has to stay where it is -------------- */
+  html .text-link,
+  html .fm-outro-link {
+    position: relative;
+  }
+  html .text-link::after,
+  html .fm-outro-link::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: var(--tap);
+    transform: translateY(-50%);
+  }
+
+  /* A one-word link in a row is 31 pixels wide. Tall enough now, and still
+     narrower than a fingertip, so it gets the width too — as padding, which
+     also opens the gaps between neighbours in the same row. */
+  html .drive-end-nav a,
+  html .hy-footer nav a,
+  html .team-jump-nav a {
+    justify-content: center;
+    min-width: var(--tap);
+    padding-right: var(--s-2);
+    padding-left: var(--s-2);
+  }
+
+  /* THE FIELD THAT ZOOMS THE PAGE.
+
+     Mobile Safari zooms the whole page in when a text field is focused and
+     its type is set below sixteen pixels — and it does not zoom back out
+     afterwards, so tapping a login field leaves the visitor on a page a third
+     too wide with the layout shifted sideways. The login card set thirteen.
+
+     Sixteen is the threshold, not a preference, and the only other way to stop
+     it is `maximum-scale=1`, which takes pinch zoom away from everybody who
+     needs it. So the floor is set on the field and the page keeps its zoom.
+
+     `max()` rather than a flat value, so a field that was already larger than
+     sixteen keeps its size. */
+  html input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+  html select,
+  html textarea {
+    font-size: max(16px, 1em);
+  }
+
+  /* A field is a target too, and a short one is hard to put a cursor in. */
+  html input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+  html select,
+  html textarea,
+  html button[type="submit"] {
+    min-height: var(--tap);
+  }
+}

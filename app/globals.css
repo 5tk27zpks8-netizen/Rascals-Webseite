@@ -20,9 +20,15 @@ button { font: inherit; }
 img { display: block; max-width: 100%; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .skip-link { position: fixed; z-index: 200; left: 1rem; top: -5rem; background: var(--white); color: var(--navy); padding: .8rem 1rem; }
-.skip-link:focus { top: 1rem; }
+.skip-link:focus { top: calc(1rem + var(--safe-t)); }
 
-.site-header { position: fixed; inset: 0 0 auto; height: 78px; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 4vw; color: white; background: linear-gradient(180deg, rgba(4,13,25,.96), rgba(4,13,25,.62)); border-bottom: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(12px); }
+:root { --header-h: 78px; }
+/* The bar fills the glass now (viewport-fit=cover), so on a phone with a
+   notch its top edge is behind the status bar. It grows by exactly what the
+   hardware takes and pads by the same, so the logo and the menu button sit
+   where they always did while the background reaches the top of the screen.
+   Both resolve to zero on hardware that has no notch. */
+.site-header { position: fixed; inset: 0 0 auto; height: calc(var(--header-h) + var(--safe-t)); padding-top: var(--safe-t); z-index: 100; display: flex; align-items: center; justify-content: space-between; padding-right: calc(4vw + var(--safe-r)); padding-left: calc(4vw + var(--safe-l)); color: white; background: linear-gradient(180deg, rgba(4,13,25,.96), rgba(4,13,25,.62)); border-bottom: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(12px); }
 .brand { display: flex; align-items: center; gap: .6rem; min-width: 245px; }
 .brand img { width: 84px; height: 62px; object-fit: contain; }
 .brand span { display: grid; justify-items: center; line-height: .9; letter-spacing: .08em; text-align: center; }
@@ -238,7 +244,10 @@ h1 i, h2 i { color: var(--red); font-style: italic; line-height: 1.06; padding-b
 .lightbox img { width: min(1200px, 90vw); height: min(82vh, 900px); height: min(82dvh, 900px); object-fit: contain; }
 .lightbox button { position: absolute; right: 2rem; top: 1rem; border: 0; color: white; background: none; font-size: 3rem; cursor: pointer; }
 
-footer { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 3rem; padding: 5rem 6vw 2rem; color: white; background: #030b16; }
+/* The page reaches the bottom of the glass now, so the last thing on it would
+   sit under the home indicator. The side insets matter in landscape, where the
+   rounded corner eats into whichever edge is up. All three are zero elsewhere. */
+footer { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 3rem; padding: 5rem calc(6vw + var(--safe-r)) calc(2rem + var(--safe-b)) calc(6vw + var(--safe-l)); color: white; background: #030b16; }
 .footer-brand img { width: 170px; }
 footer b { display: block; margin-bottom: 1.2rem; color: var(--red); font-size: .62rem; letter-spacing: .16em; }
 /* Padding, not margin. The gap between these was doing the spacing, which
@@ -250,7 +259,7 @@ footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; bor
 
 @media (max-width: 1050px) {
   .menu-button { display: block; }
-  .main-nav { position: fixed; inset: 78px 0 auto; display: none; align-items: stretch; padding: 1rem 4vw 2rem; background: rgba(3,11,22,.98); }
+  .main-nav { position: fixed; inset: calc(var(--header-h) + var(--safe-t)) 0 auto; display: none; align-items: stretch; padding: 1rem calc(4vw + var(--safe-r)) calc(2rem + var(--safe-b)) calc(4vw + var(--safe-l)); background: rgba(3,11,22,.98); }
   .main-nav.open { display: grid; }
   .main-nav a { padding: .9rem 0; }
   .main-nav a:not(.nav-cta)::after { bottom: .5rem; }
@@ -267,8 +276,9 @@ footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; bor
 }
 
 @media (max-width: 720px) {
-  .site-header { height: 68px; padding: 0 1rem; }
-  .main-nav { inset: 68px 0 auto; }
+  :root { --header-h: 68px; }
+  .site-header { padding-right: calc(1rem + var(--safe-r)); padding-left: calc(1rem + var(--safe-l)); }
+
   .brand { min-width: 225px; }
   .brand img { width: 72px; height: 54px; }
   .brand em { font-size: 1.22rem; }
@@ -336,7 +346,7 @@ footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; bor
   .gallery-grid button, .gallery-grid button:nth-child(1), .gallery-grid button:nth-child(6), .gallery-grid button:nth-child(2), .gallery-grid button:nth-child(5) { grid-column: span 1; grid-row: span 1; }
   .gallery-grid button:first-child { grid-column: 1 / -1; grid-row: span 2; }
   .lightbox { padding: 1rem; }
-  footer { grid-template-columns: 1fr 1fr; padding: 4rem 1.3rem 2rem; }
+  footer { grid-template-columns: 1fr 1fr; padding: 4rem calc(1.3rem + var(--safe-r)) calc(2rem + var(--safe-b)) calc(1.3rem + var(--safe-l)); }
   .footer-brand { grid-column: 1 / -1; }
 }
 

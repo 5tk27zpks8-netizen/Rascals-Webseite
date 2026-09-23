@@ -324,7 +324,7 @@ html:has(.roster-page) {
      that say nothing, and on a 390px header they crowd out the one thing that
      does: who this is. */
   .drive-hud {
-    padding: 10px 14px;
+    padding: calc(10px + var(--safe-t)) calc(14px + var(--safe-r)) 10px calc(14px + var(--safe-l));
   }
   .drive-hud-centre,
   .drive-hud-yard {
@@ -342,7 +342,7 @@ html:has(.roster-page) {
        bar half a screen off the left edge — which is exactly what it did. */
     transform: none;
     gap: 0;
-    padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    padding: 8px calc(6px + var(--safe-r)) calc(8px + var(--safe-b)) calc(6px + var(--safe-l));
     background: rgba(5, 9, 18, 0.93);
     backdrop-filter: blur(14px);
     border-top: 1px solid rgba(255, 255, 255, 0.12);

@@ -635,7 +635,16 @@
      the ten pixels it takes. */
   .sc-close { width: 44px; height: 44px; font-size: 16px; }
   .sc-panel-head { padding: 20px 64px 14px 18px; }
-  .sc-panel-scroll { padding: 16px 18px 28px; }
+  /* The sheet's foot is the bottom of the screen, which on a phone is where
+     the home indicator lives. The last link in it would otherwise sit under
+     the bar the operating system draws over everything. */
+  .sc-panel-scroll {
+    padding: 16px calc(18px + var(--safe-r)) calc(28px + var(--safe-b)) calc(18px + var(--safe-l));
+  }
+  .sc-panel-head {
+    padding-right: calc(64px + var(--safe-r));
+    padding-left: calc(18px + var(--safe-l));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
