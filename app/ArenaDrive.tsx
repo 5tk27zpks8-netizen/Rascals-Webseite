@@ -2808,6 +2808,34 @@ function buildScoreboard(
  */
 const STEADY: Shot = { at: 0, x: 0, y: 7.6, lx: 0, ly: 3.5, ahead: 46, fov: 58, roll: 0 };
 
+/**
+ * Hand the main thread back for a moment.
+ *
+ * Building this stadium is one long run of synchronous work — geometry,
+ * canvas textures, an instanced crowd of several thousand, a prefiltered sky
+ * — and done in a single go it holds the thread for as long as it takes. The
+ * page is not merely blank during that: it cannot scroll, it cannot be
+ * tapped, and a screenshot of it times out. On a slower machine that is many
+ * seconds of a page that looks broken and behaves like it.
+ *
+ * Dropped in between the stages, this lets the browser paint what is there
+ * and answer the person holding the phone before the next stage starts. The
+ * total work is the same and finishes at about the same moment; what changes
+ * is that the page is alive throughout it.
+ *
+ * `scheduler.yield()` where the browser has it, because it returns to this
+ * work ahead of unrelated tasks that were queued behind it. A timeout
+ * otherwise — and a timeout rather than `requestAnimationFrame`, which does
+ * not fire at all in a background tab and would leave a half-built stadium
+ * parked until the tab came forward.
+ */
+type Scheduler = { yield?: () => Promise<void> };
+const scheduler = (globalThis as unknown as { scheduler?: Scheduler }).scheduler;
+const breathe: () => Promise<void> =
+  typeof scheduler?.yield === "function"
+    ? () => scheduler.yield!()
+    : () => new Promise((resolve) => setTimeout(resolve, 0));
+
 export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
   const canvasHost = useRef<HTMLDivElement | null>(null);
   const driving = useDriveMode();
@@ -3378,18 +3406,24 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         cloudTexture.colorSpace = THREE.SRGBColorSpace;
         cloudTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
+      await breathe();
+      if (disposed) return;
       const sky = buildSky(THREE, cloudTexture);
       scene.add(sky.group);
 
       /* The pass, and the man under it. Only on the roster drive: the panel
          page has its own things to look at and a ball crossing them would be
          one more moving object competing with the copy. */
+      await breathe();
+      if (disposed) return;
       scene.add(buildGoal(THREE, OWN_END_Z, 1));
       scene.add(buildGoal(THREE, OPP_END_Z, -1));
       /* Fourteen units back from the end line, not twenty-six. At twenty-six
          the bowl had a band of bare grass behind each end wide enough to read
          as a gap in the ground, and the shot that ends the drive looks
          straight down it. A stand at this level sits close behind the posts. */
+      await breathe();
+      if (disposed) return;
       scene.add(buildEndStand(THREE, adTexture, crowdFaces, OWN_END_Z + 14, 1));
       scene.add(buildEndStand(THREE, adTexture, crowdFaces, OPP_END_Z - 14, -1));
 
@@ -3399,6 +3433,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
 
       /* One roof over the whole bowl, put in after the stands so it reads as
          sitting on them. */
+      await breathe();
+      if (disposed) return;
       const roofRing = buildRoofRing(THREE, STAND_ROOF_Y, bannerCrestTexture, bannerWordTexture);
       scene.add(roofRing);
       scene.add(buildPitchsideAds(THREE, clubCrest, clubWordmark));
@@ -3406,6 +3442,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       /* Close the bowl. The four corner chamfers meet the touchline fronts at
          x = ±(half the field + the sideline) and the end fronts at the z the
          end stands sit on, so the ring is continuous from the pitch. */
+      await breathe();
+      if (disposed) return;
       const cornerX = FIELD_WIDE / 2 + SIDELINE_DEPTH;
       scene.add(
         buildCornerStand(THREE, adTexture, crowdFaces, cornerX, OWN_END_Z + 14, 0xc02e01),
@@ -3531,6 +3569,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       sun.shadow.camera.bottom = -210;
       sun.shadow.bias = -0.0009;
       sun.shadow.normalBias = 0.6;
+      await breathe();
+      if (disposed) return;
       scene.add(sun, sun.target);
 
       /* Sky above, grass below. This is what fills the shadowed side of
@@ -3774,8 +3814,28 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
 
         paintOverlay();
         composer.render();
+
+        /* THE MOMENT THE STADIUM IS REALLY THERE.
+
+           Marked after the render, not before: `composer.render()` is where
+           the frame is actually produced, and until it returns the canvas is
+           the clear colour. One frame of grace on top of that, because the
+           browser has not composited what was just drawn until the next turn
+           of the loop — flipping the class in the same tick fades the canvas
+           in over a frame that is still blank, which is the black page again,
+           just with a transition on it.
+
+           `once` rather than a class check each frame: this runs sixty times a
+           second and must not touch the DOM after the first time. */
+        if (!live) {
+          live = true;
+          requestAnimationFrame(() => {
+            if (!disposed) host.classList.add("is-live");
+          });
+        }
       };
 
+      let live = false;
       unsubscribeDrive = subscribeDrive(tick);
 
       cleanup = () => {
@@ -3812,6 +3872,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         environment.dispose();
         renderer.dispose();
         renderer.domElement.remove();
+        host.classList.remove("is-live");
         page.classList.remove("is-driving");
       };
     })();

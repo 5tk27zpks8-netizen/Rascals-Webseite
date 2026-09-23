@@ -52,6 +52,14 @@
 /* Legacy fallback pages must visually use the same header system as the builder pages.
    This keeps /sponsoring, /team, /shop, /news, /galerie and /ueber-uns aligned even
    when they are rendered through SiteShell instead of SiteBuilderPage. */
+/* THE HEADER'S HEIGHT, IN ONE PLACE.
+   Declared here because this is the block that sets it — three files style
+   this bar and only this one's !important survives, so a token declared
+   anywhere else describes a header that does not exist. The drop-down menu
+   hangs off the bottom of it and bounds itself by it, and the anchor scroll
+   offset is measured from it, so a wrong number here is a menu that runs off
+   the screen and a heading that lands behind the bar. */
+:root{--header-h:96px}
 .site-header{
   position:sticky!important;
   inset:auto!important;
@@ -185,6 +193,7 @@
 }
 
 @media(max-width:900px){
+  :root{--header-h:78px}
   .site-header,
   .sb-header{
     position:sticky!important;

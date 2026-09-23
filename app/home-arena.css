@@ -29,10 +29,34 @@
   font-family: var(--font-body);
 }
 
+/* THE ARENA IS NEVER A BLACK PAGE.
+
+   Building this stadium is real work — geometry, textures, an instanced
+   crowd, a prefiltered sky and a post-processing chain — and until the first
+   frame comes out of it there was nothing on screen at all. Not a spinner,
+   not a placeholder: black, with a few cards floating in it, for as long as
+   the machine needed. That does not read as loading. It reads as broken, and
+   on a slower computer it reads as broken for a long time.
+
+   So the layer starts as a photograph of the very scene that is being built:
+   the same stadium, from the Rascals' own twenty, the frame the drive opens
+   on. It is 94 KB and it is there on the first paint. The live canvas is
+   transparent until it has actually drawn something, then fades in over the
+   still — and because the two are the same view, the swap is a stadium
+   becoming alive rather than one picture replacing another.
+
+   The still stays underneath afterwards. It costs nothing to leave there and
+   it means a lost WebGL context — a tab restored from the background, a
+   driver reset — falls back to a stadium instead of to black. */
 .drive-canvas {
   position: fixed;
   inset: 0;
   z-index: 0;
+  background-color: var(--drive-bg);
+  background-image: url("/arena-backdrop.webp");
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .drive-canvas canvas {
@@ -42,7 +66,24 @@
   /* Scaled up so the blur never samples past the edge of the frame. */
   transform: scale(1.06);
   transform-origin: center;
-  transition: filter 0.62s var(--drive-ease), transform 0.62s var(--drive-ease);
+  /* Nothing to show yet. `is-live` is set from the render loop, on the frame
+     after the first one actually reaches the screen — not when the canvas is
+     created, which is several seconds earlier and still black. */
+  opacity: 0;
+  transition: filter 0.62s var(--drive-ease), transform 0.62s var(--drive-ease),
+    opacity 0.7s ease;
+}
+
+.drive-canvas.is-live canvas {
+  opacity: 1;
+}
+
+/* Somebody who has asked for less movement should not be given a cross-fade
+   either; the live scene simply replaces the still. */
+@media (prefers-reduced-motion: reduce) {
+  .drive-canvas canvas {
+    transition: none;
+  }
 }
 
 /* A touch of softening while a list is being read, far short of a blur: the
@@ -1213,7 +1254,16 @@
    NARROW SCREENS — no drive, an ordinary page
    ============================================================ */
 
-@media (max-width: 999px) {
+/* Keyed to the same question the script asks, not to a width.
+
+   `canDrive()` wants a wide screen AND a hovering, fine pointer AND no
+   reduced-motion preference. A width alone answers only the first third of
+   it: an iPad held sideways is 1180 across, so it fell through this block
+   and got the desktop arena — the broadcast bar describing a drive that was
+   never going to run behind it, its labels at seven and a half pixels, and
+   no stadium at all. Everything below is what a page without the drive
+   needs, so it belongs to every device that will not get one. */
+@media (max-width: 999.98px), (pointer: coarse), (prefers-reduced-motion: reduce) {
   /* THE ARENA HAS TO LOOK LIKE THE ARENA ON A PHONE TOO.
 
      The live stadium is a scroll-driven camera over a scene with instanced
@@ -1228,14 +1278,10 @@
      fixed, so the panels travel over a ground that stays put, which is the
      part of the drive that survives without a camera. */
   .drive-canvas {
-    position: fixed;
-    inset: 0;
     height: auto;
-    background-color: var(--drive-bg);
+    /* The smaller frame: a phone cannot show the extra pixels and should not
+       pay for them. Everything else about this layer is set once, above. */
     background-image: url("/arena-backdrop-780.webp");
-    background-position: center top;
-    background-repeat: no-repeat;
-    background-size: cover;
   }
   /* The scrim is what makes text on top of a photograph readable, so it comes
      back — it is switched off elsewhere only because without the drive there
@@ -1255,6 +1301,44 @@
      paragraph above it already says what the page is. */
   .drive-hint {
     display: none;
+  }
+  /* The same applies to the two thirds of the broadcast bar that only mean
+     something while a camera is travelling: a down, a progress bar, "Der Drive
+     läuft" and the yard the ball is on. With nothing moving behind them they
+     are furniture that states something untrue, set at seven and a half
+     pixels. The badge stays — that is who this is. */
+  .drive-hud-centre,
+  .drive-hud-yard {
+    display: none;
+  }
+  .drive-hud {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* THE BROADCAST TYPE ONLY WORKS WHILE IT IS A BROADCAST.
+
+     This page sets its small labels at 0.44 to 0.52rem — seven to eight and a
+     half pixels — everywhere, desktop included. Over a moving stadium, on a
+     panel fixed to half the screen, that reads as an overlay on a screen: it
+     is meant to be glanced at, not read, and the drive carries the page.
+
+     Without the drive there is no overlay and no camera. The same page is a
+     column of text somebody is actually reading, and seven-pixel lettering in
+     a column of text is simply too small. These are the site's own floor,
+     which is the size the rest of the build settled on.
+
+     Left alone where the drive does run: that is the design as drawn, not
+     something a phone broke, and it is not this pass's to change. */
+  .drive-chain small,
+  .drive-numbers span,
+  .drive-squads small,
+  .drive-page .drive-fixtures :is(.season-stat, .season-league) small,
+  .drive-page .drive-fixtures :is(.season-stat, .season-league) span,
+  .drive-fixture .md-fixture-meta dt,
+  .drive-fixture .md-countdown small,
+  .drive-page .drive-news .news-grid span {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
   }
   /* THE YARD MARKER HAD TO STOP BEING RED TYPE.
 
@@ -1331,7 +1415,7 @@
 
 /* A denser screen gets the larger frame; there is no point sending it to a
    phone that cannot show the extra pixels. */
-@media (max-width: 999px) and (min-resolution: 2dppx) {
+@media (max-width: 999.98px) and (min-resolution: 2dppx) {
   .drive-canvas {
     background-image: url("/arena-backdrop.webp");
   }

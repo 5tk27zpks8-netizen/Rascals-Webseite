@@ -132,4 +132,80 @@
   html button[type="submit"] {
     min-height: var(--tap);
   }
+
+  /* THE CAPTION NOBODY ON A PHONE COULD SEE.
+
+     Each picture in the gallery carries a caption, held at zero opacity and
+     brought in on hover. A phone has no hover, so on a phone the captions did
+     not exist — not hidden behind a gesture, simply never shown. That is a
+     piece of the page missing rather than a flourish not firing.
+
+     Shown outright here, with a wash under it so white lettering reads over a
+     photograph whatever the photograph happens to be. */
+  html .gallery-grid span {
+    right: 1.2rem;
+    padding: 6px 10px;
+    border-radius: 3px;
+    background: rgba(3, 9, 16, 0.72);
+    opacity: 1;
+    transform: none;
+  }
+
+  /* THE MENU YOU COULD NOT REACH THE BOTTOM OF.
+
+     The drop-down hangs off the header with `bottom: auto`, so it is exactly
+     as tall as its eight links — 427 pixels — and it does not scroll. Hold an
+     iPhone sideways and the viewport is 390 tall, or 320 on an SE: the menu
+     runs 114 to 184 pixels past the bottom of the screen and the last links
+     are not merely hard to reach, they cannot be reached at all. The page
+     behind it does not scroll either, because the menu is fixed.
+
+     Bounded by the screen it is actually on, and scrollable when it does not
+     fit. `dvh` rather than `vh` so the bound is the height that is there while
+     the address bar is showing. `overscroll-behavior` keeps a flick inside the
+     menu from carrying on into the page underneath once it hits the end. */
+  html .main-nav.open,
+  html .sb-header nav.open,
+  html .site-header nav.open {
+    max-height: calc(100dvh - var(--header-h, 78px) - var(--safe-t));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* THE FLOOR HOLDS WHEN THE PHONE IS TURNED.
+
+     Portrait is clean: nothing under ten and a half pixels on any width from
+     320 to 430. Turn the same phone sideways and it is 844 or 932 CSS pixels
+     across, every mobile block keyed to a max-width stops applying, and the
+     desktop type comes back — on a screen that is no bigger, held at the same
+     distance. Nineteen elements measured between 8.3 and 10.4 there.
+
+     Not all nineteen are raised. The site's own standard, set when this was
+     first looked at, is that a short uppercase label with wide tracking at
+     full contrast reads at ten or eleven — "RECORD", "NEWS", "EXPLORE" are
+     recognised, not read. What does not survive that size is a sentence, a
+     piece of navigation, a form label, or a number small enough to be a
+     speck. Those six are listed here.
+
+     Keyed to the pointer rather than to a width, because it is the same
+     device either way up, and a tablet is one too. */
+  html .roster-tab small {
+    font-size: 0.7rem;
+  }
+  html footer > small,
+  html .sb-footer-grid > small {
+    font-size: 0.72rem;
+    line-height: 1.6;
+  }
+  html .admin-login-footer a,
+  html .admin-login-form label > span {
+    font-size: 0.78rem;
+  }
+  html .sc-open span {
+    font-size: 0.72rem;
+  }
+  html .home-schedule-footer > span {
+    font-size: 0.72rem;
+  }
 }

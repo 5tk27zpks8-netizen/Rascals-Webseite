@@ -22,7 +22,6 @@ img { display: block; max-width: 100%; }
 .skip-link { position: fixed; z-index: 200; left: 1rem; top: -5rem; background: var(--white); color: var(--navy); padding: .8rem 1rem; }
 .skip-link:focus { top: calc(1rem + var(--safe-t)); }
 
-:root { --header-h: 78px; }
 /* The bar fills the glass now (viewport-fit=cover), so on a phone with a
    notch its top edge is behind the status bar. It grows by exactly what the
    hardware takes and pads by the same, so the logo and the menu button sit
@@ -239,7 +238,10 @@ h1 i, h2 i { color: var(--red); font-style: italic; line-height: 1.06; padding-b
 .gallery-grid img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s, opacity .4s; }
 .gallery-grid button:hover img { transform: scale(1.035); opacity: .75; }
 .gallery-grid span { position: absolute; left: 1.2rem; bottom: 1.2rem; color: white; font-size: .65rem; font-weight: 900; letter-spacing: .16em; opacity: 0; transform: translateY(8px); transition: .3s; }
-.gallery-grid button:hover span { opacity: 1; transform: none; }
+/* Keyboard too: a caption that only answers to a mouse is a caption half the
+   visitors never see. */
+.gallery-grid button:hover span,
+.gallery-grid button:focus-visible span { opacity: 1; transform: none; }
 .lightbox { position: fixed; z-index: 300; inset: 0; display: grid; place-items: center; padding: 3rem; background: rgba(1,6,13,.94); }
 .lightbox img { width: min(1200px, 90vw); height: min(82vh, 900px); height: min(82dvh, 900px); object-fit: contain; }
 .lightbox button { position: absolute; right: 2rem; top: 1rem; border: 0; color: white; background: none; font-size: 3rem; cursor: pointer; }
@@ -276,7 +278,6 @@ footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; bor
 }
 
 @media (max-width: 720px) {
-  :root { --header-h: 68px; }
   .site-header { padding-right: calc(1rem + var(--safe-r)); padding-left: calc(1rem + var(--safe-l)); }
 
   .brand { min-width: 225px; }
