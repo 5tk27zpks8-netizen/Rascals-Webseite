@@ -61,3 +61,79 @@
     text-wrap: balance;
   }
 }
+
+/* ============================================================
+   THE TWO BIG PICTURES ON A PHONE
+
+   The hero and the closing call to action are the same photograph
+   trick: one picture across the whole band, a dark wash over it,
+   the words on top. On a wide screen the wash runs left to right,
+   because the words sit on the left and the picture has room to
+   breathe on the right. A phone has no right-hand side. The same
+   sideways wash there covers the half of the frame the helmet is
+   in and leaves the empty half clear — so the photograph reads as
+   a dark blue rectangle with something in it.
+
+   Turned through ninety degrees it does the job it was meant to:
+   the picture is close to open at the top where nothing is
+   written, and it deepens towards the bottom, under the lettering
+   and the buttons. The small lift in brightness and contrast is
+   for the helmet itself, which was shot at dusk under floodlights
+   and is nearly black straight out of the camera.
+
+   The `html` in front of each selector is the usual +1: the route
+   stylesheet loads after this one and carries rules of the same
+   weight, so without it the later file wins on order alone.
+   ============================================================ */
+@media (max-width: 600px) {
+  html .sb-site .sb-variant-legacy-home .sb-hero-image,
+  html .sb-site .sb-variant-legacy-join .sb-cta-image {
+    filter: brightness(1.18) contrast(1.07) saturate(1.06);
+  }
+
+  /* WHERE THE CROP SITS.
+
+     The hero photograph is four by three and the band on a phone is
+     roughly three by five, so a little under half the picture's width
+     survives. The focus point set in the CMS keeps the helmet on the
+     right, which is correct on a desktop, where the writing is on the
+     left and the helmet has the other half to itself. On a phone it
+     pushes the helmet off the left edge and leaves the crowd behind it
+     in frame instead.
+
+     Only the sideways half is moved. The height the CMS chose still
+     applies, which is why this sets the one variable rather than the
+     whole property. */
+  html .sb-site .sb-variant-legacy-home .sb-hero-image {
+    --be-op-x: 53% !important;
+  }
+
+  html .sb-site .sb-variant-legacy-home .sb-hero-shade {
+    background: linear-gradient(
+      180deg,
+      rgba(2, 10, 21, 0.12) 0%,
+      rgba(2, 10, 21, 0.3) 34%,
+      rgba(2, 10, 21, 0.64) 62%,
+      rgba(2, 10, 21, 0.88) 100%
+    );
+  }
+
+  html .sb-site .sb-variant-legacy-join .sb-cta-shade {
+    background: linear-gradient(
+      180deg,
+      rgba(2, 10, 21, 0.4) 0%,
+      rgba(2, 10, 21, 0.58) 45%,
+      rgba(2, 10, 21, 0.84) 100%
+    );
+  }
+
+  /* The button that asks for the trial session had its lettering
+     pressed against its own edges. It is the last thing on the page
+     and the one thing on it worth tapping, so it gets room on both
+     sides and a height a thumb cannot miss. */
+  html .sb-site .sb-variant-legacy-join .sb-button {
+    min-height: 52px;
+    padding: 0 30px;
+    gap: 14px;
+  }
+}
