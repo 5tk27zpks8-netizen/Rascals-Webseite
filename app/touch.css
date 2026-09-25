@@ -1,0 +1,247 @@
+/* ============================================================
+   THE TOUCH FLOOR
+
+   Every selector carries an `html` in front of it, and every rule sits
+   inside the touch query. The prefix is not decoration: a stylesheet
+   imported by a route lands after the ones the root layout imports, so
+   "loaded last" is not something this file can rely on. One extra type
+   selector settles it without turning into an !important.
+
+   Loaded last as well, on purpose. These rules raise controls that other
+   stylesheets have already sized, and at equal specificity the last
+   sheet wins — the first attempt lived in responsive.css, which is
+   loaded first so its tokens exist for everything, and every one of
+   these declarations lost silently to the rule it was meant to
+   override. Tokens first, corrections last.
+   ============================================================ */
+
+/* Twenty-eight controls across the site measured between 15 and 42
+   pixels tall on a phone. Wide enough, every one of them — it is
+   always the height that falls short, because a link is as tall as
+   its line of text and nothing more.
+
+   They are listed rather than swept up by a blanket rule, because a
+   blanket rule would also catch the things whose box is the design:
+   a player card, a photograph, a logo. Each one below was measured,
+   not guessed.
+
+   Two ways of finding the missing pixels:
+
+   PADDING, where the control has room around it. The text stays
+   where it was and the box grows around it.
+
+   A HALO, where the control is drawn with a line under it. Growing
+   the box would drag that line away from the words it belongs to,
+   so instead an invisible child reaches out to 44 and takes the
+   press. Nothing moves and the thumb still lands.
+
+   All of it inside the touch query, so a mouse keeps the compact
+   design it was drawn for.
+   ============================================================ */
+
+@media (pointer: coarse), (max-width: 599px) {
+  /* --- padding: room is available, so the box grows ------------- */
+  html .home-schedule-footer a,
+  html .featured-news > div > a,
+  html .compact-news > div > a,
+  html .public-admin-login,
+  html .sb-footer-column a,
+  html footer > div > a,
+  html .hy-footer nav a,
+  html .team-jump-nav a,
+  html .admin-login-footer a,
+  html .drive-link,
+  html .drive-end-nav a,
+  html .drive-hud-brand {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap);
+  }
+
+  /* Inline-flex ones keep flowing with the text around them. */
+  html .featured-news > div > a,
+  html .compact-news > div > a,
+  html .public-admin-login,
+  html .drive-link {
+    display: inline-flex;
+  }
+
+  /* The switcher under the hero. Its paint is on the content box, so
+     the pill stays four pixels tall while the button answers at 44 —
+     which is what it was already doing at 24. */
+  html .hero-controls button:not(.hero-playstate) {
+    height: var(--tap);
+    padding: 20px 0;
+  }
+  html .hero-controls .hero-playstate {
+    width: var(--tap);
+    height: var(--tap);
+  }
+
+  /* --- halo: the drawn box has to stay where it is -------------- */
+  html .text-link,
+  html .fm-outro-link {
+    position: relative;
+  }
+  html .text-link::after,
+  html .fm-outro-link::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: var(--tap);
+    transform: translateY(-50%);
+  }
+
+  /* A one-word link in a row is 31 pixels wide. Tall enough now, and still
+     narrower than a fingertip, so it gets the width too — as padding, which
+     also opens the gaps between neighbours in the same row. */
+  html .drive-end-nav a,
+  html .hy-footer nav a,
+  html .team-jump-nav a {
+    justify-content: center;
+    min-width: var(--tap);
+    padding-right: var(--s-2);
+    padding-left: var(--s-2);
+  }
+
+  /* THE FIELD THAT ZOOMS THE PAGE.
+
+     Mobile Safari zooms the whole page in when a text field is focused and
+     its type is set below sixteen pixels — and it does not zoom back out
+     afterwards, so tapping a login field leaves the visitor on a page a third
+     too wide with the layout shifted sideways. The login card set thirteen.
+
+     Sixteen is the threshold, not a preference, and the only other way to stop
+     it is `maximum-scale=1`, which takes pinch zoom away from everybody who
+     needs it. So the floor is set on the field and the page keeps its zoom.
+
+     `max()` rather than a flat value, so a field that was already larger than
+     sixteen keeps its size. */
+  html input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+  html select,
+  html textarea {
+    font-size: max(16px, 1em);
+  }
+
+  /* A field is a target too, and a short one is hard to put a cursor in. */
+  html input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+  html select,
+  html textarea,
+  html button[type="submit"] {
+    min-height: var(--tap);
+  }
+
+  /* THE CAPTION NOBODY ON A PHONE COULD SEE.
+
+     Each picture in the gallery carries a caption, held at zero opacity and
+     brought in on hover. A phone has no hover, so on a phone the captions did
+     not exist — not hidden behind a gesture, simply never shown. That is a
+     piece of the page missing rather than a flourish not firing.
+
+     Shown outright here, with a wash under it so white lettering reads over a
+     photograph whatever the photograph happens to be. */
+  html .gallery-grid span {
+    right: 1.2rem;
+    padding: 6px 10px;
+    border-radius: 3px;
+    background: rgba(3, 9, 16, 0.72);
+    opacity: 1;
+    transform: none;
+  }
+
+  /* THE MENU YOU COULD NOT REACH THE BOTTOM OF.
+
+     The drop-down hangs off the header with `bottom: auto`, so it is exactly
+     as tall as its eight links — 427 pixels — and it does not scroll. Hold an
+     iPhone sideways and the viewport is 390 tall, or 320 on an SE: the menu
+     runs 114 to 184 pixels past the bottom of the screen and the last links
+     are not merely hard to reach, they cannot be reached at all. The page
+     behind it does not scroll either, because the menu is fixed.
+
+     Bounded by the screen it is actually on, and scrollable when it does not
+     fit. `dvh` rather than `vh` so the bound is the height that is there while
+     the address bar is showing. `overscroll-behavior` keeps a flick inside the
+     menu from carrying on into the page underneath once it hits the end. */
+  html .main-nav.open,
+  html .sb-header nav.open,
+  html .site-header nav.open {
+    max-height: calc(100dvh - var(--header-h, 78px) - var(--safe-t));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* THE FLOOR HOLDS WHEN THE PHONE IS TURNED.
+
+     Portrait is clean: nothing under ten and a half pixels on any width from
+     320 to 430. Turn the same phone sideways and it is 844 or 932 CSS pixels
+     across, every mobile block keyed to a max-width stops applying, and the
+     desktop type comes back — on a screen that is no bigger, held at the same
+     distance. Nineteen elements measured between 8.3 and 10.4 there.
+
+     Not all nineteen are raised. The site's own standard, set when this was
+     first looked at, is that a short uppercase label with wide tracking at
+     full contrast reads at ten or eleven — "RECORD", "NEWS", "EXPLORE" are
+     recognised, not read. What does not survive that size is a sentence, a
+     piece of navigation, a form label, or a number small enough to be a
+     speck. Those six are listed here.
+
+     Keyed to the pointer rather than to a width, because it is the same
+     device either way up, and a tablet is one too. */
+  html .roster-tab small {
+    font-size: 0.7rem;
+  }
+  html footer > small,
+  html .sb-footer-grid > small {
+    font-size: 0.72rem;
+    line-height: 1.6;
+  }
+  html .admin-login-footer a,
+  html .admin-login-form label > span {
+    font-size: 0.78rem;
+  }
+  html .sc-open span {
+    font-size: 0.72rem;
+  }
+  html .home-schedule-footer > span {
+    font-size: 0.72rem;
+  }
+}
+
+/* ============================================================
+   A LONG WORD MUST NOT PUSH THE PAGE SIDEWAYS
+
+   Not a touch rule, so it sits outside the query above: it applies
+   wherever the viewport gets narrow enough, which on a phone means
+   somebody has zoomed in.
+
+   Measured at 200% zoom on a 390px phone — 195 CSS pixels of
+   viewport — five of six pages scrolled sideways, and the element
+   pushing hardest was almost always a single display word that
+   cannot break: "RASCALS." at 241 wide, "& ERGEBNISSE." at 277.
+   The fluid type scale floors them at a size where one word is
+   wider than the screen, and a word with nowhere to break takes
+   the page with it.
+
+   This is past what the standard asks for — WCAG's reflow rule is
+   about 320 CSS pixels, and the site is clean there — so it is not
+   a fix for a failure. It costs nothing at any normal size,
+   because a word only breaks when it otherwise would not fit, and
+   it removes a whole class of fault rather than one instance.
+
+   `anywhere` rather than `break-word`, because only `anywhere`
+   lets the intrinsic width shrink too; `break-word` breaks the
+   line but still reports the unbroken word's width to the layout,
+   which is exactly what was pushing.
+   ============================================================ */
+@media (max-width: 320px) {
+  h1, h2, h3,
+  .rascals-word,
+  .site-header .brand span,
+  .sb-brand span,
+  .rpc-player-placeholder strong {
+    overflow-wrap: anywhere;
+  }
+}

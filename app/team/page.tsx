@@ -1,5 +1,6 @@
 import { listPublicTeamPlayers } from "../lib/public-team-players";
 import { listActiveCoaches } from "../lib/coaches";
+import { Header } from "../SiteShell";
 import { RascalsPlayerCard } from "./RascalsPlayerCard";
 import "./team.css";
 import "./coaches-public.css";
@@ -17,9 +18,10 @@ export default async function TeamPage() {
   const specialTeams = players.filter((player) => player.unit === "special-teams");
 
   return (
+    <>
+    <Header page="team" />
     <main className="team-public team-public-v2">
       <header className="team-public-head team-public-hero">
-        <a href="/">← Startseite</a>
         <span>HELLENSTEIN RASCALS · 2026</span>
         <h1>ONE TEAM.<br /><i>THREE UNITS.</i></h1>
         <p>Die Coaches geben die Richtung vor. Offense und Defense bringen sie auf das Feld.</p>
@@ -28,6 +30,21 @@ export default async function TeamPage() {
           <a href="#offense">Offense</a>
           <a href="#defense">Defense</a>
         </nav>
+
+        {/* The way into the arena. It is not a fourth jump link: those move you
+            down this page, this one leaves it, and a control that does
+            something different should look like it does. The still is a real
+            frame out of the scene rather than an illustration of it, so what
+            the button shows is what opening it gives you. */}
+        <a className="arena-portal" href="/arena/kader">
+          <img src="/arena-portal.webp" alt="" width={1920} height={740} />
+          <span className="arena-portal-text">
+            <small>Teamvorstellung</small>
+            <strong>IN DIE ARENA</strong>
+            <em>Scroll dich durch das Stadion — Spieler für Spieler.</em>
+          </span>
+          <span className="arena-portal-go" aria-hidden="true">▶</span>
+        </a>
       </header>
 
       <section className="team-public-body team-public-body-v2">
@@ -42,7 +59,7 @@ export default async function TeamPage() {
                 <article className="coach-public-card" key={coach.id}>
                   <div className="coach-public-photo">
                     {coach.photo ? <img src={coach.photo} alt={`${coach.firstName} ${coach.lastName}`} /> : <div className="coach-public-placeholder">R</div>}
-                    <img className="coach-public-watermark" src="/rascals-logo-transparent-4k.png" alt="" />
+                    <img className="coach-public-watermark" src="/rascals-logo-1600.webp" alt="" />
                   </div>
                   <div className="coach-public-info">
                     <span>{coach.role || "COACH"}</span>
@@ -85,5 +102,6 @@ export default async function TeamPage() {
         {!players.length && !coaches.length && <div className="team-empty">Teammitglieder erscheinen hier automatisch, sobald sie im CMS angelegt und öffentlich sichtbar sind.</div>}
       </section>
     </main>
+    </>
   );
 }

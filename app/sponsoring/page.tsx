@@ -1,4 +1,6 @@
 import { listActiveSponsors, type PublicSponsor } from "../lib/sponsors";
+import { wide } from "../lib/responsive-image";
+import { Header } from "../SiteShell";
 import "./sponsoring.css";
 
 export const metadata = {
@@ -18,22 +20,9 @@ export default async function SponsoringPage() {
   const tiers: PublicSponsor["tier"][] = ["premium", "gold", "silver", "partner"];
 
   return (
+    <>
+    <Header page="sponsoring" />
     <main className="sponsors-page">
-      <header className="sponsors-header">
-        <a className="sponsors-brand" href="/">
-          <img src="/rascals-logo-transparent-4k.png" alt="" />
-          <span><strong>HELLENSTEIN</strong><em>RASCALS</em></span>
-        </a>
-        <nav className="sponsors-nav" aria-label="Hauptnavigation">
-          <a href="/ueber-uns">ÜBER UNS</a>
-          <a href="/team">TEAM</a>
-          <a href="/sponsoring">SPONSORING</a>
-          <a href="/shop">SHOP</a>
-          <a href="/news">NEWS</a>
-          <a href="/galerie">GALERIE</a>
-        </nav>
-      </header>
-
       <section className="sponsors-hero">
         <span>PROUDLY POWERED BY</span>
         <h1>PARTNER OF THE <i>HUDDLE.</i></h1>
@@ -55,7 +44,7 @@ export default async function SponsoringPage() {
                   const card = (
                     <>
                       <div className="sponsor-logo-box">
-                        {sponsor.logo ? <img src={sponsor.logo} alt={`${sponsor.name} Logo`} /> : <div className="sponsor-placeholder">{sponsor.name}</div>}
+                        {sponsor.logo ? <img {...wide(sponsor.logo)} src={sponsor.logo} alt={`${sponsor.name} Logo`} /> : <div className="sponsor-placeholder">{sponsor.name}</div>}
                       </div>
                       <footer><span>{sponsor.name}</span><b>{sponsor.url ? "↗" : ""}</b></footer>
                     </>
@@ -79,5 +68,6 @@ export default async function SponsoringPage() {
         </section>
       </section>
     </main>
+    </>
   );
 }

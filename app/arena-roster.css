@@ -1,0 +1,404 @@
+/* ============================================================
+   THE FORMATION, AND YOU FLY THROUGH IT.
+
+   Nothing on the ground but the squad. The cards stand out on
+   the pitch, spread across its width and posted down its length,
+   and scrolling carries the camera forward past them.
+
+   PlayerDeck positions the handful of cards actually in frame by
+   writing their transform and opacity directly, and takes the rest
+   out of the document. Nothing here moves; this file holds only
+   what stays the same while the camera travels.
+
+   Until that class arrives — no JS, reduced motion, narrow screen
+   — this is a plain swipeable row of the same markup.
+   ============================================================ */
+
+/* The drive is this page's easing, and it should be the only one.
+
+   `html { scroll-behavior: smooth }` is set site-wide, which is right for
+   anchor jumps everywhere else. It does not touch wheel or touch scrolling —
+   that was a wrong call earlier and it is worth being precise about, because
+   it is not the cause of the back-and-forth. What it does animate is the
+   scrolls the browser performs itself: Page Down, Home, End, dragging the
+   scrollbar track. On this page those would be eased by the browser and then
+   eased again by the drive reading the result, which is sluggish rather than
+   broken — but there is no reason to pay for it when the drive is already
+   doing the job. */
+html:has(.roster-page) {
+  scroll-behavior: auto;
+}
+
+.roster-page {
+  position: relative;
+  color: #fff;
+  /* The clipping lives here and not on the stage. `clip` rather than `hidden`
+     because `hidden` would make this a scroll container and the stage inside
+     it would stick to a box that never scrolls. */
+  overflow-x: clip;
+}
+
+/* ---------- Unit switch ---------- */
+
+.roster-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Bare labels over the pitch — no plate, no border, no blur panel. */
+.roster-switch {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(20px, 4vh, 42px);
+  z-index: 20;
+  display: flex;
+  gap: clamp(14px, 2vw, 32px);
+  transform: translateX(-50%);
+}
+
+.roster-tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.46);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(0.72rem, 0.9vw, 0.86rem);
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+.roster-tab small {
+  font-size: 0.74em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+.roster-tab:hover {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* The checked radio lights its own label and shows its own panel, matched by
+   index: radios, labels and panels are emitted in the same order. */
+.roster-radio:nth-of-type(1):checked ~ .roster-switch .roster-tab:nth-child(1),
+.roster-radio:nth-of-type(2):checked ~ .roster-switch .roster-tab:nth-child(2),
+.roster-radio:nth-of-type(3):checked ~ .roster-switch .roster-tab:nth-child(3) {
+  color: #fff;
+}
+.roster-radio:nth-of-type(1):checked ~ .roster-switch .roster-tab:nth-child(1) small,
+.roster-radio:nth-of-type(2):checked ~ .roster-switch .roster-tab:nth-child(2) small,
+.roster-radio:nth-of-type(3):checked ~ .roster-switch .roster-tab:nth-child(3) small {
+  color: var(--rascals-red, #e7192d);
+  opacity: 1;
+}
+
+/* The control itself is off-screen, so the label carries the focus ring. */
+.roster-radio:focus-visible ~ .roster-switch .roster-tab {
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 4px;
+}
+
+.roster-panel {
+  display: none;
+}
+.roster-radio:nth-of-type(1):checked ~ .roster-panel:nth-of-type(1),
+.roster-radio:nth-of-type(2):checked ~ .roster-panel:nth-of-type(2),
+.roster-radio:nth-of-type(3):checked ~ .roster-panel:nth-of-type(3) {
+  display: block;
+}
+
+.roster-empty {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  padding: 44vh clamp(24px, 6vw, 80px);
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+/* ---------- Fallback: a plain row ---------- */
+
+.deck-stage {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: clamp(12px, 1.6vw, 24px);
+  overflow-x: auto;
+  padding: clamp(80px, 14vh, 150px) clamp(16px, 4vw, 48px);
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.deck-stage > * {
+  flex: 0 0 clamp(210px, 22vw, 290px);
+  scroll-snap-align: center;
+}
+
+/* The staff carry no shirt number; ShowcaseCard handles that itself now, so
+   there is nothing left here to override for them.
+
+   Everything that used to follow — a block of rules reaching into the team
+   page's card to shrink its number column, resize its names and re-shadow it —
+   went with the card. The deck renders ShowcaseCard, which is drawn for this
+   size to begin with, so none of it has to be undone at this end any more.
+
+   ---------- The drive-through ---------- */
+
+/* The deck owns a stretch of scroll of its own: one screen to sit in, plus a
+   slice per card to travel through. Without that overhang a short page never
+   reaches either end and most of the squad stays unreachable.
+
+   The slice is per card, not per rank: one notch of a mouse wheel is about a
+   hundred pixels, so at 245 a notch is well under half a card. That is the
+   difference between flying through a formation and cutting between slides.
+   It also sets the pace of the stadium behind it, which reads the same page
+   scroll. */
+.deck.is-deck {
+  position: relative;
+  height: calc(100vh + var(--cards, 12) * 245px);
+}
+
+.deck.is-deck .deck-stage {
+  position: sticky;
+  top: 0;
+  display: block;
+  height: 100vh;
+  padding: 0;
+  /* Not `hidden`, and this matters more than it looks. Clipping the element
+     that carries the perspective makes the engine project its children about
+     the wrong point: cards that belong at the middle of the screen land a
+     thousand pixels off to the left and are clipped away, so most of the
+     squad was simply never drawn. The clip belongs on .roster-page, which has
+     no perspective of its own to corrupt. */
+  overflow: visible;
+  perspective: 1150px;
+  /* Eye level a little above centre, as if standing on the field. */
+  perspective-origin: 50% 42%;
+
+  /* NO `transform-style: preserve-3d` HERE, AND THAT IS THE FIX.
+
+     It used to be set, and it is why the squad was never fully clickable —
+     the complaint that came back three times and was answered twice at the
+     wrong level.
+
+     Inside a preserve-3d subtree Chromium does not hit-test 3D-transformed
+     descendants reliably: the cards painted exactly where they should, took
+     `pointer-events: auto`, reported the right bounding boxes, and were
+     unreachable by the pointer at every single point on the screen. Measured
+     here by sweeping a grid over the whole viewport and asking
+     elementFromPoint: zero hits on a card at full opacity. Switch this one
+     declaration off and the same card answers at 531 of them.
+
+     Earlier passes blamed opacity and pointer-events. Those were real
+     problems — a transparent card in front does swallow clicks, which is what
+     the live-window in PlayerDeck now handles — but they were never the whole
+     of it, because fixing them left the cards just as unreachable.
+
+     Nothing is lost by leaving it off. preserve-3d only matters when a child
+     needs to share the parent's 3D space with 3D-transformed children of its
+     own; these cards are leaves with one transform each, and the perspective
+     on this element projects them the same either way. Their draw order was
+     already pinned by explicit z-index rather than by 3D sorting, so the
+     picture is identical — it is only the pointer that changes. */
+}
+
+.deck.is-deck .deck-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(196px, 16vw, 238px);
+  margin-left: calc(clamp(196px, 16vw, 238px) / -2);
+  margin-top: calc(clamp(196px, 16vw, 238px) * -0.6917);
+
+  /* NO transform, opacity or z-index here, and that is deliberate.
+
+     They used to live in this rule, derived by the engine from one inherited
+     custom property: `--rel: calc(var(--i) - var(--focus))`, feeding a
+     three-function transform and an `opacity: clamp(0, min(calc(), calc()), 1)`.
+     It was documented as costing "one property write per scroll frame", which
+     was true and beside the point — that one write invalidates every card that
+     inherits it, and each has to re-resolve those calc chains.
+
+     Measured on this page: a single --focus write costs 57 to 99ms of style
+     recalculation with seventy-two cards on the stage. The 60fps budget is
+     16.7ms. It falls to 8ms at eight cards and 2ms at none, so the cost is the
+     per-card resolution, not the write.
+
+     PlayerDeck now positions the handful of cards that are actually in frame
+     by writing their transform and opacity directly, and takes the rest out of
+     the document with display:none so the engine never considers them. What is
+     left here is only what does not change while scrolling. */
+
+  pointer-events: none;
+
+  /* Opacity only. Naming `transform` here pins the card's raster at the scale
+     it had when the layer was promoted, so every card growing towards the
+     camera is a bitmap being enlarged — soft edges and mushy type. Left off,
+     the type is re-drawn at the size it is actually shown. */
+  will-change: opacity;
+  backface-visibility: hidden;
+}
+
+.deck.is-deck .deck-card.is-live {
+  pointer-events: auto;
+}
+
+/* Depth haze: the far end of the formation sinks into the ground rather than
+   staying crisp to the horizon. One element instead of a per-card filter. */
+.deck.is-deck .deck-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  /* Depth haze, not nightfall. At its old weight — more than four fifths
+     opaque at the corners — a stadium lit for a bright afternoon arrived
+     looking like an evening kickoff, because the only part of the picture at
+     full daylight was the middle of the screen. */
+  background: radial-gradient(
+    ellipse 76% 64% at 50% 44%,
+    transparent 48%,
+    rgba(14, 28, 46, 0.24) 80%,
+    rgba(14, 28, 46, 0.42) 100%
+  );
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .roster-switch {
+    bottom: 14px;
+    gap: 14px;
+  }
+  .roster-tab {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+  }
+}
+
+/* ==========================================================================
+   THE VIEW FOR EVERYTHING THAT IS NOT DRIVING
+
+   The condition below is the exact negation of DRIVE_MEDIA in
+   app/lib/drive-mode.ts, and the two have to be edited together. Whenever the
+   stadium does not run, this layout does — phones, tablets, touchscreen
+   laptops, narrow windows, and anyone who has asked for reduced motion.
+
+   What was here before was not a mobile view; it was the deck's desktop row
+   with its 3D switched off. One flex line, sixteen thousand pixels wide for a
+   squad of seventy-two, inside a page that did not scroll vertically at all.
+   Every player was reachable and none of them was findable: no hint that the
+   row slid sideways, no sense of how far along it you were, and a downward
+   swipe — the one thing every thumb tries first — did nothing.
+
+   So: an ordinary page of ordinary cards, scrolled the ordinary way.
+   ========================================================================== */
+@media (max-width: 999.98px), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .deck-stage {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    /* Room at the foot for the unit switcher, which floats over the page. */
+    padding: 14px 14px 108px;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+  .deck-stage > * {
+    flex: none;
+    scroll-snap-align: none;
+  }
+  /* The deck no longer reserves a screen per card: nothing is travelling
+     through, so the page is just as tall as its contents. */
+  .deck,
+  .deck.is-deck {
+    height: auto;
+  }
+
+  /* THE HUD LOSES WHAT THE DRIVE GAVE IT MEANING.
+     "KICKOFF", a progress bar and "BALL ON OWN 20" describe a journey down a
+     field. With no field and no journey they are three pieces of furniture
+     that say nothing, and on a 390px header they crowd out the one thing that
+     does: who this is. */
+  .drive-hud {
+    padding: calc(10px + var(--safe-t)) calc(14px + var(--safe-r)) 10px calc(14px + var(--safe-l));
+  }
+  .drive-hud-centre,
+  .drive-hud-yard {
+    display: none;
+  }
+
+  /* The switcher is the only navigation on this page, so it gets a real bar
+     rather than three words floating over the content. */
+  .roster-switch {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* The base rule centres this with left:50% AND a translate. Setting
+       left/right alone leaves the translate in place, which drags the whole
+       bar half a screen off the left edge — which is exactly what it did. */
+    transform: none;
+    gap: 0;
+    padding: 8px calc(6px + var(--safe-r)) calc(8px + var(--safe-b)) calc(6px + var(--safe-l));
+    background: rgba(5, 9, 18, 0.93);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .roster-tab {
+    flex: 1;
+    justify-content: center;
+    /* 44px is the floor a thumb needs, and these were nowhere near it. */
+    min-height: 44px;
+    padding: 0 6px;
+    font-size: 0.7rem;
+  }
+}
+
+/* Two across once there is room for two, which halves the scroll for a squad
+   this size without making a card too small to read. */
+/* TWO ACROSS, INCLUDING ON A PHONE.
+
+   One card per row looks generous and reads as a chore: at 362 wide the card
+   is 501 tall and mostly crest, and seventy-two of them make a page thirty-
+   seven thousand pixels long — forty-four screens to see a squad. Two across
+   puts a card at about 174, still large enough for a face and a name, and
+   cuts the page to a quarter. Scanning a squad is the job here; admiring one
+   card at a time is what opening it is for. */
+@media (max-width: 999.98px), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .deck-stage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 14px 12px 108px;
+  }
+}
+@media (min-width: 700px) and (max-width: 999.98px), (min-width: 700px) and (pointer: coarse) {
+  .deck-stage {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+/* THE NAME SIZES ITSELF FROM THE CARD, NOT FROM THE VIEWPORT.
+
+   At 390 the card is 177 wide and a 25px surname fits. At 360 it is 162 and
+   "Dollansky" wants 149 pixels in 134. At 320 it is 142 and half the squad
+   runs out of its box. Picking breakpoints for that is guessing at which
+   names exist; the card already knows how wide it is, so the type comes from
+   there — min() keeps the current size as a ceiling, so nothing above 390
+   changes at all and everything below scales exactly in step with the card.
+
+   Scoped to the non-driving layout, so the stadium's own cards are untouched. */
+@media (max-width: 999.98px), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .deck-card .sc-card { container-type: inline-size; }
+  /* The ratios carry reserve rather than sitting on the longest name in the
+     current squad. Derived from the card's own width they are right for any
+     squad; derived from THIS squad's longest name they would be right until
+     someone signs a longer one. */
+  .deck-card .sc-name em { font-size: min(25px, 13.2cqw); }
+  .deck-card .sc-name.is-name-m em { font-size: min(22px, 11.6cqw); }
+  .deck-card .sc-name.is-name-s em { font-size: min(19px, 10.1cqw); }
+  .deck-card .sc-name i { font-size: min(13px, 7cqw); }
+}

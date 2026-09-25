@@ -20,7 +20,7 @@ type Game = {
 
 type TeamData = { name: string; logo: string; score: number };
 
-const DEFAULT_RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
+const DEFAULT_RASCALS_LOGO = "/rascals-logo-768.webp";
 
 export function DynamicHomeGames() {
   const [games, setGames] = useState<Game[]>([]);

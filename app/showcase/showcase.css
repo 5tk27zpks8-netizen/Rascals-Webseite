@@ -1,0 +1,662 @@
+/* ============================================================
+   THE SHOWCASE — CARD AND DOSSIER
+
+   The visual language for the team presentation: dark, high
+   contrast, HUD-like, sporting. Navy ground, one red accent,
+   white type. No second accent, no gradients doing work that
+   contrast should do.
+
+   Scoped to .sc-* and to the showcase page. The site's own brand
+   red (--rascals-red) is a lighter, brighter tone used across
+   every other page; the deeper red here is this presentation's
+   own and is deliberately not the global token, so nothing else
+   on the site shifts.
+   ============================================================ */
+
+.roster-page {
+  --sc-navy: #21254b;
+  --sc-navy-deep: #12142b;
+  --sc-navy-lift: #2b3060;
+  --sc-red: #9e210f;
+  --sc-red-hot: #c82d16;
+  --sc-white: #ffffff;
+  --sc-dim: rgba(255, 255, 255, 0.62);
+  --sc-faint: rgba(255, 255, 255, 0.34);
+  --sc-hair: rgba(255, 255, 255, 0.16);
+  /* The corner cut that makes a rectangle read as a panel in a HUD rather
+     than as a box in a document. One value, used everywhere, so the whole
+     interface is cut from the same stock. */
+  --sc-notch: 14px;
+}
+
+/* ---------- The card ---------- */
+
+.sc-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* Taller than it is wide, like a squad photo rather than a tile. */
+  aspect-ratio: 3 / 4.15;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background:
+    linear-gradient(168deg, rgba(43, 48, 96, 0.96) 0%, rgba(18, 20, 43, 0.99) 58%),
+    var(--sc-navy-deep);
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--sc-notch)) 0,
+    100% var(--sc-notch),
+    100% 100%,
+    var(--sc-notch) 100%,
+    0 calc(100% - var(--sc-notch))
+  );
+  color: var(--sc-white);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  /* Colour and shadow only. The card's position and size belong to the deck's
+     3D transform, and a hover that also transforms would fight it — the card
+     would jump out of the formation the moment a cursor crossed it. */
+  transition:
+    box-shadow 0.28s ease,
+    background 0.28s ease;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.8),
+    0 24px 44px rgba(0, 0, 0, 0.58);
+}
+
+/* The hairline, drawn inside the clip so it follows the cut corners. */
+.sc-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border: 1px solid var(--sc-hair);
+  clip-path: inherit;
+  pointer-events: none;
+  transition: border-color 0.28s ease;
+}
+
+/* A stripe of the accent down the left edge — the one piece of colour the
+   card carries at rest, and the thing that makes a wall of them read as a
+   team rather than as a list. */
+.sc-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  width: 3px;
+  background: var(--sc-red);
+  transition:
+    width 0.28s ease,
+    background 0.28s ease;
+}
+
+.sc-watermark {
+  position: absolute;
+  top: -0.14em;
+  right: 0.02em;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.085);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(88px, 9vw, 132px);
+  font-weight: 950;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sc-portrait {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.sc-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 14%;
+  /* Desaturated at rest so the red stripe and the name carry the colour, and
+     the squad reads as one set rather than as a patchwork of photographs shot
+     under different light. Restored on hover, which is what makes the focused
+     card feel like it has woken up. */
+  filter: saturate(0.55) contrast(1.06) brightness(0.86);
+  transition: filter 0.32s ease, transform 0.5s ease;
+}
+
+.sc-portrait-empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(70% 60% at 50% 40%, rgba(43, 48, 96, 0.9), transparent 70%);
+}
+.sc-portrait-empty img {
+  width: 54%;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.22;
+  filter: none;
+}
+
+/* The photo has to end in darkness or the type below it sits on noise. */
+.sc-portrait::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 62%;
+  background: linear-gradient(180deg, transparent, rgba(18, 20, 43, 0.96) 82%);
+  pointer-events: none;
+}
+
+.sc-body {
+  position: relative;
+  z-index: 3;
+  display: block;
+  margin-top: -16%;
+  padding: 0 14px 12px;
+}
+
+.sc-position {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sc-red-hot);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.sc-tag {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  background: var(--sc-red);
+  color: var(--sc-white);
+  font-size: 9px;
+  letter-spacing: 0;
+}
+.sc-tag.is-rookie {
+  background: transparent;
+  border: 1px solid var(--sc-faint);
+  color: var(--sc-dim);
+}
+
+.sc-name {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--font-display, Impact, sans-serif);
+  line-height: 0.92;
+  text-transform: uppercase;
+  /* Names break between the given and the family name or not at all. Broken
+     mid-syllable — SCHU / STER — a name looks like a bug. */
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: manual;
+}
+.sc-name i {
+  display: block;
+  color: var(--sc-dim);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.sc-name em {
+  display: block;
+  color: var(--sc-white);
+  font-size: 25px;
+  font-style: italic;
+  font-weight: 950;
+  letter-spacing: -0.005em;
+}
+.sc-name.is-name-m em { font-size: 22px; }
+.sc-name.is-name-s em { font-size: 19px; }
+
+.sc-open {
+  position: relative;
+  z-index: 3;
+  display: block;
+  margin: 0 14px 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--sc-hair);
+  color: var(--sc-faint);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  transition: color 0.28s ease, border-color 0.28s ease;
+}
+.sc-open span::after {
+  content: " ▸";
+}
+
+/* Hover and focus are the same state: something has addressed this card. */
+.sc-card:hover,
+.sc-card:focus-visible {
+  background:
+    linear-gradient(168deg, rgba(56, 62, 118, 0.98) 0%, rgba(22, 24, 50, 0.99) 58%),
+    var(--sc-navy-deep);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.8),
+    0 26px 52px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(200, 45, 22, 0.5),
+    /* The glow is the only one on the page and it is kept low. A card that
+       blooms reads as a game menu; a card with a rim reads as equipment. */
+    0 0 34px rgba(158, 33, 15, 0.28);
+}
+.sc-card:hover::before,
+.sc-card:focus-visible::before {
+  width: 5px;
+  background: var(--sc-red-hot);
+}
+.sc-card:hover .sc-portrait img,
+.sc-card:focus-visible .sc-portrait img {
+  filter: saturate(1) contrast(1.02) brightness(1);
+  transform: scale(1.035);
+}
+.sc-card:hover .sc-open,
+.sc-card:focus-visible .sc-open {
+  color: var(--sc-white);
+  border-top-color: rgba(200, 45, 22, 0.7);
+}
+.sc-card:hover .sc-frame,
+.sc-card:focus-visible .sc-frame {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Focus has to be visible on its own, not only as the hover treatment: a
+   keyboard user gets no cursor to explain why a card lit up. */
+.sc-card:focus-visible {
+  outline: 2px solid var(--sc-white);
+  outline-offset: 3px;
+}
+
+.sc-card:active {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.9),
+    0 10px 22px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(200, 45, 22, 0.6);
+}
+
+/* Staff carry no shirt number, so the number's space goes to the name. */
+.sc-card.is-coach .sc-position {
+  color: var(--sc-dim);
+}
+
+/* ---------- The dossier ---------- */
+
+.sc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+}
+
+.sc-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 9, 20, 0.66);
+  /* The drive stays visible behind, but out of focus — which is what says the
+     presentation is paused rather than gone. */
+  backdrop-filter: blur(7px) saturate(0.8);
+  -webkit-backdrop-filter: blur(7px) saturate(0.8);
+  animation: sc-fade 0.3s ease both;
+}
+
+.sc-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(460px, 100%);
+  background:
+    linear-gradient(200deg, rgba(43, 48, 96, 0.97) 0%, rgba(14, 16, 34, 0.99) 46%),
+    var(--sc-navy-deep);
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: -30px 0 80px rgba(0, 0, 0, 0.6);
+  animation: sc-slide 0.42s cubic-bezier(0.16, 0.84, 0.28, 1) both;
+}
+
+@keyframes sc-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sc-slide {
+  from { transform: translateX(26px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.sc-panel-head {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 26px 58px 18px 26px;
+  border-bottom: 1px solid var(--sc-hair);
+}
+
+.sc-panel-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sc-faint);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+}
+.sc-panel-eyebrow b {
+  color: var(--sc-red-hot);
+  font-weight: 900;
+}
+.sc-panel-mark {
+  width: 16px;
+  height: 3px;
+  background: var(--sc-red);
+}
+
+.sc-panel-name {
+  margin: 10px 0 0;
+  font-family: var(--font-display, Impact, sans-serif);
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+.sc-panel-name i {
+  display: block;
+  color: var(--sc-dim);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.sc-panel-name em {
+  display: block;
+  color: var(--sc-white);
+  font-size: clamp(30px, 4vw, 40px);
+  font-style: italic;
+  font-weight: 950;
+}
+.sc-panel-nick {
+  margin: 8px 0 0;
+  color: var(--sc-dim);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.sc-close {
+  position: absolute;
+  top: 20px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--sc-hair);
+  background: transparent;
+  color: var(--sc-dim);
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.sc-close:hover {
+  border-color: var(--sc-red-hot);
+  background: rgba(158, 33, 15, 0.18);
+  color: var(--sc-white);
+}
+.sc-close:focus-visible {
+  outline: 2px solid var(--sc-white);
+  outline-offset: 2px;
+}
+
+.sc-panel-scroll {
+  flex: 1 1 auto;
+  padding: 20px 26px 34px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sc-panel-portrait {
+  position: relative;
+  margin-bottom: 20px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid var(--sc-hair);
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--sc-notch)) 0,
+    100% var(--sc-notch),
+    100% 100%,
+    var(--sc-notch) 100%,
+    0 calc(100% - var(--sc-notch))
+  );
+}
+.sc-panel-portrait.is-empty {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(74% 66% at 50% 38%, rgba(43, 48, 96, 0.95), rgba(14, 16, 34, 0.98) 72%);
+}
+.sc-panel-initials {
+  color: rgba(255, 255, 255, 0.24);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 64px;
+  font-style: italic;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+}
+
+.sc-panel-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 16%;
+}
+.sc-panel-number {
+  position: absolute;
+  right: 8px;
+  bottom: -14px;
+  color: rgba(255, 255, 255, 0.18);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 78px;
+  font-weight: 950;
+  font-style: italic;
+  line-height: 1;
+}
+
+.sc-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 0 22px;
+  background: var(--sc-hair);
+  border: 1px solid var(--sc-hair);
+}
+.sc-fact {
+  padding: 10px 12px;
+  background: rgba(18, 20, 43, 0.92);
+}
+/* An odd number of facts would otherwise leave a lit hole in the grid, which
+   reads as a tile that failed to load rather than as a field nobody filled. */
+.sc-fact.is-wide {
+  grid-column: 1 / -1;
+}
+.sc-fact dt {
+  color: var(--sc-faint);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.sc-fact dd {
+  margin: 4px 0 0;
+  color: var(--sc-white);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 19px;
+  font-weight: 900;
+  font-style: italic;
+}
+
+.sc-block {
+  margin-bottom: 22px;
+}
+.sc-block h3 {
+  margin: 0 0 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--sc-hair);
+  color: var(--sc-white);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.sc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sc-stats li {
+  padding: 10px 12px;
+  background: rgba(43, 48, 96, 0.4);
+  border-left: 2px solid var(--sc-red);
+}
+.sc-stats b {
+  display: block;
+  color: var(--sc-white);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 950;
+  line-height: 1;
+}
+.sc-stats span {
+  display: block;
+  margin-top: 4px;
+  color: var(--sc-dim);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sc-bio {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.sc-muted {
+  margin: 0;
+  color: var(--sc-faint);
+  font-size: 13px;
+}
+
+.sc-panel-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.sc-link {
+  display: inline-block;
+  padding: 10px 16px;
+  background: var(--sc-red);
+  color: var(--sc-white);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background 0.2s ease;
+}
+.sc-link:hover { background: var(--sc-red-hot); }
+.sc-link.is-ghost {
+  background: transparent;
+  border: 1px solid var(--sc-hair);
+  color: var(--sc-dim);
+}
+.sc-link.is-ghost:hover {
+  border-color: var(--sc-white);
+  color: var(--sc-white);
+}
+.sc-link:focus-visible {
+  outline: 2px solid var(--sc-white);
+  outline-offset: 2px;
+}
+
+/* ---------- Narrow screens ---------- */
+
+@media (max-width: 760px) {
+  /* A sheet from the bottom rather than a column from the side: on a phone the
+     side of the screen is the whole screen, and a panel that arrives sideways
+     covering everything is just a page that changed without saying so. Coming
+     up from the bottom keeps the edge of the drive visible at the top, which is
+     what says this is a layer rather than a navigation. */
+  .sc-panel {
+    top: auto;
+    left: 0;
+    width: 100%;
+    /* `dvh`, not `vh`. On a phone browser `vh` is measured with the address
+       bar hidden, so a sheet capped in `vh` is taller than the screen it is
+       standing on whenever the bar is showing — and the head of the sheet,
+       with the name and the close button on it, is what goes off the top.
+       `dvh` is the height that is actually there. The `vh` line above it is
+       for browsers that do not know the newer unit and would otherwise have
+       no cap at all. */
+    max-height: 88vh;
+    max-height: 88dvh;
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.6);
+    animation-name: sc-rise;
+  }
+  @keyframes sc-rise {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  /* The way out of a sheet is the one control that has to be hit first time,
+     with a thumb, one-handed. 34px clears the minimum and no more; at 44 it
+     is the size every other dismiss on a phone is, and the head gives back
+     the ten pixels it takes. */
+  .sc-close { width: 44px; height: 44px; font-size: 16px; }
+  .sc-panel-head { padding: 20px 64px 14px 18px; }
+  /* The sheet's foot is the bottom of the screen, which on a phone is where
+     the home indicator lives. The last link in it would otherwise sit under
+     the bar the operating system draws over everything. */
+  .sc-panel-scroll {
+    padding: 16px calc(18px + var(--safe-r)) calc(28px + var(--safe-b)) calc(18px + var(--safe-l));
+  }
+  .sc-panel-head {
+    padding-right: calc(64px + var(--safe-r));
+    padding-left: calc(18px + var(--safe-l));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-scrim,
+  .sc-panel {
+    animation: none;
+  }
+  .sc-card,
+  .sc-card::before,
+  .sc-frame,
+  .sc-portrait img,
+  .sc-open {
+    transition: none;
+  }
+}
