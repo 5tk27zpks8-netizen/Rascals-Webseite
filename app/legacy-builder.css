@@ -82,7 +82,10 @@
   .sb-site .sb-stats-section .sb-stats strong {
     display: grid;
     place-items: center;
-    min-height: 2.2em;
+    /* Two lines of 1.2 is 2.4em, so the reservation has to clear that or
+       the tile whose label wraps stands taller than the one beside it —
+       which is the raggedness this reservation exists to stop. */
+    min-height: 2.45em;
     max-width: 22ch;
     font-size: 0.65rem !important;
     letter-spacing: 0.07em !important;
@@ -164,5 +167,55 @@
     min-height: 52px;
     padding: 0 30px;
     gap: 14px;
+  }
+}
+
+/* ============================================================
+   FOUR ACROSS ON A PHONE AFTER ALL
+
+   Two by two was the safe reading of a narrow screen, and it
+   cost more than it bought: a hundred and sixty-five pixels of
+   solid red between the helmet and the units, for four facts of
+   four characters each. Across the bottom of the picture instead,
+   it is a scoreboard rule — which is what a strip of figures is
+   meant to be — at a little under half the height.
+
+   Ninety-eight pixels a tile at 393 is enough for both lines as
+   long as neither is asked to do more than it must: the figure
+   carries the meaning and the label names it, and two lines are
+   reserved for the label so the four figures stay on one line
+   across whether a label wraps or not. The longest this club has,
+   "SPIELER AUF DEM FELD", takes both of them.
+
+   Below 360 there is no honest way to fit four — a tile would be
+   eighty pixels and the label would need three lines — so the
+   smallest phones keep the two-by-two, which is what the block
+   above still draws.
+   ============================================================ */
+@media (min-width: 360px) and (max-width: 600px) {
+  .sb-site .sb-stats-section .sb-stats,
+  .sb-site .sb-variant-legacy-strip .sb-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sb-site .sb-stats-section .sb-stats article {
+    gap: 3px;
+    padding: 11px 4px;
+    /* The row rule the two-by-two needed has nothing left to
+       divide once there is only one row. */
+    border-bottom: 0;
+  }
+
+  .sb-site .sb-stats-section .sb-stats b {
+    font-size: 1.3rem !important;
+    letter-spacing: -0.02em;
+  }
+
+  .sb-site .sb-stats-section .sb-stats strong {
+    max-width: none;
+    min-height: 2.3em;
+    font-size: 0.6rem !important;
+    letter-spacing: 0.02em !important;
+    line-height: 1.15 !important;
   }
 }
