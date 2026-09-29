@@ -46,7 +46,7 @@ export function ShowcaseCard({
   return (
     <button
       type="button"
-      className={`sc-card${coach ? " is-coach" : ""}`}
+      className={`sc-card${coach ? " is-coach" : ""}${player.portrait ? "" : " is-bare"}`}
       onClick={() => onOpen(player)}
       aria-label={[fullName, player.position].filter(Boolean).join(", ") + ". Details öffnen"}
     >
