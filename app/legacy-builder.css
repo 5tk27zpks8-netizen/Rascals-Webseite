@@ -78,7 +78,11 @@
 
      The measure is wide enough for the longest label this club has —
      "SPIELER AUF DEM FELD" — to sit on one line at a phone's width, so the
-     reservation is usually headroom rather than a second line in use. */
+     reservation is usually headroom rather than a second line in use.
+
+     This whole block only still draws below 360, where four across
+     does not fit; from 360 to 800 the one-row rule further down
+     takes over. */
   .sb-site .sb-stats-section .sb-stats strong {
     display: grid;
     place-items: center;
@@ -192,30 +196,66 @@
    smallest phones keep the two-by-two, which is what the block
    above still draws.
    ============================================================ */
-@media (min-width: 360px) and (max-width: 600px) {
+@media (min-width: 360px) and (max-width: 800px) {
   .sb-site .sb-stats-section .sb-stats,
   .sb-site .sb-variant-legacy-strip .sb-stats {
     grid-template-columns: repeat(4, 1fr);
   }
 
+  /* THE FIGURE AND ITS LABEL SIT SIDE BY SIDE, AS THEY DO ON A
+     DESKTOP.
+
+     Stacked, the band could not get below sixty-eight pixels
+     however small the type went, and the reason was not the type:
+     two lines have to be reserved for the label, because "SPIELER
+     AUF DEM FELD" needs both and a row is only as short as its
+     tallest tile. Those two lines were most of the height.
+
+     Beside the figure the label wraps into space the figure is not
+     using, so the tile is one line of figure tall whatever the
+     label does — and the band lands near forty, which is a rule
+     under the picture rather than a block between it and the rest
+     of the page. It is also the shape the same strip has on a wide
+     screen, so the two stop being different designs. */
   .sb-site .sb-stats-section .sb-stats article {
-    gap: 3px;
-    padding: 11px 4px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 9px 4px;
     /* The row rule the two-by-two needed has nothing left to
        divide once there is only one row. */
     border-bottom: 0;
   }
 
   .sb-site .sb-stats-section .sb-stats b {
-    font-size: 1.3rem !important;
+    flex: 0 0 auto;
+    /* Grows with the screen so a tablet does not get a phone's
+       lettering across twice the width. */
+    font-size: clamp(0.98rem, 2.6vw, 1.35rem) !important;
     letter-spacing: -0.02em;
   }
 
   .sb-site .sb-stats-section .sb-stats strong {
+    display: block;
+    /* Takes what the figure leaves rather than shrinking to its own
+       longest word, which is what pushed the longest label onto a
+       third line and made one tile taller than its neighbours. */
+    flex: 1 1 auto;
+    min-width: 0;
     max-width: none;
-    min-height: 2.3em;
-    font-size: 0.6rem !important;
-    letter-spacing: 0.02em !important;
-    line-height: 1.15 !important;
+    min-height: 0;
+    text-align: left;
+    font-size: clamp(0.55rem, 1.5vw, 0.74rem) !important;
+    letter-spacing: 0.01em !important;
+    line-height: 1.2 !important;
+    /* Balanced wrapping evens the lines out by adding one — it made
+       "SPIELER AUF DEM FELD" three short lines where two full ones
+       fit. Greedy wrapping fills each line before starting the next,
+       which is what keeps the band short. */
+    text-wrap: wrap;
+    /* Dimmed a step off the figure. The number is the fact; the
+       label only says which fact it is. */
+    opacity: 0.86;
   }
 }
