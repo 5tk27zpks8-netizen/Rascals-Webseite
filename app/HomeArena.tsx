@@ -1,4 +1,5 @@
 import { ArenaDrive } from "./ArenaDrive";
+import { wide } from "./lib/responsive-image";
 import { listPublicTeamPlayers } from "./lib/public-team-players";
 import { DriveRoster } from "./DriveRoster";
 import { MatchdayHero } from "./MatchdayHero";
@@ -108,7 +109,7 @@ export async function HomeArena() {
       <header className="drive-hud">
         <a className="drive-hud-brand" href="/">
           <img src={logo} alt="" />
-          <span>HELLENSTEIN<br /><i>RASCALS</i></span>
+          <span><strong>HELLENSTEIN</strong><em>RASCALS</em></span>
         </a>
 
         <div className="drive-hud-centre">
@@ -195,7 +196,7 @@ export async function HomeArena() {
               {units.map((unit, index) => (
                 <article key={unit.name} data-cue>
                   <div className="drive-unit-media">
-                    <img src={unit.image} alt="" loading="lazy" />
+                    <img {...wide(unit.image)} src={unit.image} alt="" />
                     <span>{String(index + 1).padStart(2, "0")}</span>
                   </div>
                   <h3>{unit.name}</h3>
@@ -208,7 +209,7 @@ export async function HomeArena() {
             <div className="drive-squads">
               {squads.map((squad) => (
                 <article key={squad.name} data-cue>
-                  <img src={squad.image} alt="" loading="lazy" />
+                  <img {...wide(squad.image)} src={squad.image} alt="" />
                   <div>
                     <small>{squad.tag}</small>
                     <h3>{squad.name}</h3>

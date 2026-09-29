@@ -63,30 +63,37 @@ function designedShape(style:BuilderElementStyle){
    margins that centre it do nothing. Offset and zoom share one
    transform, so setting either does not wipe out the other.
  *
- * PADDING IS WRITTEN AS A VARIABLE, NOT A NUMBER.
+ * WHAT THE CMS SETS IS WRITTEN AS A VARIABLE, NOT A NUMBER.
  *
- * A smaller screen may want different padding from the one set for the
- * desktop, and an inline style beats any stylesheet — so the narrow-screen
- * value used to be forced back in with `!important`, falling back to
- * `inherit` when the CMS had set nothing. That fallback was the bug: an
- * element with no padding of its own inherited its parent's, and since the
- * full-bleed hero and CTA pictures sit directly inside a section padded by
- * 4vw, each one took that 4vw as its own padding and drew itself inset by a
- * finger's width on both sides. The same rule flattened every builder
- * button on a phone to the height of its lettering.
+ * A smaller screen may want a different size, leading, tracking, alignment
+ * or padding from the one set for the desktop, and an inline style beats any
+ * stylesheet — so the narrow-screen value used to be forced back in with
+ * `!important`, falling back to `inherit` when the CMS had set nothing. That
+ * fallback was the bug: an element with no setting of its own took its
+ * parent's. The full-bleed hero and CTA pictures sit directly inside a
+ * section padded by 4vw, so each one took that 4vw as its own padding and
+ * drew itself inset by a finger's width on both sides; every builder button
+ * on a phone was flattened to the height of its lettering; and the red strip
+ * of numbers lost its hierarchy outright, the figure and its label both
+ * falling to the paragraph size around them, untracked, so a long label
+ * wrapped where a short one did not and four equal tiles came out at four
+ * different heights.
  *
- * So the padding is now only ever declared here, and only when the CMS
- * actually asked for some. What it resolves to is left to a variable the
- * media queries redefine. An element nobody has given padding gets no
- * declaration at all, which is the whole point: its own stylesheet keeps
- * what it had.
+ * So each of these is only ever declared here, and only when the CMS
+ * actually asked for it. What it resolves to is left to a variable the media
+ * queries redefine. An element nobody has styled gets no declaration at all,
+ * which is the whole point: its own stylesheet keeps what it had.
+ *
+ * The value a declaration falls back to is the widest one the CMS gave —
+ * desktop, else tablet, else phone — so a size typed on the phone tab alone
+ * still takes effect rather than resolving to nothing.
  *
  * The point of a picture is split the same way, and for the same reason: a
  * narrow screen crops a wide photograph so hard that the focus chosen for a
  * desktop can fall outside the frame entirely. Keeping the two halves apart
  * lets a phone move the crop sideways without discarding the height the CMS
  * picked. */
-function elementStyle(style?:BuilderElementStyle):CSSProperties{if(!style)return{};const t=style.tablet||{},m=style.mobile||{};const placed=style.width!=null||!!style.height||style.imageAlign!=null;const shape=designedShape(style);const hasPad=style.paddingX!=null||style.paddingY!=null||t.paddingX!=null||t.paddingY!=null||m.paddingX!=null||m.paddingY!=null;const hasFocus=style.objectPositionX!=null||style.objectPositionY!=null;const moves:string[]=[];if(style.offsetX||style.offsetY)moves.push(`translate(${style.offsetX??0}px,${style.offsetY??0}px)`);if(style.scale!=null&&style.scale!==1)moves.push(`scale(${style.scale})`);const transform=moves.join(" ");const value:VarStyle={color:brandColor(style.color)||undefined,background:brandColor(style.background)||undefined,fontFamily:style.fontFamily||undefined,fontSize:style.fontSize==null?undefined:`${style.fontSize}px`,fontWeight:style.fontWeight,fontStyle:style.italic?"italic":undefined,letterSpacing:style.letterSpacing==null?undefined:`${style.letterSpacing}em`,lineHeight:style.lineHeight,textTransform:style.textTransform&&style.textTransform!=="none"?style.textTransform:undefined,textAlign:style.align,borderColor:brandColor(style.borderColor)||undefined,borderWidth:style.borderWidth,borderStyle:style.borderWidth?"solid":undefined,borderRadius:style.borderRadius,padding:hasPad?"var(--be-py-now,var(--be-py-desktop,0px)) var(--be-px-now,var(--be-px-desktop,0px))":undefined,"--be-px-desktop":hasPad?`${style.paddingX??0}px`:undefined,"--be-py-desktop":hasPad?`${style.paddingY??0}px`:undefined,opacity:style.opacity,objectPosition:hasFocus?"var(--be-op-x) var(--be-op-y)":undefined,"--be-op-x":hasFocus?`${style.objectPositionX??50}%`:undefined,"--be-op-y":hasFocus?`${style.objectPositionY??50}%`:undefined,width:style.width==null?undefined:`${style.width}%`,maxWidth:style.width==null?undefined:"100%",height:shape?"auto":undefined,aspectRatio:shape?String(shape.aspect):undefined,bottom:shape?"auto":undefined,right:style.width==null?undefined:"auto",objectFit:style.objectFit||undefined,display:placed?"block":undefined,marginLeft:style.imageAlign==="center"||style.imageAlign==="right"?"auto":undefined,marginRight:style.imageAlign==="center"||style.imageAlign==="left"?"auto":undefined,transform:transform||undefined,boxShadow:style.boxShadow||undefined,"--be-font-size-tablet":t.fontSize==null?undefined:`${t.fontSize}px`,"--be-line-height-tablet":t.lineHeight,"--be-letter-spacing-tablet":t.letterSpacing==null?undefined:`${t.letterSpacing}em`,"--be-align-tablet":t.align,"--be-px-tablet":t.paddingX==null?undefined:`${t.paddingX}px`,"--be-py-tablet":t.paddingY==null?undefined:`${t.paddingY}px`,"--be-font-size-mobile":m.fontSize==null?undefined:`${m.fontSize}px`,"--be-line-height-mobile":m.lineHeight,"--be-letter-spacing-mobile":m.letterSpacing==null?undefined:`${m.letterSpacing}em`,"--be-align-mobile":m.align,"--be-px-mobile":m.paddingX==null?undefined:`${m.paddingX}px`,"--be-py-mobile":m.paddingY==null?undefined:`${m.paddingY}px`};return value as CSSProperties}
+function elementStyle(style?:BuilderElementStyle):CSSProperties{if(!style)return{};const t=style.tablet||{},m=style.mobile||{};const placed=style.width!=null||!!style.height||style.imageAlign!=null;const shape=designedShape(style);const hasPad=style.paddingX!=null||style.paddingY!=null||t.paddingX!=null||t.paddingY!=null||m.paddingX!=null||m.paddingY!=null;const hasFocus=style.objectPositionX!=null||style.objectPositionY!=null;const pick=<T,>(...values:(T|null|undefined)[])=>values.find(value=>value!=null);const baseSize=pick(style.fontSize,t.fontSize,m.fontSize);const baseLine=pick(style.lineHeight,t.lineHeight,m.lineHeight);const baseTrack=pick(style.letterSpacing,t.letterSpacing,m.letterSpacing);const baseAlign=pick(style.align,t.align,m.align);const moves:string[]=[];if(style.offsetX||style.offsetY)moves.push(`translate(${style.offsetX??0}px,${style.offsetY??0}px)`);if(style.scale!=null&&style.scale!==1)moves.push(`scale(${style.scale})`);const transform=moves.join(" ");const value:VarStyle={color:brandColor(style.color)||undefined,background:brandColor(style.background)||undefined,fontFamily:style.fontFamily||undefined,fontSize:baseSize==null?undefined:"var(--be-fs-now,var(--be-fs-base))","--be-fs-base":baseSize==null?undefined:`${baseSize}px`,fontWeight:style.fontWeight,fontStyle:style.italic?"italic":undefined,letterSpacing:baseTrack==null?undefined:"var(--be-ls-now,var(--be-ls-base))","--be-ls-base":baseTrack==null?undefined:`${baseTrack}em`,lineHeight:baseLine==null?undefined:"var(--be-lh-now,var(--be-lh-base))","--be-lh-base":baseLine==null?undefined:String(baseLine),textTransform:style.textTransform&&style.textTransform!=="none"?style.textTransform:undefined,borderColor:brandColor(style.borderColor)||undefined,borderWidth:style.borderWidth,borderStyle:style.borderWidth?"solid":undefined,borderRadius:style.borderRadius,padding:hasPad?"var(--be-py-now,var(--be-py-desktop,0px)) var(--be-px-now,var(--be-px-desktop,0px))":undefined,"--be-px-desktop":hasPad?`${style.paddingX??0}px`:undefined,"--be-py-desktop":hasPad?`${style.paddingY??0}px`:undefined,opacity:style.opacity,objectPosition:hasFocus?"var(--be-op-x) var(--be-op-y)":undefined,"--be-op-x":hasFocus?`${style.objectPositionX??50}%`:undefined,"--be-op-y":hasFocus?`${style.objectPositionY??50}%`:undefined,width:style.width==null?undefined:`${style.width}%`,maxWidth:style.width==null?undefined:"100%",height:shape?"auto":undefined,aspectRatio:shape?String(shape.aspect):undefined,bottom:shape?"auto":undefined,right:style.width==null?undefined:"auto",objectFit:style.objectFit||undefined,display:placed?"block":undefined,marginLeft:style.imageAlign==="center"||style.imageAlign==="right"?"auto":undefined,marginRight:style.imageAlign==="center"||style.imageAlign==="left"?"auto":undefined,transform:transform||undefined,boxShadow:style.boxShadow||undefined,"--be-font-size-tablet":t.fontSize==null?undefined:`${t.fontSize}px`,"--be-line-height-tablet":t.lineHeight,"--be-letter-spacing-tablet":t.letterSpacing==null?undefined:`${t.letterSpacing}em`,"--be-align-tablet":t.align,"--be-px-tablet":t.paddingX==null?undefined:`${t.paddingX}px`,"--be-py-tablet":t.paddingY==null?undefined:`${t.paddingY}px`,"--be-font-size-mobile":m.fontSize==null?undefined:`${m.fontSize}px`,"--be-line-height-mobile":m.lineHeight,"--be-letter-spacing-mobile":m.letterSpacing==null?undefined:`${m.letterSpacing}em`,"--be-align-mobile":m.align,"--be-px-mobile":m.paddingX==null?undefined:`${m.paddingX}px`,"--be-py-mobile":m.paddingY==null?undefined:`${m.paddingY}px`};if(baseAlign!=null){(value as Record<string,string>).textAlign="var(--be-al-now,var(--be-al-base))";value["--be-al-base"]=baseAlign}return value as CSSProperties}
 const ss=(section:BuilderSection,key:string)=>elementStyle(section.elementStyles?.[key]);
 const is=(item:BuilderItem,key:string)=>elementStyle(item.elementStyles?.[key]);
 function Background({section}:{section:BuilderSection}){const mode=section.style.backgroundMode||"color";if(mode==="image"&&section.style.backgroundImage)return<><img className="sb-bg-media" {...wide(section.style.backgroundImage)} src={section.style.backgroundImage} alt=""/><span className="sb-bg-overlay"/></>;if(mode==="video"&&section.style.backgroundVideo)return<><video className="sb-bg-media" src={section.style.backgroundVideo} autoPlay muted loop playsInline/><span className="sb-bg-overlay"/></>;return null}

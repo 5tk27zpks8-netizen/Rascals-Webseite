@@ -1432,3 +1432,56 @@
     animation: none;
   }
 }
+
+/* ============================================================
+   THE BOWL IS LIVE ON A PHONE NOW
+
+   Everything above in the narrow-screen block was written for an
+   Arena page with no arena in it: the stadium was a photograph,
+   the scrim over it was heavy because a flat still can take any
+   amount of darkening, and the invitation to start a drive was
+   hidden because there was no drive to start.
+
+   There is one now — the same bowl, the same camera, travelling
+   with the scroll (see lib/drive-mode). So the page stops
+   treating it as wallpaper. `is-stadium` is set from the render
+   loop on the frame after the first one reaches the screen, which
+   means none of this applies to a phone whose WebGL never starts:
+   that one keeps the photograph and the heavy scrim it was
+   written for.
+
+   What changes is where the darkness sits. Instead of one flat
+   sheet over the whole frame, each stop carries its own band,
+   faded out at both ends, so the words keep the ground they need
+   and the stadium between the stops is simply the stadium.
+   ============================================================ */
+@media (max-width: 999.98px), (pointer: coarse) {
+  .drive-page.is-stadium .drive-vignette {
+    background: linear-gradient(
+      180deg,
+      rgba(3, 9, 16, 0.5) 0%,
+      rgba(3, 9, 16, 0.34) 26%,
+      rgba(3, 9, 16, 0.34) 74%,
+      rgba(3, 9, 16, 0.62) 100%
+    );
+  }
+
+  /* The band under one stop. It fades in and out rather than
+     ending on a line, because a hard edge travelling over a live
+     picture reads as a bug. Everything a panel holds sits above
+     it — this is the panel's own background, not a layer. */
+  .drive-page.is-stadium .drive-panel {
+    background: linear-gradient(
+      180deg,
+      rgba(4, 11, 20, 0) 0%,
+      rgba(4, 11, 20, 0.82) 12%,
+      rgba(4, 11, 20, 0.82) 88%,
+      rgba(4, 11, 20, 0) 100%
+    );
+  }
+
+  /* It can be started here after all. */
+  .drive-page.is-stadium .drive-hint {
+    display: block;
+  }
+}

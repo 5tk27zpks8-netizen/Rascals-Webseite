@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { subscribeDrive, type DriveFrame } from "./lib/drive-scroll";
-import { useDriveMode } from "./lib/drive-mode";
+import { useDriveMode, useStadium, wantsLightStadium } from "./lib/drive-mode";
 import {
   FIELD_YARDS_LONG,
   FIELD_YARDS_WIDE,
@@ -2839,15 +2839,21 @@ const breathe: () => Promise<void> =
 export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
   const canvasHost = useRef<HTMLDivElement | null>(null);
   const driving = useDriveMode();
+  const stadium = useStadium();
 
   useEffect(() => {
     const page = document.querySelector<HTMLElement>(".drive-page");
     const host = canvasHost.current;
     if (!page || !host) return;
 
-    if (!driving) return;
+    /* The stadium and the drive's layout are two decisions now: a phone
+       gets the bowl, live and moving with the scroll, but keeps its own
+       stacked panels rather than the fixed broadcast furniture, which needs
+       a screen to be fixed on. See lib/drive-mode. */
+    if (!stadium) return;
 
-    page.classList.add("is-driving");
+    const light = wantsLightStadium();
+    if (driving) page.classList.add("is-driving");
 
     const panels = Array.from(page.querySelectorAll<HTMLElement>("[data-from]"));
     const chainLinks = new Map<string, HTMLElement>();
@@ -2986,7 +2992,11 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       if (disposed) return;
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      /* A phone's screen is three device pixels to the CSS pixel and its GPU
+         is not three times the size. Held to 1.5 the bowl is still sharper
+         than the photograph it replaces and costs a little over a third of
+         the fragments two would. */
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, light ? 1.5 : 2));
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setClearColor(0x03070d, 1);
       // Without tone mapping the floodlights clip the turf to a flat mint
@@ -3046,10 +3056,13 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       const drawing = renderer.getDrawingBufferSize(new THREE.Vector2());
       const composerTarget = new THREE.WebGLRenderTarget(drawing.x, drawing.y, {
         type: THREE.HalfFloatType,
-        samples: 4,
+        /* Multisampling is what smooths the goal posts against the sky, and
+           at a phone's size the posts are two pixels wide either way. It is
+           also the single most expensive thing in this target, so it goes. */
+        samples: light ? 0 : 4,
       });
       const composer = new EffectComposer(renderer, composerTarget);
-      composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      composer.setPixelRatio(Math.min(window.devicePixelRatio, light ? 1.5 : 2));
       composer.setSize(window.innerWidth, window.innerHeight);
       composer.addPass(new RenderPass(scene, camera));
 
@@ -3077,16 +3090,22 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          the stands by 1.7%, which is a no-op dressed as a feature. Nine units
          is the gap between rows of a stand and the depth of a roof, which is
          the scale the shading actually has to work at here. */
-      const ao = new GTAOPass(scene, camera, window.innerWidth, window.innerHeight);
-      ao.output = GTAOPass.OUTPUT.Default;
-      ao.updateGtaoMaterial({
-        radius: 9,
-        distanceExponent: 1.2,
-        thickness: 3.5,
-        scale: 1.35,
-        samples: 12,
-      });
-      composer.addPass(ao);
+      const ao = light ? null : new GTAOPass(scene, camera, window.innerWidth, window.innerHeight);
+      if (ao) {
+        ao.output = GTAOPass.OUTPUT.Default;
+        ao.updateGtaoMaterial({
+          radius: 9,
+          distanceExponent: 1.2,
+          thickness: 3.5,
+          scale: 1.35,
+          samples: 12,
+        });
+      }
+      /* The occlusion pass is the other one a phone does not get. It reads
+         depth twelve times a pixel to darken creases that, at this size, are
+         a pixel deep — real work for something nobody can see, on the device
+         least able to afford it. */
+      if (ao) composer.addPass(ao);
       /* Bloom is a night lever. At night the lamps were the only thing over the
          threshold; in daylight the painted yard lines are near white before it
          is even applied, so a cut of 1.05 caught the whole pitch and made the
@@ -3283,10 +3302,18 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       const artworkArrived = () => {
         for (const fn of onCrestReady) fn();
       };
-      const clubCrest = textures.load("/rascals-logo-transparent.png", artworkArrived);
+      /* The crest and the wordmark are painted on the midfield, the banners
+         and the end zone, so they have to hold up at a metre across on a
+         desktop screen. On a phone the same two files are a megabyte for
+         artwork that never covers more than a few hundred pixels, on the
+         connection least able to spare it — so a phone is sent versions cut
+         to the size it can actually show. */
+      const crestFile = light ? "/rascals-logo-transparent-720.png" : "/rascals-logo-transparent.png";
+      const wordmarkFile = light ? "/rascals-endzone-wordmark-v3-800.png" : "/rascals-endzone-wordmark-v3.png";
+      const clubCrest = textures.load(crestFile, artworkArrived);
       clubCrest.colorSpace = THREE.SRGBColorSpace;
       clubCrest.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      const clubWordmark = textures.load("/rascals-endzone-wordmark-v3.png", artworkArrived);
+      const clubWordmark = textures.load(wordmarkFile, artworkArrived);
       clubWordmark.colorSpace = THREE.SRGBColorSpace;
       clubWordmark.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
@@ -3560,7 +3587,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       /* One shadow camera has to cover the whole ground, so it gets a big map.
          Tight near and far planes around the bowl keep the depth precision
          usable at that span. */
-      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.mapSize.set(light ? 1024 : 2048, light ? 1024 : 2048);
       sun.shadow.camera.near = 40;
       sun.shadow.camera.far = 620;
       sun.shadow.camera.left = -170;
@@ -3686,7 +3713,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         renderer.setSize(window.innerWidth, window.innerHeight);
         composer.setSize(window.innerWidth, window.innerHeight);
         bloom.setSize(window.innerWidth, window.innerHeight);
-        ao.setSize(window.innerWidth, window.innerHeight);
+        ao?.setSize(window.innerWidth, window.innerHeight);
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
       };
@@ -3830,7 +3857,13 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         if (!live) {
           live = true;
           requestAnimationFrame(() => {
-            if (!disposed) host.classList.add("is-live");
+            if (disposed) return;
+            host.classList.add("is-live");
+            /* Only once a frame has actually reached the screen. The page
+               lightens its scrim for a live bowl, and doing that before the
+               first frame — or at all, if WebGL never starts — would leave
+               pale text over a photograph instead. */
+            page.classList.add("is-stadium");
           });
         }
       };
@@ -3863,7 +3896,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         boardTexture?.dispose();
         crowdFaces.forEach((texture) => texture.dispose());
         zoneTexture?.dispose();
-        ao.dispose();
+        ao?.dispose();
         composer.dispose();
         composerTarget.dispose();
         /* The prefiltered sky is a render target and holds GPU memory of its
@@ -3874,6 +3907,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         renderer.domElement.remove();
         host.classList.remove("is-live");
         page.classList.remove("is-driving");
+        page.classList.remove("is-stadium");
       };
     })();
 
@@ -3881,9 +3915,10 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       disposed = true;
       page.removeEventListener("click", onChainClick);
       page.classList.remove("is-driving");
+      page.classList.remove("is-stadium");
       cleanup?.();
     };
-  }, [steady, driving]);
+  }, [steady, driving, stadium]);
 
   return <div className="drive-canvas" ref={canvasHost} aria-hidden="true" />;
 }

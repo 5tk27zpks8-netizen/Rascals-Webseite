@@ -97,32 +97,36 @@
   color:inherit!important;
   text-decoration:none!important;
 }
-.site-header .brand img{
+.site-header .brand img,
+.drive-hud .drive-hud-brand img{
   width:auto!important;
   height:78px!important;
   flex:0 0 auto!important;
   max-width:140px!important;
   object-fit:contain!important;
 }
-.site-header .brand span{
+.site-header .brand span,
+.drive-hud .drive-hud-brand span{
   display:grid!important;
   justify-items:start!important;
   line-height:.9!important;
   letter-spacing:0!important;
   text-align:left!important;
 }
-.site-header .brand strong{
+.site-header .brand strong,
+.drive-hud .drive-hud-brand strong{
   width:auto!important;
   color:#fff!important;
-  font-family:var(--site-heading-font,Inter,Arial,sans-serif)!important;
+  font-family:var(--site-heading-font,var(--font-display))!important;
   font-size:.84rem!important;
   font-weight:950!important;
   letter-spacing:.18em!important;
   text-align:left!important;
 }
-.site-header .brand em{
+.site-header .brand em,
+.drive-hud .drive-hud-brand em{
   color:var(--rascals-red)!important;
-  font-family:var(--site-heading-font,Inter,Arial,sans-serif)!important;
+  font-family:var(--site-heading-font,var(--font-display))!important;
   font-size:1.9rem!important;
   font-style:italic!important;
   font-weight:950!important;
@@ -181,6 +185,19 @@
     transform:translateX(-72px);
   }
 }
+/* The same correction was missing on a phone, and it showed: the mark sat a
+   clear step to the right of the Anmelden button and the address under it,
+   because five per cent of the file on each side is empty canvas and nothing
+   was taking it off. A percentage rather than a pixel count, so it stays
+   right whatever width the mark is given — enough to clear the canvas and a
+   little further, which puts the ink just past the column and reads as
+   deliberate rather than as a near miss. */
+@media(max-width:900px){
+  .sb-footer-brand-block img,
+  .footer-brand img{
+    transform:translateX(-7%);
+  }
+}
 
 /* ~10% stronger card atmosphere. Field lines/numbers remain at their current,
    deliberately subtle opacity. */
@@ -203,7 +220,8 @@
     padding:var(--safe-t) calc(4vw + var(--safe-r)) 0 calc(4vw + var(--safe-l))!important;
   }
   .site-header .brand img,
-  .sb-header .sb-brand img{
+  .sb-header .sb-brand img,
+  .drive-hud .drive-hud-brand img{
     width:auto!important;
     height:58px!important;
     flex-basis:auto!important;
@@ -212,12 +230,14 @@
   /* The lockup stays the heaviest thing in the bar, scaled to the shorter
      header so the name never crowds the menu button. */
   .site-header .brand strong,
-  .sb-header .sb-brand b{
+  .sb-header .sb-brand b,
+  .drive-hud .drive-hud-brand strong{
     font-size:.76rem!important;
     letter-spacing:.16em!important;
   }
   .site-header .brand em,
-  .sb-header .sb-brand em{
+  .sb-header .sb-brand em,
+  .drive-hud .drive-hud-brand em{
     font-size:1.45rem!important;
   }
   .site-header .main-nav{
@@ -247,5 +267,40 @@
   }
   .site-header .menu-button{
     display:block!important;
+  }
+}
+
+/* ============================================================
+   THE BADGE ON THE ARENA PAGES
+
+   The stadium pages carry their own bar — a broadcast overlay, not
+   the site header — and it had grown its own idea of the club's
+   lockup: a mark at forty-four pixels stretched to fill a box it
+   did not fit, and "RASCALS" set upright, small and wide-tracked
+   instead of the italic it is everywhere else. Two headers, two
+   logos, on the same site.
+
+   The rules above now name this badge alongside the other two, so
+   all three take one mark at one size and one wordmark. Only what
+   is genuinely the overlay's own is left here: the bar has to grow
+   to hold the taller lockup, and the badge keeps the gap and the
+   colour it inherits from the page around it.
+   ============================================================ */
+.drive-hud .drive-hud-brand{
+  gap:15px!important;
+}
+.drive-hud .drive-hud-brand img{
+  height:78px!important;
+  max-width:140px!important;
+  object-fit:contain!important;
+}
+.drive-hud .drive-hud-brand span{
+  font-size:inherit!important;
+  letter-spacing:0!important;
+}
+@media(max-width:900px){
+  .drive-hud .drive-hud-brand img{
+    height:58px!important;
+    max-width:104px!important;
   }
 }

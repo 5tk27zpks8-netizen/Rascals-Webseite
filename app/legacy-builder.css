@@ -38,26 +38,35 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     min-height: 0;
-    padding: 18px 10px;
+    /* Held down deliberately. Four facts stacked two by two is a band, not a
+       section: at eighteen and twenty-four it ran to two hundred pixels of
+       solid red between the hero and the fixtures, which is more weight than
+       four short facts have earned. */
+    padding: 13px 8px;
     text-align: center;
   }
   .sb-site .sb-stats-section .sb-stats b {
-    font-size: clamp(1.5rem, 8vw, 2rem);
+    font-size: clamp(1.35rem, 7vw, 1.8rem);
     line-height: 1;
   }
   /* Two lines are reserved whether the label needs them or not. Without it
      each tile centred its own pair, so a label that wrapped pushed its number
      up and the four numbers no longer sat on one line across the row — which
-     is the same raggedness, just turned ninety degrees. */
+     is the same raggedness, just turned ninety degrees.
+
+     The measure is wide enough for the longest label this club has —
+     "SPIELER AUF DEM FELD" — to sit on one line at a phone's width, so the
+     reservation is usually headroom rather than a second line in use. */
   .sb-site .sb-stats-section .sb-stats strong {
     display: grid;
     place-items: center;
-    min-height: 2.5em;
-    max-width: 15ch;
-    font-size: 0.66rem;
-    line-height: 1.25;
+    min-height: 2.2em;
+    max-width: 22ch;
+    font-size: 0.65rem;
+    letter-spacing: 0.07em;
+    line-height: 1.2;
     text-wrap: balance;
   }
 }
