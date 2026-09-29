@@ -47,9 +47,29 @@
     padding: 13px 8px;
     text-align: center;
   }
+  /* THE BAND KEEPS ITS OWN SCALE ON A PHONE, AND THIS IS THE ONE PLACE
+     THAT IS TRUE.
+
+     Everywhere else on this site a size typed into the CMS wins, and it
+     should: it is somebody's decision about their own page. A strip of
+     figures is the exception, because it is not four texts — it is one
+     object made of four. Give one of the four a size of its own and the
+     set breaks: measured at 393px, a label set to 28 rather than the
+     strip's own 10.4 made its row 121 pixels tall against the other
+     row's 82, and the band went from 165 to 203. That is not a bolder
+     label, it is a broken band.
+
+     So on a narrow screen the strip's scale is not negotiable. The
+     important beats the inline value the CMS wrote, which is the whole
+     reason it is here; on a wide screen, where a row of four has the
+     room to carry a difference, nothing is overridden and the CMS still
+     decides. */
+  .sb-site .sb-stats-section .sb-stats article {
+    font-size: 1rem !important;
+  }
   .sb-site .sb-stats-section .sb-stats b {
-    font-size: clamp(1.35rem, 7vw, 1.8rem);
-    line-height: 1;
+    font-size: clamp(1.35rem, 7vw, 1.8rem) !important;
+    line-height: 1 !important;
   }
   /* Two lines are reserved whether the label needs them or not. Without it
      each tile centred its own pair, so a label that wrapped pushed its number
@@ -64,9 +84,9 @@
     place-items: center;
     min-height: 2.2em;
     max-width: 22ch;
-    font-size: 0.65rem;
-    letter-spacing: 0.07em;
-    line-height: 1.2;
+    font-size: 0.65rem !important;
+    letter-spacing: 0.07em !important;
+    line-height: 1.2 !important;
     text-wrap: balance;
   }
 }
