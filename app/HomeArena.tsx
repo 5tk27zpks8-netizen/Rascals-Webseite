@@ -102,7 +102,7 @@ export async function HomeArena() {
 
   return (
     <div className="drive-page">
-      <ArenaDrive />
+      <ArenaDrive logo={logo} />
       <div className="drive-vignette" aria-hidden="true" />
 
       {/* --- broadcast overlay ------------------------------------- */}

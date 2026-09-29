@@ -2836,8 +2836,9 @@ const breathe: () => Promise<void> =
     ? () => scheduler.yield!()
     : () => new Promise((resolve) => setTimeout(resolve, 0));
 
-export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
+export function ArenaDrive({ steady = false, logo = "/rascals-logo-768.webp" }: { steady?: boolean; logo?: string } = {}) {
   const canvasHost = useRef<HTMLDivElement | null>(null);
+  const loader = useRef<HTMLDivElement | null>(null);
   const driving = useDriveMode();
   const stadium = useStadium();
 
@@ -2853,6 +2854,49 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
     if (!stadium) return;
 
     const light = wantsLightStadium();
+
+    /* THE BAR IS THE BUILD, NOT A GUESS AT IT.
+
+       A progress bar that runs on a timer is a lie told at the exact moment
+       somebody is deciding whether the page is broken. This one is moved by
+       the build itself: every point where the stadium hands the page back —
+       and there are a dozen — is also the point where it says how far it has
+       got. The count below has to match the number of `step()` calls, and it
+       stops short of full: the last of the work is the first frame, and the
+       bar is only allowed to finish when that frame is on the screen.
+
+       Fifteen seconds is not a timeout on the build, which is left to finish;
+       it is a timeout on the waiting. If WebGL never starts, or the machine
+       is slower than anything here can measure, the reader gets the still
+       photograph of the same stadium rather than a bar that never fills. */
+    const BUILD_STEPS = 13;
+    let built = 0;
+    const paintProgress = (value: number) => {
+      loader.current?.style.setProperty("--load", value.toFixed(3));
+    };
+    const step = async () => {
+      built += 1;
+      paintProgress(Math.min(0.94, built / BUILD_STEPS));
+      await breathe();
+    };
+    let clearing = 0;
+    const giveUp = window.setTimeout(() => {
+      loader.current?.classList.add("is-done");
+      clearing = window.setTimeout(() => loader.current?.classList.add("is-gone"), 800);
+    }, 15000);
+    const finish = () => {
+      window.clearTimeout(giveUp);
+      paintProgress(1);
+      loader.current?.classList.add("is-done");
+      /* The fade is a courtesy; the disappearance is not. A transition can be
+         dropped — a saturated compositor, a tab coming back from the
+         background — and a half-faded sheet left over the stadium is worse
+         than no fade at all, so the panel is taken out of the picture on a
+         timer whether its transition finished or not. */
+      clearing = window.setTimeout(() => {
+        loader.current?.classList.add("is-gone");
+      }, 800);
+    };
     if (driving) page.classList.add("is-driving");
 
     const panels = Array.from(page.querySelectorAll<HTMLElement>("[data-from]"));
@@ -3024,8 +3068,16 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       /* The sky, as the thing that lights the bowl. See buildSkyEnvironment.
          Set on the scene rather than per material so every standard surface in
          here picks it up, including the ones built before this line runs. */
+      /* The renderer, its multisampled target and the three passes are done;
+         the sky that lights everything is next and is the single most
+         expensive step in the build. Between the two is a good place to let
+         the page answer for itself. */
+      await step();
+      if (disposed) return;
       const environment = buildSkyEnvironment(THREE, renderer);
       scene.environment = environment.texture;
+      await step();
+      if (disposed) return;
       /* Scaled so the picture keeps the brightness it had. The point of this
          change is not a brighter stadium — it is the same amount of light
          arriving with a direction, a sun in it and a green bounce off the
@@ -3249,6 +3301,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         return texture;
       };
+      await step();
+      if (disposed) return;
       const turfNormal = makeTiled(createTurfNormalTexture(), 16);
       const turfRough = makeTiled(createTurfRoughnessTexture(), 16);
 
@@ -3277,6 +3331,9 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       surround.rotation.x = -Math.PI / 2;
       surround.position.set(0, -0.06, centreZ);
       scene.add(surround);
+
+      await step();
+      if (disposed) return;
 
       // --- stands and flags -------------------------------------------
       /* THE CLUB'S OWN ARTWORK, LOADED RATHER THAN REDRAWN.
@@ -3433,7 +3490,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         cloudTexture.colorSpace = THREE.SRGBColorSpace;
         cloudTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
-      await breathe();
+      await step();
       if (disposed) return;
       const sky = buildSky(THREE, cloudTexture);
       scene.add(sky.group);
@@ -3441,7 +3498,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       /* The pass, and the man under it. Only on the roster drive: the panel
          page has its own things to look at and a ball crossing them would be
          one more moving object competing with the copy. */
-      await breathe();
+      await step();
       if (disposed) return;
       scene.add(buildGoal(THREE, OWN_END_Z, 1));
       scene.add(buildGoal(THREE, OPP_END_Z, -1));
@@ -3449,7 +3506,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
          the bowl had a band of bare grass behind each end wide enough to read
          as a gap in the ground, and the shot that ends the drive looks
          straight down it. A stand at this level sits close behind the posts. */
-      await breathe();
+      await step();
       if (disposed) return;
       scene.add(buildEndStand(THREE, adTexture, crowdFaces, OWN_END_Z + 14, 1));
       scene.add(buildEndStand(THREE, adTexture, crowdFaces, OPP_END_Z - 14, -1));
@@ -3460,7 +3517,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
 
       /* One roof over the whole bowl, put in after the stands so it reads as
          sitting on them. */
-      await breathe();
+      await step();
       if (disposed) return;
       const roofRing = buildRoofRing(THREE, STAND_ROOF_Y, bannerCrestTexture, bannerWordTexture);
       scene.add(roofRing);
@@ -3469,7 +3526,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       /* Close the bowl. The four corner chamfers meet the touchline fronts at
          x = ±(half the field + the sideline) and the end fronts at the z the
          end stands sit on, so the ring is continuous from the pitch. */
-      await breathe();
+      await step();
       if (disposed) return;
       const cornerX = FIELD_WIDE / 2 + SIDELINE_DEPTH;
       scene.add(
@@ -3596,7 +3653,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
       sun.shadow.camera.bottom = -210;
       sun.shadow.bias = -0.0009;
       sun.shadow.normalBias = 0.6;
-      await breathe();
+      await step();
       if (disposed) return;
       scene.add(sun, sun.target);
 
@@ -3702,6 +3759,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         blending: THREE.AdditiveBlending,
       }));
       scene.add(dust);
+      await step();
+      if (disposed) return;
 
       // --- input ---------------------------------------------------------
       const pointer = { x: 0, y: 0 };
@@ -3840,7 +3899,9 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
         }
 
         paintOverlay();
+        const frameStart = performance.now();
         composer.render();
+        watchFrameCost(frameStart);
 
         /* THE MOMENT THE STADIUM IS REALLY THERE.
 
@@ -3859,6 +3920,7 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
           requestAnimationFrame(() => {
             if (disposed) return;
             host.classList.add("is-live");
+            finish();
             /* Only once a frame has actually reached the screen. The page
                lightens its scrim for a live bowl, and doing that before the
                first frame — or at all, if WebGL never starts — would leave
@@ -3867,6 +3929,73 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
           });
         }
       };
+
+      /* WHAT THE BOWL COSTS IS NOT KNOWN UNTIL IT IS DRAWN ON THE MACHINE
+         DRAWING IT.
+
+         The scene is one budget on a desktop with a discrete card and quite
+         another on an integrated one, and there is no honest way to guess
+         which is in front of you: the screen is the same size either way and
+         a browser will not say what it is running on. Guessing low means a
+         stadium nobody asked for; guessing high means the page the owner
+         described — long to arrive and then not quite right.
+
+         So it is measured instead. The first fifty frames are timed, the
+         middle one taken, and if it is slower than roughly thirty a second
+         the two most expensive things go, one step at a time and in the order
+         of what costs most per pixel for what it adds: the occlusion pass
+         first, which reads depth twelve times a pixel to darken creases, then
+         the extra pixels themselves. A machine that is comfortable never
+         reaches either step and keeps the bowl exactly as drawn.
+
+         Fifty frames rather than five because the first few are still warming
+         caches and would condemn a fast machine on its slowest moment. */
+      let costFrames: number[] = [];
+      let quality = 0;
+      const watchFrameCost = (start: number) => {
+        if (quality > 1) return;
+        costFrames.push(performance.now() - start);
+        if (costFrames.length < 50) return;
+        const sorted = [...costFrames].sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)];
+        costFrames = [];
+        if (median <= 33) { quality = 2; return; }
+        if (quality === 0) {
+          quality = 1;
+          if (ao) ao.enabled = false;
+          return;
+        }
+        quality = 2;
+        renderer.setPixelRatio(1);
+        composer.setPixelRatio(1);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+        bloom.setSize(window.innerWidth, window.innerHeight);
+      };
+
+      /* EVERY SHADER IN THE BOWL IS COMPILED BEFORE THE FIRST FRAME, NOT
+         DURING IT.
+
+         The first `composer.render()` is not a frame — it is where the driver
+         turns roughly forty materials into programs, and the main thread waits
+         for all of it. Measured as one unbroken block of several seconds, on
+         top of an already long build, with the page unable to answer a click
+         or a scroll for the whole of it.
+
+         `compileAsync` does the same work through the parallel-compile
+         extension: the wait is a promise rather than a stall, so the still
+         photograph stays interactive underneath until the stadium is genuinely
+         ready to draw. Where the extension is missing it still compiles ahead
+         of the first frame, which at least moves the cost off the frame that
+         was supposed to be the opening shot. */
+      const compile = (renderer as unknown as {
+        compileAsync?: (scene: unknown, camera: unknown) => Promise<unknown>;
+      }).compileAsync;
+      if (typeof compile === "function") await compile.call(renderer, scene, camera);
+      else renderer.compile(scene, camera);
+      if (disposed) return;
+      await step();
+      if (disposed) return;
 
       let live = false;
       unsubscribeDrive = subscribeDrive(tick);
@@ -3913,6 +4042,8 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
 
     return () => {
       disposed = true;
+      window.clearTimeout(giveUp);
+      window.clearTimeout(clearing);
       page.removeEventListener("click", onChainClick);
       page.classList.remove("is-driving");
       page.classList.remove("is-stadium");
@@ -3920,5 +4051,16 @@ export function ArenaDrive({ steady = false }: { steady?: boolean } = {}) {
     };
   }, [steady, driving, stadium]);
 
-  return <div className="drive-canvas" ref={canvasHost} aria-hidden="true" />;
+  return (
+    <>
+      <div className="drive-canvas" ref={canvasHost} aria-hidden="true" />
+      {stadium ? (
+        <div className="drive-loading" ref={loader} role="status" aria-live="polite">
+          <img src={logo} alt="" width={220} height={143} />
+          <p>Arena wird geladen</p>
+          <span className="drive-loading-bar" aria-hidden="true"><i /></span>
+        </div>
+      ) : null}
+    </>
+  );
 }

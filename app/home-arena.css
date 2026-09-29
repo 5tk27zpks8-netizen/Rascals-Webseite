@@ -1485,3 +1485,101 @@
     display: block;
   }
 }
+
+/* ============================================================
+   WHILE THE STADIUM IS BEING BUILT
+
+   Eight thousand seats, a roof, a scoreboard and forty materials
+   do not arrive in a frame, and until they do the page has always
+   shown the photograph with the words already over it — which
+   reads as the finished page, badly rendered, rather than as one
+   that is still coming.
+
+   So the wait says what it is: the club's mark, the sentence, and
+   a bar that is moved by the build rather than by a timer. It
+   covers the whole frame because the thing behind it is not ready
+   to be looked at, and it goes when the first real frame is on
+   the screen, not when a countdown says so.
+   ============================================================ */
+.drive-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(18px, 3vh, 30px);
+  padding: calc(24px + var(--safe-t)) var(--gutter-r) calc(24px + var(--safe-b)) var(--gutter-l);
+  background:
+    radial-gradient(120% 90% at 50% 38%, rgba(12, 26, 44, 0.96), rgba(3, 8, 15, 0.99) 68%),
+    var(--drive-bg, #03070d);
+  opacity: 1;
+  transition: opacity 0.55s ease;
+}
+
+.drive-loading img {
+  width: clamp(190px, 44vw, 330px);
+  height: auto;
+  object-fit: contain;
+  /* The mark breathes rather than spins. A spinner says "busy"; this says
+     whose stadium is being built. */
+  animation: drive-load-pulse 2.6s ease-in-out infinite;
+}
+
+.drive-loading p {
+  margin: 0;
+  color: #dbe5f2;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(0.82rem, 2.4vw, 1rem);
+  font-weight: 900;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.drive-loading-bar {
+  position: relative;
+  display: block;
+  width: min(280px, 62vw);
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.13);
+}
+
+/* Scaled from the left rather than sized, so the browser moves it on the
+   compositor and the bar keeps going while the main thread is busy building
+   the thing it is measuring — which is the one moment it has to. */
+.drive-loading-bar i {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(var(--load, 0.04));
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--rascals-red, #e7192d), #ff5468);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.drive-loading.is-done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Out of the picture for good, transition or no transition. */
+.drive-loading.is-gone {
+  display: none;
+}
+
+@keyframes drive-load-pulse {
+  0%, 100% { opacity: 0.92; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.035); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drive-loading img {
+    animation: none;
+  }
+  .drive-loading,
+  .drive-loading-bar i {
+    transition: none;
+  }
+}
