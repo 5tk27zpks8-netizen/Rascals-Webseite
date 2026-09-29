@@ -1,6 +1,7 @@
 import { countPublishedNews, listNewsCategories, listPublishedNews } from "../lib/news";
 import { Header } from "../SiteShell";
 import "./news-public.css";
+import { siteBrand } from "../lib/brand-server";
 
 export const metadata = { title: "News · Hellenstein Rascals", description: "Aktuelle News, Spielberichte und Vereinsmeldungen der Hellenstein Rascals." };
 
@@ -17,8 +18,10 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
   ]);
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
+  const brand = await siteBrand();
+
   return <>
-    <Header page="news" />
+    <Header page="news" brand={brand} />
     <main className="public-news-page">
     <header className="public-news-hero"><span>INSIDE RASCALS</span><h1>FROM THE <i>HUDDLE.</i></h1><p>Spielberichte, Team-News, Vereinsleben und aktuelle Meldungen.</p></header>
     {/* A placeholder is not a label: it vanishes the moment anything is typed,

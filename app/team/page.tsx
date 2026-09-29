@@ -5,6 +5,7 @@ import { RascalsPlayerCard } from "./RascalsPlayerCard";
 import "./team.css";
 import "./coaches-public.css";
 import "./team-sections.css";
+import { siteBrand } from "../lib/brand-server";
 
 export const metadata = {
   title: "Team · Hellenstein Rascals",
@@ -17,9 +18,11 @@ export default async function TeamPage() {
   const defense = players.filter((player) => player.unit === "defense");
   const specialTeams = players.filter((player) => player.unit === "special-teams");
 
+  const brand = await siteBrand();
+
   return (
     <>
-    <Header page="team" />
+    <Header page="team" brand={brand} />
     <main className="team-public team-public-v2">
       <header className="team-public-head team-public-hero">
         <span>HELLENSTEIN RASCALS · 2026</span>

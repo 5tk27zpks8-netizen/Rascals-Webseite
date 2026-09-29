@@ -2,6 +2,7 @@ import { listActiveSponsors, type PublicSponsor } from "../lib/sponsors";
 import { wide } from "../lib/responsive-image";
 import { Header } from "../SiteShell";
 import "./sponsoring.css";
+import { siteBrand } from "../lib/brand-server";
 
 export const metadata = {
   title: "Sponsoring · Hellenstein Rascals",
@@ -19,9 +20,11 @@ export default async function SponsoringPage() {
   const sponsors = await listActiveSponsors();
   const tiers: PublicSponsor["tier"][] = ["premium", "gold", "silver", "partner"];
 
+  const brand = await siteBrand();
+
   return (
     <>
-    <Header page="sponsoring" />
+    <Header page="sponsoring" brand={brand} />
     <main className="sponsors-page">
       <section className="sponsors-hero">
         <span>PROUDLY POWERED BY</span>

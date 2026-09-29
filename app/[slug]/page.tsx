@@ -1,5 +1,6 @@
 import { AboutTimeline } from "../AboutTimeline";
 import { LegacyBrandSync } from "../LegacyBrandSync";
+import { brandFromTheme } from "../lib/brand";
 import { SiteBuilderPage } from "../SiteBuilderPage";
 import { SiteShell, type PageName } from "../SiteShell";
 import { findBuilderPage, readPublishedSiteBuilderState } from "../lib/site-builder";
@@ -55,7 +56,10 @@ export default async function ContentPage({ params }: { params: Promise<{ slug: 
         navCtaLabel={state.theme.navCtaLabel}
         navCtaUrl={state.theme.navCtaUrl}
       />
-      <SiteShell page={page} />
+      <SiteShell
+        page={page}
+        brand={brandFromTheme(state.theme)}
+      />
       {page === "ueber-uns" && <AboutTimeline />}
     </>;
   }

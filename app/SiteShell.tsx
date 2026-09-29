@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { wide } from "./lib/responsive-image";
+import { DEFAULT_BRAND, type SiteBrand } from "./lib/brand";
 import { RascalsField } from "./RascalsField";
 import { TeamUnits } from "./TeamUnits";
 
@@ -30,13 +31,13 @@ const shopUrl = "https://hellenstein-rascals.myshopify.com";
 const productUrl = `${shopUrl}/products/puli`;
 const productImage = "/shop-product-4k.webp";
 
-export function Header({ page }: { page: PageName }) {
+export function Header({ page, brand = DEFAULT_BRAND }: { page: PageName; brand?: SiteBrand }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <header className="site-header">
       <a className="brand" href="/" aria-label="Hellenstein Rascals Startseite">
-        <img src="/rascals-logo-768.webp" alt="" />
-        <span><strong>HELLENSTEIN</strong><em>RASCALS</em></span>
+        <img src={brand.logo} alt="" />
+        <span><strong>{brand.top}</strong><em>{brand.bottom}</em></span>
       </a>
       <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-controls="main-nav">
         <span /> <span /> <span />
@@ -248,8 +249,8 @@ function JoinCta() {
   return <section className="join-cta"><img {...wide("/team-entry-4k.webp")} src="/team-entry-4k.webp" alt="" data-parallax="8" /><div className="hero-shade" /><div><span className="eyebrow" data-reveal>YOUR NEXT PLAY</span><h2 data-reveal data-reveal-delay="80">READY TO JOIN<br />THE <i>FAMILY?</i></h2><p data-reveal data-reveal-delay="160">Du brauchst keine Erfahrung. Nur den Willen, Teil von etwas Größerem zu werden.</p><a className="button red" href="mailto:football@hsb1846.de" data-reveal data-reveal-delay="220">Probetraining anfragen <span>→</span></a></div></section>;
 }
 
-function Footer() {
-  return <footer><div className="footer-brand"><img src="/rascals-logo-768.webp" alt="Hellenstein Rascals" /><p>American Football in Heidenheim.<br />Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</p></div><div><b>EXPLORE</b>{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div><div><b>FOLLOW</b><a href="https://www.instagram.com/hellenstein_rascals/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="https://www.facebook.com/HellensteinRascals/" target="_blank" rel="noreferrer">Facebook ↗</a><a href="mailto:football@hsb1846.de">E-Mail ↗</a></div><div><b>HOME FIELD</b><p>Heeracker 22<br />89522 Heidenheim</p></div><small>© 2026 HELLENSTEIN RASCALS · ALL GRIT. ALL HEART.</small></footer>;
+function Footer({ brand }: { brand: SiteBrand }) {
+  return <footer><div className="footer-brand"><img src={brand.logo} alt={`${brand.top} ${brand.bottom}`} /><p>American Football in Heidenheim.<br />Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</p></div><div><b>EXPLORE</b>{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div><div><b>FOLLOW</b><a href="https://www.instagram.com/hellenstein_rascals/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="https://www.facebook.com/HellensteinRascals/" target="_blank" rel="noreferrer">Facebook ↗</a><a href="mailto:football@hsb1846.de">E-Mail ↗</a></div><div><b>HOME FIELD</b><p>Heeracker 22<br />89522 Heidenheim</p></div><small>© 2026 HELLENSTEIN RASCALS · ALL GRIT. ALL HEART.</small></footer>;
 }
 
 /**
@@ -257,7 +258,7 @@ function Footer() {
  * it inside <main>, below the header. Rendering it as a sibling before
  * <SiteShell> pushed the sticky header underneath the hero.
  */
-export function SiteShell({ page, heroOverride }: { page: PageName; heroOverride?: React.ReactNode }) {
+export function SiteShell({ page, heroOverride, brand = DEFAULT_BRAND }: { page: PageName; heroOverride?: React.ReactNode; brand?: SiteBrand }) {
   let content: React.ReactNode;
   if (page === "ueber-uns") content = <AboutPage />;
   else if (page === "team") content = <TeamPage />;
@@ -266,5 +267,5 @@ export function SiteShell({ page, heroOverride }: { page: PageName; heroOverride
   else if (page === "news") content = <NewsPage />;
   else if (page === "galerie") content = <GalleryPage />;
   else content = <HomePage heroOverride={heroOverride} />;
-  return <><a className="skip-link" href="#content">Zum Inhalt</a><Header page={page} /><main id="content">{content}</main><Footer /></>;
+  return <><a className="skip-link" href="#content">Zum Inhalt</a><Header page={page} brand={brand} /><main id="content">{content}</main><Footer brand={brand} /></>;
 }

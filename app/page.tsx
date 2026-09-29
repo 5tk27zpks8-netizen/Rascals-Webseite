@@ -6,6 +6,7 @@ import { SiteBuilderPage } from "./SiteBuilderPage";
 import { SiteShell } from "./SiteShell";
 import { findBuilderPage, readPublishedSiteBuilderState, readSiteBuilderState } from "./lib/site-builder";
 import { readSiteDesign } from "./lib/site-design";
+import { brandFromTheme } from "./lib/brand";
 import { HomeMatchday } from "./HomeMatchday";
 import { HomeArena } from "./HomeArena";
 import { HomeHybrid } from "./HomeHybrid";
@@ -55,5 +56,6 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
   if (design === "arena") return <HomeArena />;
   if (design === "hybrid") return <HomeHybrid />;
 
-  return <><SiteShell page="home" heroOverride={<CmsHero/>}/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
+  const brand = brandFromTheme(state.theme);
+  return <><SiteShell page="home" brand={brand} heroOverride={<CmsHero/>}/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
 }

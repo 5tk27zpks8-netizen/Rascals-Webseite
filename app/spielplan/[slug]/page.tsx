@@ -5,6 +5,7 @@ import { Header } from "../../SiteShell";
 import { ScheduleLogo } from "../ScheduleLogo";
 import "../spielplan.css";
 import "../game-detail-score.css";
+import { siteBrand } from "../../lib/brand-server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -18,8 +19,10 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
   const events = await listGameEvents(game.id, 50);
   const rascalsLogo = siteState.theme.logoUrl?.trim() || DEFAULT_RASCALS_LOGO;
 
+  const brand = await siteBrand();
+
   return <>
-    <Header page="spielplan" />
+    <Header page="spielplan" brand={brand} />
     <main className="schedule-page">
     <header className="schedule-hero">
       <a href="/spielplan">← Spielplan</a>

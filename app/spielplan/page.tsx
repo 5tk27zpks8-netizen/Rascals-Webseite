@@ -4,6 +4,7 @@ import { readPublishedSiteBuilderState } from "../lib/site-builder";
 import { Header } from "../SiteShell";
 import { ScheduleLogo } from "./ScheduleLogo";
 import "./spielplan.css";
+import { siteBrand } from "../lib/brand-server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,8 +33,10 @@ export default async function SpielplanPage() {
   const pointsFor = completed.reduce((sum, game) => sum + game.rascalsScore, 0);
   const pointsAgainst = completed.reduce((sum, game) => sum + game.opponentScore, 0);
 
+  const brand = await siteBrand();
+
   return <>
-    <Header page="spielplan" />
+    <Header page="spielplan" brand={brand} />
     <main className="full-schedule-page">
     <header className="full-schedule-hero">
       <div className="full-schedule-hero-copy">
