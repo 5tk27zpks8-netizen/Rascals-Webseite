@@ -414,6 +414,17 @@ html:has(.roster-page) {
    the page: without that subtraction the word sits behind the bar
    at exactly the moment it is supposed to be the only thing on
    the screen.
+
+   NOTHING HERE IS HIDDEN UNTIL A SCRIPT SAYS OTHERWISE.
+
+   The first build faded all three in on a class an observer added
+   when the section came into view, and that is the wrong way round
+   for the last thing on a page: if the callback is late — and on
+   this page it competes with a stadium being rendered — the reader
+   scrolls to the end and finds a blank screen. So the call is
+   simply there, and the arrival is an animation played over it.
+   Worst case somebody sees it without the throw, which is a
+   smaller loss than not seeing it at all.
    ============================================================ */
 .roster-endzone {
   display: grid;
@@ -429,6 +440,26 @@ html:has(.roster-page) {
      same reason. */
   position: relative;
   z-index: 10;
+  /* THE PULL, DONE BY THE BROWSER.
+
+     This was a script: watch for the section, wait for the scrolling to
+     stop, then scroll it into place. It worked when measured and it is
+     exactly the kind of thing that does not survive contact with a real
+     machine — a smooth scroll is cancelled by the next flick, and the
+     callback that starts it is behind a stadium on the same thread.
+
+     Snapping is the same intent expressed where it cannot be starved: the
+     browser itself brings the end zone to rest against the top when a
+     scroll finishes near it. `proximity` rather than `mandatory` because
+     there is one snap point on a page seventy cards long, and mandatory
+     would fight every scroll that was never headed here. */
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+
+/* Only this page, and only because of the one snap point above. */
+html:has(.roster-page) {
+  scroll-snap-type: y proximity;
 }
 
 .roster-endzone-eyebrow {
@@ -438,9 +469,6 @@ html:has(.roster-page) {
   font-weight: 900;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
 }
 
 /* The call. Set to the width of the screen rather than to a size, because
@@ -459,10 +487,6 @@ html:has(.roster-page) {
   /* The pieces break between themselves or not at all. */
   overflow-wrap: normal;
   text-shadow: 0 10px 40px rgba(2, 8, 16, 0.85), 0 2px 10px rgba(2, 8, 16, 0.6);
-  /* Thrown, not faded: it arrives slightly too big and pulls back. */
-  opacity: 0;
-  transform: scale(0.82);
-  transition: opacity 0.42s ease, transform 0.62s cubic-bezier(0.16, 1.5, 0.3, 1);
 }
 
 .roster-endzone-word span,
@@ -481,29 +505,37 @@ html:has(.roster-page) {
   color: #c3d1e2;
   font-size: clamp(0.88rem, 2.2vw, 1.02rem);
   line-height: 1.5;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.5s ease 0.26s, transform 0.5s ease 0.26s;
 }
 
-.roster-endzone.is-in .roster-endzone-eyebrow,
-.roster-endzone.is-in .roster-endzone-line {
-  opacity: 1;
-  transform: none;
-}
-
+/* The arrival, played once when the section is reached. Thrown, not faded:
+   it arrives slightly too big and pulls back. */
 .roster-endzone.is-in .roster-endzone-word {
-  opacity: 1;
-  transform: scale(1);
+  animation: endzone-call 0.62s cubic-bezier(0.16, 1.5, 0.3, 1) both;
+}
+
+.roster-endzone.is-in .roster-endzone-eyebrow {
+  animation: endzone-rise 0.5s ease 0.06s both;
+}
+
+.roster-endzone.is-in .roster-endzone-line {
+  animation: endzone-rise 0.5s ease 0.24s both;
+}
+
+@keyframes endzone-call {
+  from { opacity: 0; transform: scale(0.82); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes endzone-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Nothing arrives; it is simply there. */
 @media (prefers-reduced-motion: reduce) {
-  .roster-endzone-eyebrow,
-  .roster-endzone-word,
-  .roster-endzone-line {
-    opacity: 1;
-    transform: none;
-    transition: none;
+  .roster-endzone.is-in .roster-endzone-eyebrow,
+  .roster-endzone.is-in .roster-endzone-word,
+  .roster-endzone.is-in .roster-endzone-line {
+    animation: none;
   }
 }

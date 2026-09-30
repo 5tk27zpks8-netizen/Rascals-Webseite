@@ -30,67 +30,27 @@ export function RosterEndzone() {
     const node = host.current;
     if (!node) return;
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    /* Where a pull lands: the page reserves room at the top for the bar that
-       is fixed over it, and `scrollIntoView` honours that, so "arrived" is
-       that offset rather than zero. */
-    const landing = 110;
-    let previous = window.scrollY;
-    let goingDown = true;
-    let attempts = 0;
-    let idle = 0;
+    /* The class only decides whether the arrival is animated. Everything it
+       plays over is visible without it, which is the point: this page has a
+       stadium rendering on the same thread, and a callback that arrives late
+       must not be the difference between a call and a blank screen.
 
-    const consider = () => {
-      const top = node.getBoundingClientRect().top;
-      /* Settled. Nothing more to do, ever. */
-      if (top <= landing) { attempts = 99; return; }
-      /* Scrolled right back out of it: the drive can be finished again. */
-      if (top > window.innerHeight) { attempts = 0; return; }
-      if (top > window.innerHeight * 0.82) return;
-      if (reduced || !goingDown || attempts >= 3) return;
-      attempts += 1;
-      node.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-
-    /* THE PULL WAITS FOR THE FLICK TO FINISH.
-
-       A smooth scroll is cancelled by the next scroll the reader makes, and
-       on a phone a flick is dozens of them. Pulling the moment the end zone
-       appears therefore did nothing at all in the one case that matters: the
-       pull started, the flick killed it, and because it had already been
-       spent the ending never completed. Measured — the section stopped 594
-       pixels down a 800-pixel screen and stayed there.
-
-       So it waits for the scrolling to stop first, and may try twice more if
-       it is interrupted anyway. Three is the ceiling: past that the reader is
-       clearly steering, and the page should let them. */
-    const onScroll = () => {
-      const y = window.scrollY;
-      goingDown = y > previous;
-      previous = y;
-      window.clearTimeout(idle);
-      idle = window.setTimeout(consider, 150);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    /* The call arrives whether or not the page was pulled, so it is also
-       right for a reader who scrolled here themselves, and for one who has
-       asked for less movement and is never pulled at all. */
+       Bringing the end zone to rest is the browser's job now — one CSS snap
+       point, see arena-roster.css. A script doing it by hand was cancelled by
+       the next flick every time, which is what a smooth scroll is for. */
     const watcher = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) node.classList.add("is-in");
+          if (!entry.isIntersecting) continue;
+          node.classList.add("is-in");
+          watcher.disconnect();
         }
       },
-      { threshold: 0.2 },
+      { threshold: 0.15 },
     );
     watcher.observe(node);
 
-    return () => {
-      watcher.disconnect();
-      window.clearTimeout(idle);
-      window.removeEventListener("scroll", onScroll);
-    };
+    return () => watcher.disconnect();
   }, []);
 
   return (
