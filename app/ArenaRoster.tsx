@@ -1,5 +1,6 @@
 import { ArenaDrive } from "./ArenaDrive";
 import { PlayerDeck, type DeckEntry } from "./PlayerDeck";
+import { RosterEndzone } from "./RosterEndzone";
 import type { Coach } from "./lib/coaches";
 import type { Player, PlayerUnit } from "./lib/football";
 import "./home-arena.css";
@@ -190,6 +191,8 @@ export function ArenaRoster({
             )}
           </section>
         ))}
+
+        <RosterEndzone />
       </div>
     </div>
   );

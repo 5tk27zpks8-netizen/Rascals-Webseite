@@ -402,3 +402,108 @@ html:has(.roster-page) {
   .deck-card .sc-name.is-name-s em { font-size: min(19px, 10.1cqw); }
   .deck-card .sc-name i { font-size: min(13px, 7cqw); }
 }
+
+/* ============================================================
+   THE END ZONE
+
+   Where the drive finishes. A screenful of nothing but the call,
+   so that after seventy cards the page arrives somewhere instead
+   of running out.
+
+   Full height minus the switcher, which is fixed over the foot of
+   the page: without that subtraction the word sits behind the bar
+   at exactly the moment it is supposed to be the only thing on
+   the screen.
+   ============================================================ */
+.roster-endzone {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(14px, 2.4vh, 26px);
+  min-height: calc(100dvh - 96px);
+  padding: clamp(40px, 8vh, 96px) var(--gutter-r) calc(clamp(40px, 8vh, 96px) + var(--safe-b)) var(--gutter-l);
+  text-align: center;
+  /* Above the scrim. Without this the call sat under the sheet that darkens
+     the stadium for the cards and came out grey on dark red — the two
+     colours it must not be. The panels on the drive stand at ten for the
+     same reason. */
+  position: relative;
+  z-index: 10;
+}
+
+.roster-endzone-eyebrow {
+  color: #8fa1b6;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(0.6rem, 1.6vw, 0.74rem);
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
+}
+
+/* The call. Set to the width of the screen rather than to a size, because
+   what makes it read as a call is that nothing else fits beside it. */
+.roster-endzone-word {
+  display: block;
+  max-width: 100%;
+  color: #ffffff;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(2.6rem, 13vw, 11rem);
+  font-weight: 950;
+  font-style: italic;
+  letter-spacing: -0.045em;
+  line-height: 0.86;
+  text-transform: uppercase;
+  /* The pieces break between themselves or not at all. */
+  overflow-wrap: normal;
+  text-shadow: 0 10px 40px rgba(2, 8, 16, 0.85), 0 2px 10px rgba(2, 8, 16, 0.6);
+  /* Thrown, not faded: it arrives slightly too big and pulls back. */
+  opacity: 0;
+  transform: scale(0.82);
+  transition: opacity 0.42s ease, transform 0.62s cubic-bezier(0.16, 1.5, 0.3, 1);
+}
+
+.roster-endzone-word span,
+.roster-endzone-word i {
+  display: inline-block;
+}
+
+.roster-endzone-word i {
+  color: var(--rascals-red, #e7192d);
+  font-style: italic;
+}
+
+.roster-endzone-line {
+  max-width: 34ch;
+  margin: 0;
+  color: #c3d1e2;
+  font-size: clamp(0.88rem, 2.2vw, 1.02rem);
+  line-height: 1.5;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease 0.26s, transform 0.5s ease 0.26s;
+}
+
+.roster-endzone.is-in .roster-endzone-eyebrow,
+.roster-endzone.is-in .roster-endzone-line {
+  opacity: 1;
+  transform: none;
+}
+
+.roster-endzone.is-in .roster-endzone-word {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Nothing arrives; it is simply there. */
+@media (prefers-reduced-motion: reduce) {
+  .roster-endzone-eyebrow,
+  .roster-endzone-word,
+  .roster-endzone-line {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
