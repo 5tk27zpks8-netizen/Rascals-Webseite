@@ -2675,6 +2675,21 @@ function buildFlags(
 const TOUCHDOWN_WIDTH = 26;
 const TOUCHDOWN_HEIGHT = TOUCHDOWN_WIDTH * (384 / 2048);
 
+/**
+ * Where in the picture the call is wanted, as a fraction of the half-frame
+ * above the middle. 0 is dead centre, 1 is the top edge.
+ *
+ * 0.28 puts its middle a third of the way down, which leaves the whole word
+ * clear of the broadcast overlay along the top and still above the goal. It
+ * is a composition decision and it belongs here, in the frame's own terms —
+ * see the height below, which used to be a world coordinate and was wrong
+ * twice because of it.
+ */
+const TOUCHDOWN_AIM = 0.28;
+
+/** The height to start solving from; also where it hangs before a frame exists. */
+const TOUCHDOWN_Y = 12.2;
+
 function buildTouchdownCall(THREE: Three, texture: import("three").Texture) {
   const WIDTH = TOUCHDOWN_WIDTH;
   const material = new THREE.MeshBasicMaterial({
@@ -2699,7 +2714,7 @@ function buildTouchdownCall(THREE: Three, texture: import("three").Texture) {
      off the crossbar's position in the frame it is 3.1 degrees, not the 5.1
      the shot definition implies. With that, 12.2 puts the word in the upper
      third with the goal below it. */
-  mesh.position.set(0.6, 12.2, OPP_GOAL_Z - 9);
+  mesh.position.set(0.6, TOUCHDOWN_Y, OPP_GOAL_Z - 9);
   mesh.rotation.set(0.05, -0.16, 0.085);
   mesh.renderOrder = 3;
   mesh.visible = false;
@@ -3776,6 +3791,9 @@ export function ArenaDrive({ steady = false, logo = "/rascals-logo-768.webp" }: 
          frame while the call is on screen, and eight vectors a frame is eight
          vectors a frame for the garbage collector to find. */
       const fitProbe = new THREE.Vector3();
+      /* Carried between frames so each one starts from the last answer and
+         converges in a step, rather than re-solving from scratch. */
+      let callHeight = TOUCHDOWN_Y;
 
       // --- input ---------------------------------------------------------
       const pointer = { x: 0, y: 0 };
@@ -3893,6 +3911,51 @@ export function ArenaDrive({ steady = false, logo = "/rascals-logo-768.webp" }: 
             const overshoot = 1 + Math.sin(Math.min(1, arrival) * Math.PI) * 0.09;
             const grow = 0.72 + 0.28 * arrival;
             touchdownCall.scale.setScalar(grow * overshoot);
+            touchdownCall.rotation.z = 0.085 + Math.sin(time * 0.37) * 0.016 * arrival;
+
+            /* ITS HEIGHT IS A PLACE IN THE PICTURE — ON THE PAGE WHERE IT IS
+               THE ONLY THING IN FRAME.
+
+               It was a world coordinate, and the comment where it is built
+               records solving that coordinate against the rendered frame —
+               twice, because a camera tilt read off the shot definition
+               turned out not to be the camera's actual tilt. That is the
+               tell: a number that has to be re-derived from the picture every
+               time something moves is a number that wants to be expressed in
+               the picture.
+
+               So it is. Aim at a fraction of the frame, project the word's
+               centre, measure how far a unit of height moves it there, and
+               step. Two passes, because the relation is a perspective divide
+               rather than a straight line, and the second lands it.
+
+               It also means the shot is the same shot on a phone, where the
+               camera sees a different slice of the world through the same
+               lens — the old fixed height put the word off the top of a
+               portrait frame entirely.
+
+               NOT ON THE ONEPAGER. That drive ends on a panel of its own with
+               TOUCHDOWN set across it, and the word in the air is composed to
+               hang ABOVE that headline rather than to own the frame. Bringing
+               it down to the middle lays one TOUCHDOWN straight through the
+               other. Where there are panels, the old height stands — the
+               composition there is the two of them together, and it is
+               already right. */
+            touchdownCall.position.y = callHeight;
+            for (let pass = 0; panels.length === 0 && pass < 2; pass++) {
+              const here = fitProbe.copy(touchdownCall.position).project(camera).y;
+              const above = fitProbe
+                .set(touchdownCall.position.x, callHeight + 1, touchdownCall.position.z)
+                .project(camera).y;
+              const perUnit = above - here;
+              if (Math.abs(perUnit) < 1e-6) break;
+              /* Fenced: a frame with a degenerate camera — a zero-height
+                 window, a tab waking up mid-resize — must not be able to fling
+                 the call somewhere it can never be seen from again. */
+              callHeight = Math.min(34, Math.max(5, callHeight + (TOUCHDOWN_AIM - here) / perUnit));
+              touchdownCall.position.y = callHeight;
+            }
+
             /* AND THEN IT IS CUT TO THE FRAME IT IS BEING READ IN.
 
                Twenty-six units of world is twenty-six units of world whatever
@@ -3931,10 +3994,11 @@ export function ArenaDrive({ steady = false, logo = "/rascals-logo-768.webp" }: 
               if (reach <= 0.94) break;
               touchdownCall.scale.multiplyScalar(0.94 / reach);
             }
-            /* Hanging, not pinned: a slow drift on both axes once it has
-               settled, small enough to be felt rather than watched. */
-            touchdownCall.position.y = 12.2 + Math.sin(time * 0.5) * 0.34 * arrival;
-            touchdownCall.rotation.z = 0.085 + Math.sin(time * 0.37) * 0.016 * arrival;
+            /* Hanging, not pinned: a slow drift once it has settled, small
+               enough to be felt rather than watched. On top of the solved
+               height rather than instead of it, so the drift is a drift and
+               not an argument with the composition. */
+            touchdownCall.position.y = callHeight + Math.sin(time * 0.5) * 0.34 * arrival;
           }
         }
 
