@@ -1,6 +1,6 @@
 import { ArenaDrive } from "./ArenaDrive";
 import { PlayerDeck, type DeckEntry } from "./PlayerDeck";
-import { RosterEndzone } from "./RosterEndzone";
+import { EndzonePull } from "./EndzonePull";
 import type { Coach } from "./lib/coaches";
 import type { Player, PlayerUnit } from "./lib/football";
 import "./home-arena.css";
@@ -192,7 +192,11 @@ export function ArenaRoster({
           </section>
         ))}
 
-        <RosterEndzone />
+        {/* No markup of its own: the end of the drive is the stadium's own
+            call, hanging over the end stand. This only closes the gap to it.
+            There was a second, HTML one here for a while and the page ended
+            up saying TOUCHDOWN twice, over the top of itself. */}
+        <EndzonePull />
       </div>
     </div>
   );

@@ -2665,8 +2665,18 @@ function buildFlags(
  * bounding box out of everything drawn after it — the crowd would vanish in a
  * rectangle around the word.
  */
+/**
+ * How wide the call is in the world, before it is fitted to the frame.
+ *
+ * It is a number the arrival needs as well — the plane is a fixed size and
+ * the frame is not, so the two have to be compared somewhere — and a width
+ * written down twice is a width that will disagree with itself.
+ */
+const TOUCHDOWN_WIDTH = 26;
+const TOUCHDOWN_HEIGHT = TOUCHDOWN_WIDTH * (384 / 2048);
+
 function buildTouchdownCall(THREE: Three, texture: import("three").Texture) {
-  const WIDTH = 26;
+  const WIDTH = TOUCHDOWN_WIDTH;
   const material = new THREE.MeshBasicMaterial({
     map: texture,
     transparent: true,
@@ -2676,7 +2686,7 @@ function buildTouchdownCall(THREE: Three, texture: import("three").Texture) {
     toneMapped: false,
   });
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(WIDTH, WIDTH * (384 / 2048)),
+    new THREE.PlaneGeometry(WIDTH, TOUCHDOWN_HEIGHT),
     material,
   );
   /* Over the end zone, above the crossbar, short of the end line so the end
@@ -3762,6 +3772,11 @@ export function ArenaDrive({ steady = false, logo = "/rascals-logo-768.webp" }: 
       await step();
       if (disposed) return;
 
+      /* Reused rather than allocated: the fit below runs eight projections a
+         frame while the call is on screen, and eight vectors a frame is eight
+         vectors a frame for the garbage collector to find. */
+      const fitProbe = new THREE.Vector3();
+
       // --- input ---------------------------------------------------------
       const pointer = { x: 0, y: 0 };
       const onPointerMove = (event: PointerEvent) => {
@@ -3878,6 +3893,44 @@ export function ArenaDrive({ steady = false, logo = "/rascals-logo-768.webp" }: 
             const overshoot = 1 + Math.sin(Math.min(1, arrival) * Math.PI) * 0.09;
             const grow = 0.72 + 0.28 * arrival;
             touchdownCall.scale.setScalar(grow * overshoot);
+            /* AND THEN IT IS CUT TO THE FRAME IT IS BEING READ IN.
+
+               Twenty-six units of world is twenty-six units of world whatever
+               the window is, and a phone held upright sees barely a third of
+               the width a desktop does at the same distance. The call was
+               composed against a wide frame, so on a portrait screen it ran
+               off both edges and arrived as "CHDOOOO" — the one word on the
+               page that has to be read whole.
+
+               Measured, not estimated. The word hangs at an angle, a little
+               off centre, close enough to the camera for perspective to
+               matter: the edge turned towards you projects wider than the
+               one turned away, so no formula in the plane's own width is
+               going to be right. Its four corners are put through the camera
+               instead and the answer read off the picture.
+
+               Twice, because the correction is itself perspective and so does
+               not land exactly on the first pass. Two steps bring it inside a
+               fraction of a percent, which is well under the margin.
+
+               It never scales UP. On a wide screen both passes find it
+               already inside the frame and leave the shot exactly as it was
+               composed. */
+            for (let pass = 0; pass < 2; pass++) {
+              touchdownCall.updateMatrixWorld(true);
+              let reach = 0;
+              for (const corner of [-1, 1]) {
+                for (const edge of [-1, 1]) {
+                  fitProbe
+                    .set(corner * TOUCHDOWN_WIDTH * 0.5, edge * TOUCHDOWN_HEIGHT * 0.5, 0)
+                    .applyMatrix4(touchdownCall.matrixWorld)
+                    .project(camera);
+                  reach = Math.max(reach, Math.abs(fitProbe.x));
+                }
+              }
+              if (reach <= 0.94) break;
+              touchdownCall.scale.multiplyScalar(0.94 / reach);
+            }
             /* Hanging, not pinned: a slow drift on both axes once it has
                settled, small enough to be felt rather than watched. */
             touchdownCall.position.y = 12.2 + Math.sin(time * 0.5) * 0.34 * arrival;
