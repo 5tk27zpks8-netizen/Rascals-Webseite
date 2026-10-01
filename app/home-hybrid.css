@@ -1,0 +1,426 @@
+/* ============================================================
+   HYBRID — the calm structure, with depth.
+   Layered planes and a few degrees of tilt instead of WebGL.
+   ============================================================ */
+
+.hy-page {
+  --hy-bg: #0b1524;
+  --hy-panel: #101d31;
+  --hy-line: rgba(180, 205, 240, 0.13);
+  --hy-dim: #9aabc2;
+
+  min-height: 100vh;
+  background: var(--hy-bg);
+  color: #fff;
+  font-family: var(--font-body);
+}
+
+/* Anything that tilts shares one transform, driven by two custom properties
+   the pointer script writes. Defaults keep it flat when nothing writes them. */
+[data-depth] {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --shift-x: 0px;
+  --shift-y: 0px;
+  transform: perspective(1100px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translate3d(var(--shift-x), var(--shift-y), 0);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* --- opener ----------------------------------------------------- */
+
+.hy-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(40px, 6vw, 96px) clamp(20px, 6vw, 96px) clamp(48px, 7vw, 110px);
+  background:
+    radial-gradient(120% 90% at 78% 8%, rgba(63, 120, 200, 0.22), transparent 60%),
+    radial-gradient(80% 60% at 8% 88%, rgba(231, 25, 45, 0.16), transparent 66%),
+    var(--hy-bg);
+}
+
+/* A faint yard grid, so the ground under the layers reads as a field. */
+.hy-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(90deg, var(--hy-line) 1px, transparent 1px),
+    linear-gradient(180deg, var(--hy-line) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(120% 80% at 50% 40%, #000 30%, transparent 76%);
+  opacity: 0.55;
+}
+
+.hy-hero-inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 80px);
+  width: min(1500px, 100%);
+  margin: 0 auto;
+}
+
+.hy-hero-copy h1 {
+  margin: 1.3rem 0 1.4rem;
+  max-width: 12ch;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7.4vw, 7rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.83;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+}
+
+.hy-hero-copy h1 i {
+  color: var(--rascals-red);
+  font-style: italic;
+}
+
+.hy-hero-copy p {
+  max-width: 40ch;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: clamp(1rem, 1.3vw, 1.15rem);
+  line-height: 1.7;
+}
+
+.hy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 2rem;
+}
+
+.hy-cta,
+.hy-ghost {
+  display: inline-flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 1.6rem;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.hy-cta {
+  background: var(--rascals-red);
+  color: #fff;
+  box-shadow: 0 14px 38px rgba(231, 25, 45, 0.3);
+}
+
+.hy-cta:hover {
+  filter: brightness(1.09);
+}
+
+.hy-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: #fff;
+}
+
+.hy-ghost:hover {
+  border-color: #fff;
+}
+
+/* --- the layered stack ------------------------------------------ */
+
+.hy-stack {
+  position: relative;
+  aspect-ratio: 5 / 4;
+  min-height: 300px;
+}
+
+.hy-plate {
+  position: absolute;
+  border: 1px solid var(--hy-line);
+}
+
+/* Two offset plates behind the photo do the depth: the tilt moves all three
+   together, and the parallax between them is what the eye reads as space. */
+.hy-plate-back {
+  inset: -5% -7% 12% 14%;
+  background: rgba(63, 120, 200, 0.07);
+  transform: translateZ(-70px);
+}
+
+.hy-plate-mid {
+  inset: 4% 6% 4% -6%;
+  border-color: rgba(231, 25, 45, 0.34);
+  transform: translateZ(-34px);
+}
+
+.hy-photo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: translateZ(28px);
+  box-shadow: 0 40px 90px rgba(2, 8, 18, 0.6);
+}
+
+.hy-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 62%;
+}
+
+/* --- gameday and numbers ---------------------------------------- */
+
+.hy-gameday {
+  padding: clamp(40px, 5vw, 76px) clamp(20px, 6vw, 96px);
+  border-block: 1px solid var(--hy-line);
+  background: var(--hy-panel);
+}
+
+.hy-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: clamp(28px, 3.4vw, 52px) clamp(20px, 6vw, 96px);
+}
+
+.hy-stats article {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: clamp(20px, 2.4vw, 34px) 10px;
+  border: 1px solid var(--hy-line);
+  background: var(--hy-panel);
+  text-align: center;
+}
+
+.hy-stats b {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4vw, 3.2rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+.hy-stats span {
+  color: var(--hy-dim);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* --- schedule ---------------------------------------------------- */
+
+.hy-page .hy-fixtures {
+  padding: clamp(48px, 6vw, 96px) clamp(20px, 6vw, 96px);
+  background: var(--hy-panel);
+  color: #fff;
+}
+
+.hy-page .hy-fixtures .section-heading,
+.hy-page .hy-fixtures .section-heading h2,
+.hy-page .hy-fixtures .season-stats,
+.hy-page .hy-fixtures .season-stat,
+.hy-page .hy-fixtures .season-league,
+.hy-page .hy-fixtures .fixture-list {
+  color: #fff;
+}
+
+.hy-fixtures .section-heading h2 i {
+  color: var(--rascals-red);
+}
+
+/* The shared teams block, moved onto this design's ground. */
+.hy-page .team-units {
+  background: var(--hy-bg);
+  color: #fff;
+}
+
+.hy-page .team-units-grid p,
+.hy-page .team-squads p {
+  color: var(--hy-dim);
+}
+
+.hy-page .team-squads article {
+  border-color: var(--hy-line);
+  background: var(--hy-panel);
+}
+
+.hy-page .team-unit-media {
+  background: var(--hy-panel);
+}
+
+/* --- club --------------------------------------------------------- */
+
+.hy-club {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 72px);
+  padding: clamp(48px, 6vw, 96px) clamp(20px, 6vw, 96px);
+  border-top: 1px solid var(--hy-line);
+  background: var(--hy-panel);
+}
+
+.hy-club-media img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  box-shadow: 0 32px 70px rgba(2, 8, 18, 0.55);
+}
+
+.hy-club h2 {
+  margin: 1rem 0 1.2rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 4.6vw, 4rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.hy-club h2 i {
+  color: var(--rascals-red);
+  font-style: italic;
+}
+
+.hy-club p {
+  max-width: 50ch;
+  color: rgba(255, 255, 255, 0.74);
+  line-height: 1.75;
+}
+
+/* --- news ---------------------------------------------------------- */
+
+.hy-page .hy-news {
+  padding: clamp(44px, 5vw, 88px) clamp(20px, 6vw, 96px);
+  background: var(--hy-bg);
+  color: #fff;
+}
+
+.hy-news .section-heading h2 {
+  color: #fff;
+}
+
+.hy-news .section-heading h2 i {
+  color: var(--rascals-red);
+}
+
+/* --- join ---------------------------------------------------------- */
+
+.hy-join {
+  margin: clamp(28px, 4vw, 60px) clamp(20px, 6vw, 96px) clamp(48px, 6vw, 96px);
+  padding: clamp(48px, 7vw, 110px) clamp(24px, 5vw, 80px);
+  border: 1px solid var(--hy-line);
+  background:
+    radial-gradient(90% 120% at 88% 12%, rgba(231, 25, 45, 0.22), transparent 62%),
+    linear-gradient(180deg, var(--hy-panel), #0d1a2c);
+}
+
+.hy-join-inner {
+  max-width: 46ch;
+}
+
+.hy-join h2 {
+  margin: 1rem 0 1.1rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5.4vw, 4.8rem);
+  font-weight: 950;
+  font-stretch: var(--display-stretch, 76%);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.hy-join h2 i {
+  color: var(--rascals-red);
+  font-style: italic;
+}
+
+.hy-join p {
+  margin: 0 0 1.9rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.7;
+}
+
+/* --- footer --------------------------------------------------------- */
+
+.hy-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  justify-content: space-between;
+  padding: 44px clamp(20px, 6vw, 96px);
+  border-top: 1px solid var(--hy-line);
+}
+
+.hy-footer > div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 48ch;
+}
+
+.hy-footer img {
+  width: 62px;
+}
+
+.hy-footer strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+
+.hy-footer small {
+  display: block;
+  margin-top: 5px;
+  color: var(--hy-dim);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.hy-footer nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 34px;
+  align-content: start;
+}
+
+.hy-footer nav a {
+  color: var(--hy-dim);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.hy-footer nav a:hover {
+  color: #fff;
+}
+
+/* --- responsive ------------------------------------------------------ */
+
+@media (max-width: 1080px) {
+  .hy-hero-inner,
+  .hy-club {
+    grid-template-columns: 1fr;
+  }
+  .hy-stack {
+    order: -1;
+  }
+}
+
+@media (max-width: 780px) {
+  .hy-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-depth] {
+    transform: none;
+    transition: none;
+  }
+}

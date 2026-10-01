@@ -1,7 +1,11 @@
 import { bindings } from "./cms";
 
 export const ADMIN_SESSION_COOKIE = "rascals_admin_session";
-const PASSWORD_ITERATIONS = 210_000;
+// Cloudflare Workers rejects PBKDF2 above 100_000 iterations ("iteration
+// counts above 100000 are not supported"), so the platform ceiling is also
+// what we use. Local workerd does not enforce this limit, which is why a
+// higher count passed every local test and failed only once deployed.
+const PASSWORD_ITERATIONS = 100_000;
 const SESSION_HOURS = 8;
 const MAX_FAILED_ATTEMPTS = 8;
 const LOCK_MINUTES = 15;
@@ -27,7 +31,7 @@ export async function ensureAdminAuthSchema() {
     email TEXT PRIMARY KEY,
     password_salt TEXT NOT NULL,
     password_hash TEXT NOT NULL,
-    password_iterations INTEGER NOT NULL DEFAULT 210000,
+    password_iterations INTEGER NOT NULL DEFAULT 100000,
     failed_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until TEXT,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -76,8 +80,69 @@ export async function canSetupPasswordForEmail(email: string): Promise<boolean> 
   await ensureAdminAuthSchema();
   const { DB } = bindings();
   const row = await DB.prepare("SELECT role, active FROM cms_users WHERE lower(email)=lower(?)").bind(email).first<Record<string, unknown>>();
-  if (!row || Number(row.active ?? 0) !== 1) return false;
-  return String(row.role ?? "viewer") !== "viewer";
+  return Boolean(row) && Number(row?.active ?? 0) === 1;
+}
+
+/**
+ * Whether nobody can sign in as an admin yet, which is the condition for
+ * handing the next registration the admin role.
+ *
+ * Counting rows in cms_users would be wrong here: this database already holds
+ * users from the header-based auth that preceded passwords, so "no users yet"
+ * is never true and the site could never be claimed. What matters is whether
+ * any *active admin* has a password to sign in with.
+ */
+async function needsFirstAdmin(): Promise<boolean> {
+  const { DB } = bindings();
+  const row = await DB.prepare(`SELECT COUNT(*) AS total
+    FROM cms_users u
+    JOIN cms_auth_credentials c ON lower(c.email)=lower(u.email)
+    WHERE u.role='admin' AND u.active=1`).first<{ total: number }>();
+  return Number(row?.total ?? 0) === 0;
+}
+
+/**
+ * Self-service registration. Anyone can create an account and sign in right
+ * away, but a new account only carries the standard view (Spielplan and
+ * Live-Ticker, read-only) until an admin widens it under /admin/users.
+ *
+ * While no admin can sign in yet, the next registration claims the admin role
+ * so the site is manageable without seeding; that window closes the moment
+ * someone takes it. An account that already exists keeps whatever role an
+ * admin gave it — setting a password must never quietly demote an editor.
+ */
+export async function registerAdminUser(email: string, password: string, displayName: string): Promise<{ role: string }> {
+  if (password.length < 12) throw new Error("PASSWORD_TOO_SHORT");
+  const normalized = email.trim().toLowerCase();
+  if (!normalized.includes("@")) throw new Error("INVALID_EMAIL");
+  await ensureAdminAuthSchema();
+  const { DB } = bindings();
+
+  const existingCredential = await DB.prepare("SELECT email FROM cms_auth_credentials WHERE lower(email)=lower(?)").bind(normalized).first();
+  if (existingCredential) throw new Error("ALREADY_REGISTERED");
+
+  const claimsAdmin = await needsFirstAdmin();
+  const name = displayName.trim() || normalized.split("@")[0];
+
+  // Written as an explicit update-or-insert rather than ON CONFLICT: this
+  // table predates the auth work and cannot be assumed to carry the unique
+  // index that an upsert target requires.
+  const existingUser = await DB.prepare("SELECT email, role FROM cms_users WHERE lower(email)=lower(?)")
+    .bind(normalized).first<Record<string, unknown>>();
+
+  let role: string;
+  if (existingUser) {
+    role = claimsAdmin ? "admin" : String(existingUser.role ?? "viewer");
+    await DB.prepare("UPDATE cms_users SET display_name=?, role=?, active=1, updated_at=CURRENT_TIMESTAMP WHERE lower(email)=lower(?)")
+      .bind(name, role, normalized).run();
+  } else {
+    role = claimsAdmin ? "admin" : "viewer";
+    await DB.prepare("INSERT INTO cms_users (email, display_name, role, active) VALUES (?,?,?,1)")
+      .bind(normalized, name, role).run();
+  }
+
+  await writePasswordCredential(normalized, password);
+  return { role };
 }
 
 export async function hasAdminCredential(email: string): Promise<boolean> {
@@ -92,31 +157,59 @@ export async function setAdminPassword(email: string, password: string): Promise
   await ensureAdminAuthSchema();
   const normalized = email.trim().toLowerCase();
   if (!(await canSetupPasswordForEmail(normalized))) throw new Error("NOT_ALLOWED");
+  await writePasswordCredential(normalized, password);
+}
+
+/** The iteration count a stored hash was derived with, clamped to what the runtime accepts. */
+function supportedIterations(stored: unknown): number {
+  const value = Number(stored);
+  return Number.isFinite(value) && value > 0 ? Math.min(value, PASSWORD_ITERATIONS) : PASSWORD_ITERATIONS;
+}
+
+async function writePasswordCredential(normalizedEmail: string, password: string): Promise<void> {
   const saltBytes = crypto.getRandomValues(new Uint8Array(16));
   const salt = bytesToBase64(saltBytes);
   const hash = await derivePasswordHash(password, saltBytes, PASSWORD_ITERATIONS);
   const { DB } = bindings();
-  await DB.prepare(`INSERT INTO cms_auth_credentials
-      (email,password_salt,password_hash,password_iterations,failed_attempts,locked_until,updated_at)
-      VALUES (?,?,?,?,0,NULL,CURRENT_TIMESTAMP)
-      ON CONFLICT(email) DO UPDATE SET
-        password_salt=excluded.password_salt,
-        password_hash=excluded.password_hash,
-        password_iterations=excluded.password_iterations,
-        failed_attempts=0,
-        locked_until=NULL,
-        updated_at=CURRENT_TIMESTAMP`)
-    .bind(normalized, salt, bytesToBase64(hash), PASSWORD_ITERATIONS)
-    .run();
-  await DB.prepare("DELETE FROM cms_auth_sessions WHERE lower(email)=lower(?)").bind(normalized).run();
+  // Update-or-insert instead of ON CONFLICT, for the same reason as above.
+  const existing = await DB.prepare("SELECT email FROM cms_auth_credentials WHERE lower(email)=lower(?)")
+    .bind(normalizedEmail).first();
+  if (existing) {
+    await DB.prepare(`UPDATE cms_auth_credentials
+        SET password_salt=?, password_hash=?, password_iterations=?, failed_attempts=0, locked_until=NULL, updated_at=CURRENT_TIMESTAMP
+        WHERE lower(email)=lower(?)`)
+      .bind(salt, bytesToBase64(hash), PASSWORD_ITERATIONS, normalizedEmail).run();
+  } else {
+    await DB.prepare(`INSERT INTO cms_auth_credentials
+        (email,password_salt,password_hash,password_iterations,failed_attempts,locked_until,updated_at)
+        VALUES (?,?,?,?,0,NULL,CURRENT_TIMESTAMP)`)
+      .bind(normalizedEmail, salt, bytesToBase64(hash), PASSWORD_ITERATIONS).run();
+  }
+  await DB.prepare("DELETE FROM cms_auth_sessions WHERE lower(email)=lower(?)").bind(normalizedEmail).run();
 }
 
-export async function verifyAdminPassword(email: string, password: string): Promise<{ ok: boolean; locked?: boolean; email?: string }> {
+export async function verifyAdminPassword(email: string, password: string): Promise<{ ok: boolean; locked?: boolean; pending?: boolean; email?: string }> {
   await ensureAdminAuthSchema();
   const normalized = email.trim().toLowerCase();
   const { DB } = bindings();
   const user = await DB.prepare("SELECT email, active, role FROM cms_users WHERE lower(email)=lower(?)").bind(normalized).first<Record<string, unknown>>();
-  if (!user || Number(user.active ?? 0) !== 1 || String(user.role ?? "viewer") === "viewer") return { ok: false };
+  if (!user) return { ok: false };
+  // Registration activates an account immediately, so an inactive one was
+  // switched off by an admin. Saying that plainly beats implying the password
+  // is wrong. Only reported once the password checks out, so it cannot be used
+  // to probe which addresses are registered.
+  if (Number(user.active ?? 0) !== 1) {
+    const credential = await DB.prepare("SELECT password_salt,password_hash,password_iterations FROM cms_auth_credentials WHERE lower(email)=lower(?)")
+      .bind(normalized).first<Record<string, unknown>>();
+    if (!credential) return { ok: false };
+    const derived = await derivePasswordHash(
+      password,
+      base64ToBytes(String(credential.password_salt ?? "")),
+      supportedIterations(credential.password_iterations),
+    );
+    if (!timingSafeEqual(derived, base64ToBytes(String(credential.password_hash ?? "")))) return { ok: false };
+    return { ok: false, pending: true };
+  }
   const row = await DB.prepare("SELECT email,password_salt,password_hash,password_iterations,failed_attempts,locked_until FROM cms_auth_credentials WHERE lower(email)=lower(?)")
     .bind(normalized).first<Record<string, unknown>>();
   if (!row) return { ok: false };
@@ -125,7 +218,7 @@ export async function verifyAdminPassword(email: string, password: string): Prom
 
   const salt = base64ToBytes(String(row.password_salt ?? ""));
   const expected = base64ToBytes(String(row.password_hash ?? ""));
-  const iterations = Math.max(100_000, Number(row.password_iterations ?? PASSWORD_ITERATIONS));
+  const iterations = supportedIterations(row.password_iterations);
   const actual = await derivePasswordHash(password, salt, iterations);
   const ok = timingSafeEqual(actual, expected);
   if (!ok) {
@@ -159,21 +252,27 @@ export async function destroyAdminSession(token: string | null): Promise<void> {
 }
 
 export function sessionCookie(token: string): string {
-  return `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/admin; HttpOnly; Secure; SameSite=Lax`;
+  return `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 }
 
 export function clearSessionCookie(): string {
-  return `${ADMIN_SESSION_COOKIE}=; Path=/admin; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+  return `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
+/**
+ * Sanitises a post-login redirect target. Sign-in is no longer admin-only, so
+ * any same-origin path is allowed, but anything that could send a visitor to
+ * another site, or straight back into the auth flow, falls back.
+ */
 export function safeAdminReturnTo(value: unknown, fallback = "/admin"): string {
   const raw = typeof value === "string" ? value : fallback;
-  if (!raw.startsWith("/admin") || raw.startsWith("//")) return fallback;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return fallback;
   try {
     const url = new URL(raw, "https://app.local");
-    if (url.origin !== "https://app.local" || !url.pathname.startsWith("/admin")) return fallback;
-    if (url.pathname.startsWith("/admin/api/auth") || url.pathname === "/admin/login" || url.pathname === "/admin/logout") return fallback;
-    return `${url.pathname}${url.search}${url.hash}`;
+    if (url.origin !== "https://app.local") return fallback;
+    const path = url.pathname;
+    if (path.startsWith("/api/auth") || path === "/login" || path === "/logout") return fallback;
+    return `${path}${url.search}${url.hash}`;
   } catch {
     return fallback;
   }

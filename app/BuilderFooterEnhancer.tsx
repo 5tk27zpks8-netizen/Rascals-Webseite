@@ -19,7 +19,7 @@ export function BuilderFooterEnhancer() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [footerTitle, setFooterTitle] = useState("HELLENSTEIN RASCALS");
   const [footerSubtitle, setFooterSubtitle] = useState("American Football · Heidenheim");
-  const [logoUrl, setLogoUrl] = useState("/rascals-logo-transparent-4k.png");
+  const [logoUrl, setLogoUrl] = useState("/rascals-logo-768.webp");
 
   useEffect(() => {
     let currentFooter: HTMLElement | null = null;

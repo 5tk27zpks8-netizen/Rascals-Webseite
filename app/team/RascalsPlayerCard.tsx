@@ -1,4 +1,10 @@
 import type { Player } from "../lib/football";
+/* The card carries its own look. It used to be pulled in by the two team
+   pages instead, which held for as long as those were the only places the
+   card appeared — on the Arena roster, where nothing imports it, the card
+   lost its aspect ratio and every one of them grew to five thousand pixels
+   tall. A component's stylesheet belongs to the component. */
+import "./team.css";
 import "./inactive-player-stamp.css";
 
 export const PLAYER_CARD_TEMPLATE = "RASCALS" as const;
@@ -27,7 +33,7 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
       <div className="rpc-brand">
         <div className="rpc-line" />
         <div className="rpc-brand-center">
-          <img src="/rascals-logo-transparent-4k.png" alt="" />
+            <img src="/rascals-logo-768.webp" alt="" loading="lazy" decoding="async" />
           <b>RASCALS</b>
         </div>
         <div className="rpc-line" />
@@ -35,9 +41,11 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
 
       <img
         className="rpc-background-logo"
-        src="/rascals-logo-transparent-4k.png"
+        src="/rascals-logo-1600.webp"
         alt=""
         aria-hidden="true"
+        loading="lazy"
+        decoding="async"
       />
 
       <div className="rpc-smoke rpc-smoke-left" aria-hidden="true" />
@@ -45,7 +53,22 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
 
       <div className="rpc-player-stage">
         {player.portrait ? (
-          <img className="rpc-player-photo" src={player.portrait} alt={fullName} />
+          /* Lazy, because there are seventy-two of these on one page.
+
+             The club's database carries no portraits yet, so today this costs
+             nothing either way — but the day they are filled in, seventy-two
+             photographs would be requested the moment the page opened, for a
+             page somebody scrolls through a squad at a time. The browser still
+             loads the ones near the viewport early enough that scrolling
+             normally shows no gap, and the card reserves its box regardless,
+             so nothing shifts when one arrives. */
+          <img
+            className="rpc-player-photo"
+            src={player.portrait}
+            alt={fullName}
+            loading="lazy"
+            decoding="async"
+          />
         ) : (
           <div className="rpc-player-placeholder">
             <strong>#{number}</strong>

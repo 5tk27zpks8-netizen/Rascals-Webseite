@@ -32,6 +32,8 @@ const AUTO_STAT_BY_EVENT: Record<string, string> = {
 };
 
 async function authorize() { return requireCmsPermission("gameday"); }
+/** Following the Ticker is part of the standard view; writing to it is not. */
+async function authorizeRead() { return requireCmsPermission("gameday_view"); }
 
 async function ensureAssignments() {
   const { DB } = bindings();
@@ -71,7 +73,7 @@ async function ensureAssignedGame(actor: { role: string; email: string }, gameId
 }
 
 export async function GET(request: Request) {
-  const actor = await authorize(); if (actor instanceof Response) return actor;
+  const actor = await authorizeRead(); if (actor instanceof Response) return actor;
   await ensureFootballSchema(); await ensureAssignments(); await ensureGamedayRosterSchema(); await ensureStatsSchema();
   const url = new URL(request.url); const { DB } = bindings();
 
