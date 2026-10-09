@@ -1,3 +1,55 @@
-[data-builder-element]{transition:outline-color .15s ease,box-shadow .15s ease}
-@media(max-width:980px){[data-builder-element]{font-size:var(--be-font-size-tablet,inherit)!important;line-height:var(--be-line-height-tablet,inherit)!important;letter-spacing:var(--be-letter-spacing-tablet,inherit)!important;text-align:var(--be-align-tablet,inherit)!important;padding-left:var(--be-px-tablet,inherit)!important;padding-right:var(--be-px-tablet,inherit)!important;padding-top:var(--be-py-tablet,inherit)!important;padding-bottom:var(--be-py-tablet,inherit)!important}}
-@media(max-width:620px){[data-builder-element]{font-size:var(--be-font-size-mobile,var(--be-font-size-tablet,inherit))!important;line-height:var(--be-line-height-mobile,var(--be-line-height-tablet,inherit))!important;letter-spacing:var(--be-letter-spacing-mobile,var(--be-letter-spacing-tablet,inherit))!important;text-align:var(--be-align-mobile,var(--be-align-tablet,inherit))!important;padding-left:var(--be-px-mobile,var(--be-px-tablet,inherit))!important;padding-right:var(--be-px-mobile,var(--be-px-tablet,inherit))!important;padding-top:var(--be-py-mobile,var(--be-py-tablet,inherit))!important;padding-bottom:var(--be-py-mobile,var(--be-py-tablet,inherit))!important}}
+/* ============================================================
+   WHAT A NARROW SCREEN DOES TO A BUILDER ELEMENT
+
+   The CMS lets a text be given its own size, leading, tracking,
+   alignment and padding, and a different set of each for a tablet
+   and for a phone. Those live in an inline style, which beats any
+   stylesheet, so the narrow-screen value used to be forced back in
+   with !important — falling back to `inherit` wherever the CMS had
+   set nothing.
+
+   That fallback was the fault. An element nobody had styled did not
+   keep what its own stylesheet drew; it took its parent's. On a
+   phone the red strip of numbers lost its hierarchy entirely — the
+   2.2rem figure and the 0.65rem label both became the paragraph
+   size around them, the tracking went, and a long label wrapped
+   where a short one did not, so four equal tiles came out at four
+   different heights. The full-bleed pictures took the section's own
+   4vw as padding and drew themselves inset. Every builder button
+   was flattened to the height of its lettering.
+
+   Nothing here sets a property any more. Each rule only says what
+   the variable in the renderer's inline value resolves to, and the
+   renderer writes that inline value only for an element the CMS
+   actually styled. An element with no setting carries no
+   declaration at all, so its own stylesheet stands — which is the
+   whole point, and why none of this needs !important.
+
+   See the note above elementStyle in SiteBuilderPageV4.
+   ============================================================ */
+
+[data-builder-element] {
+  transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+@media (max-width: 980px) {
+  [data-builder-element] {
+    --be-fs-now: var(--be-font-size-tablet, var(--be-fs-base));
+    --be-lh-now: var(--be-line-height-tablet, var(--be-lh-base));
+    --be-ls-now: var(--be-letter-spacing-tablet, var(--be-ls-base));
+    --be-al-now: var(--be-align-tablet, var(--be-al-base));
+    --be-px-now: var(--be-px-tablet, var(--be-px-desktop, 0px));
+    --be-py-now: var(--be-py-tablet, var(--be-py-desktop, 0px));
+  }
+}
+
+@media (max-width: 620px) {
+  [data-builder-element] {
+    --be-fs-now: var(--be-font-size-mobile, var(--be-font-size-tablet, var(--be-fs-base)));
+    --be-lh-now: var(--be-line-height-mobile, var(--be-line-height-tablet, var(--be-lh-base)));
+    --be-ls-now: var(--be-letter-spacing-mobile, var(--be-letter-spacing-tablet, var(--be-ls-base)));
+    --be-al-now: var(--be-align-mobile, var(--be-align-tablet, var(--be-al-base)));
+    --be-px-now: var(--be-px-mobile, var(--be-px-tablet, var(--be-px-desktop, 0px)));
+    --be-py-now: var(--be-py-mobile, var(--be-py-tablet, var(--be-py-desktop, 0px)));
+  }
+}

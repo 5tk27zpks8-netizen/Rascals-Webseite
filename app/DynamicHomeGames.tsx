@@ -20,7 +20,7 @@ type Game = {
 
 type TeamData = { name: string; logo: string; score: number };
 
-const DEFAULT_RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
+const DEFAULT_RASCALS_LOGO = "/rascals-logo-768.webp";
 
 export function DynamicHomeGames() {
   const [games, setGames] = useState<Game[]>([]);
@@ -129,11 +129,11 @@ export function DynamicHomeGames() {
 function GameRow({ game, artVariant, rascalsLogo }: { game: Game; artVariant: number; rascalsLogo: string }) {
   const home = game.homeAway === "home";
   const left: TeamData = home
-    ? { name: "HELLENSTEIN RASCALS", logo: rascalsLogo, score: game.rascalsScore }
+    ? { name: "HEIDENHEIM RASCALS", logo: rascalsLogo, score: game.rascalsScore }
     : { name: game.opponent.toUpperCase(), logo: game.opponentLogo, score: game.opponentScore };
   const right: TeamData = home
     ? { name: game.opponent.toUpperCase(), logo: game.opponentLogo, score: game.opponentScore }
-    : { name: "HELLENSTEIN RASCALS", logo: rascalsLogo, score: game.rascalsScore };
+    : { name: "HEIDENHEIM RASCALS", logo: rascalsLogo, score: game.rascalsScore };
   const outcome = resultText(game);
   const href = game.slug ? `/spielplan/${game.slug}` : "/spielplan";
 

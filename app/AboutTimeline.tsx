@@ -5,15 +5,15 @@ import { createPortal } from "react-dom";
 import "./about-timeline.css";
 
 const ICONS = {
-  football: "https://api.iconify.design/noto/american-football.svg",
-  whistle: "https://api.iconify.design/mdi/whistle-outline.svg?color=%23e7192d",
-  seasonFootball: "https://api.iconify.design/ion/american-football-outline.svg?color=%23e7192d",
-  helmet: "https://api.iconify.design/streamline-ultimate/american-football-helmet.svg?color=%23e7192d",
-  trophy: "https://api.iconify.design/bi/trophy.svg?color=%23e7192d",
+  football: "/icons/football-color.svg",
+  whistle: "/icons/whistle.svg",
+  seasonFootball: "/icons/football.svg",
+  helmet: "/icons/helmet.svg",
+  trophy: "/icons/trophy.svg",
 };
 
 const milestones = [
-  { year:"2023", tag:"KICKOFF", league:"AUFBAULIGA", note:"Gründung der Hellenstein Rascals. Der erste Schritt auf unserem Weg.", points:"", icon:ICONS.whistle },
+  { year:"2023", tag:"KICKOFF", league:"AUFBAULIGA", note:"Gründung der Heidenheim Rascals. Der erste Schritt auf unserem Weg.", points:"", icon:ICONS.whistle },
   { year:"2025", tag:"NEXT DOWN", league:"KREISLIGA", note:"Viele Spiele, viele Lektionen und ein Team, das zusammen gewachsen ist.", points:"139 : 137", icon:ICONS.seasonFootball },
   { year:"2026", tag:"MOVING THE CHAINS", league:"KREISOBERLIGA", note:"Mehr Erfahrung, mehr Wille, mehr Team. Der verdiente Aufstieg in die Kreisoberliga.", points:"170 : 66", icon:ICONS.helmet },
   { year:"2027", tag:"NEXT LEVEL", league:"BEZIRKSLIGA", note:"Unser nächstes Ziel: die Bezirksliga. Wir arbeiten. Wir glauben. Wir werden bereit sein.", points:"", icon:ICONS.trophy },

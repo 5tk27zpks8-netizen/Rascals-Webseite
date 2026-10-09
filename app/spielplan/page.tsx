@@ -1,14 +1,16 @@
 import { listGameEvents } from "../lib/football";
 import { listVisibleGames } from "../lib/public-games";
 import { readPublishedSiteBuilderState } from "../lib/site-builder";
+import { Header } from "../SiteShell";
 import { ScheduleLogo } from "./ScheduleLogo";
 import "./spielplan.css";
+import { siteBrand } from "../lib/brand-server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export const metadata = { title: "Spielplan · Hellenstein Rascals", description: "Spielplan, Ergebnisse und Live-Updates der Hellenstein Rascals." };
+export const metadata = { title: "Spielplan · Heidenheim Rascals", description: "Spielplan, Ergebnisse und Live-Updates der Heidenheim Rascals." };
 
-const DEFAULT_RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
+const DEFAULT_RASCALS_LOGO = "/rascals-logo-768.webp";
 type PublicGame = Awaited<ReturnType<typeof listVisibleGames>>[number];
 
 export default async function SpielplanPage() {
@@ -31,14 +33,14 @@ export default async function SpielplanPage() {
   const pointsFor = completed.reduce((sum, game) => sum + game.rascalsScore, 0);
   const pointsAgainst = completed.reduce((sum, game) => sum + game.opponentScore, 0);
 
-  return <main className="full-schedule-page">
+  const brand = await siteBrand();
+
+  return <>
+    <Header page="spielplan" brand={brand} />
+    <main className="full-schedule-page">
     <header className="full-schedule-hero">
-      <nav className="full-schedule-nav">
-        <a className="full-schedule-brand" href="/"><ScheduleLogo src={rascalsLogo} name="Hellenstein Rascals"/><span><b>HELLENSTEIN</b><strong>RASCALS</strong></span></a>
-        <a className="full-schedule-back" href="/">← Startseite</a>
-      </nav>
       <div className="full-schedule-hero-copy">
-        <span>HELLENSTEIN RASCALS · SAISON 2026</span>
+        <span>HEIDENHEIM RASCALS · SAISON 2026</span>
         <h1>SPIELPLAN<br/><i>& ERGEBNISSE.</i></h1>
         <p>Alle Begegnungen, Ergebnisse und Live-Updates der Rascals in einer klaren Saisonübersicht.</p>
       </div>
@@ -67,13 +69,14 @@ export default async function SpielplanPage() {
       {completed.length > 0 && <ScheduleGroup title="ERGEBNISSE" kicker="FINAL" games={completed} results rascalsLogo={rascalsLogo}/>} 
       {!games.length && <div className="full-schedule-empty">Der Spielplan wird hier automatisch angezeigt, sobald Spiele im CMS angelegt wurden.</div>}
     </div>
-  </main>;
+    </main>
+  </>;
 }
 
 function FeatureGame({ game, mode, rascalsLogo }: { game: PublicGame; mode: "live" | "next" | "result"; rascalsLogo: string }) {
   const home = game.homeAway === "home";
-  const left = home ? { name: "HELLENSTEIN RASCALS", logo: rascalsLogo, score: game.rascalsScore } : { name: game.opponent, logo: game.opponentLogo, score: game.opponentScore };
-  const right = home ? { name: game.opponent, logo: game.opponentLogo, score: game.opponentScore } : { name: "HELLENSTEIN RASCALS", logo: rascalsLogo, score: game.rascalsScore };
+  const left = home ? { name: "HEIDENHEIM RASCALS", logo: rascalsLogo, score: game.rascalsScore } : { name: game.opponent, logo: game.opponentLogo, score: game.opponentScore };
+  const right = home ? { name: game.opponent, logo: game.opponentLogo, score: game.opponentScore } : { name: "HEIDENHEIM RASCALS", logo: rascalsLogo, score: game.rascalsScore };
   const scored = game.status === "final" || game.status === "live";
   const kicker = mode === "live" ? "● LIVE" : mode === "next" ? "NEXT UP" : "LETZTES ERGEBNIS";
 

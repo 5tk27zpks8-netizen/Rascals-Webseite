@@ -1,0 +1,321 @@
+/* ============================================================
+   THE BAR AT THE BOTTOM
+
+   Only where a phone or a small tablet is holding the page. At
+   900 the site already switches to its compact header, so that is
+   where the bar takes over from the menu button — one breakpoint
+   for one decision, rather than two that can drift apart.
+
+   Everything here is inside that query. A desktop never sees a
+   line of it.
+   ============================================================ */
+
+.mtb,
+.mtb-overlay {
+  display: none;
+}
+
+@media (max-width: 899.98px) {
+  /* ---------- the bar ---------- */
+  .mtb {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 120;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    /* The home indicator lives in this strip on a modern phone, so the bar
+       grows by exactly what the hardware takes and the cells stay where a
+       thumb expects them. Zero on anything without one. */
+    padding: 0 var(--safe-r) var(--safe-b) var(--safe-l);
+    background: rgba(5, 11, 22, 0.94);
+    backdrop-filter: blur(16px) saturate(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+    /* The scoreboard's own line. It is the one piece of colour on the bar
+       when nothing is selected, and it is what makes the strip read as part
+       of this club rather than as chrome. */
+    box-shadow: inset 0 1px 0 var(--rascals-red, #e7192d),
+      0 -18px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .mtb-tab {
+    display: grid;
+    grid-template-rows: auto auto;
+    place-items: center;
+    gap: 3px;
+    min-height: 56px;
+    padding: 8px 2px 9px;
+    border: 0;
+    background: transparent;
+    color: #8496ad;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.18s ease;
+  }
+
+  .mtb-mark {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+  }
+
+  .mtb-mark svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .mtb-label {
+    font-family: var(--font-display, inherit);
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    /* Below the site's reading floor on purpose, and allowed: this is a word
+       under a picture, in a bar of five, on a control that is 56 tall and
+       never changes position. It is a label for something already identified,
+       not a line anyone reads. */
+    line-height: 1;
+  }
+
+  /* ---------- where you are ---------- */
+  .mtb-tab.is-here,
+  .mtb-tab.is-open {
+    color: #ffffff;
+  }
+
+  .mtb-tab.is-here .mtb-mark {
+    color: var(--rascals-red, #e7192d);
+  }
+
+  /* The lit marker, drawn above the cell like the down indicator on a board.
+     Colour alone is never the only signal — the lettering brightens too, and
+     `aria-current` says it outright for anything not looking at the screen. */
+  .mtb-tab.is-here::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 26px;
+    height: 2px;
+    background: var(--rascals-red, #e7192d);
+    box-shadow: 0 0 10px rgba(231, 25, 45, 0.7);
+  }
+
+  .mtb-tab {
+    position: relative;
+  }
+
+  /* THE TAP HAS TO ANSWER BEFORE THE PAGE DOES.
+
+     A tap here reloads the page, and even at its best that is a few hundred
+     milliseconds of nothing happening. Silence in that gap is what makes an
+     interface feel stuck — the finger has left the glass and the screen has
+     not acknowledged it. So the cell lights and sinks the instant it is
+     pressed, which costs nothing and is the difference between waiting and
+     wondering whether the tap registered. */
+  .mtb-tab:active {
+    color: #ffffff;
+    background: rgba(231, 25, 45, 0.16);
+    transform: scale(0.94);
+    transition: transform 0.06s ease, background 0.06s ease, color 0.06s ease;
+  }
+
+  .mtb-tab:active .mtb-mark {
+    color: var(--rascals-red, #e7192d);
+  }
+
+  .mtb-tab:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: -3px;
+  }
+
+  /* ---------- room for it ---------- */
+  /* The page ends above the bar rather than behind it. On the drive pages the
+     canvas is fixed and unaffected, which is what should happen — the stadium
+     runs to the edge of the glass, the reading does not. */
+  body {
+    padding-bottom: calc(56px + var(--safe-b));
+  }
+
+  /* The roster's own switcher sits directly on top of the bar instead of
+     underneath it, and stops paying for the home indicator twice. */
+  .roster-switch {
+    bottom: calc(56px + var(--safe-b)) !important;
+    padding-bottom: 8px !important;
+  }
+  .deck-stage {
+    padding-bottom: 132px;
+  }
+
+  /* With the bar carrying the main places, the button that used to hide them
+     has nothing left to do.
+
+     Written long rather than short because the rule it has to beat is
+     `.site-header .menu-button { display: block !important }` — two classes
+     and an !important — so a plain `.menu-button` with an !important of its
+     own still loses. Matching its shape and adding `html` settles it without
+     another escalation. */
+  html .site-header .menu-button,
+  html .sb-header .sb-menu,
+  html .menu-button,
+  html .sb-menu {
+    display: none !important;
+  }
+  html .site-header .main-nav,
+  html .sb-header nav,
+  html .main-nav {
+    display: none !important;
+  }
+
+  /* ---------- the rest, in a sheet ---------- */
+  .mtb-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    display: block;
+  }
+
+  .mtb-scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 9, 18, 0.66);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: mtb-fade 0.22s ease both;
+  }
+
+  .mtb-sheet {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    max-height: 86dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px var(--gutter-r) calc(var(--s-4) + var(--safe-b)) var(--gutter-l);
+    background: linear-gradient(180deg, #101c2d 0%, #070f1c 62%);
+    border-top: 2px solid var(--rascals-red, #e7192d);
+    box-shadow: 0 -30px 70px rgba(0, 0, 0, 0.6);
+    animation: mtb-rise 0.28s cubic-bezier(0.16, 0.84, 0.28, 1) both;
+  }
+
+  @keyframes mtb-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes mtb-rise {
+    from { transform: translateY(14px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* The bar people expect to be able to drag. It does not drag — saying so
+     with a shape that invites it would be a lie — so it is thin, dim and
+     reads as a seam rather than a handle. */
+  .mtb-grip {
+    width: 34px;
+    height: 3px;
+    margin: 0 auto 14px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .mtb-sheet-head {
+    margin: 0 0 14px;
+    color: #7f8fa3;
+    font-family: var(--font-display, inherit);
+    font-size: 10.5px;
+    font-weight: 900;
+    letter-spacing: 0.22em;
+  }
+
+  .mtb-sheet-list {
+    margin: 0 0 var(--s-4);
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+  }
+
+  .mtb-sheet-list a {
+    display: grid;
+    gap: 2px;
+    min-height: var(--tap);
+    padding: 11px 12px;
+    border-radius: 10px;
+    color: #eef3f9;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .mtb-sheet-list a:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .mtb-sheet-list a.is-here {
+    background: rgba(231, 25, 45, 0.14);
+    box-shadow: inset 2px 0 0 var(--rascals-red, #e7192d);
+  }
+
+  .mtb-sheet-list b {
+    font-family: var(--font-display, inherit);
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+  }
+
+  .mtb-sheet-list span {
+    color: #93a3b7;
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+
+  .mtb-sheet-cta,
+  .mtb-sheet-close {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: var(--tap);
+    border: 0;
+    border-radius: 10px;
+    font-family: var(--font-display, inherit);
+    font-size: 12.5px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .mtb-sheet-cta {
+    background: var(--rascals-red, #e7192d);
+    color: #ffffff;
+  }
+
+  .mtb-sheet-close {
+    margin-top: var(--s-2);
+    background: transparent;
+    color: #8496ad;
+  }
+}
+
+/* Somebody who has asked for less movement gets the sheet without the slide. */
+@media (prefers-reduced-motion: reduce) {
+  .mtb-scrim,
+  .mtb-sheet {
+    animation: none;
+  }
+  .mtb-tab {
+    transition: none;
+  }
+}
+
+@media print {
+  .mtb,
+  .mtb-overlay {
+    display: none !important;
+  }
+}

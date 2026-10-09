@@ -5,6 +5,11 @@ import { HomeSectionMedia } from "./HomeSectionMedia";
 import { SiteBuilderPage } from "./SiteBuilderPage";
 import { SiteShell } from "./SiteShell";
 import { findBuilderPage, readPublishedSiteBuilderState, readSiteBuilderState } from "./lib/site-builder";
+import { readSiteDesign } from "./lib/site-design";
+import { brandFromTheme } from "./lib/brand";
+import { HomeMatchday } from "./HomeMatchday";
+import { HomeArena } from "./HomeArena";
+import { HomeHybrid } from "./HomeHybrid";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -44,5 +49,13 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
     return <SiteBuilderPage state={state} page={builderPage} />;
   }
 
-  return <><CmsHero/><SiteShell page="home"/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
+  // Which complete design is live is a CMS setting, chosen under /admin/designs.
+  // Each one is its own page, not a repaint of the same one.
+  const design = await readSiteDesign();
+  if (design === "matchday") return <HomeMatchday />;
+  if (design === "arena") return <HomeArena />;
+  if (design === "hybrid") return <HomeHybrid />;
+
+  const brand = brandFromTheme(state.theme);
+  return <><SiteShell page="home" brand={brand} heroOverride={<CmsHero/>}/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
 }

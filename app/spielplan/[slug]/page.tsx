@@ -1,14 +1,16 @@
 import { notFound } from "next/navigation";
 import { getGameBySlug, listGameEvents } from "../../lib/football";
 import { readPublishedSiteBuilderState } from "../../lib/site-builder";
+import { Header } from "../../SiteShell";
 import { ScheduleLogo } from "../ScheduleLogo";
 import "../spielplan.css";
 import "../game-detail-score.css";
+import { siteBrand } from "../../lib/brand-server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const DEFAULT_RASCALS_LOGO = "/rascals-logo-transparent-4k.png";
+const DEFAULT_RASCALS_LOGO = "/rascals-logo-768.webp";
 
 export default async function GameDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -17,10 +19,14 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
   const events = await listGameEvents(game.id, 50);
   const rascalsLogo = siteState.theme.logoUrl?.trim() || DEFAULT_RASCALS_LOGO;
 
-  return <main className="schedule-page">
+  const brand = await siteBrand();
+
+  return <>
+    <Header page="spielplan" brand={brand} />
+    <main className="schedule-page">
     <header className="schedule-hero">
       <a href="/spielplan">← Spielplan</a>
-      <span>{game.status === "live" ? "LIVE GAMEDAY" : "HELLENSTEIN RASCALS"}</span>
+      <span>{game.status === "live" ? "LIVE GAMEDAY" : "HEIDENHEIM RASCALS"}</span>
       <h1>{game.homeAway === "home" ? "RASCALS VS." : "RASCALS @"} <i>{game.opponent.toUpperCase()}</i></h1>
       <p>{formatDate(game.kickoff)}{game.venue ? ` · ${game.venue}` : ""}</p>
     </header>
@@ -30,7 +36,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
         <div className="live-kicker"><b>{game.status === "live" ? "● LIVE" : statusLabel(game.status)}</b><span>{game.quarter || ""}{game.gameClock ? ` · ${game.gameClock}` : ""}</span></div>
         <div className="live-score">
           <div className="live-score-team live-score-team-left">
-            <ScheduleLogo src={rascalsLogo} name="Hellenstein Rascals" className="detail-game-logo"/>
+            <ScheduleLogo src={rascalsLogo} name="Heidenheim Rascals" className="detail-game-logo"/>
             <b>RASCALS</b>
           </div>
           <div className="live-score-center" aria-label={`Spielstand ${game.rascalsScore} zu ${game.opponentScore}`}>
@@ -51,7 +57,8 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
         </article>)}</div> : <div className="schedule-empty">Für dieses Spiel gibt es noch keine Ticker-Einträge.</div>}
       </section>
     </section>
-  </main>;
+    </main>
+  </>;
 }
 
 function formatDate(value: string | null) {

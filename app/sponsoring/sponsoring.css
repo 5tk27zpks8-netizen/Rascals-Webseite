@@ -1,1 +1,151 @@
-.sponsors-page{min-height:100vh;background:#07101d;color:#fff}.sponsors-header{display:flex;align-items:center;justify-content:space-between;padding:22px 6vw;border-bottom:1px solid rgba(255,255,255,.08);background:#050c16}.sponsors-brand{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none}.sponsors-brand img{width:56px;height:56px;object-fit:contain}.sponsors-brand span{display:grid}.sponsors-brand strong{font-size:12px;letter-spacing:.14em}.sponsors-brand em{font-size:26px;font-style:italic;font-weight:900;letter-spacing:.04em}.sponsors-nav{display:flex;gap:26px;align-items:center}.sponsors-nav a{color:#fff;text-decoration:none;font-size:13px;font-weight:900;letter-spacing:.08em}.sponsors-hero{padding:84px 7vw 54px;background:linear-gradient(180deg,#0b1726 0%,#07101d 100%)}.sponsors-hero span{color:#ef2d3d;font-size:12px;font-weight:900;letter-spacing:.18em}.sponsors-hero h1{max-width:900px;margin:14px 0;font-size:clamp(56px,9vw,128px);line-height:.86;letter-spacing:-.045em}.sponsors-hero h1 i{color:#ef2d3d;font-style:italic}.sponsors-hero p{max-width:720px;color:#aeb7c3;font-size:18px;line-height:1.7}.sponsors-content{padding:34px 7vw 90px}.sponsor-tier{margin-top:42px}.sponsor-tier-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:18px}.sponsor-tier-head small{color:#7f8ca0;letter-spacing:.14em}.sponsor-tier-head h2{margin:6px 0 0;font-size:clamp(28px,4vw,48px)}.sponsor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.sponsor-card{min-height:220px;display:flex;flex-direction:column;justify-content:space-between;padding:20px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:#101b2a;color:#fff;text-decoration:none;transition:.2s ease}.sponsor-card:hover{transform:translateY(-3px);border-color:rgba(239,45,61,.5)}.sponsor-logo-box{min-height:130px;display:grid;place-items:center;border-radius:10px;background:#f5f6f8;padding:18px}.sponsor-logo-box img{max-width:100%;max-height:96px;object-fit:contain}.sponsor-placeholder{font-weight:900;color:#18212e;letter-spacing:.08em;text-align:center}.sponsor-card footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}.sponsor-card footer span{font-weight:900}.sponsor-card footer b{color:#ef2d3d}.sponsors-empty{padding:36px;border:1px dashed rgba(255,255,255,.16);border-radius:14px;color:#8f9bad;text-align:center}.sponsors-cta{margin-top:70px;padding:34px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:#101b2a;display:flex;justify-content:space-between;align-items:center;gap:24px}.sponsors-cta h3{margin:0 0 8px;font-size:32px}.sponsors-cta p{margin:0;color:#9ca8b7}.sponsors-cta a{padding:14px 20px;border-radius:9px;background:#ef2d3d;color:#fff;text-decoration:none;font-weight:900;white-space:nowrap}@media(max-width:1000px){.sponsor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sponsors-nav{display:none}}@media(max-width:620px){.sponsors-header{padding:16px 18px}.sponsors-hero,.sponsors-content{padding-left:20px;padding-right:20px}.sponsor-grid{grid-template-columns:1fr}.sponsors-cta{align-items:flex-start;flex-direction:column}}
+.sponsors-page{min-height:100vh;background:#07101d;color:#fff}.sponsors-header{display:flex;align-items:center;justify-content:space-between;padding:22px 6vw;border-bottom:1px solid rgba(255,255,255,.08);background:#050c16}.sponsors-brand{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none}.sponsors-brand img{width:56px;height:56px;object-fit:contain}.sponsors-brand span{display:grid}.sponsors-brand strong{font-size:12px;letter-spacing:.14em}.sponsors-brand em{font-size:26px;font-style:italic;font-weight:900;letter-spacing:.04em}.sponsors-nav{display:flex;gap:26px;align-items:center}.sponsors-nav a{color:#fff;text-decoration:none;font-size:13px;font-weight:900;letter-spacing:.08em}.sponsors-hero{padding:84px 7vw 54px;background:linear-gradient(180deg,#0b1726 0%,#07101d 100%)}.sponsors-hero span{color:var(--rascals-red);font-size:12px;font-weight:900;letter-spacing:.18em}.sponsors-hero h1{max-width:900px;margin:14px 0;font-size:clamp(56px,9vw,128px);line-height:.86;letter-spacing:-.045em}.sponsors-hero h1 i{color:var(--rascals-red);font-style:italic}.sponsors-hero p{max-width:720px;color:#aeb7c3;font-size:18px;line-height:1.7}.sponsors-content{padding:34px 7vw 90px}.sponsor-tier{margin-top:42px}.sponsor-tier-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:18px}.sponsor-tier-head small{color:#7f8ca0;letter-spacing:.14em}.sponsor-tier-head h2{margin:6px 0 0;font-size:clamp(28px,4vw,48px)}.sponsor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.sponsor-card{min-height:220px;display:flex;flex-direction:column;justify-content:space-between;padding:20px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:#101b2a;color:#fff;text-decoration:none;transition:.2s ease}.sponsor-card:hover{transform:translateY(-3px);border-color:rgba(239,45,61,.5)}.sponsor-logo-box{min-height:130px;display:grid;place-items:center;border-radius:10px;background:#f5f6f8;padding:18px}.sponsor-logo-box img{max-width:100%;max-height:96px;object-fit:contain}.sponsor-placeholder{font-weight:900;color:#18212e;letter-spacing:.08em;text-align:center}.sponsor-card footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}.sponsor-card footer span{font-weight:900}.sponsor-card footer b{color:var(--rascals-red)}.sponsors-empty{padding:36px;border:1px dashed rgba(255,255,255,.16);border-radius:14px;color:#8f9bad;text-align:center}.sponsors-cta{margin-top:70px;padding:34px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:#101b2a;display:flex;justify-content:space-between;align-items:center;gap:24px}.sponsors-cta h3{margin:0 0 8px;font-size:32px}.sponsors-cta p{margin:0;color:#9ca8b7}.sponsors-cta a{padding:14px 20px;border-radius:9px;background:var(--rascals-red);color:#fff;text-decoration:none;font-weight:900;white-space:nowrap}@media(max-width:1000px){.sponsor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sponsors-nav{display:none}}@media(max-width:620px){.sponsors-header{padding:16px 18px}.sponsors-hero,.sponsors-content{padding-left:20px;padding-right:20px}.sponsor-grid{grid-template-columns:1fr}.sponsors-cta{align-items:flex-start;flex-direction:column}}
+
+/* ============================================================
+   THE SPONSORING LEAD
+
+   Between the partners already on board and the invitation to
+   join them, because that is the order somebody reads this page
+   in: who is here, who to ask, how to ask.
+
+   The frame keeps its shape whether or not there is a photograph
+   in it. Sized once, in one place, so the day the picture arrives
+   nothing below it moves.
+   ============================================================ */
+.sponsor-lead {
+  margin: clamp(48px, 7vw, 92px) 0 clamp(36px, 5vw, 64px);
+}
+
+.sponsor-lead-head {
+  margin-bottom: clamp(18px, 2.4vw, 28px);
+}
+
+.sponsor-lead-head small {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--rascals-red, #e7192d);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.sponsor-lead-head h2 {
+  margin: 0;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sponsor-lead-card {
+  display: grid;
+  grid-template-columns: clamp(132px, 22vw, 196px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(18px, 3vw, 34px);
+  /* One person is not a full-width row. Left aligned and capped, so the block
+     sits under the heading rather than stretching across the page with the
+     right two thirds empty. */
+  max-width: 720px;
+  padding: clamp(16px, 2.4vw, 26px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: linear-gradient(140deg, rgba(18, 32, 52, 0.9), rgba(7, 16, 28, 0.94));
+}
+
+.sponsor-lead-photo {
+  position: relative;
+  overflow: hidden;
+  /* The shape a portrait is cropped to. Held here so the empty frame and the
+     photograph that replaces it are the same box. */
+  aspect-ratio: 4 / 5;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sponsor-lead-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 22%;
+}
+
+/* No photograph yet: the club's mark, small and quiet, so the frame reads as
+   reserved rather than as a picture that failed to load. */
+.sponsor-lead-photo.is-empty {
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sponsor-lead-photo.is-empty img {
+  width: 58%;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.32;
+}
+
+.sponsor-lead-body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sponsor-lead-body small {
+  color: #8fa1b6;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sponsor-lead-body b {
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(1.25rem, 3.2vw, 1.85rem);
+  font-weight: 950;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+.sponsor-lead-body a {
+  color: #dbe5f2;
+  font-size: clamp(0.92rem, 2.4vw, 1rem);
+  text-decoration: none;
+  /* A thumb has to be able to hit it, and it is the one thing on this block
+     worth hitting. */
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap, 44px);
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid rgba(231, 25, 45, 0.55);
+  justify-self: start;
+}
+
+.sponsor-lead-body a:hover,
+.sponsor-lead-body a:focus-visible {
+  color: #ffffff;
+  border-bottom-color: var(--rascals-red, #e7192d);
+}
+
+.sponsor-lead-pending {
+  color: #8092a6;
+  font-size: 0.92rem;
+  font-style: italic;
+}
+
+/* Stacked, the frame became the block: a portrait two hundred pixels tall
+   above three short lines, with the name pushed under the fold of the card.
+   Beside the words instead — narrower, same crop — it stays a photograph of
+   somebody rather than the subject of the section. */
+@media (max-width: 560px) {
+  .sponsor-lead-card {
+    grid-template-columns: clamp(96px, 31vw, 130px) minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+  }
+}

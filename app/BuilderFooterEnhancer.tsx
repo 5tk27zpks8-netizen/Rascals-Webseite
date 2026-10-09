@@ -17,9 +17,9 @@ const DATENSCHUTZ_URL = "https://hsb1846.de/home/datenschutzerklaerung-2/";
 
 export function BuilderFooterEnhancer() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
-  const [footerTitle, setFooterTitle] = useState("HELLENSTEIN RASCALS");
+  const [footerTitle, setFooterTitle] = useState("HEIDENHEIM RASCALS");
   const [footerSubtitle, setFooterSubtitle] = useState("American Football · Heidenheim");
-  const [logoUrl, setLogoUrl] = useState("/rascals-logo-transparent-4k.png");
+  const [logoUrl, setLogoUrl] = useState("/rascals-logo-768.webp");
 
   useEffect(() => {
     let currentFooter: HTMLElement | null = null;
@@ -75,7 +75,7 @@ export function BuilderFooterEnhancer() {
   return createPortal(
     <div className="sb-footer-grid" data-builder-theme="footer">
       <div className="sb-footer-brand-block">
-        <img src={logoUrl} alt="Hellenstein Rascals" />
+        <img src={logoUrl} alt="Heidenheim Rascals" />
         <a href="/admin" aria-label="Zum Admin Login" className="public-admin-login sb-footer-login">Anmelden</a>
         <p>{footerSubtitle || "American Football in Heidenheim."}<br />Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</p>
       </div>
@@ -99,7 +99,7 @@ export function BuilderFooterEnhancer() {
         <a href={DATENSCHUTZ_URL} target="_blank" rel="noreferrer">Datenschutz ↗</a>
       </div>
 
-      <small>© 2026 {footerTitle || "HELLENSTEIN RASCALS"} · ALL GRIT. ALL HEART.</small>
+      <small>© 2026 {footerTitle || "HEIDENHEIM RASCALS"} · ALL GRIT. ALL HEART.</small>
     </div>,
     target,
   );

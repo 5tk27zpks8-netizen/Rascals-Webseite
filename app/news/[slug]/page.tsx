@@ -4,9 +4,9 @@ import "../news-public.css";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params; const post = await getPublishedNewsBySlug(slug);
-  if (!post) return { title: "News nicht gefunden · Hellenstein Rascals" };
+  if (!post) return { title: "News nicht gefunden · Heidenheim Rascals" };
   const image = post.ogImage || post.image;
-  return { title: `${post.seoTitle || post.title} · Hellenstein Rascals`, description: post.seoDescription || post.excerpt, openGraph: image ? { images: [image] } : undefined };
+  return { title: `${post.seoTitle || post.title} · Heidenheim Rascals`, description: post.seoDescription || post.excerpt, openGraph: image ? { images: [image] } : undefined };
 }
 
 export default async function NewsDetailPage({ params }: { params: Promise<{ slug: string }> }) {
