@@ -8,8 +8,8 @@ import "./team-sections.css";
 import { siteBrand } from "../lib/brand-server";
 
 export const metadata = {
-  title: "Team · Hellenstein Rascals",
-  description: "Coaches, Offense und Defense der Hellenstein Rascals.",
+  title: "Team · Heidenheim Rascals",
+  description: "Coaches, Offense und Defense der Heidenheim Rascals.",
 };
 
 export default async function TeamPage() {
@@ -25,7 +25,7 @@ export default async function TeamPage() {
     <Header page="team" brand={brand} />
     <main className="team-public team-public-v2">
       <header className="team-public-head team-public-hero">
-        <span>HELLENSTEIN RASCALS · 2026</span>
+        <span>HEIDENHEIM RASCALS · 2026</span>
         <h1>ONE TEAM.<br /><i>THREE UNITS.</i></h1>
         <p>Die Coaches geben die Richtung vor. Offense und Defense bringen sie auf das Feld.</p>
         <nav className="team-jump-nav" aria-label="Team Bereiche">

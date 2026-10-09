@@ -3,7 +3,7 @@ import { HomeMatchday } from "../HomeMatchday";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Design-Vorschau · Hellenstein Rascals",
+  title: "Design-Vorschau · Heidenheim Rascals",
   robots: { index: false, follow: false },
 };
 

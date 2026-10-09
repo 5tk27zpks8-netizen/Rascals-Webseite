@@ -16,7 +16,7 @@ export type SiteBrand = { logo: string; top: string; bottom: string };
 
 export const DEFAULT_BRAND: SiteBrand = {
   logo: "/rascals-logo-768.webp",
-  top: "HELLENSTEIN",
+  top: "HEIDENHEIM",
   bottom: "RASCALS",
 };
 

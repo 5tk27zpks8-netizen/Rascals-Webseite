@@ -5,8 +5,8 @@ import "./sponsoring.css";
 import { siteBrand } from "../lib/brand-server";
 
 export const metadata = {
-  title: "Sponsoring · Hellenstein Rascals",
-  description: "Partner und Sponsoren der Hellenstein Rascals.",
+  title: "Sponsoring · Heidenheim Rascals",
+  description: "Partner und Sponsoren der Heidenheim Rascals.",
 };
 
 /**
@@ -104,7 +104,7 @@ export default async function SponsoringPage() {
                   only cost two lines on a phone. */}
               <b>{SPONSORSHIP_LEAD.name}</b>
               {SPONSORSHIP_LEAD.email ? (
-                <a href={`mailto:${SPONSORSHIP_LEAD.email}?subject=Sponsoring%20Hellenstein%20Rascals`}>
+                <a href={`mailto:${SPONSORSHIP_LEAD.email}?subject=Sponsoring%20Heidenheim%20Rascals`}>
                   {SPONSORSHIP_LEAD.email}
                 </a>
               ) : (
@@ -116,7 +116,7 @@ export default async function SponsoringPage() {
 
         <section className="sponsors-cta">
           <div><h3>Teil des Rascals Netzwerks werden.</h3><p>Partnerschaften rund um Team, Gameday und regionale Sichtbarkeit.</p></div>
-          <a href="mailto:football@hsb1846.de?subject=Sponsoring%20Hellenstein%20Rascals">Sponsoring anfragen →</a>
+          <a href="mailto:football@hsb1846.de?subject=Sponsoring%20Heidenheim%20Rascals">Sponsoring anfragen →</a>
         </section>
       </section>
     </main>

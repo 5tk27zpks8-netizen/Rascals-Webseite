@@ -110,7 +110,7 @@ export function createTurfTexture(): HTMLCanvasElement | null {
   // End-zone lettering runs sideline to sideline and is read from the side of
   // the ground, the way a real end zone is painted — not along the field.
   paintAcross(context, "RASCALS", W / 2, endZone / 2, W * 0.86, 1);
-  paintAcross(context, "HELLENSTEIN", W / 2, H - endZone / 2, W * 0.7, -1);
+  paintAcross(context, "HEIDENHEIM", W / 2, H - endZone / 2, W * 0.7, -1);
 
   /* Midfield emblem. Nothing is painted here at all: the club mark goes
      straight onto the grass via paintMidfieldMark once the image has loaded.
@@ -520,7 +520,7 @@ export function createAdBoardTexture(): HTMLCanvasElement | null {
      lets the same names set around fifty units, which lands near fourteen
      pixels. Same band, same rhythm, legible. */
   const boards: ({ kind: "name"; text: string } | { kind: "chevrons" })[] = [
-    { kind: "name", text: "HELLENSTEIN RASCALS" },
+    { kind: "name", text: "HEIDENHEIM RASCALS" },
     { kind: "chevrons" },
     { kind: "name", text: "RASCALS.FOOTBALL" },
     { kind: "chevrons" },
@@ -606,7 +606,7 @@ export function createFlagTexture(): HTMLCanvasElement | null {
   context.fillStyle = "rgba(255,255,255,0.85)";
   context.font = "900 30px Impact, sans-serif";
   context.letterSpacing = "10px";
-  context.fillText("HELLENSTEIN", W / 2, H * 0.79);
+  context.fillText("HEIDENHEIM", W / 2, H * 0.79);
   return canvas;
 }
 
@@ -773,7 +773,7 @@ export function createTeamZoneTexture(): HTMLCanvasElement | null {
   context.textBaseline = "middle";
   context.font = '900 58px Impact, "Arial Narrow", sans-serif';
   context.letterSpacing = "16px";
-  context.fillText("HELLENSTEIN RASCALS", W * 0.5, H * 0.53);
+  context.fillText("HEIDENHEIM RASCALS", W * 0.5, H * 0.53);
 
   /* The badge, twice, at the quarters. Simple enough to survive being read at
      a glancing angle from a hundred units away: the helmet shape and the
@@ -878,7 +878,7 @@ export function createScoreboardTexture(data: ScoreboardData): HTMLCanvasElement
   context.fillStyle = "#b3121f";
   context.fillRect(14, 14, W - 28, headerH);
   context.fillStyle = "#ffffff";
-  const header = (data.competition ?? "HELLENSTEIN RASCALS").toUpperCase();
+  const header = (data.competition ?? "HEIDENHEIM RASCALS").toUpperCase();
   /* Fitted, not assumed: the club's name is longer than most opponents' and
      Impact is not on every machine, so the width that actually gets measured
      decides the size. */

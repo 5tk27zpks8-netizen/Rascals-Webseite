@@ -64,7 +64,7 @@ export function MatchdayHero() {
     return (
       <div className="md-fixture">
         <span className="md-fixture-kicker">AMERICAN FOOTBALL · HEIDENHEIM</span>
-        <h1><span>HELLENSTEIN</span><br /><i>RASCALS.</i></h1>
+        <h1><span>HEIDENHEIM</span><br /><i>RASCALS.</i></h1>
         <p className="md-fixture-note">
           {loaded ? "Der Spielplan für die neue Saison steht noch nicht fest." : " "}
         </p>

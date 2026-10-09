@@ -13,7 +13,7 @@ const ICONS = {
 };
 
 const milestones = [
-  { year:"2023", tag:"KICKOFF", league:"AUFBAULIGA", note:"Gründung der Hellenstein Rascals. Der erste Schritt auf unserem Weg.", points:"", icon:ICONS.whistle },
+  { year:"2023", tag:"KICKOFF", league:"AUFBAULIGA", note:"Gründung der Heidenheim Rascals. Der erste Schritt auf unserem Weg.", points:"", icon:ICONS.whistle },
   { year:"2025", tag:"NEXT DOWN", league:"KREISLIGA", note:"Viele Spiele, viele Lektionen und ein Team, das zusammen gewachsen ist.", points:"139 : 137", icon:ICONS.seasonFootball },
   { year:"2026", tag:"MOVING THE CHAINS", league:"KREISOBERLIGA", note:"Mehr Erfahrung, mehr Wille, mehr Team. Der verdiente Aufstieg in die Kreisoberliga.", points:"170 : 66", icon:ICONS.helmet },
   { year:"2027", tag:"NEXT LEVEL", league:"BEZIRKSLIGA", note:"Unser nächstes Ziel: die Bezirksliga. Wir arbeiten. Wir glauben. Wir werden bereit sein.", points:"", icon:ICONS.trophy },

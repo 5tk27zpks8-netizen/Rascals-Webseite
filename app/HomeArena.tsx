@@ -109,7 +109,7 @@ export async function HomeArena() {
       <header className="drive-hud">
         <a className="drive-hud-brand" href="/">
           <img src={logo} alt="" />
-          <span><strong>HELLENSTEIN</strong><em>RASCALS</em></span>
+          <span><strong>HEIDENHEIM</strong><em>RASCALS</em></span>
         </a>
 
         <div className="drive-hud-centre">
@@ -147,7 +147,7 @@ export async function HomeArena() {
             <i>GEHÖREN UNS.</i>
           </h1>
           <p className="drive-lead" data-cue>
-            Hellenstein Rascals — American Football in Heidenheim. Scroll dich mit uns
+            Heidenheim Rascals — American Football in Heidenheim. Scroll dich mit uns
             über das Feld, von der eigenen 20 bis in die Endzone.
           </p>
           <span className="drive-hint" data-cue>Scrollen startet den Drive</span>
@@ -172,7 +172,7 @@ export async function HomeArena() {
             ))}
           </div>
           <p className="drive-lead" data-cue>
-            Seit 2023 zurück unter dem Hellenstein. Bei uns zählen Einsatz, Fairness und
+            Seit 2023 zurück in Heidenheim. Bei uns zählen Einsatz, Fairness und
             der Mensch unter dem Helm.
           </p>
           <a className="drive-link" href="/ueber-uns" data-cue>Die ganze Vereinsgeschichte</a>

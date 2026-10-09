@@ -85,7 +85,7 @@ function legacyHomeSections(template: BuilderPage): BuilderSection[] {
 
   const story = byId.get("seed-home-story")!;
   story.variant = "legacy-story";
-  story.text = "Seit 2023 bringen wir American Football zurück unter den Hellenstein. Bei uns zählen Einsatz, Fairness und der Mensch unter dem Helm.";
+  story.text = "Seit 2023 bringen wir American Football zurück nach Heidenheim. Bei uns zählen Einsatz, Fairness und der Mensch unter dem Helm.";
   story.items = [{ id: "legacy-story-p2", text: "Ob Rookie oder Veteran: Wer für das Team alles gibt, gehört dazu." }];
   story.style.paddingTop = 0;
   story.style.paddingBottom = 0;

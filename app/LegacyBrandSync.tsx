@@ -184,7 +184,7 @@ type LegacyBrandSyncProps = {
 export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, navCtaUrl }: LegacyBrandSyncProps) {
   useLayoutEffect(() => {
     const src = logoUrl?.trim() || "/rascals-logo-768.webp";
-    const top = brandTop?.trim() || "HELLENSTEIN";
+    const top = brandTop?.trim() || "HEIDENHEIM";
     const bottom = brandBottom?.trim() || "RASCALS";
     const ctaLabel = navCtaLabel?.trim() || "Mitmachen";
     const ctaUrl = navCtaUrl?.trim() || "mailto:football@hsb1846.de";

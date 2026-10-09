@@ -65,7 +65,7 @@ export function HomeMatchday() {
       <Header page="home" />
 
       <div className="md-sideline" aria-hidden="true">
-        <span>HELLENSTEIN RASCALS · AMERICAN FOOTBALL · HEIDENHEIM</span>
+        <span>HEIDENHEIM RASCALS · AMERICAN FOOTBALL · HEIDENHEIM</span>
       </div>
 
       <main className="md-main">
@@ -76,7 +76,7 @@ export function HomeMatchday() {
             <MatchdayHero />
           </div>
           <div className="md-hero-media">
-            <img src="/team-entry-4k.webp" alt="Die Hellenstein Rascals laufen zum Spiel ein" />
+            <img src="/team-entry-4k.webp" alt="Die Heidenheim Rascals laufen zum Spiel ein" />
           </div>
         </section>
 
@@ -152,7 +152,7 @@ export function HomeMatchday() {
               NO ONE<br /><i>FIGHTS ALONE.</i>
             </blockquote>
             <div className="md-club-copy">
-              <p data-reveal data-reveal-delay="80">Seit 2023 bringen wir American Football zurück unter den Hellenstein. Bei uns zählen Einsatz, Fairness und der Mensch unter dem Helm.</p>
+              <p data-reveal data-reveal-delay="80">Seit 2023 bringen wir American Football zurück nach Heidenheim. Bei uns zählen Einsatz, Fairness und der Mensch unter dem Helm.</p>
               <p data-reveal data-reveal-delay="140">Ob Rookie oder Veteran: Wer für das Team alles gibt, gehört dazu. Football-Erfahrung ist für den Einstieg nicht nötig — Motivation und Verlässlichkeit schon.</p>
               <a className="md-link" href="/ueber-uns" data-reveal data-reveal-delay="200">Unsere Geschichte →</a>
             </div>
@@ -185,7 +185,7 @@ export function HomeMatchday() {
       <footer className="md-footer">
         <div>
           <img src="/rascals-logo-768.webp" alt="" />
-          <span>HELLENSTEIN RASCALS</span>
+          <span>HEIDENHEIM RASCALS</span>
           <small>American Football · Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</small>
         </div>
         <nav>

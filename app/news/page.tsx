@@ -3,7 +3,7 @@ import { Header } from "../SiteShell";
 import "./news-public.css";
 import { siteBrand } from "../lib/brand-server";
 
-export const metadata = { title: "News · Hellenstein Rascals", description: "Aktuelle News, Spielberichte und Vereinsmeldungen der Hellenstein Rascals." };
+export const metadata = { title: "News · Heidenheim Rascals", description: "Aktuelle News, Spielberichte und Vereinsmeldungen der Heidenheim Rascals." };
 
 export default async function NewsPage({ searchParams }: { searchParams: Promise<{ q?: string; category?: string; page?: string }> }) {
   const params = await searchParams;

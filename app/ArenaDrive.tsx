@@ -3565,7 +3565,7 @@ export function ArenaDrive({ steady = false, logo = "/rascals-logo-768.webp" }: 
       // once with a placeholder and repainted when the fetch lands, so a slow
       // network never holds the scene up.
       let boardTexture: import("three").CanvasTexture | null = null;
-      const boardCanvas = createScoreboardTexture({ competition: "HELLENSTEIN RASCALS" });
+      const boardCanvas = createScoreboardTexture({ competition: "HEIDENHEIM RASCALS" });
       if (boardCanvas) {
         boardTexture = new THREE.CanvasTexture(boardCanvas);
         boardTexture.colorSpace = THREE.SRGBColorSpace;

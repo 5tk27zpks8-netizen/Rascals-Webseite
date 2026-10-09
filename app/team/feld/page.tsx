@@ -4,8 +4,8 @@ import { FormationField } from "../FormationField";
 import { siteBrand } from "../../lib/brand-server";
 
 export const metadata = {
-  title: "Aufstellung · Hellenstein Rascals",
-  description: "Der Kader der Hellenstein Rascals als Aufstellung auf dem Feld.",
+  title: "Aufstellung · Heidenheim Rascals",
+  description: "Der Kader der Heidenheim Rascals als Aufstellung auf dem Feld.",
 };
 
 export default async function TeamFormationPage() {

@@ -6,7 +6,7 @@
     {%- if section.settings.image != blank -%}
       {{ section.settings.image | image_url: width: 2400 | image_tag: widths: '650, 900, 1300, 1800, 2400', sizes: '(min-width: 900px) 55vw, 100vw', loading: 'lazy', alt: section.settings.image.alt }}
     {%- else -%}
-      <img src="{{ fallback_asset | asset_url }}" width="3840" height="2160" loading="lazy" alt="Hellenstein Rascals laufen auf das Footballfeld">
+      <img src="{{ fallback_asset | asset_url }}" width="3840" height="2160" loading="lazy" alt="Heidenheim Rascals laufen auf das Footballfeld">
     {%- endif -%}
     <span class="huddle-story__stamp">NO ONE<br>FIGHTS<br>ALONE.</span>
   </div>

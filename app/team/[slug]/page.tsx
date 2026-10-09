@@ -55,7 +55,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
     <main className="player-profile">
       <section className="player-profile-hero">
         <a className="player-profile-back" href="/team">← Zurück zum Team</a>
-        <div className="player-profile-brand">HELLENSTEIN RASCALS · 2026 ROSTER</div>
+        <div className="player-profile-brand">HEIDENHEIM RASCALS · 2026 ROSTER</div>
         <div className="player-profile-layout">
           <div className="player-profile-card"><RascalsPlayerCard player={player} /></div>
           <div className="player-profile-copy">

@@ -7,7 +7,7 @@
     {%- if hero_image != blank -%}
       {{ hero_image | image_url: width: 3000 | image_tag: widths: '750, 1100, 1600, 2200, 3000', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: hero_image.alt }}
     {%- else -%}
-      <img src="{{ fallback_image }}" width="3840" height="2160" loading="eager" fetchpriority="high" alt="Hellenstein Rascals Football-Helm auf dem Spielfeld">
+      <img src="{{ fallback_image }}" width="3840" height="2160" loading="eager" fetchpriority="high" alt="Heidenheim Rascals Football-Helm auf dem Spielfeld">
     {%- endif -%}
   </div>
   <div class="hero-gridiron__shade"></div>
@@ -32,7 +32,7 @@
   "class": "section-hero",
   "settings": [
     { "type": "image_picker", "id": "image", "label": "Bild" },
-    { "type": "text", "id": "eyebrow", "label": "Subheading", "default": "OFFICIAL HELLENSTEIN RASCALS SHOP" },
+    { "type": "text", "id": "eyebrow", "label": "Subheading", "default": "OFFICIAL HEIDENHEIM RASCALS SHOP" },
     { "type": "textarea", "id": "heading", "label": "Heading", "default": "WEAR THE\nRASCALS." },
     { "type": "richtext", "id": "text", "label": "Body text", "default": "<p>Deine Farben. Dein Team. Dein nächster Spielzug.</p>" },
     { "type": "text", "id": "button_label", "label": "Button label", "default": "SHOP THE DROP" },

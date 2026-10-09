@@ -185,7 +185,7 @@ export async function ensureFootballSchema() {
   ]);
 
   await DB.prepare(`INSERT OR IGNORE INTO teams (id,name,slug,league,season,description)
-    VALUES ('mens','Herren','herren','Kreisoberliga',2026,'Hellenstein Rascals Herrenmannschaft')`).run();
+    VALUES ('mens','Herren','herren','Kreisoberliga',2026,'Heidenheim Rascals Herrenmannschaft')`).run();
 
   for (const fullName of INITIAL_PLAYER_NAMES) {
     const parts = fullName.trim().split(/\s+/);

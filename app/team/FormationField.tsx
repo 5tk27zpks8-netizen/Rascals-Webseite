@@ -88,7 +88,7 @@ export function FormationField({ players }: { players: Player[] }) {
       <div className="fm-track" data-pan-track>
         {/* ---- Opening panel ---- */}
         <div className="fm-intro">
-          <span className="fm-eyebrow">HELLENSTEIN RASCALS · 2026</span>
+          <span className="fm-eyebrow">HEIDENHEIM RASCALS · 2026</span>
           <h2>
             DIE
             <br />

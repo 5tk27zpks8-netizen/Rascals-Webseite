@@ -26,7 +26,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
     <main className="schedule-page">
     <header className="schedule-hero">
       <a href="/spielplan">← Spielplan</a>
-      <span>{game.status === "live" ? "LIVE GAMEDAY" : "HELLENSTEIN RASCALS"}</span>
+      <span>{game.status === "live" ? "LIVE GAMEDAY" : "HEIDENHEIM RASCALS"}</span>
       <h1>{game.homeAway === "home" ? "RASCALS VS." : "RASCALS @"} <i>{game.opponent.toUpperCase()}</i></h1>
       <p>{formatDate(game.kickoff)}{game.venue ? ` · ${game.venue}` : ""}</p>
     </header>
@@ -36,7 +36,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
         <div className="live-kicker"><b>{game.status === "live" ? "● LIVE" : statusLabel(game.status)}</b><span>{game.quarter || ""}{game.gameClock ? ` · ${game.gameClock}` : ""}</span></div>
         <div className="live-score">
           <div className="live-score-team live-score-team-left">
-            <ScheduleLogo src={rascalsLogo} name="Hellenstein Rascals" className="detail-game-logo"/>
+            <ScheduleLogo src={rascalsLogo} name="Heidenheim Rascals" className="detail-game-logo"/>
             <b>RASCALS</b>
           </div>
           <div className="live-score-center" aria-label={`Spielstand ${game.rascalsScore} zu ${game.opponentScore}`}>

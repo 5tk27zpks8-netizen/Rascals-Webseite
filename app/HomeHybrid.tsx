@@ -75,13 +75,13 @@ export function HomeHybrid() {
 
         <section className="hy-club">
           <div className="hy-club-media" data-depth="0.8">
-            <img src="/team-victory-4k.webp" alt="Die Hellenstein Rascals feiern gemeinsam" />
+            <img src="/team-victory-4k.webp" alt="Die Heidenheim Rascals feiern gemeinsam" />
           </div>
           <div className="hy-club-copy">
             <span className="eyebrow red-text" data-reveal>Mehr als Football</span>
             <h2 data-reveal data-reveal-delay="80">EIN TEAM.<br /><i>EINE FAMILIE.</i></h2>
             <p data-reveal data-reveal-delay="150">
-              Seit 2023 bringen wir American Football zurück unter den Hellenstein. Bei uns zählen
+              Seit 2023 bringen wir American Football zurück nach Heidenheim. Bei uns zählen
               Einsatz, Fairness und der Mensch unter dem Helm.
             </p>
             <a className="text-link" href="/ueber-uns" data-reveal data-reveal-delay="210">Unsere Geschichte <span>→</span></a>
@@ -112,7 +112,7 @@ export function HomeHybrid() {
         <div>
           <img src="/rascals-logo-768.webp" alt="" />
           <div>
-            <strong>HELLENSTEIN RASCALS</strong>
+            <strong>HEIDENHEIM RASCALS</strong>
             <small>American Football · Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</small>
           </div>
         </div>

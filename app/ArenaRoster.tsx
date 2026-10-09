@@ -141,7 +141,7 @@ export function ArenaRoster({
       <header className="drive-hud">
         <a className="drive-hud-brand" href="/">
           <img src={logo} alt="" />
-          <span><strong>HELLENSTEIN</strong><em>RASCALS</em></span>
+          <span><strong>HEIDENHEIM</strong><em>RASCALS</em></span>
         </a>
         <div className="drive-hud-centre">
           <span className="drive-hud-down" data-hud-down>KICKOFF</span>

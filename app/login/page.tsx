@@ -4,7 +4,7 @@ import { getAdminSessionIdentity, safeAdminReturnTo } from "../lib/admin-auth";
 import "./login.css";
 
 export const metadata = {
-  title: "Login · Hellenstein Rascals",
+  title: "Login · Heidenheim Rascals",
   robots: { index: false, follow: false },
 };
 

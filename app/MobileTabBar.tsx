@@ -246,7 +246,7 @@ export function MobileTabBar() {
             ref={sheet}
           >
             <div className="mtb-grip" aria-hidden="true" />
-            <p className="mtb-sheet-head">HELLENSTEIN RASCALS</p>
+            <p className="mtb-sheet-head">HEIDENHEIM RASCALS</p>
             <ul className="mtb-sheet-list">
               {MORE.map((item) => (
                 <li key={item.href}>

@@ -3,7 +3,7 @@ import CoachPlaybook from "./CoachPlaybook";
 
 export const metadata: Metadata = {
   title: "Playbook & Scheme | Rascals Football Operations",
-  description: "Formationen, Depth Chart und Positions-Performance der Hellenstein Rascals.",
+  description: "Formationen, Depth Chart und Positions-Performance der Heidenheim Rascals.",
 };
 
 export default function CoachPlaybookPage() {
