@@ -40,9 +40,16 @@
 }
 .fixtures-section .season-league{min-width:170px!important}
 .fixtures-section .season-stat{min-width:96px!important}
+/* MEASURED, NOT EYEBALLED.
+
+   This band is light by design — the same #f2f3ef on a desktop as on a phone,
+   so it is a choice and not a mobile accident. What is an accident is the type
+   on it: currentColor at 46% composites to about 2.99:1 against that
+   background, where AA asks 4.5 for text this size. 68% lands at 5.99 and is
+   still plainly a secondary label. */
 .season-stats small,.season-stats span{
-  color:color-mix(in srgb,currentColor 46%,transparent);
-  font-size:.52rem;
+  color:color-mix(in srgb,currentColor 68%,transparent);
+  font-size:.62rem;
   font-weight:900;
   line-height:1;
   letter-spacing:.14em;
@@ -57,9 +64,9 @@
   letter-spacing:.035em;
   white-space:nowrap;
 }
-.season-league strong{color:var(--sb-accent,#dc1726)}
+.season-league strong{color:var(--sb-accent,var(--rascals-red))}
 .season-stat strong{font-size:1.05rem}
-.season-stat strong i{padding:0 3px;color:var(--sb-accent,#dc1726);font-style:normal}
+.season-stat strong i{padding:0 3px;color:var(--sb-accent,var(--rascals-red));font-style:normal}
 
 .home-schedule{width:100%}
 .home-schedule-list{display:grid;gap:14px}
@@ -159,7 +166,7 @@
   line-height:1;
   letter-spacing:.14em;
 }
-.home-game-status.live{border-color:var(--sb-accent,#dc1726);background:var(--sb-accent,#dc1726);color:#fff;box-shadow:0 0 13px rgba(220,23,38,.22)}
+.home-game-status.live{border-color:var(--sb-accent,var(--rascals-red));background:var(--sb-accent,var(--rascals-red));color:#fff;box-shadow:0 0 13px rgba(220,23,38,.22)}
 .home-game-meta time{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:4px 7px;color:#fff!important;font-variant-numeric:tabular-nums}
 .home-game-meta time b{color:#f12635;font-size:.54rem;letter-spacing:.13em}
 .home-game-meta time strong{font-size:1.18rem;font-weight:950;line-height:1;color:#fff}
@@ -268,10 +275,14 @@
 .home-game-venue span b{color:#f12635}
 
 .home-schedule-footer{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 2px 0}
-.home-schedule-footer>span{color:color-mix(in srgb,currentColor 46%,transparent);font-size:.58rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
-.home-schedule-footer a{color:inherit;font-size:.63rem;font-weight:950;letter-spacing:.09em;text-decoration:none;text-transform:uppercase}
-.home-schedule-footer a b{margin-left:7px;color:var(--sb-accent,#dc1726)}
-.home-games-empty{padding:36px 20px;border:1px solid color-mix(in srgb,currentColor 10%,transparent);text-align:center;color:color-mix(in srgb,currentColor 50%,transparent);font-weight:800}
+.home-schedule-footer>span{color:color-mix(in srgb,currentColor 68%,transparent);font-size:.66rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+/* Fifteen pixels tall as a bare line of caps. The padding makes it pressable
+   without moving anything: the text sits where it did, the target grew. */
+.home-schedule-footer a{display:inline-block;padding:7px 0;color:inherit;font-size:.68rem;font-weight:950;letter-spacing:.09em;text-decoration:none;text-transform:uppercase}
+.home-schedule-footer a b{margin-left:7px;color:var(--sb-accent,var(--rascals-red))}
+/* The one line a visitor reads when the schedule is empty, so it gets the
+   most headroom of the three: 72% is 6.87:1. */
+.home-games-empty{padding:36px 20px;border:1px solid color-mix(in srgb,currentColor 16%,transparent);text-align:center;color:color-mix(in srgb,currentColor 72%,transparent);font-weight:800}
 
 @media(max-width:1100px){
   .fixtures-section .section-heading{grid-template-columns:1fr;align-items:start;gap:22px}
@@ -323,4 +334,17 @@
   .home-game-venue span{display:none}
   .home-schedule-footer{align-items:flex-start;flex-direction:column;gap:10px}
   .home-game-card:before{opacity:.45}
+}
+
+
+/* The brand red is 4.12:1 on this band — under AA for text at this size. The
+   hoarding red already in the palette is 5.40:1 and all but indistinguishable,
+   so the eyebrow borrows it here rather than inventing a shade. */
+.fixtures-section .red-text { color: #c4152a; }
+
+/* The smallest labels are set for a desktop band. On a phone .52rem is eight
+   pixels; these are the numbers the section exists to show. */
+@media (max-width: 700px) {
+  .season-stats small, .season-stats span { font-size: .68rem; }
+  .home-schedule-footer > span { font-size: .7rem; }
 }

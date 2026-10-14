@@ -71,3 +71,12 @@
   .news-preview .featured-news h3 { font-size: 1.55rem; }
   .news-preview .featured-news p { -webkit-line-clamp: 2; font-size: .84rem; }
 }
+
+
+/* The story link was twenty-two pixels of inline-flex. Same treatment: the
+   words stay put, the area around them becomes part of the link. */
+.news-preview .featured-news a,
+.news-preview .compact-news a {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}

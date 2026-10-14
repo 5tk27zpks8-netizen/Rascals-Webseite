@@ -1,6 +1,6 @@
 /* Standard strip layout. Structural rules only: editable values always come
    from the Website Studio variables or per-element inline styles. */
-.sb-stats-section.sb-variant-strip{min-height:var(--sb-min,0);padding:var(--sb-pt,0) 4vw var(--sb-pb,0);border-color:var(--sb-border,transparent);border-radius:var(--sb-radius,0);background:var(--sb-background,#e7192d);color:var(--sb-text,#fff)}
+.sb-stats-section.sb-variant-strip{min-height:var(--sb-min,0);padding:var(--sb-pt,0) 4vw var(--sb-pb,0);border-color:var(--sb-border,transparent);border-radius:var(--sb-radius,0);background:var(--sb-background,var(--rascals-red));color:var(--sb-text,#fff)}
 .sb-stats-section.sb-variant-strip>.sb-inner{width:min(var(--sb-max,1920px),100%);max-width:none}
 .sb-stats-section.sb-variant-strip .sb-section-head{display:none}
 .sb-stats-section.sb-variant-strip .sb-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;width:100%;background:transparent;border-radius:var(--sb-radius,0);overflow:visible}
