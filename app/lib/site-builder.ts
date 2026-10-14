@@ -167,7 +167,103 @@ function newsUnderTheSchedule(state: Partial<SiteBuilderState>): Partial<SiteBui
   };
 }
 
-export const defaultSiteBuilderState:SiteBuilderState={version:NEWS_MOVED_IN,editorInitialized:false,theme:{background:"#050d18",surface:"#0b1725",text:"#ffffff",muted:"#9aa7b7",accent:"#e7192d",headerBackground:"#050d18",headerText:"#ffffff",contentWidth:1600,radius:0,logoUrl:"/rascals-logo-768.webp",brandTop:"HELLENSTEIN",brandBottom:"RASCALS",navCtaLabel:"Mitmachen",navCtaUrl:"mailto:football@hsb1846.de",footerTitle:"HELLENSTEIN RASCALS",footerSubtitle:"American Football · Heidenheim",headingFont:"Inter, Arial, sans-serif",bodyFont:"Inter, Arial, sans-serif",headingWeight:950,headingTracking:-.04,bodyLineHeight:1.65,headingTransform:"uppercase",bodyFontSize:16,bodyFontWeight:400,bodyItalic:false,bodyLetterSpacing:0,headingItalic:false},pages:templates()};
+/**
+ * THE UNITS BLOCK ON THE START PAGE, MERGED INTO ONE SQUAD.
+ *
+ * Offense, Defense and Special Teams, numbered 01 02 03, each with its own
+ * strapline, its own paragraph and its own way through to the roster. The
+ * split had already gone from /team, from the Arena and from the team block
+ * in the classic design; this was the last place still telling people the
+ * club fields three units, and the three links now all went to the same
+ * undivided roster.
+ *
+ * It has to happen here because this one is not markup. The section is a
+ * builder section and its three cards are rows in D1 that somebody typed, so
+ * there is nothing in the repository to edit — the numerals came out of the
+ * renderer, and everything the cards say comes out of here.
+ *
+ * The photographs stay, and so does one link: the leftmost card keeps the way
+ * through to the squad and the other two give theirs up.
+ *
+ * GATED ON RECOGNISING THE SPLIT. None of this runs unless the cards are
+ * actually named after the three units, so a units section somebody has since
+ * repurposed for something else is left exactly as it is.
+ */
+const UNITS_MERGED_IN = 7;
+
+const UNIT_NAMES = /^(offense|defense|defence|special[\s-]?teams?|spezial[\s-]?teams?)$/i;
+
+function mergeUnitSections(state: Partial<SiteBuilderState>): Partial<SiteBuilderState> {
+  const pages = state.pages;
+  if (!Array.isArray(pages)) return state;
+  return {
+    ...state,
+    pages: pages.map((page) => {
+      const sections = page?.sections;
+      if (!Array.isArray(sections)) return page;
+      let touched = false;
+      const next = sections.map((section) => {
+        if (section?.type !== "units" || !Array.isArray(section.items)) return section;
+        if (!section.items.some((item) => UNIT_NAMES.test((item?.title ?? "").trim()))) return section;
+        touched = true;
+        let linkKept = false;
+        const items = section.items.map((item) => {
+          const keep = !linkKept && Boolean(item?.linkUrl);
+          if (keep) linkKept = true;
+          return {
+            ...item,
+            title: "",
+            subtitle: "",
+            text: "",
+            linkLabel: keep ? item.linkLabel : "",
+            linkUrl: keep ? item.linkUrl : "",
+          };
+        });
+        /* The heading is one field — "DREI EINHEITEN. EIN TEAM." — and the
+           section renderer never prints the accent, so only the counting half
+           comes out and what is left of the line stands on its own. Blanking
+           the whole title instead left the block with no heading at all.
+           The strapline underneath explained what each unit was for and has
+           nothing left to explain. */
+        const title = (section.title ?? "").replace(/drei\s+(einheiten|units)\.?\s*/i, "").trim();
+        const text = /\bunits?\b/i.test(section.text ?? "") ? "" : section.text;
+        return { ...section, title: title || "EIN TEAM.", text, items };
+      });
+      return touched ? { ...page, sections: next } : page;
+    }),
+  };
+}
+
+/**
+ * The teamwear shop, ahead of "Ein Team. Eine Familie." rather than behind it.
+ *
+ * Identified by where its button goes rather than by what it is called: the
+ * shop is the one section on the page pointing at the club's Shopify address,
+ * whatever type it was built as and whatever heading it carries. Nothing
+ * happens if there is no such section, or no section to put it in front of.
+ */
+function shopAheadOfTheStory(state: Partial<SiteBuilderState>): Partial<SiteBuilderState> {
+  const pages = state.pages;
+  if (!Array.isArray(pages)) return state;
+  const shopLink = (section: { buttonUrl?: string; items?: { linkUrl?: string }[] }) =>
+    /myshopify\.com/i.test(section?.buttonUrl ?? "") ||
+    (Array.isArray(section?.items) && section.items.some((item) => /myshopify\.com/i.test(item?.linkUrl ?? "")));
+  return {
+    ...state,
+    pages: pages.map((page) => {
+      const sections = page?.sections;
+      if (!Array.isArray(sections)) return page;
+      const shop = sections.findIndex(shopLink);
+      const story = sections.findIndex((section) => /eine\s+familie/i.test(`${section?.title ?? ""} ${section?.accent ?? ""}`));
+      if (shop < 0 || story < 0 || shop === story || shop === story - 1) return page;
+      const rest = sections.filter((_, index) => index !== shop);
+      const before = rest.findIndex((section) => /eine\s+familie/i.test(`${section?.title ?? ""} ${section?.accent ?? ""}`));
+      return { ...page, sections: [...rest.slice(0, before), sections[shop], ...rest.slice(before)] };
+    }),
+  };
+}
+
+export const defaultSiteBuilderState:SiteBuilderState={version:UNITS_MERGED_IN,editorInitialized:false,theme:{background:"#050d18",surface:"#0b1725",text:"#ffffff",muted:"#9aa7b7",accent:"#e7192d",headerBackground:"#050d18",headerText:"#ffffff",contentWidth:1600,radius:0,logoUrl:"/rascals-logo-768.webp",brandTop:"HELLENSTEIN",brandBottom:"RASCALS",navCtaLabel:"Mitmachen",navCtaUrl:"mailto:football@hsb1846.de",footerTitle:"HELLENSTEIN RASCALS",footerSubtitle:"American Football · Heidenheim",headingFont:"Inter, Arial, sans-serif",bodyFont:"Inter, Arial, sans-serif",headingWeight:950,headingTracking:-.04,bodyLineHeight:1.65,headingTransform:"uppercase",bodyFontSize:16,bodyFontWeight:400,bodyItalic:false,bodyLetterSpacing:0,headingItalic:false},pages:templates()};
 
 function cleanSlug(value:string){return value.trim().toLowerCase().replace(/^\/+|\/+$/g,"").replace(/[^a-z0-9äöüß-]+/g,"-").replace(/-+/g,"-")}
 function numberOr(value:unknown,fallback:number){const n=Number(value);return Number.isFinite(n)?n:fallback}
@@ -181,7 +277,7 @@ function normalizeItem(item:BuilderItem):BuilderItem{return{id:item.id||crypto.r
 function normalizeSection(section:Partial<BuilderSection>):BuilderSection{const s=section.style??{};const desktopAlign=alignOr(s.align,"left");const desktopMin=Math.max(0,numberOr(s.minHeight,0));return{id:section.id||crypto.randomUUID(),type:section.type||"text",variant:section.variant||"default",visible:section.visible!==false,eyebrow:section.eyebrow??"",title:section.title??"",accent:section.accent??"",text:section.text??"",image:section.image??"",image2:section.image2??"",buttonLabel:section.buttonLabel??"",buttonUrl:section.buttonUrl??"",elementStyles:normalizeElementStyles(section.elementStyles),style:{background:s.background||"#050d18",textColor:s.textColor||"#ffffff",accentColor:s.accentColor||"#e7192d",paddingTop:Math.max(0,numberOr(s.paddingTop,64)),paddingBottom:Math.max(0,numberOr(s.paddingBottom,64)),minHeight:desktopMin,align:desktopAlign,maxWidth:Math.max(320,numberOr(s.maxWidth,1600)),rounded:Math.max(0,numberOr(s.rounded,0)),border:s.border||"",borderWidth:clamp(s.borderWidth,0,20,s.border?1:0),borderStyle:s.borderStyle==="dashed"||s.borderStyle==="dotted"||s.borderStyle==="none"?s.borderStyle:"solid",boxShadow:s.boxShadow||"",opacity:clamp(s.opacity,0,1,1),headingScale:clamp(s.headingScale,.45,1.8,1),backgroundMode:s.backgroundMode==="gradient"||s.backgroundMode==="image"||s.backgroundMode==="video"?s.backgroundMode:"color",backgroundImage:s.backgroundImage||"",backgroundVideo:s.backgroundVideo||"",backgroundGradient:s.backgroundGradient||"linear-gradient(135deg,#050d18,#0b1725)",overlayColor:s.overlayColor||"#020812",overlayOpacity:clamp(s.overlayOpacity,0,1,.45),backgroundPosition:s.backgroundPosition||"center",backgroundFixed:s.backgroundFixed===true,tablet:normalizeResponsive(s.tablet,{paddingTop:56,paddingBottom:56,minHeight:desktopMin,align:desktopAlign,maxWidth:1200,headingScale:.9}),mobile:normalizeResponsive(s.mobile,{paddingTop:40,paddingBottom:40,minHeight:0,align:desktopAlign,maxWidth:720,headingScale:.72})},items:Array.isArray(section.items)?section.items.map(normalizeItem):[]}}
 function normalizePage(page:Partial<BuilderPage>):BuilderPage{return{id:page.id||crypto.randomUUID(),name:page.name||"Neue Seite",slug:cleanSlug(page.slug||""),enabled:page.enabled===true,showInNav:page.showInNav===true,navLabel:page.navLabel||page.name||"Seite",title:page.title||"",description:page.description||"",sections:Array.isArray(page.sections)?page.sections.map(normalizeSection):[]}}
 function migratePages(input:Partial<SiteBuilderState>):BuilderPage[]{const incoming=Array.isArray(input.pages)?input.pages:[];const base=templates();const merged=base.map(template=>{const previous=incoming.find(page=>page.id===template.id||cleanSlug(page.slug||"")===template.slug);if(!previous)return template;const normalized=normalizePage(previous);return normalized.sections.length?normalized:{...template,enabled:normalized.enabled,showInNav:normalized.showInNav,navLabel:normalized.navLabel,title:normalized.title||template.title,description:normalized.description||template.description}});const custom=incoming.filter(page=>!base.some(template=>template.id===page.id||template.slug===cleanSlug(page.slug||""))).map(normalizePage);return[...merged,...custom]}
-function normalizeState(incoming:Partial<SiteBuilderState>):SiteBuilderState{const stored=numberOr(incoming.version,1);const restored:Partial<SiteBuilderState>=stored<BRAND_RESTORED_IN?restoreBrandLine(incoming):incoming;const input:Partial<SiteBuilderState>=stored<NEWS_MOVED_IN?newsUnderTheSchedule(restored):restored;const raw=input.theme??{};const theme:BuilderTheme={...defaultSiteBuilderState.theme,...raw,contentWidth:Math.max(800,numberOr(raw.contentWidth,1600)),radius:Math.max(0,numberOr(raw.radius,0)),headingWeight:clamp(raw.headingWeight,100,1000,950),headingTracking:clamp(raw.headingTracking,-.12,.2,-.04),bodyLineHeight:clamp(raw.bodyLineHeight,1,2.4,1.65),headingTransform:raw.headingTransform==="none"?"none":"uppercase",bodyFontSize:clamp(raw.bodyFontSize,8,40,16),bodyFontWeight:clamp(raw.bodyFontWeight,100,1000,400),bodyLetterSpacing:clamp(raw.bodyLetterSpacing,-.1,.2,0),bodyItalic:raw.bodyItalic===true,headingItalic:raw.headingItalic===true};const pages=numberOr(input.version,1)<2?migratePages(input):Array.isArray(input.pages)?input.pages.map(normalizePage):templates();return{version:NEWS_MOVED_IN,editorInitialized:input.editorInitialized===true,theme,pages}}
+function normalizeState(incoming:Partial<SiteBuilderState>):SiteBuilderState{const stored=numberOr(incoming.version,1);const restored:Partial<SiteBuilderState>=stored<BRAND_RESTORED_IN?restoreBrandLine(incoming):incoming;const moved:Partial<SiteBuilderState>=stored<NEWS_MOVED_IN?newsUnderTheSchedule(restored):restored;const input:Partial<SiteBuilderState>=stored<UNITS_MERGED_IN?shopAheadOfTheStory(mergeUnitSections(moved)):moved;const raw=input.theme??{};const theme:BuilderTheme={...defaultSiteBuilderState.theme,...raw,contentWidth:Math.max(800,numberOr(raw.contentWidth,1600)),radius:Math.max(0,numberOr(raw.radius,0)),headingWeight:clamp(raw.headingWeight,100,1000,950),headingTracking:clamp(raw.headingTracking,-.12,.2,-.04),bodyLineHeight:clamp(raw.bodyLineHeight,1,2.4,1.65),headingTransform:raw.headingTransform==="none"?"none":"uppercase",bodyFontSize:clamp(raw.bodyFontSize,8,40,16),bodyFontWeight:clamp(raw.bodyFontWeight,100,1000,400),bodyLetterSpacing:clamp(raw.bodyLetterSpacing,-.1,.2,0),bodyItalic:raw.bodyItalic===true,headingItalic:raw.headingItalic===true};const pages=numberOr(input.version,1)<2?migratePages(input):Array.isArray(input.pages)?input.pages.map(normalizePage):templates();return{version:UNITS_MERGED_IN,editorInitialized:input.editorInitialized===true,theme,pages}}
 async function readKey(key:string):Promise<SiteBuilderState|null>{await ensureCmsSchema();const{DB}=bindings();const row=await DB.prepare("SELECT value FROM cms_settings WHERE key = ?").bind(key).first<{value:string}>();if(!row?.value)return null;try{return normalizeState(JSON.parse(row.value) as SiteBuilderState)}catch{return null}}
 async function writeKey(key:string,state:SiteBuilderState){await ensureCmsSchema();const normalized=normalizeState(state);const{DB}=bindings();await DB.prepare(`INSERT INTO cms_settings (key,value,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP`).bind(key,JSON.stringify(normalized)).run();return normalized}
 export async function readSiteBuilderState():Promise<SiteBuilderState>{return await readKey(DRAFT_KEY)??await readKey(LEGACY_KEY)??defaultSiteBuilderState}

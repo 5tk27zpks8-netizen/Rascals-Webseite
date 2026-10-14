@@ -337,17 +337,22 @@ button:focus-visible {
   background: linear-gradient(transparent 25%, rgb(3 10 19 / 0.92));
   pointer-events: none;
 }
-.sb-unit-index {
-  position: absolute;
-  top: clamp(1rem, 2vw, 1.8rem);
-  left: clamp(1.5rem, 3vw, 2.6rem);
-  z-index: 2;
-  color: var(--rascals-red);
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
+/* A CARD WITH NOTHING WRITTEN ON IT IS A PHOTOGRAPH.
+
+   The photographs sit at 0.42 under a near-black gradient because they were
+   backdrops: three units, each with a name, a strapline and a paragraph to
+   keep legible on top. Merged into one squad there is nothing left on them,
+   and a backdrop with nothing in front of it is just a dark picture. So where
+   a card carries no text it shows its photograph properly. The gradient stays
+   — the one card that kept the way through to the roster needs something for
+   that line to sit on, and a soft foot keeps all three reading as a set. */
+.sb-units article.is-bare > img {
+  opacity: 0.92;
 }
+.sb-units article.is-bare:hover > img {
+  opacity: 1;
+}
+
 .sb-unit-body {
   position: relative;
   z-index: 2;
