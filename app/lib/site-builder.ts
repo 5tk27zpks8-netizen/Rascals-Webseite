@@ -264,22 +264,23 @@ function shopAheadOfTheStory(state: Partial<SiteBuilderState>): Partial<SiteBuil
 }
 
 /**
- * SOMETHING TO READ OVER THE THREE PHOTOGRAPHS.
+ * AND BACK TO "EIN TEAM." — THE HEADING THE CLUB ASKED FOR.
  *
- * Merging the units left the block with "EIN TEAM." and nothing under it,
- * which is true and says nothing — a heading that could sit over any block on
- * any club's site. Three photographs of the same squad deserve a line that
- * explains why they are three and not one.
+ * The merged block briefly carried "EIN KADER. JEDE POSITION." and a line
+ * about the kickoff, the huddle and the final whistle. That was written to
+ * answer a complaint that the bare heading said too little; the club wanted
+ * the bare heading back, so it goes back.
  *
- * It replaces the bare heading only, and only where this is still the heading
- * the merge left behind, with no strapline of its own. Anything written in
- * the editor since survives untouched, and once the page is published from
- * the editor this stops running at all.
+ * Still narrow: it recognises the exact wording that was put there, and only
+ * replaces that. A heading somebody has typed since is not touched, and the
+ * strapline is cleared only when it is still word for word the one that was
+ * written here — anything else is the club's own and stays.
  */
-const UNITS_HEADLINE_IN = 8;
+const UNITS_PLAIN_IN = 9;
 
-const MERGED_HEADLINE = "EIN KADER. JEDE POSITION.";
-const MERGED_STRAPLINE =
+const PLAIN_HEADLINE = "EIN TEAM.";
+const RETIRED_HEADLINE = "EIN KADER. JEDE POSITION.";
+const RETIRED_STRAPLINE =
   "Vor dem Kickoff, im Huddle, nach dem Schlusspfiff \u2014 immer dieselbe Mannschaft. " +
   "Wer hier aufl\u00e4uft, spielt da, wo das Team ihn braucht.";
 
@@ -295,16 +296,17 @@ function unitsHeadline(state: Partial<SiteBuilderState>): Partial<SiteBuilderSta
         ...page,
         sections: sections.map((section) => {
           if (section?.type !== "units") return section;
-          const bare = (section.title ?? "").trim().toUpperCase() === "EIN TEAM." || !(section.title ?? "").trim();
-          if (!bare || (section.text ?? "").trim()) return section;
-          return { ...section, title: MERGED_HEADLINE, text: MERGED_STRAPLINE };
+          const title = (section.title ?? "").trim();
+          if (title.toUpperCase() !== RETIRED_HEADLINE) return section;
+          const text = (section.text ?? "").trim() === RETIRED_STRAPLINE ? "" : section.text;
+          return { ...section, title: PLAIN_HEADLINE, text };
         }),
       };
     }),
   };
 }
 
-export const defaultSiteBuilderState:SiteBuilderState={version:UNITS_HEADLINE_IN,editorInitialized:false,theme:{background:"#050d18",surface:"#0b1725",text:"#ffffff",muted:"#9aa7b7",accent:"#e7192d",headerBackground:"#050d18",headerText:"#ffffff",contentWidth:1600,radius:0,logoUrl:"/rascals-logo-768.webp",brandTop:"HELLENSTEIN",brandBottom:"RASCALS",navCtaLabel:"Mitmachen",navCtaUrl:"mailto:football@hsb1846.de",footerTitle:"HELLENSTEIN RASCALS",footerSubtitle:"American Football · Heidenheim",headingFont:"Inter, Arial, sans-serif",bodyFont:"Inter, Arial, sans-serif",headingWeight:950,headingTracking:-.04,bodyLineHeight:1.65,headingTransform:"uppercase",bodyFontSize:16,bodyFontWeight:400,bodyItalic:false,bodyLetterSpacing:0,headingItalic:false},pages:templates()};
+export const defaultSiteBuilderState:SiteBuilderState={version:UNITS_PLAIN_IN,editorInitialized:false,theme:{background:"#050d18",surface:"#0b1725",text:"#ffffff",muted:"#9aa7b7",accent:"#e7192d",headerBackground:"#050d18",headerText:"#ffffff",contentWidth:1600,radius:0,logoUrl:"/rascals-logo-768.webp",brandTop:"HELLENSTEIN",brandBottom:"RASCALS",navCtaLabel:"Mitmachen",navCtaUrl:"mailto:football@hsb1846.de",footerTitle:"HELLENSTEIN RASCALS",footerSubtitle:"American Football · Heidenheim",headingFont:"Inter, Arial, sans-serif",bodyFont:"Inter, Arial, sans-serif",headingWeight:950,headingTracking:-.04,bodyLineHeight:1.65,headingTransform:"uppercase",bodyFontSize:16,bodyFontWeight:400,bodyItalic:false,bodyLetterSpacing:0,headingItalic:false},pages:templates()};
 
 function cleanSlug(value:string){return value.trim().toLowerCase().replace(/^\/+|\/+$/g,"").replace(/[^a-z0-9äöüß-]+/g,"-").replace(/-+/g,"-")}
 function numberOr(value:unknown,fallback:number){const n=Number(value);return Number.isFinite(n)?n:fallback}
@@ -318,7 +320,7 @@ function normalizeItem(item:BuilderItem):BuilderItem{return{id:item.id||crypto.r
 function normalizeSection(section:Partial<BuilderSection>):BuilderSection{const s=section.style??{};const desktopAlign=alignOr(s.align,"left");const desktopMin=Math.max(0,numberOr(s.minHeight,0));return{id:section.id||crypto.randomUUID(),type:section.type||"text",variant:section.variant||"default",visible:section.visible!==false,eyebrow:section.eyebrow??"",title:section.title??"",accent:section.accent??"",text:section.text??"",image:section.image??"",image2:section.image2??"",buttonLabel:section.buttonLabel??"",buttonUrl:section.buttonUrl??"",elementStyles:normalizeElementStyles(section.elementStyles),style:{background:s.background||"#050d18",textColor:s.textColor||"#ffffff",accentColor:s.accentColor||"#e7192d",paddingTop:Math.max(0,numberOr(s.paddingTop,64)),paddingBottom:Math.max(0,numberOr(s.paddingBottom,64)),minHeight:desktopMin,align:desktopAlign,maxWidth:Math.max(320,numberOr(s.maxWidth,1600)),rounded:Math.max(0,numberOr(s.rounded,0)),border:s.border||"",borderWidth:clamp(s.borderWidth,0,20,s.border?1:0),borderStyle:s.borderStyle==="dashed"||s.borderStyle==="dotted"||s.borderStyle==="none"?s.borderStyle:"solid",boxShadow:s.boxShadow||"",opacity:clamp(s.opacity,0,1,1),headingScale:clamp(s.headingScale,.45,1.8,1),backgroundMode:s.backgroundMode==="gradient"||s.backgroundMode==="image"||s.backgroundMode==="video"?s.backgroundMode:"color",backgroundImage:s.backgroundImage||"",backgroundVideo:s.backgroundVideo||"",backgroundGradient:s.backgroundGradient||"linear-gradient(135deg,#050d18,#0b1725)",overlayColor:s.overlayColor||"#020812",overlayOpacity:clamp(s.overlayOpacity,0,1,.45),backgroundPosition:s.backgroundPosition||"center",backgroundFixed:s.backgroundFixed===true,tablet:normalizeResponsive(s.tablet,{paddingTop:56,paddingBottom:56,minHeight:desktopMin,align:desktopAlign,maxWidth:1200,headingScale:.9}),mobile:normalizeResponsive(s.mobile,{paddingTop:40,paddingBottom:40,minHeight:0,align:desktopAlign,maxWidth:720,headingScale:.72})},items:Array.isArray(section.items)?section.items.map(normalizeItem):[]}}
 function normalizePage(page:Partial<BuilderPage>):BuilderPage{return{id:page.id||crypto.randomUUID(),name:page.name||"Neue Seite",slug:cleanSlug(page.slug||""),enabled:page.enabled===true,showInNav:page.showInNav===true,navLabel:page.navLabel||page.name||"Seite",title:page.title||"",description:page.description||"",sections:Array.isArray(page.sections)?page.sections.map(normalizeSection):[]}}
 function migratePages(input:Partial<SiteBuilderState>):BuilderPage[]{const incoming=Array.isArray(input.pages)?input.pages:[];const base=templates();const merged=base.map(template=>{const previous=incoming.find(page=>page.id===template.id||cleanSlug(page.slug||"")===template.slug);if(!previous)return template;const normalized=normalizePage(previous);return normalized.sections.length?normalized:{...template,enabled:normalized.enabled,showInNav:normalized.showInNav,navLabel:normalized.navLabel,title:normalized.title||template.title,description:normalized.description||template.description}});const custom=incoming.filter(page=>!base.some(template=>template.id===page.id||template.slug===cleanSlug(page.slug||""))).map(normalizePage);return[...merged,...custom]}
-function normalizeState(incoming:Partial<SiteBuilderState>):SiteBuilderState{const stored=numberOr(incoming.version,1);const restored:Partial<SiteBuilderState>=stored<BRAND_RESTORED_IN?restoreBrandLine(incoming):incoming;const moved:Partial<SiteBuilderState>=stored<NEWS_MOVED_IN?newsUnderTheSchedule(restored):restored;const merged:Partial<SiteBuilderState>=stored<UNITS_MERGED_IN?shopAheadOfTheStory(mergeUnitSections(moved)):moved;const input:Partial<SiteBuilderState>=stored<UNITS_HEADLINE_IN?unitsHeadline(merged):merged;const raw=input.theme??{};const theme:BuilderTheme={...defaultSiteBuilderState.theme,...raw,contentWidth:Math.max(800,numberOr(raw.contentWidth,1600)),radius:Math.max(0,numberOr(raw.radius,0)),headingWeight:clamp(raw.headingWeight,100,1000,950),headingTracking:clamp(raw.headingTracking,-.12,.2,-.04),bodyLineHeight:clamp(raw.bodyLineHeight,1,2.4,1.65),headingTransform:raw.headingTransform==="none"?"none":"uppercase",bodyFontSize:clamp(raw.bodyFontSize,8,40,16),bodyFontWeight:clamp(raw.bodyFontWeight,100,1000,400),bodyLetterSpacing:clamp(raw.bodyLetterSpacing,-.1,.2,0),bodyItalic:raw.bodyItalic===true,headingItalic:raw.headingItalic===true};const pages=numberOr(input.version,1)<2?migratePages(input):Array.isArray(input.pages)?input.pages.map(normalizePage):templates();return{version:UNITS_HEADLINE_IN,editorInitialized:input.editorInitialized===true,theme,pages}}
+function normalizeState(incoming:Partial<SiteBuilderState>):SiteBuilderState{const stored=numberOr(incoming.version,1);const restored:Partial<SiteBuilderState>=stored<BRAND_RESTORED_IN?restoreBrandLine(incoming):incoming;const moved:Partial<SiteBuilderState>=stored<NEWS_MOVED_IN?newsUnderTheSchedule(restored):restored;const merged:Partial<SiteBuilderState>=stored<UNITS_MERGED_IN?shopAheadOfTheStory(mergeUnitSections(moved)):moved;const input:Partial<SiteBuilderState>=stored<UNITS_PLAIN_IN?unitsHeadline(merged):merged;const raw=input.theme??{};const theme:BuilderTheme={...defaultSiteBuilderState.theme,...raw,contentWidth:Math.max(800,numberOr(raw.contentWidth,1600)),radius:Math.max(0,numberOr(raw.radius,0)),headingWeight:clamp(raw.headingWeight,100,1000,950),headingTracking:clamp(raw.headingTracking,-.12,.2,-.04),bodyLineHeight:clamp(raw.bodyLineHeight,1,2.4,1.65),headingTransform:raw.headingTransform==="none"?"none":"uppercase",bodyFontSize:clamp(raw.bodyFontSize,8,40,16),bodyFontWeight:clamp(raw.bodyFontWeight,100,1000,400),bodyLetterSpacing:clamp(raw.bodyLetterSpacing,-.1,.2,0),bodyItalic:raw.bodyItalic===true,headingItalic:raw.headingItalic===true};const pages=numberOr(input.version,1)<2?migratePages(input):Array.isArray(input.pages)?input.pages.map(normalizePage):templates();return{version:UNITS_PLAIN_IN,editorInitialized:input.editorInitialized===true,theme,pages}}
 async function readKey(key:string):Promise<SiteBuilderState|null>{await ensureCmsSchema();const{DB}=bindings();const row=await DB.prepare("SELECT value FROM cms_settings WHERE key = ?").bind(key).first<{value:string}>();if(!row?.value)return null;try{return normalizeState(JSON.parse(row.value) as SiteBuilderState)}catch{return null}}
 async function writeKey(key:string,state:SiteBuilderState){await ensureCmsSchema();const normalized=normalizeState(state);const{DB}=bindings();await DB.prepare(`INSERT INTO cms_settings (key,value,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP`).bind(key,JSON.stringify(normalized)).run();return normalized}
 export async function readSiteBuilderState():Promise<SiteBuilderState>{return await readKey(DRAFT_KEY)??await readKey(LEGACY_KEY)??defaultSiteBuilderState}
