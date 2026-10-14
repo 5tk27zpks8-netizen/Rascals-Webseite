@@ -64,41 +64,10 @@
   transform: scale(1.04);
 }
 
-/* Sits over the photograph, so it needs its own contrast rather than
-   relying on whatever happens to be behind it. */
-.team-unit-index {
-  position: absolute;
-  left: 12px;
-  bottom: 2px;
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: clamp(38px, 4.4vw, 62px);
-  font-weight: 950;
-  line-height: 1;
-  text-shadow: 0 2px 18px rgba(2, 10, 21, 0.55);
-}
-
-.team-units-grid h3 {
-  margin: 16px 0 4px;
-  font-family: var(--font-display);
-  font-size: clamp(1.25rem, 2.1vw, 1.9rem);
-  font-weight: 950;
-  letter-spacing: -0.01em;
-}
-
-.team-units-grid strong {
-  display: block;
-  color: var(--red);
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-}
-
-.team-units-grid p {
-  margin: 10px 0 0;
-  color: #55606e;
-  font-size: 0.9rem;
-  line-height: 1.65;
+/* The one link, under the photographs rather than beside the heading: it is
+   the only thing to do in this block, so it reads as the end of it. */
+.team-units-link {
+  margin-top: clamp(20px, 2.4vw, 32px);
 }
 
 /* --- seniors and juniors --------------------------------------- */

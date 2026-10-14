@@ -171,23 +171,6 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
     </div>
 
     <Fixtures />
-    <TeamUnits />
-
-    <section className="story-split">
-      <div className="story-image">
-        <img {...wide("/team-victory-4k.webp")} src="/team-victory-4k.webp" alt="Hellenstein Rascals feiern gemeinsam nach ihrem Sieg" />
-        <span data-reveal>NO ONE<br />FIGHTS ALONE.</span>
-      </div>
-      <div className="story-copy">
-        <span className="eyebrow red-text" data-reveal>Mehr als Football</span>
-        <h2 data-reveal data-reveal-delay="80">EIN TEAM.<br />EINE <i>FAMILIE.</i></h2>
-        <p data-reveal data-reveal-delay="160">Seit 2023 bringen wir American Football zurück unter den Hellenstein. Bei uns zählen Einsatz, Fairness und der Mensch unter dem Helm.</p>
-        <p data-reveal data-reveal-delay="200">Ob Rookie oder Veteran: Wer für das Team alles gibt, gehört dazu.</p>
-        <a className="text-link dark-link" href="/ueber-uns" data-reveal data-reveal-delay="260">Unsere Geschichte <span>→</span></a>
-      </div>
-    </section>
-
-    <ShopFeature />
 
     <section className="section news-preview">
       <div className="section-heading">
@@ -212,6 +195,26 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
         </article>
       </div>
     </section>
+
+
+    <TeamUnits />
+
+    <ShopFeature />
+
+    <section className="story-split">
+      <div className="story-image">
+        <img {...wide("/team-victory-4k.webp")} src="/team-victory-4k.webp" alt="Hellenstein Rascals feiern gemeinsam nach ihrem Sieg" />
+        <span data-reveal>NO ONE<br />FIGHTS ALONE.</span>
+      </div>
+      <div className="story-copy">
+        <span className="eyebrow red-text" data-reveal>Mehr als Football</span>
+        <h2 data-reveal data-reveal-delay="80">EIN TEAM.<br />EINE <i>FAMILIE.</i></h2>
+        <p data-reveal data-reveal-delay="160">Seit 2023 bringen wir American Football zurück unter den Hellenstein. Bei uns zählen Einsatz, Fairness und der Mensch unter dem Helm.</p>
+        <p data-reveal data-reveal-delay="200">Ob Rookie oder Veteran: Wer für das Team alles gibt, gehört dazu.</p>
+        <a className="text-link dark-link" href="/ueber-uns" data-reveal data-reveal-delay="260">Unsere Geschichte <span>→</span></a>
+      </div>
+    </section>
+
 
     <hr className="rascals-yardline" />
     <SponsorTicker />

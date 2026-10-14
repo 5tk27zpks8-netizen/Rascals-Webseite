@@ -2,32 +2,26 @@ import "./team-units.css";
 import { wide } from "./lib/responsive-image";
 
 /**
- * The teams block, sitting below the schedule on the homepage.
+ * The team block, below the schedule on the homepage.
  *
- * Carried over from the alternative design that was reviewed, with the
- * photography left in colour rather than the greyscale that suited that
- * page's paper palette.
+ * IT USED TO BE THREE ROSTERS.
+ *
+ * Offense, Defense and Special Teams, each with its own photograph, its own
+ * name and its own paragraph about what that unit does. Three depth charts
+ * for a club that fields one team — everybody here plays both ways — and the
+ * split survived on the homepage after it had already gone from /team and
+ * from the Arena, which left the front page advertising a structure the rest
+ * of the site no longer has.
+ *
+ * The photographs stay, because they are the team and they are what the block
+ * is for. What goes is the three names, the three descriptions and the idea
+ * that a reader has to pick one: there is one squad and one way in to it.
  */
 
-const units = [
-  {
-    name: "OFFENSE",
-    line: "Ball. Yards. Punkte.",
-    text: "Line, Backfield und Receiver — elf Spieler, ein Spielzug, kein Alleingang.",
-    image: "/team-players-4k.webp",
-  },
-  {
-    name: "DEFENSE",
-    line: "Stoppen. Zurückholen.",
-    text: "Front, Linebacker und Secondary. Wer hier steht, gibt keinen Meter freiwillig her.",
-    image: "/team-huddle-4k.webp",
-  },
-  {
-    name: "SPECIAL TEAMS",
-    line: "Ein Snap entscheidet.",
-    text: "Kick, Punt, Return. Die Phase, die Spiele dreht und die keiner trainiert sehen will.",
-    image: "/team-walk-4k.webp",
-  },
+const photos = [
+  { image: "/team-players-4k.webp", alt: "Rascals Spieler vor dem Spiel" },
+  { image: "/team-huddle-4k.webp", alt: "Das Team im Huddle" },
+  { image: "/team-walk-4k.webp", alt: "Die Rascals auf dem Weg auf das Feld" },
 ];
 
 const squads = [
@@ -49,22 +43,26 @@ export function TeamUnits() {
   return (
     <section className="team-units">
       <div className="team-units-head">
-        <span className="eyebrow red-text" data-reveal>Die Teams</span>
-        <h2 data-reveal data-reveal-delay="80">DREI UNITS.<br /><i>EIN TEAM.</i></h2>
+        <span className="eyebrow red-text" data-reveal>Das Team</span>
+        <h2 data-reveal data-reveal-delay="80">DER GANZE<br /><i>KADER.</i></h2>
       </div>
 
       <div className="team-units-grid">
-        {units.map((unit, index) => (
-          <article key={unit.name} data-reveal data-reveal-delay={index * 90}>
+        {photos.map((photo, index) => (
+          <article key={photo.image} data-reveal data-reveal-delay={index * 90}>
             <div className="team-unit-media">
-              <img {...wide(unit.image)} src={unit.image} alt="" />
-              <span className="team-unit-index">{String(index + 1).padStart(2, "0")}</span>
+              <img {...wide(photo.image)} src={photo.image} alt={photo.alt} />
             </div>
-            <h3>{unit.name}</h3>
-            <strong>{unit.line}</strong>
-            <p>{unit.text}</p>
           </article>
         ))}
+      </div>
+
+      {/* One way in. There were three — one under each unit — and with the
+          units gone they would have been three links to the same page. */}
+      <div className="team-units-link">
+        <a className="text-link" href="/team" data-reveal data-reveal-delay="180">
+          Zum Kader <span>→</span>
+        </a>
       </div>
 
       <div className="team-squads">
