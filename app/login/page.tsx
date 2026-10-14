@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAdminSessionIdentity, safeAdminReturnTo } from "../lib/admin-auth";
+import { cloudflareAccessEmail } from "../lib/cf-access";
 import "./login.css";
 
 export const metadata = {
@@ -12,6 +13,7 @@ type Search = { return_to?: string; error?: string; mode?: string; detail?: stri
 
 const errorText: Record<string, string> = {
   invalid: "E-Mail oder Passwort ist nicht korrekt.",
+  sso: "Die Anmeldung \u00fcber Cloudflare konnte nicht best\u00e4tigt werden. Bitte melde dich hier an.",
   locked: "Zu viele Fehlversuche. Der Zugang ist für 15 Minuten gesperrt.",
   password: "Das Passwort muss mindestens 12 Zeichen lang sein.",
   mismatch: "Die beiden Passwörter stimmen nicht überein.",
@@ -25,8 +27,23 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
   const query = await searchParams;
   const returnTo = safeAdminReturnTo(query.return_to, "/admin");
 
-  const identity = await getAdminSessionIdentity(await headers());
+  const requestHeaders = await headers();
+  const identity = await getAdminSessionIdentity(requestHeaders);
   if (identity) redirect(returnTo);
+
+  /* ONE SIGN-IN, NOT TWO.
+     /admin sits behind Cloudflare Access, so anybody sent here from there has
+     already proved who they are. If that proof checks out, hand it straight
+     over for a session rather than asking for a password that establishes
+     nothing new.
+
+     Not when something already went wrong, and not on the registration form.
+     The handover's only way of failing is to send people back here, so trying
+     again on arrival would be a loop; and somebody who asked for the create-
+     account form asked for the form. */
+  if (!query.error && query.mode !== "register" && (await cloudflareAccessEmail(requestHeaders))) {
+    redirect(`/api/auth/access?return_to=${encodeURIComponent(returnTo)}`);
+  }
 
   const registerMode = query.mode === "register";
   const message = query.error ? errorText[query.error] ?? "Anmeldung nicht möglich." : "";

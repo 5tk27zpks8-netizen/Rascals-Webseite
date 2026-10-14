@@ -145,6 +145,44 @@ export async function registerAdminUser(email: string, password: string, display
   return { role };
 }
 
+/**
+ * The account behind an identity Cloudflare Access has already verified.
+ *
+ * Access has its own allow-list — whoever reaches /admin is somebody the club
+ * put on it — so arriving without a CMS account is not a reason to turn
+ * anybody away. It is the same deal self-registration offers: you get in, and
+ * you get the standard view until an admin widens it. What it never does is
+ * change the role of an account that already exists; an editor who signs in
+ * through Access is still an editor, and a deactivated account stays
+ * deactivated and says so.
+ *
+ * The first-admin window is asked about differently here than in
+ * registerAdminUser. There it means "no admin has a password yet", which is
+ * the right question when a password is being set. An Access account has no
+ * password at all, so asking it that way would leave the window open forever
+ * and hand the admin role to everyone who ever signed in.
+ */
+export async function accessAccountFor(email: string, displayName?: string): Promise<{ email: string } | { pending: true }> {
+  await ensureAdminAuthSchema();
+  const normalized = email.trim().toLowerCase();
+  const { DB } = bindings();
+
+  const existing = await DB.prepare("SELECT email, active FROM cms_users WHERE lower(email)=lower(?)")
+    .bind(normalized).first<Record<string, unknown>>();
+  if (existing) {
+    if (Number(existing.active ?? 0) !== 1) return { pending: true };
+    return { email: String(existing.email ?? normalized).toLowerCase() };
+  }
+
+  const admins = await DB.prepare("SELECT COUNT(*) AS total FROM cms_users WHERE role='admin' AND active=1")
+    .first<{ total: number }>();
+  const role = Number(admins?.total ?? 0) === 0 ? "admin" : "viewer";
+  const name = (displayName ?? "").trim() || normalized.split("@")[0];
+  await DB.prepare("INSERT INTO cms_users (email, display_name, role, active) VALUES (?,?,?,1)")
+    .bind(normalized, name, role).run();
+  return { email: normalized };
+}
+
 export async function hasAdminCredential(email: string): Promise<boolean> {
   await ensureAdminAuthSchema();
   const { DB } = bindings();
