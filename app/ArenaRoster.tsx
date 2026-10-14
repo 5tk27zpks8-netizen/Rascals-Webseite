@@ -2,7 +2,7 @@ import { ArenaDrive } from "./ArenaDrive";
 import { PlayerDeck, type DeckEntry } from "./PlayerDeck";
 import { EndzonePull } from "./EndzonePull";
 import type { Coach } from "./lib/coaches";
-import type { Player, PlayerUnit } from "./lib/football";
+import type { Player } from "./lib/football";
 import "./home-arena.css";
 import "./arena-roster.css";
 
@@ -29,12 +29,6 @@ import "./arena-roster.css";
  * carried the bare helmet that ships with the repository.
  */
 export const CLUB_LOGO = "/rascals-logo-768.webp";
-
-/** The two squads that get a tab of their own. */
-const SQUADS: { id: PlayerUnit; label: string }[] = [
-  { id: "offense", label: "OFFENSE" },
-  { id: "defense", label: "DEFENSE" },
-];
 
 /**
  * A coach, shaped so the squad's own card can carry them.
@@ -103,35 +97,17 @@ export function ArenaRoster({
     .sort((a, b) => a.sortOrder - b.sortOrder || a.lastName.localeCompare(b.lastName, "de"))
     .map((coach) => ({ player: asCard(coach), coach: true }));
 
-  /* Offense, Defense, and the staff in their own right — special teams no
-     longer has a tab here. Anyone carried as special teams in the CMS is
-     therefore not on this page; they still appear on /team, which lists every
-     unit. */
-  const byUnit = [
-    ...SQUADS.map((unit) => {
-      const squad = order(players.filter((player) => player.unit === unit.id));
-      return {
-        id: unit.id as string,
-        label: unit.label,
-        count: squad.length,
-        staffOnly: false,
-        entries: [...staff, ...squad.map((player) => ({ player }))] as DeckEntry[],
-      };
-    }),
-    {
-      id: "coaches",
-      label: "COACHES",
-      count: staff.length,
-      staffOnly: true,
-      entries: staff,
-    },
-  ];
+  /* ONE DRIVE, ONE SQUAD.
 
-  // Open on the unit that actually has players, so it never starts empty.
-  const initial = byUnit.reduce(
-    (best, unit) => (unit.count > best.count ? unit : best),
-    byUnit[0],
-  );
+     There were tabs here — Offense, Defense, Coaches — and a radio group
+     fixed over the foot of the page to switch between them. Three decks where
+     the club has one team, and the tab reading OFFENSE 1 next to DEFENSE 72
+     was not telling anybody anything except that the field in the CMS had
+     been left on its default.
+
+     So the drive runs past everybody once: the staff first, because that is
+     the order a squad is introduced in, then the players. */
+  const entries: DeckEntry[] = [...staff, ...order(players).map((player) => ({ player }))];
 
   return (
     <div className="drive-page roster-page">
@@ -154,43 +130,14 @@ export function ArenaRoster({
         </div>
       </header>
 
-      {/* The radios sit before the panels so the :checked sibling selectors reach them. */}
       <div className="roster-units">
-        {byUnit.map((unit) => (
-          <input
-            key={unit.id}
-            type="radio"
-            name="roster-unit"
-            id={`unit-${unit.id}`}
-            className="roster-radio"
-            defaultChecked={unit.id === initial.id}
-          />
-        ))}
-
-        {/* A radio group, not a tablist: role="tablist" without role="tab"
-            children is broken ARIA, and the inputs already say "pick one". */}
-        <div className="roster-switch" role="group" aria-label="Bereich wählen">
-          {byUnit.map((unit) => (
-            <label key={unit.id} htmlFor={`unit-${unit.id}`} className="roster-tab">
-              {unit.label}
-              <small>{unit.count}</small>
-            </label>
-          ))}
-        </div>
-
-        {byUnit.map((unit) => (
-          <section key={unit.id} className="roster-panel" data-unit={unit.id}>
-            {unit.entries.length === 0 ? (
-              <p className="roster-empty">
-                {unit.staffOnly
-                  ? "Es ist noch kein Coach hinterlegt."
-                  : "Für diese Unit ist noch kein Spieler hinterlegt."}
-              </p>
-            ) : (
-              <PlayerDeck entries={unit.entries} />
-            )}
-          </section>
-        ))}
+        <section className="roster-panel">
+          {entries.length === 0 ? (
+            <p className="roster-empty">Es ist noch niemand hinterlegt.</p>
+          ) : (
+            <PlayerDeck entries={entries} />
+          )}
+        </section>
 
         {/* No markup of its own: the end of the drive is the stadium's own
             call, hanging over the end stand. This only closes the gap to it.

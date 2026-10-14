@@ -9,14 +9,21 @@ import { siteBrand } from "../lib/brand-server";
 
 export const metadata = {
   title: "Team · Hellenstein Rascals",
-  description: "Coaches, Offense und Defense der Hellenstein Rascals.",
+  description: "Coaches und Kader der Hellenstein Rascals.",
 };
 
 export default async function TeamPage() {
   const [players, coaches] = await Promise.all([listPublicTeamPlayers(), listActiveCoaches()]);
-  const offense = players.filter((player) => player.unit === "offense");
-  const defense = players.filter((player) => player.unit === "defense");
-  const specialTeams = players.filter((player) => player.unit === "special-teams");
+  /* ONE ROSTER.
+
+     This page used to be three: Offense, Defense, Special Teams, each with
+     its own heading and its own grid, filled by the unit written against a
+     player in the CMS. That is how a squad of a hundred is organised. It is
+     not how this one plays — everybody here plays both ways — and the split
+     mostly produced a Special Teams heading over nobody and a Defense
+     heading over almost everybody, which says less than no heading at all.
+
+     So: one roster, in the order a squad is read out. */
 
   const brand = await siteBrand();
 
@@ -26,12 +33,11 @@ export default async function TeamPage() {
     <main className="team-public team-public-v2">
       <header className="team-public-head team-public-hero">
         <span>HELLENSTEIN RASCALS · 2026</span>
-        <h1>ONE TEAM.<br /><i>THREE UNITS.</i></h1>
-        <p>Die Coaches geben die Richtung vor. Offense und Defense bringen sie auf das Feld.</p>
+        <h1>ONE TEAM.<br /><i>ALL IN.</i></h1>
+        <p>Die Coaches geben die Richtung vor. Der Kader bringt sie auf das Feld.</p>
         <nav className="team-jump-nav" aria-label="Team Bereiche">
           <a href="#coaches">Coaches</a>
-          <a href="#offense">Offense</a>
-          <a href="#defense">Defense</a>
+          <a href="#kader">Kader</a>
         </nav>
 
         {/* The way into the arena. It is not a fourth jump link: those move you
@@ -75,30 +81,13 @@ export default async function TeamPage() {
           </section>
         )}
 
-        {offense.length > 0 && (
-          <section id="offense" className="team-showcase team-showcase-offense">
+        {players.length > 0 && (
+          <section id="kader" className="team-showcase team-showcase-roster">
             <div className="team-section-head">
-              <div><small>02 · MOVE THE CHAINS</small><h2>OFFENSE</h2></div>
-              <p>Tempo, Präzision und Explosivität. Die Unit, die Raum gewinnt und Punkte auf das Board bringt.</p>
+              <div><small>02 · ALL IN</small><h2>KADER</h2></div>
+              <p>Jeder Name, eine Mannschaft. Wer hier steht, spielt da, wo das Team ihn braucht.</p>
             </div>
-            <div className="team-roster-grid">{offense.map((player) => <RascalsPlayerCard key={player.id} player={player} />)}</div>
-          </section>
-        )}
-
-        {defense.length > 0 && (
-          <section id="defense" className="team-showcase team-showcase-defense">
-            <div className="team-section-head">
-              <div><small>03 · DEFEND THE STANDARD</small><h2>DEFENSE</h2></div>
-              <p>Pressure, Disziplin und Physicality. Die Unit, die Drives stoppt und Momentum dreht.</p>
-            </div>
-            <div className="team-roster-grid">{defense.map((player) => <RascalsPlayerCard key={player.id} player={player} />)}</div>
-          </section>
-        )}
-
-        {specialTeams.length > 0 && (
-          <section className="team-showcase team-showcase-special">
-            <div className="team-section-head compact"><div><small>04 · FIELD POSITION</small><h2>SPECIAL TEAMS</h2></div></div>
-            <div className="team-roster-grid">{specialTeams.map((player) => <RascalsPlayerCard key={player.id} player={player} />)}</div>
+            <div className="team-roster-grid">{players.map((player) => <RascalsPlayerCard key={player.id} player={player} />)}</div>
           </section>
         )}
 

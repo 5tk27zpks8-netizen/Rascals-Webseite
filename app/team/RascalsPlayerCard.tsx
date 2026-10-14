@@ -1,4 +1,5 @@
 import type { Player } from "../lib/football";
+import { positionLine, positionName } from "../lib/positions";
 /* The card carries its own look. It used to be pulled in by the two team
    pages instead, which held for as long as those were the only places the
    card appeared — on the Arena roster, where nothing imports it, the card
@@ -25,6 +26,14 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
         ? "pc-name pc-name-medium"
         : "pc-name";
   const inactive = !player.active;
+  /* Written out — "Linebacker", not "LB". See lib/positions. The two halves
+     stay separate so the line can only ever break between them: set as one
+     string, "Wide Receiver / Defensive End" broke after the slash and again
+     inside the second position, three lines deep, and shoved the name and the
+     number up over the photograph. */
+  const position = positionName(player.position);
+  const secondary = positionName(player.secondaryPosition);
+  const positionLabel = positionLine(player.position, player.secondaryPosition);
 
   const content = (
     <>
@@ -89,8 +98,11 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
         <div className="rpc-number">{number}</div>
         <div className="rpc-identity">
           <div className="rpc-position">
-            {player.position}
-            {player.secondaryPosition ? ` / ${player.secondaryPosition}` : ""}
+            <span>{position}</span>
+            {/* The spaces are the whole point: two nowrap spans with nothing
+                between them have no break opportunity at all, so the line
+                stopped wrapping and simply ran out of the card instead. */}
+            {secondary && <>{" "}<i aria-hidden="true">/</i>{" "}<span>{secondary}</span></>}
           </div>
           <h3 className={nameClass}>{fullName}</h3>
         </div>
@@ -113,7 +125,7 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
     return (
       <div
         className="rascals-player-card is-inactive"
-        aria-label={`${fullName}, ${player.position}, inaktiv`}
+        aria-label={`${fullName}, ${positionLabel}, inaktiv`}
         data-template={PLAYER_CARD_TEMPLATE}
       >
         {content}
@@ -125,7 +137,7 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
     <a
       href={`/team/${player.slug}`}
       className="rascals-player-card"
-      aria-label={`${fullName}, ${player.position}`}
+      aria-label={`${fullName}, ${positionLabel}`}
       data-template={PLAYER_CARD_TEMPLATE}
     >
       {content}

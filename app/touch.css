@@ -190,9 +190,6 @@
 
      Keyed to the pointer rather than to a width, because it is the same
      device either way up, and a tablet is one too. */
-  html .roster-tab small {
-    font-size: 0.7rem;
-  }
   html footer > small,
   html .sb-footer-grid > small {
     font-size: 0.72rem;

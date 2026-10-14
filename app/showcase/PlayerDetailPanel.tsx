@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Player, PlayerStat } from "../lib/football";
+import { positionName } from "../lib/positions";
 
 /**
  * THE DOSSIER.
@@ -159,7 +160,7 @@ export function PlayerDetailPanel({
      panel that answers every question with an em dash looks broken rather than
      sparse. Empty fields are left out and the grid closes up around them. */
   if (player.position) {
-    facts.push({ label: coach ? "Rolle" : "Position", value: player.position });
+    facts.push({ label: coach ? "Rolle" : "Position", value: coach ? player.position : positionName(player.position) });
   }
   if (player.secondaryPosition) {
     facts.push({ label: "Auch", value: player.secondaryPosition });

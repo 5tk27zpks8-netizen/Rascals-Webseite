@@ -250,7 +250,7 @@ function JoinCta() {
 }
 
 function Footer({ brand }: { brand: SiteBrand }) {
-  return <footer><div className="footer-brand"><img src={brand.logo} alt={`${brand.top} ${brand.bottom}`} /><p>American Football in Heidenheim.<br />Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</p></div><div><b>EXPLORE</b>{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div><div><b>FOLLOW</b><a href="https://www.instagram.com/hellenstein_rascals/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="https://www.facebook.com/HellensteinRascals/" target="_blank" rel="noreferrer">Facebook ↗</a><a href="mailto:football@hsb1846.de">E-Mail ↗</a></div><div><b>HOME FIELD</b><p>Heeracker 22<br />89522 Heidenheim</p></div><small>© 2026 HELLENSTEIN RASCALS · ALL GRIT. ALL HEART.</small></footer>;
+  return <footer><div className="footer-brand"><img src={brand.logo} alt={`${brand.top} ${brand.bottom}`} /><p>American Football in Heidenheim.<br />Eine Abteilung des Heidenheimer Sportbund 1846 e.V.</p></div><div><b>EXPLORE</b>{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div><div><b>FOLLOW</b><a href="https://www.instagram.com/hellenstein_rascals/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="mailto:football@hsb1846.de">E-Mail ↗</a></div><div><b>HOME FIELD</b><p>Heeracker 22<br />89522 Heidenheim</p></div><small>© 2026 HELLENSTEIN RASCALS · ALL GRIT. ALL HEART.</small></footer>;
 }
 
 /**

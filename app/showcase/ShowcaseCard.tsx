@@ -1,6 +1,7 @@
 "use client";
 
 import type { Player } from "../lib/football";
+import { positionName } from "../lib/positions";
 
 /**
  * One player, as a card in the fly-through.
@@ -48,7 +49,7 @@ export function ShowcaseCard({
       type="button"
       className={`sc-card${coach ? " is-coach" : ""}${player.portrait ? "" : " is-bare"}`}
       onClick={() => onOpen(player)}
-      aria-label={[fullName, player.position].filter(Boolean).join(", ") + ". Details öffnen"}
+      aria-label={[fullName, coach ? player.position : positionName(player.position)].filter(Boolean).join(", ") + ". Details öffnen"}
     >
       {/* The frame: a hairline plate with the corner cut taken out of it. */}
       <span className="sc-frame" aria-hidden="true" />
@@ -80,7 +81,7 @@ export function ShowcaseCard({
 
       <span className="sc-body">
         <span className="sc-position">
-          {coach ? player.position || "COACH" : player.position}
+          {coach ? player.position || "COACH" : positionName(player.position)}
           {player.captain ? <b className="sc-tag">C</b> : null}
           {player.rookie && !player.captain ? <b className="sc-tag is-rookie">R</b> : null}
         </span>

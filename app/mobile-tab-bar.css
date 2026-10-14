@@ -141,12 +141,6 @@
     padding-bottom: calc(56px + var(--safe-b));
   }
 
-  /* The roster's own switcher sits directly on top of the bar instead of
-     underneath it, and stops paying for the home indicator twice. */
-  .roster-switch {
-    bottom: calc(56px + var(--safe-b)) !important;
-    padding-bottom: 8px !important;
-  }
   .deck-stage {
     padding-bottom: 132px;
   }

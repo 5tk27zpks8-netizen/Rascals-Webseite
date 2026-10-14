@@ -88,7 +88,6 @@ export function BuilderFooterEnhancer() {
       <div className="sb-footer-column">
         <b>FOLLOW</b>
         <a href="https://www.instagram.com/hellenstein_rascals/" target="_blank" rel="noreferrer">Instagram ↗</a>
-        <a href="https://www.facebook.com/HellensteinRascals/" target="_blank" rel="noreferrer">Facebook ↗</a>
         <a href="mailto:football@hsb1846.de">E-Mail ↗</a>
       </div>
 

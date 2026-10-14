@@ -38,79 +38,11 @@ html:has(.roster-page) {
   overflow-x: clip;
 }
 
-/* ---------- Unit switch ---------- */
-
-.roster-radio {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-/* Bare labels over the pitch — no plate, no border, no blur panel. */
-.roster-switch {
-  position: fixed;
-  left: 50%;
-  bottom: clamp(20px, 4vh, 42px);
-  z-index: 20;
-  display: flex;
-  gap: clamp(14px, 2vw, 32px);
-  transform: translateX(-50%);
-}
-
-.roster-tab {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
-  color: rgba(255, 255, 255, 0.46);
-  font-family: var(--font-display, Impact, sans-serif);
-  font-size: clamp(0.72rem, 0.9vw, 0.86rem);
-  font-weight: 950;
-  letter-spacing: 0.18em;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
-  cursor: pointer;
-  transition: color 0.18s ease;
-}
-.roster-tab small {
-  font-size: 0.74em;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  opacity: 0.6;
-}
-.roster-tab:hover {
-  color: rgba(255, 255, 255, 0.82);
-}
-
-/* The checked radio lights its own label and shows its own panel, matched by
-   index: radios, labels and panels are emitted in the same order. */
-.roster-radio:nth-of-type(1):checked ~ .roster-switch .roster-tab:nth-child(1),
-.roster-radio:nth-of-type(2):checked ~ .roster-switch .roster-tab:nth-child(2),
-.roster-radio:nth-of-type(3):checked ~ .roster-switch .roster-tab:nth-child(3) {
-  color: #fff;
-}
-.roster-radio:nth-of-type(1):checked ~ .roster-switch .roster-tab:nth-child(1) small,
-.roster-radio:nth-of-type(2):checked ~ .roster-switch .roster-tab:nth-child(2) small,
-.roster-radio:nth-of-type(3):checked ~ .roster-switch .roster-tab:nth-child(3) small {
-  color: var(--rascals-red, #e7192d);
-  opacity: 1;
-}
-
-/* The control itself is off-screen, so the label carries the focus ring. */
-.roster-radio:focus-visible ~ .roster-switch .roster-tab {
-  outline: 2px solid rgba(255, 255, 255, 0.45);
-  outline-offset: 4px;
-}
+/* The switch that used to be here is gone with the units it switched between
+   — there is one squad, so there is nothing to pick. What is left is the one
+   panel it used to reveal, which no longer has to be revealed by anything. */
 
 .roster-panel {
-  display: none;
-}
-.roster-radio:nth-of-type(1):checked ~ .roster-panel:nth-of-type(1),
-.roster-radio:nth-of-type(2):checked ~ .roster-panel:nth-of-type(2),
-.roster-radio:nth-of-type(3):checked ~ .roster-panel:nth-of-type(3) {
   display: block;
 }
 
@@ -269,17 +201,6 @@ html:has(.roster-page) {
   pointer-events: none;
 }
 
-@media (max-width: 760px) {
-  .roster-switch {
-    bottom: 14px;
-    gap: 14px;
-  }
-  .roster-tab {
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
-  }
-}
-
 /* ==========================================================================
    THE VIEW FOR EVERYTHING THAT IS NOT DRIVING
 
@@ -345,30 +266,6 @@ html:has(.roster-page) {
     display: none;
   }
 
-  /* The switcher is the only navigation on this page, so it gets a real bar
-     rather than three words floating over the content. */
-  .roster-switch {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    /* The base rule centres this with left:50% AND a translate. Setting
-       left/right alone leaves the translate in place, which drags the whole
-       bar half a screen off the left edge — which is exactly what it did. */
-    transform: none;
-    gap: 0;
-    padding: 8px calc(6px + var(--safe-r)) calc(8px + var(--safe-b)) calc(6px + var(--safe-l));
-    background: rgba(5, 9, 18, 0.93);
-    backdrop-filter: blur(14px);
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-  }
-  .roster-tab {
-    flex: 1;
-    justify-content: center;
-    /* 44px is the floor a thumb needs, and these were nowhere near it. */
-    min-height: 44px;
-    padding: 0 6px;
-    font-size: 0.7rem;
-  }
 }
 
 /* Two across once there is room for two, which halves the scroll for a squad
