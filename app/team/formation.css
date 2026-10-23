@@ -1,0 +1,513 @@
+/* ============================================================
+   FORMATION — the roster laid out on a field that pans sideways.
+
+   The section pins and the track slides (RascalsMotion's data-pan
+   handler), so the whole formation is walked through at full size
+   instead of being squeezed into one screen. Below 900px the pin
+   stands down and the same track becomes a swipeable strip.
+   ============================================================ */
+
+.fm {
+  --fm-red: var(--rascals-red, #e7192d);
+  --fm-ink: #050d18;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(231, 25, 45, 0.14), transparent 55%),
+    linear-gradient(180deg, #071827 0%, #050d18 60%, #040b14 100%);
+  color: #fff;
+}
+
+.fm-track {
+  display: flex;
+  align-items: stretch;
+  min-height: 100vh;
+  min-height: 100dvh;
+  will-change: transform;
+}
+
+/* ---------- Opening panel ---------- */
+
+.fm-intro {
+  flex: 0 0 min(88vw, 620px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 0 clamp(24px, 4vw, 64px);
+}
+
+.fm-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--fm-red);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.24em;
+}
+.fm-eyebrow::before {
+  content: "";
+  width: 34px;
+  height: 3px;
+  background: var(--fm-red);
+}
+
+.fm-intro h2 {
+  margin: 0;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(2.6rem, 5vw, 4.6rem);
+  font-weight: 950;
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.fm-intro h2 i {
+  color: var(--fm-red);
+  font-style: italic;
+}
+
+.fm-intro p {
+  max-width: 42ch;
+  margin: 0;
+  color: #9fb0c2;
+  line-height: 1.6;
+}
+
+.fm-legend {
+  display: flex;
+  gap: 20px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8194a8;
+}
+.fm-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.fm-legend i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.fm-key-filled {
+  background: var(--fm-red);
+}
+.fm-key-open {
+  border: 2px dashed rgba(255, 255, 255, 0.45);
+}
+
+.fm-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  color: #6f8196;
+}
+.fm-arrow {
+  position: relative;
+  width: 74px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--fm-red), rgba(231, 25, 45, 0));
+}
+.fm-arrow::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -4px;
+  border: 5px solid transparent;
+  border-left-color: rgba(231, 25, 45, 0.5);
+}
+
+/* ---------- The field ---------- */
+
+.fm-field {
+  position: relative;
+  flex: 0 0 230vw;
+  isolation: isolate;
+  margin: clamp(26px, 3.5vh, 52px) 0;
+  border-top: 2px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(10, 30, 22, 0.55), rgba(6, 18, 14, 0.75));
+}
+
+/* The groups are only a semantic wrapper; they span the field so the markers
+   inside them measure their percentages against the field itself. */
+.fm .fm-field .fm-group,
+.fm .fm-field .fm-zones {
+  position: absolute;
+  inset: 0;
+}
+
+/* Zone names read as ground markings, well behind the players. */
+.fm-zones span {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(2.5rem, 4.4vw, 5rem);
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.045);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.fm-los {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 42.7%;
+  z-index: 1;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(255, 255, 255, 0.5) 12%,
+    rgba(255, 255, 255, 0.5) 88%,
+    transparent
+  );
+}
+.fm-los span {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(5, 13, 24, 0.85);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  color: #c3d2e0;
+  white-space: nowrap;
+}
+
+/* ---------- Player markers ---------- */
+
+.fm-slot {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 120px;
+  transform: translate(-50%, -50%);
+  text-decoration: none;
+  color: inherit;
+}
+
+.fm-disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  overflow: hidden;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: 1.32rem;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+.fm-disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fm-slot-filled .fm-disc {
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  background: linear-gradient(160deg, var(--fm-red), #9d0f20);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.fm-slot-filled:hover .fm-disc,
+.fm-slot-filled:focus-visible .fm-disc {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(231, 25, 45, 0.4);
+}
+
+.fm-slot-open .fm-disc {
+  border: 2px dashed rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.05rem;
+}
+
+/* Captain badge */
+.fm-c {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--fm-ink);
+  font-size: 0.62rem;
+  font-weight: 950;
+}
+
+/* Backups stack behind the starter, receding into the field. */
+.fm-depth {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  margin-left: -27px;
+  width: 54px;
+  height: 54px;
+  pointer-events: none;
+}
+.fm-depth i {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  background: rgba(231, 25, 45, 0.16);
+}
+
+.fm-tag {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 13, 24, 0.82);
+  text-align: center;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.fm-tag b {
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  line-height: 1.12;
+}
+.fm-tag small {
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--fm-red);
+  text-transform: uppercase;
+}
+.fm-tag-open {
+  border-style: dashed;
+  background: rgba(5, 13, 24, 0.6);
+}
+.fm-tag-open b {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.63rem;
+  font-weight: 800;
+}
+.fm-tag-open small {
+  color: rgba(255, 255, 255, 0.34);
+}
+
+/* ---------- Sideline ---------- */
+
+/* Sized by its content rather than the viewport: inside a pinned section the
+   wheel drives the horizontal pan, so a vertically scrolling list would strand
+   everyone below the fold. The roster grows sideways in columns instead. */
+.fm-bench {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: clamp(28px, 3vw, 56px);
+  padding: clamp(40px, 6vh, 80px) clamp(28px, 4vw, 64px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+.fm-bench-head {
+  flex: 0 0 min(70vw, 340px);
+}
+
+.fm-bench-head small {
+  color: var(--fm-red);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+.fm-bench-head h3 {
+  margin: 10px 0 12px;
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(1.9rem, 3.2vw, 3rem);
+  font-weight: 950;
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+.fm-bench-head h3 i {
+  color: var(--fm-red);
+  font-style: italic;
+}
+.fm-bench-head p {
+  max-width: 46ch;
+  margin: 0;
+  color: #93a5b8;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.fm-bench-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(8, auto);
+  grid-auto-columns: 186px;
+  gap: 9px;
+}
+
+.fm-bench-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.025);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.fm-bench-card:hover,
+.fm-bench-card:focus-visible {
+  border-color: rgba(231, 25, 45, 0.55);
+  background: rgba(231, 25, 45, 0.08);
+}
+.fm-bench-disc {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #b9c8d7;
+}
+.fm-bench-disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fm-bench-card b {
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* ---------- Closing tally ---------- */
+
+.fm-outro {
+  flex: 0 0 min(80vw, 420px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 clamp(28px, 4vw, 64px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+.fm-outro strong {
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(3.4rem, 7vw, 6rem);
+  font-weight: 950;
+  line-height: 0.82;
+  color: var(--fm-red);
+}
+.fm-outro span {
+  max-width: 24ch;
+  color: #93a5b8;
+  line-height: 1.5;
+}
+.fm-outro-link {
+  margin-top: 8px;
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 2px solid var(--fm-red);
+  padding-bottom: 4px;
+  align-self: flex-start;
+}
+
+/* ---------- Narrow screens ----------
+   RascalsMotion skips the pin below 900px, so the same track has to be
+   reachable by hand. It becomes an ordinary horizontal scroller, and the
+   field is narrowed so the formation is not an endless swipe. */
+
+@media (max-width: 900px) {
+  .fm {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  .fm-track {
+    min-height: 0;
+  }
+  .fm-intro,
+  .fm-bench,
+  .fm-outro {
+    scroll-snap-align: start;
+    padding-top: 44px;
+    padding-bottom: 44px;
+  }
+  /* The markers do not shrink with the field, so a narrower field would put
+     them on top of each other. It keeps a fixed size that holds the spacing
+     rule, and the strip is swiped instead. */
+  .fm-field {
+    flex-basis: 1500px;
+    height: 640px;
+    margin: 24px 0;
+  }
+  .fm-slot {
+    width: 92px;
+    gap: 4px;
+  }
+  .fm-disc {
+    width: 44px;
+    height: 44px;
+    font-size: 1.05rem;
+  }
+  .fm-slot-open .fm-disc {
+    font-size: 0.85rem;
+  }
+  .fm-tag {
+    padding: 3px 6px;
+  }
+  .fm-tag b {
+    font-size: 0.6rem;
+  }
+  .fm-tag-open b {
+    font-size: 0.55rem;
+  }
+  .fm-tag small {
+    font-size: 0.5rem;
+  }
+  .fm-depth {
+    margin-left: -22px;
+    width: 44px;
+    height: 44px;
+  }
+  .fm-bench-grid {
+    max-height: none;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-slot-filled .fm-disc {
+    transition: none;
+  }
+}

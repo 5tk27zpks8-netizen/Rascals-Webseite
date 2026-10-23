@@ -1,4 +1,4 @@
-<section class="cart-page section-shell page-width">
+<section class="cart-page section-shell page-width" data-cart-guard>
   <header class="page-title reveal"><p class="eyebrow eyebrow--red">LOCKER ROOM</p><h1>{{ 'cart.title' | t }}</h1></header>
   {%- if cart.empty? -%}
     <div class="empty-state reveal"><span class="empty-state__ball" aria-hidden="true"></span><h2>{{ 'cart.empty' | t }}</h2><a class="button button--red" href="{{ routes.all_products_collection_url }}">{{ 'cart.continue_shopping' | t }} →</a></div>

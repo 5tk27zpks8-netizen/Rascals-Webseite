@@ -13,4 +13,20 @@
   {%- if price_target.unit_price_measurement -%}
     <small>{{ price_target.unit_price | money }} / {{ price_target.unit_price_measurement.reference_value }}{{ price_target.unit_price_measurement.reference_unit }}</small>
   {%- endif -%}
+  {%- comment -%}
+    Every variant's price, already formatted by the shop's own money format.
+
+    Switching variant used to leave this number alone: the picker swapped the
+    id behind the buy button and the figure above it stayed where it started.
+    That was survivable while variants only differed by size. It is not
+    survivable with a variant that costs four euro more — the surcharge would
+    never appear until the cart.
+
+    Formatted here rather than in script because the money format is a shop
+    setting (currency, separators, whether tax is shown), and a second
+    implementation of it in JavaScript is a second thing to get wrong.
+  {%- endcomment -%}
+  {%- if product.variants.size > 1 -%}
+    <script type="application/json" data-variant-prices>{ {%- for variant in product.variants -%}"{{ variant.id }}": {{ variant.price | money | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%} }</script>
+  {%- endif -%}
 </div>

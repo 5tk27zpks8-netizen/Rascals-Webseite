@@ -1,4 +1,23 @@
 {%- liquid
+  comment
+    WHICH ARTICLES OFFER PRINTING IS A TAG.
+
+    A shirt with a number on it costs four euro more, and in Shopify only a
+    variant can make a line cost more — line item properties, which is what
+    the number itself is, carry text and never touch a price.
+
+    Building the surcharge out of variants would mean an extra product option
+    and a doubled variant list on every article that offers printing. That is
+    a lot of admin work to say yes to one article, so the surcharge is a
+    second line instead: a four euro "Veredelung" product added alongside, in
+    the same request, at the same quantity. Choosing an article is then one
+    tag.
+
+    The cost of that choice is the extra cart line, and it has to be looked
+    after: remove the shirt and the four euro must go with it. theme.js does
+    that on the cart page.
+  endcomment
+
   assign current_variant = product.selected_or_first_available_variant
   assign product_form_id = 'ProductForm-' | append: section.id
 -%}
@@ -62,6 +81,86 @@
                 {%- if block.settings.show_dynamic_checkout -%}{{ form | payment_button }}{%- endif -%}
               {% endform %}
             </div>
+          {%- when 'personalisation' -%}
+            {%- liquid
+              assign offers_print = false
+              assign print_tag = block.settings.tag | strip | downcase
+              if print_tag != blank
+                for tag in product.tags
+                  assign tag_key = tag | strip | downcase
+                  if tag_key == print_tag
+                    assign offers_print = true
+                  endif
+                endfor
+              endif
+              assign addon = block.settings.addon
+              assign addon_variant = addon.first_available_variant | default: addon.variants.first
+            -%}
+            {%- if offers_print and addon_variant -%}
+              <div class="personalise" {{ block.shopify_attributes }}
+                   data-personalise
+                   data-addon-id="{{ addon_variant.id }}"
+                   data-addon-title="{{ addon.title | escape }}"
+                   data-product-title="{{ product.title | escape }}">
+                <div class="personalise__head">
+                  <span class="eyebrow eyebrow--red">{{ block.settings.heading }}</span>
+                  <span class="personalise__price">+{{ addon_variant.price | money }}</span>
+                </div>
+                {%- if block.settings.note != blank -%}<p class="personalise__note">{{ block.settings.note }}</p>{%- endif -%}
+
+                <div class="personalise__kinds" role="radiogroup" aria-label="{{ block.settings.heading | escape }}">
+                  {%- assign kinds = 'off|Ohne,number|Nummer,initials|Initialen,position|Position' | split: ',' -%}
+                  {%- for kind in kinds -%}
+                    {%- assign parts = kind | split: '|' -%}
+                    <label class="personalise__kind">
+                      <input type="radio" name="Personalise-{{ section.id }}" value="{{ parts.first }}" data-personalise-kind{% if forloop.first %} checked{% endif %}>
+                      <span>{{ parts.last }}</span>
+                    </label>
+                  {%- endfor -%}
+                </div>
+
+                <div class="personalise__fields" data-personalise-fields hidden>
+                  <label class="personalise__field" data-personalise-field="number" hidden>
+                    <span>{{ block.settings.label_number }}</span>
+                    <input type="text" inputmode="numeric" autocomplete="off" maxlength="2" placeholder="{{ block.settings.placeholder_number | escape }}" data-personalise-value disabled>
+                  </label>
+                  <label class="personalise__field" data-personalise-field="initials" hidden>
+                    <span>{{ block.settings.label_initials }}</span>
+                    <input type="text" autocomplete="off" maxlength="4" placeholder="{{ block.settings.placeholder_initials | escape }}" data-personalise-value disabled>
+                  </label>
+                  <label class="personalise__field" data-personalise-field="position" hidden>
+                    <span>{{ block.settings.label_position }}</span>
+                    <select data-personalise-value disabled>
+                      {%- assign positions = block.settings.positions | newline_to_br | split: '<br />' -%}
+                      {%- for position in positions -%}
+                        {%- assign position_value = position | strip -%}
+                        {%- if position_value != blank -%}<option value="{{ position_value | escape }}">{{ position_value }}</option>{%- endif -%}
+                      {%- endfor -%}
+                    </select>
+                  </label>
+                  <label class="personalise__field" data-personalise-field="placement" hidden>
+                    <span>{{ block.settings.label_placement }}</span>
+                    <select data-personalise-placement disabled>
+                      {%- assign placements = block.settings.placements | newline_to_br | split: '<br />' -%}
+                      {%- for placement in placements -%}
+                        {%- assign placement_value = placement | strip -%}
+                        {%- if placement_value != blank -%}<option value="{{ placement_value | escape }}">{{ placement_value }}</option>{%- endif -%}
+                      {%- endfor -%}
+                    </select>
+                  </label>
+                  <p class="personalise__preview" data-personalise-preview aria-live="polite"></p>
+                  <p class="personalise__error" data-personalise-error role="alert" hidden></p>
+                </div>
+
+                {%- comment -%}
+                  What is printed travels as line item properties and reaches
+                  the order and the packing slip, which is where whoever does
+                  the printing reads it. They are not form fields: the shirt
+                  and the four euro are two lines and the cart only takes both
+                  in one request if it is made from script.
+                {%- endcomment -%}
+              </div>
+            {%- endif -%}
           {%- when 'description' -%}<div class="product-description rte" {{ block.shopify_attributes }}>{{ product.description }}</div>
           {%- when 'custom_liquid' -%}<div class="rte" {{ block.shopify_attributes }}>{{ block.settings.custom_liquid }}</div>
           {%- when 'trust' -%}<div class="trust-row" {{ block.shopify_attributes }}><span>✓ SICHERE ZAHLUNG</span><span>↗ SCHNELLER VERSAND</span><span>★ TEAM OFFICIAL</span></div>
@@ -76,16 +175,152 @@
   "name": "Product information",
   "settings": [],
   "blocks": [
-    { "type": "@app" },
-    { "type": "vendor", "name": "Anbieter", "limit": 1 },
-    { "type": "title", "name": "Heading", "limit": 1 },
-    { "type": "price", "name": "Preis", "limit": 1 },
-    { "type": "variant_picker", "name": "Variantenauswahl", "limit": 1 },
-    { "type": "quantity", "name": "Anzahl", "limit": 1 },
-    { "type": "buy_buttons", "name": "Kaufbuttons", "limit": 1, "settings": [{ "type": "checkbox", "id": "show_dynamic_checkout", "label": "Dynamischen Checkout anzeigen", "default": true }] },
-    { "type": "description", "name": "Produktbeschreibung", "limit": 1 },
-    { "type": "trust", "name": "Vertrauenspunkte", "limit": 1 },
-    { "type": "custom_liquid", "name": "Custom Liquid", "settings": [{ "type": "liquid", "id": "custom_liquid", "label": "Custom Liquid" }] }
+    {
+      "type": "@app"
+    },
+    {
+      "type": "vendor",
+      "name": "Anbieter",
+      "limit": 1
+    },
+    {
+      "type": "title",
+      "name": "Heading",
+      "limit": 1
+    },
+    {
+      "type": "price",
+      "name": "Preis",
+      "limit": 1
+    },
+    {
+      "type": "variant_picker",
+      "name": "Variantenauswahl",
+      "limit": 1
+    },
+    {
+      "type": "quantity",
+      "name": "Anzahl",
+      "limit": 1
+    },
+    {
+      "type": "buy_buttons",
+      "name": "Kaufbuttons",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "show_dynamic_checkout",
+          "label": "Dynamischen Checkout anzeigen",
+          "default": true
+        }
+      ]
+    },
+    {
+      "type": "personalisation",
+      "name": "Veredelung (Nummer / Initialen / Position)",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Erscheint nur bei Artikeln mit dem unten eingetragenen Tag. Der Aufpreis ist der Preis des gewählten Zusatzartikels — hier wird kein Betrag eingetragen."
+        },
+        {
+          "type": "text",
+          "id": "tag",
+          "label": "Artikel-Tag",
+          "default": "veredelung",
+          "info": "Diesen Tag im Shopify-Admin bei jedem Artikel setzen, der veredelt werden kann."
+        },
+        {
+          "type": "product",
+          "id": "addon",
+          "label": "Zusatzartikel für den Aufpreis",
+          "info": "Ein Produkt „Veredelung“ zu 4 €. Wird zusammen mit dem Trikot in den Warenkorb gelegt."
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "Überschrift",
+          "default": "Veredelung"
+        },
+        {
+          "type": "text",
+          "id": "note",
+          "label": "Hinweis",
+          "default": "Nummer, Initialen oder Position — dein Name auf dem Trikot."
+        },
+        {
+          "type": "text",
+          "id": "label_number",
+          "label": "Beschriftung: Nummer",
+          "default": "Nummer"
+        },
+        {
+          "type": "text",
+          "id": "placeholder_number",
+          "label": "Platzhalter: Nummer",
+          "default": "z. B. 89"
+        },
+        {
+          "type": "text",
+          "id": "label_initials",
+          "label": "Beschriftung: Initialen",
+          "default": "Initialen"
+        },
+        {
+          "type": "text",
+          "id": "placeholder_initials",
+          "label": "Platzhalter: Initialen",
+          "default": "z. B. CG"
+        },
+        {
+          "type": "text",
+          "id": "label_position",
+          "label": "Beschriftung: Position",
+          "default": "Position"
+        },
+        {
+          "type": "textarea",
+          "id": "positions",
+          "label": "Positionen (eine pro Zeile)",
+          "default": "QB\nRB\nFB\nWR\nTE\nOL\nC\nG\nT\nDL\nDE\nDT\nNT\nLB\nMLB\nILB\nOLB\nCB\nDB\nFS\nSS\nK\nP\nLS"
+        },
+        {
+          "type": "text",
+          "id": "label_placement",
+          "label": "Beschriftung: Platzierung",
+          "default": "Platzierung"
+        },
+        {
+          "type": "textarea",
+          "id": "placements",
+          "label": "Platzierungen (eine pro Zeile)",
+          "default": "Brust links\nBrust rechts\nÄrmel links\nÄrmel rechts\nNacken\nRücken groß"
+        }
+      ]
+    },
+    {
+      "type": "description",
+      "name": "Produktbeschreibung",
+      "limit": 1
+    },
+    {
+      "type": "trust",
+      "name": "Vertrauenspunkte",
+      "limit": 1
+    },
+    {
+      "type": "custom_liquid",
+      "name": "Custom Liquid",
+      "settings": [
+        {
+          "type": "liquid",
+          "id": "custom_liquid",
+          "label": "Custom Liquid"
+        }
+      ]
+    }
   ]
 }
 {% endschema %}

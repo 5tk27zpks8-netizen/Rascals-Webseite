@@ -9,6 +9,10 @@ const LEGACY_LOGO_SELECTORS = [
 
 const STYLE_ID = "legacy-builder-header-unifier";
 
+function setStyleIfChanged(element: HTMLElement, property: string, value: string, priority: "important") {
+  if (element.style.getPropertyValue(property) !== value) element.style.setProperty(property, value, priority);
+}
+
 const unifiedHeaderCss = `
 .site-header.legacy-unified-header{
   position:sticky!important;
@@ -19,8 +23,16 @@ const unifiedHeaderCss = `
   align-items:center!important;
   justify-content:space-between!important;
   height:auto!important;
-  min-height:112px!important;
-  padding:0 4vw!important;
+  min-height:96px!important;
+  /* The page fills the glass now (viewport-fit=cover in the root layout), so
+     this bar's top edge is behind the status bar and the notch on a phone that
+     has one, and behind the rounded corner on whichever side is up in
+     landscape. Every inset resolves to zero on hardware without them, so this
+     is the same bar on a desktop as it always was. The declarations stay
+     !important because every one in this block is: they are injected over
+     stylesheets that already styled this element, and a single non-important
+     padding here would simply lose. */
+  padding:var(--safe-t) calc(4vw + var(--safe-r)) 0 calc(4vw + var(--safe-l))!important;
   border-bottom:1px solid rgba(255,255,255,.08)!important;
   background:#050d18!important;
   color:#fff!important;
@@ -30,17 +42,19 @@ const unifiedHeaderCss = `
 .site-header.legacy-unified-header .brand{
   display:flex!important;
   align-items:center!important;
-  gap:12px!important;
+  /* Same gap as the builder lockup: at 12px the wordmark sat 3px closer to the
+     mark here than it does on the homepage. */
+  gap:15px!important;
   min-width:0!important;
   color:inherit!important;
   text-decoration:none!important;
   transform:none!important;
 }
 .site-header.legacy-unified-header .brand img{
-  width:96px!important;
-  height:96px!important;
-  flex:0 0 96px!important;
-  max-width:none!important;
+  width:auto!important;
+  height:78px!important;
+  flex:0 0 auto!important;
+  max-width:140px!important;
   object-fit:contain!important;
 }
 .site-header.legacy-unified-header .brand span{
@@ -53,22 +67,20 @@ const unifiedHeaderCss = `
 .site-header.legacy-unified-header .brand strong{
   width:auto!important;
   color:#fff!important;
-  font-family:Inter,Arial,sans-serif!important;
-  font-size:.72rem!important;
+  font-family:var(--font-display,Inter,Arial,sans-serif)!important;
+  font-size:.84rem!important;
   font-weight:950!important;
-  line-height:1!important;
-  letter-spacing:.16em!important;
+  letter-spacing:.18em!important;
   text-align:left!important;
   text-transform:uppercase!important;
 }
 .site-header.legacy-unified-header .brand em{
   color:#e7192d!important;
-  font-family:Inter,Arial,sans-serif!important;
-  font-size:1.1rem!important;
+  font-family:var(--font-display,Inter,Arial,sans-serif)!important;
+  font-size:1.9rem!important;
   font-style:italic!important;
   font-weight:950!important;
-  line-height:1!important;
-  letter-spacing:0!important;
+  letter-spacing:-.01em!important;
   text-transform:uppercase!important;
 }
 .site-header.legacy-unified-header .main-nav{
@@ -103,21 +115,61 @@ const unifiedHeaderCss = `
   box-shadow:0 8px 22px rgba(231,25,45,.22)!important;
   transform:none!important;
 }
-.site-header.legacy-unified-header .menu-button{
-  display:none!important;
-}
-@media(max-width:780px){
+@media(max-width:900px){
   .site-header.legacy-unified-header{
-    min-height:88px!important;
-    padding:0 18px!important;
+    min-height:78px!important;
+    padding:var(--safe-t) calc(18px + var(--safe-r)) 0 calc(18px + var(--safe-l))!important;
   }
   .site-header.legacy-unified-header .brand img{
-    width:74px!important;
-    height:74px!important;
-    flex-basis:74px!important;
+    width:auto!important;
+    height:58px!important;
+    flex-basis:auto!important;
+    max-width:104px!important;
   }
-  .site-header.legacy-unified-header .brand strong{font-size:.62rem!important;}
-  .site-header.legacy-unified-header .brand em{font-size:.96rem!important;}
+  .site-header.legacy-unified-header .brand strong{font-size:.76rem!important;letter-spacing:.16em!important;}
+  .site-header.legacy-unified-header .brand em{font-size:1.45rem!important;}
+
+  /* THE NAV HAS TO COLLAPSE AGAIN.
+
+     The rule further up forces display:flex with no media query at all. That
+     is right for a desktop bar and wrong everywhere else, and because it
+     carries !important nothing in the shared stylesheets could take it back:
+     on a phone every legacy page loaded with its menu already open, a column
+     of links shoving the page's own content three hundred and fifty pixels
+     down, while the burger button sat above it doing nothing at all.
+
+     This restores the same behaviour the builder pages have — hidden until
+     the button says otherwise — and gives the links a target a thumb can hit
+     rather than the zero padding the desktop bar wants. */
+  .site-header.legacy-unified-header{
+    position:relative!important;
+  }
+  .site-header.legacy-unified-header .main-nav{
+    position:absolute!important;
+    left:0!important;
+    right:0!important;
+    top:100%!important;
+    display:none!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:0!important;
+    padding:10px 18px calc(18px + env(safe-area-inset-bottom, 0px))!important;
+    background:#050d18!important;
+    border-bottom:1px solid rgba(255,255,255,.12)!important;
+  }
+  .site-header.legacy-unified-header .main-nav.open{
+    display:flex!important;
+  }
+  .site-header.legacy-unified-header .main-nav a{
+    display:block!important;
+    padding:13px 0!important;
+    font-size:.82rem!important;
+    line-height:1.2!important;
+  }
+  .site-header.legacy-unified-header .main-nav .nav-cta{
+    margin-top:10px!important;
+    text-align:center!important;
+  }
 }
 `;
 
@@ -131,7 +183,7 @@ type LegacyBrandSyncProps = {
 
 export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, navCtaUrl }: LegacyBrandSyncProps) {
   useLayoutEffect(() => {
-    const src = logoUrl?.trim() || "/rascals-logo-transparent-4k.png";
+    const src = logoUrl?.trim() || "/rascals-logo-768.webp";
     const top = brandTop?.trim() || "HELLENSTEIN";
     const bottom = brandBottom?.trim() || "RASCALS";
     const ctaLabel = navCtaLabel?.trim() || "Mitmachen";
@@ -148,21 +200,23 @@ export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, n
     const apply = () => {
       document.querySelectorAll<HTMLElement>(".site-header").forEach((header) => {
         header.classList.add("legacy-unified-header");
-        header.style.setProperty("background", "#050d18", "important");
-        header.style.setProperty("min-height", "112px", "important");
-        header.style.setProperty("height", "auto", "important");
+        setStyleIfChanged(header, "background", "#050d18", "important");
+        setStyleIfChanged(header, "min-height", "96px", "important");
+        setStyleIfChanged(header, "height", "auto", "important");
       });
 
       document.querySelectorAll<HTMLAnchorElement>(".site-header .brand").forEach((brand) => {
         brand.classList.add("legacy-unified-brand");
       });
 
+      /* Only the source is synced here. Size is deliberately NOT set inline:
+         an inline !important beats every stylesheet, so doing it here pinned
+         the subpage lockup to a square 62px and silently overrode the shared
+         header spec in site-polish.css. The size has one home now. */
       for (const selector of LEGACY_LOGO_SELECTORS) {
         document.querySelectorAll<HTMLImageElement>(selector).forEach((image) => {
           if (image.getAttribute("src") !== src) image.setAttribute("src", src);
-          image.style.setProperty("width", selector.includes("footer") ? "255px" : "96px", "important");
-          image.style.setProperty("height", selector.includes("footer") ? "auto" : "96px", "important");
-          image.style.setProperty("object-fit", "contain", "important");
+          setStyleIfChanged(image, "object-fit", "contain", "important");
         });
       }
 
@@ -180,7 +234,7 @@ export function LegacyBrandSync({ logoUrl, brandTop, brandBottom, navCtaLabel, n
 
     apply();
     const observer = new MutationObserver(apply);
-    observer.observe(document.body, { subtree: true, childList: true, attributes: true });
+    observer.observe(document.body, { subtree: true, childList: true });
     return () => observer.disconnect();
   }, [logoUrl, brandTop, brandBottom, navCtaLabel, navCtaUrl]);
 

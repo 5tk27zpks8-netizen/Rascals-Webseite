@@ -204,6 +204,32 @@ h3 { font-size: 1.6rem; }
 .trust-row { display: grid; gap: .65rem; padding: 1.2rem 0; border-block: 1px solid rgba(6,20,38,.14); color: #5b6672; font-size: .66rem; font-weight: 900; letter-spacing: .1em; }
 .product-description { margin-top: 2rem; }
 
+/* --- Veredelung: Nummer, Initialen oder Position ------------------- */
+.personalise { margin-block: 1.4rem; padding: 1.1rem 1.2rem; background: var(--white); border: 1px solid rgba(6,20,38,.18); border-left: 3px solid var(--red); }
+.personalise__head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.personalise__price { font-size: .78rem; font-weight: 900; letter-spacing: .08em; color: var(--red); white-space: nowrap; }
+.personalise__note { margin: .5rem 0 0; color: #5b6672; font-size: .84rem; }
+.personalise__kinds { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
+.personalise__kind { position: relative; }
+.personalise__kind input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.personalise__kind span { display: block; min-height: 44px; padding: .75rem 1rem; line-height: 1.6; font-size: .7rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; background: var(--ice); border: 1px solid rgba(6,20,38,.18); }
+.personalise__kind input:checked + span { color: var(--white); background: var(--navy); border-color: var(--navy); }
+.personalise__kind input:focus-visible + span { outline: 2px solid var(--red); outline-offset: 2px; }
+/* [hidden] is only display:none in the user agent sheet, so any rule here
+   that sets a display beats it — which is how all three fields ended up on
+   the page at once with one of them chosen. */
+.personalise [hidden] { display: none; }
+.personalise__fields { display: grid; gap: .75rem; margin-top: 1rem; }
+.personalise__field { display: grid; gap: .4rem; }
+.personalise__field > span { font-size: .68rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.personalise__field input, .personalise__field select { width: 100%; min-height: 52px; padding: .75rem 1rem; background: var(--white); border: 1px solid rgba(6,20,38,.18); }
+.personalise__field input { font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; font-size: 1.5rem; letter-spacing: .06em; text-transform: uppercase; }
+.personalise__preview:empty { display: none; }
+.personalise__preview { margin: 0; color: #5b6672; font-size: .78rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.personalise__error { margin: 0; color: var(--red); font-size: .82rem; font-weight: 700; }
+@media (min-width: 560px) { .personalise__fields { grid-template-columns: 1fr 1fr; } .personalise__preview, .personalise__error { grid-column: 1 / -1; } }
+
+
 .cart-form { display: grid; grid-template-columns: 1fr 360px; align-items: start; gap: 3rem; }
 .cart-items { display: grid; gap: 1rem; }
 .cart-item { display: grid; grid-template-columns: 150px 1fr 80px 100px; align-items: center; gap: 1.5rem; padding: 1rem; background: var(--white); }
