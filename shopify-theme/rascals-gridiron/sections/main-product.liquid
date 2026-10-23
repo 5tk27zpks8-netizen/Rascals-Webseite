@@ -1,6 +1,97 @@
 {%- liquid
+  comment
+    THE PRINT OPTION IS A REAL VARIANT OPTION, NOT A CHECKBOX.
+
+    A shirt with a number on the back costs four euro more, and in Shopify the
+    only thing that can make a line cost more is the variant. Line item
+    properties — which is what the name and the number themselves are — carry
+    text and never touch the price, so a surcharge built out of them would be
+    a figure on the page that the checkout disagrees with.
+
+    So the shop keeps an ordinary product option (default name "Veredelung",
+    values "Ohne" and "Mit Druck") on the articles that offer printing, and
+    the dearer variants are simply priced four euro higher. Everything below
+    is presentation: the option is lifted out of the plain variant picker and
+    presented as the choice it actually is, with the fields for what gets
+    printed and where.
+
+    A product without that option renders exactly as before, which is what
+    makes this per-article without anybody maintaining a list.
+  endcomment
+
   assign current_variant = product.selected_or_first_available_variant
   assign product_form_id = 'ProductForm-' | append: section.id
+
+  assign print_option_name = ''
+  assign print_value_without = ''
+  for block in section.blocks
+    if block.type == 'personalisation'
+      assign print_option_name = block.settings.option_name | strip | downcase
+      assign print_value_without = block.settings.value_without | strip | downcase
+    endif
+  endfor
+
+  assign print_option_index = -1
+  assign print_value_off = ''
+  assign print_value_on = ''
+  if print_option_name != blank
+    for option in product.options_with_values
+      assign option_name = option.name | strip | downcase
+      if option_name == print_option_name
+        assign print_option_index = forloop.index0
+        for value in option.values
+          assign value_key = value | strip | downcase
+          if value_key == print_value_without
+            assign print_value_off = value
+          elsif print_value_on == blank
+            assign print_value_on = value
+          endif
+        endfor
+        comment
+          Nothing matched the configured "without" value, so fall back to the
+          order the option was written in: first value off, second value on.
+          A club that names them "Nein" and "Ja" still gets a working block
+          rather than a silent nothing.
+        endcomment
+        if print_value_off == blank
+          assign print_value_off = option.values.first
+          assign print_value_on = ''
+          for value in option.values
+            unless forloop.first
+              if print_value_on == blank
+                assign print_value_on = value
+              endif
+            endunless
+          endfor
+        endif
+      endif
+    endfor
+  endif
+
+  comment
+    What the printing costs, read off the variants instead of typed into a
+    setting: raise the price in Shopify and the figure on the page follows.
+  endcomment
+  assign print_surcharge = 0
+  if print_option_index >= 0 and print_value_on != blank
+    assign price_off = 2147483647
+    assign price_on = 2147483647
+    for variant in product.variants
+      assign variant_value = variant.options[print_option_index]
+      if variant_value == print_value_off
+        if variant.price < price_off
+          assign price_off = variant.price
+        endif
+      elsif variant_value == print_value_on
+        if variant.price < price_on
+          assign price_on = variant.price
+        endif
+      endif
+    endfor
+    if price_off < 2147483647 and price_on < 2147483647 and price_on > price_off
+      assign print_surcharge = price_on | minus: price_off
+    endif
+  endif
 -%}
 <section class="main-product section-shell page-width" data-product-root>
   <div class="product-gallery reveal">
@@ -39,6 +130,7 @@
             {%- unless product.has_only_default_variant -%}
               <variant-selects class="variant-selects" data-section="{{ section.id }}" {{ block.shopify_attributes }}>
                 {%- for option in product.options_with_values -%}
+                  {%- if forloop.index0 == print_option_index -%}{%- continue -%}{%- endif -%}
                   <label for="Option-{{ section.id }}-{{ forloop.index0 }}">{{ option.name }}</label>
                   <select id="Option-{{ section.id }}-{{ forloop.index0 }}" data-option-index="{{ forloop.index0 }}">
                     {%- for value in option.values -%}<option value="{{ value | escape }}"{% if option.selected_value == value %} selected{% endif %}>{{ value }}</option>{%- endfor -%}
@@ -62,6 +154,79 @@
                 {%- if block.settings.show_dynamic_checkout -%}{{ form | payment_button }}{%- endif -%}
               {% endform %}
             </div>
+          {%- when 'personalisation' -%}
+            {%- if print_option_index >= 0 and print_value_on != blank -%}
+              <div class="personalise" {{ block.shopify_attributes }}
+                   data-personalise
+                   data-value-off="{{ print_value_off | escape }}"
+                   data-value-on="{{ print_value_on | escape }}">
+                <div class="personalise__head">
+                  <span class="eyebrow eyebrow--red">{{ block.settings.heading }}</span>
+                  {%- if print_surcharge > 0 -%}<span class="personalise__price">+{{ print_surcharge | money }}</span>{%- endif -%}
+                </div>
+                {%- if block.settings.note != blank -%}<p class="personalise__note">{{ block.settings.note }}</p>{%- endif -%}
+
+                {%- comment -%}
+                  This is the print option, hidden, and it is what actually
+                  decides the variant and therefore the price. The radios
+                  below only set it.
+                {%- endcomment -%}
+                <input type="hidden" data-option-index="{{ print_option_index }}" data-personalise-option value="{{ print_value_off | escape }}">
+
+                <div class="personalise__kinds" role="radiogroup" aria-label="{{ block.settings.heading | escape }}">
+                  {%- assign kinds = 'off|Ohne,number|Nummer,initials|Initialen,position|Position' | split: ',' -%}
+                  {%- for kind in kinds -%}
+                    {%- assign parts = kind | split: '|' -%}
+                    <label class="personalise__kind">
+                      <input type="radio" name="Personalise-{{ section.id }}" value="{{ parts.first }}" data-personalise-kind{% if forloop.first %} checked{% endif %}>
+                      <span>{{ parts.last }}</span>
+                    </label>
+                  {%- endfor -%}
+                </div>
+
+                <div class="personalise__fields" data-personalise-fields hidden>
+                  <label class="personalise__field" data-personalise-field="number" hidden>
+                    <span>{{ block.settings.label_number }}</span>
+                    <input type="text" inputmode="numeric" autocomplete="off" maxlength="2" placeholder="{{ block.settings.placeholder_number | escape }}" data-personalise-value disabled>
+                  </label>
+                  <label class="personalise__field" data-personalise-field="initials" hidden>
+                    <span>{{ block.settings.label_initials }}</span>
+                    <input type="text" autocomplete="off" maxlength="4" placeholder="{{ block.settings.placeholder_initials | escape }}" data-personalise-value disabled>
+                  </label>
+                  <label class="personalise__field" data-personalise-field="position" hidden>
+                    <span>{{ block.settings.label_position }}</span>
+                    <select data-personalise-value disabled>
+                      {%- assign positions = block.settings.positions | newline_to_br | split: '<br />' -%}
+                      {%- for position in positions -%}
+                        {%- assign position_value = position | strip -%}
+                        {%- if position_value != blank -%}<option value="{{ position_value | escape }}">{{ position_value }}</option>{%- endif -%}
+                      {%- endfor -%}
+                    </select>
+                  </label>
+                  <label class="personalise__field" data-personalise-field="placement" hidden>
+                    <span>{{ block.settings.label_placement }}</span>
+                    <select data-personalise-placement disabled>
+                      {%- assign placements = block.settings.placements | newline_to_br | split: '<br />' -%}
+                      {%- for placement in placements -%}
+                        {%- assign placement_value = placement | strip -%}
+                        {%- if placement_value != blank -%}<option value="{{ placement_value | escape }}">{{ placement_value }}</option>{%- endif -%}
+                      {%- endfor -%}
+                    </select>
+                  </label>
+                  <p class="personalise__preview" data-personalise-preview aria-live="polite"></p>
+                  <p class="personalise__error" data-personalise-error role="alert" hidden></p>
+                </div>
+
+                {%- comment -%}
+                  What is printed travels as line item properties: they reach
+                  the order and the packing slip, which is where whoever does
+                  the printing will read them.
+                {%- endcomment -%}
+                <input type="hidden" name="properties[Veredelung]" form="{{ product_form_id }}" data-personalise-prop="kind" disabled>
+                <input type="hidden" name="properties[Aufdruck]" form="{{ product_form_id }}" data-personalise-prop="value" disabled>
+                <input type="hidden" name="properties[Platzierung]" form="{{ product_form_id }}" data-personalise-prop="placement" disabled>
+              </div>
+            {%- endif -%}
           {%- when 'description' -%}<div class="product-description rte" {{ block.shopify_attributes }}>{{ product.description }}</div>
           {%- when 'custom_liquid' -%}<div class="rte" {{ block.shopify_attributes }}>{{ block.settings.custom_liquid }}</div>
           {%- when 'trust' -%}<div class="trust-row" {{ block.shopify_attributes }}><span>✓ SICHERE ZAHLUNG</span><span>↗ SCHNELLER VERSAND</span><span>★ TEAM OFFICIAL</span></div>
@@ -83,6 +248,7 @@
     { "type": "variant_picker", "name": "Variantenauswahl", "limit": 1 },
     { "type": "quantity", "name": "Anzahl", "limit": 1 },
     { "type": "buy_buttons", "name": "Kaufbuttons", "limit": 1, "settings": [{ "type": "checkbox", "id": "show_dynamic_checkout", "label": "Dynamischen Checkout anzeigen", "default": true }] },
+    {"type": "personalisation", "name": "Veredelung (Nummer / Initialen / Position)", "limit": 1, "settings": [{"type": "paragraph", "content": "Erscheint nur bei Artikeln, die eine Produktoption mit dem unten eingetragenen Namen haben (z. B. „Veredelung“ mit den Werten „Ohne“ und „Mit Druck“). Der Aufpreis kommt aus dem Preisunterschied dieser Varianten — hier wird nichts eingetragen."}, {"type": "text", "id": "option_name", "label": "Name der Produktoption", "default": "Veredelung"}, {"type": "text", "id": "value_without", "label": "Wert für „ohne Druck“", "default": "Ohne"}, {"type": "text", "id": "heading", "label": "Überschrift", "default": "Veredelung"}, {"type": "text", "id": "note", "label": "Hinweis", "default": "Nummer, Initialen oder Position — dein Name auf dem Trikot."}, {"type": "text", "id": "label_number", "label": "Beschriftung: Nummer", "default": "Nummer"}, {"type": "text", "id": "placeholder_number", "label": "Platzhalter: Nummer", "default": "z. B. 89"}, {"type": "text", "id": "label_initials", "label": "Beschriftung: Initialen", "default": "Initialen"}, {"type": "text", "id": "placeholder_initials", "label": "Platzhalter: Initialen", "default": "z. B. CG"}, {"type": "text", "id": "label_position", "label": "Beschriftung: Position", "default": "Position"}, {"type": "textarea", "id": "positions", "label": "Positionen (eine pro Zeile)", "default": "QB\nRB\nFB\nWR\nTE\nOL\nC\nG\nT\nDL\nDE\nDT\nNT\nLB\nMLB\nILB\nOLB\nCB\nDB\nFS\nSS\nK\nP\nLS"}, {"type": "text", "id": "label_placement", "label": "Beschriftung: Platzierung", "default": "Platzierung"}, {"type": "textarea", "id": "placements", "label": "Platzierungen (eine pro Zeile)", "default": "Brust links\nBrust rechts\nÄrmel links\nÄrmel rechts\nNacken\nRücken groß"}]},
     { "type": "description", "name": "Produktbeschreibung", "limit": 1 },
     { "type": "trust", "name": "Vertrauenspunkte", "limit": 1 },
     { "type": "custom_liquid", "name": "Custom Liquid", "settings": [{ "type": "liquid", "id": "custom_liquid", "label": "Custom Liquid" }] }
