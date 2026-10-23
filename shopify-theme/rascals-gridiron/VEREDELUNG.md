@@ -1,53 +1,66 @@
 # Veredelung: Nummer, Initialen oder Position
 
 Käufer können sich bei ausgewählten Artikeln die Rückennummer, ihre Initialen
-oder ihre Position aufdrucken lassen. Der Aufpreis beträgt 4 € und ist ein
-echter Preis, kein Hinweis auf der Seite.
+oder ihre Position aufdrucken lassen. Der Aufpreis beträgt 4 €.
 
-## Warum es zwei Hälften braucht
+## Einrichtung — einmalig
 
-Shopify kann einen Zeilenpreis nur über die **Variante** erhöhen. Der Text,
-der gedruckt wird, kann dagegen nur als **Line Item Property** mitreisen —
-das ist freier Text, der niemals den Preis berührt.
+1. **Produkt „Veredelung" anlegen**, Preis 4,00 €.
+   - Veröffentlichen (sonst lässt es sich nicht in den Warenkorb legen),
+     aber **in keine Collection** aufnehmen, damit es nicht im Shop
+     herumsteht.
+   - Kein Versandgewicht, keine Bestandsverfolgung.
+2. **Theme-Editor → Produktseite → Block „Veredelung"**: dieses Produkt unter
+   *Zusatzartikel für den Aufpreis* auswählen.
 
-Deshalb: die 4 € stecken in einer Variante, der Aufdruck in Properties.
-Ein Aufpreis, der nur aus Properties gebaut wäre, wäre eine Zahl auf der
-Seite, der die Kasse widerspricht.
+Der angezeigte Aufpreis ist der Preis dieses Produkts. Werden daraus später
+5 €, zeigt die Seite 5 € — am Theme ist nichts zu ändern.
 
-## Einmal pro Artikel im Shopify-Admin
+## Artikel auswählen — ein Tag
 
-Für jeden Artikel, der veredelt werden kann:
+Jedem Artikel, der veredelt werden kann, im Shopify-Admin den Tag
+**`veredelung`** geben. Fertig. Artikel ohne den Tag sehen aus wie vorher.
 
-1. **Produkt → Varianten → Option hinzufügen**
-   - Optionsname: `Veredelung`
-   - Werte: `Ohne` und `Mit Druck`
-2. Bei allen Varianten mit `Mit Druck` den Preis **4 € höher** setzen.
+(Der Tag ist im Theme-Editor änderbar, falls ein anderer Name lieber ist.)
 
-Mehr ist nicht zu tun. Artikel **ohne** diese Option sehen aus wie vorher —
-daran erkennt das Theme, welche Artikel die Veredelung anbieten, ohne dass
-irgendwo eine Liste gepflegt werden muss.
+## Warum ein zweiter Artikel und keine Variante
 
-Der Aufpreis auf der Seite wird aus dem Preisunterschied der Varianten
-gelesen. Werden daraus später 5 €, zeigt die Seite 5 € an, ohne dass am
-Theme etwas geändert wird.
+In Shopify kann **nur eine Variante** einen Zeilenpreis erhöhen. Der Text,
+der gedruckt wird, kann dagegen **nur als Line Item Property** mitreisen, und
+eine Property fasst den Preis nie an.
+
+Über Varianten zu gehen hieße: pro Artikel eine zusätzliche Option und eine
+verdoppelte Variantenliste. Das ist viel Verwaltungsarbeit, um bei einem
+Artikel Ja zu sagen. Deshalb der zweite Artikel — der Preis dafür ist die
+zusätzliche Zeile im Warenkorb.
 
 ## Was im Shop passiert
 
-- Die Option `Veredelung` taucht **nicht** in der normalen Variantenauswahl
-  auf. Sie wird als eigener Block dargestellt: OHNE · NUMMER · INITIALEN ·
-  POSITION, dazu das passende Feld und die Platzierung.
+- Block auf der Produktseite: OHNE · NUMMER · INITIALEN · POSITION, dazu das
+  passende Feld und die Platzierung.
 - Nummer: nur Ziffern, höchstens zwei. Initialen: Großbuchstaben, höchstens
-  vier Zeichen. Position: Auswahl aus der Positionsliste.
-- Der Preis oben auf der Seite aktualisiert sich beim Umschalten.
+  vier Zeichen. Position: Auswahl aus der Liste.
 - Ohne Eintrag im Feld lässt sich nicht in den Warenkorb legen — ein Trikot
   mit leerem Aufdruck ist ein Reklamationsfall.
-- Im Warenkorb und in der Bestellung stehen die Angaben als
-  `Veredelung`, `Aufdruck` und `Platzierung`. Das ist, was der Druckerei
-  vorliegt.
+- Trikot und Veredelung gehen **in einer Anfrage** in den Warenkorb, in
+  gleicher Menge. Zwei getrennte Anfragen hätten ein Zeitfenster, in dem das
+  Trikot drin ist und die 4 € nicht.
+- Bei der Bestellung steht am Trikot `Veredelung`, `Aufdruck` und
+  `Platzierung`; an der Veredelungszeile steht, zu welchem Artikel sie
+  gehört. Das ist, was der Druckerei vorliegt.
 
-## Einstellungen im Theme-Editor
+## Die Warenkorb-Absicherung
 
-Produktseite → Block **„Veredelung (Nummer / Initialen / Position)"**:
-Optionsname, Wert für „ohne Druck", Überschrift, Hinweistext, die
-Positionsliste und die Platzierungen. Der Aufpreis steht dort bewusst
-nicht — er kommt aus den Varianten.
+Eine eigene Zeile kann einzeln entfernt werden, und das Mengenfeld neben dem
+Trikot weiß nichts von ihr. Beides ergäbe einen Warenkorb, der einen Druck
+berechnet, den niemand bekommt — oder einen druckt, den niemand bezahlt hat.
+
+Deshalb prüft die Warenkorbseite jede Veredelungszeile gegen das Trikot, mit
+dem sie hinzugefügt wurde (beide tragen dieselbe unsichtbare Kennung):
+
+- Menge geändert → die Veredelung zieht nach.
+- Trikot entfernt → die Veredelung verschwindet.
+- Zwei verschiedene Trikots mit je eigenem Druck bleiben getrennt.
+
+Die Korrektur läuft höchstens einmal pro Seitenaufruf, damit eine Korrektur,
+die nicht greift, die Seite nicht endlos neu lädt.
