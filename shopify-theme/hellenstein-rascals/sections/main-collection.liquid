@@ -1,119 +1,12 @@
-{% comment %}
-  DREI LINIEN, FÜNF KATEGORIEN, NICHT FÜNFZEHN KOLLEKTIONEN.
-
-  Linie (Old-School, Basic, Standard) und Kategorie (Mützen, Pullover,
-  Jacken, Accessoires, Merch) sind zwei Achsen, nicht eine. Beide als
-  Kollektion anzulegen hiesse 3 × 5 = 15 Listen und jeden neuen Artikel in
-  zwei davon einsortieren — und jedes vergessene Einsortieren ist ein
-  Artikel, den im Shop niemand findet.
-
-  Darum: die Linie ist die Kollektion, die Kategorie der Produkttyp. Jeder
-  Artikel trägt beides genau einmal. "Old-School → Pullover" ist dann keine
-  eigene Liste, sondern diese Seite mit gesetztem Reiter.
-
-  Der Produkttyp wird aus der Filterliste herausgezogen und als Reiterzeile
-  über das Raster gesetzt; Grösse, Preis und Verfügbarkeit bleiben im
-  Filterkasten. Kategorien gehören in die Navigation, nicht in ein
-  Ausklappmenü neben "Preis".
-
-  OHNE EINGERICHTETE FILTER ÄNDERT SICH NICHTS.
-
-  collection.filters ist leer, solange im Admin keine Storefront-Filter
-  eingerichtet sind. Dann rendern Reiter und Filterkasten gar nicht und die
-  Seite sieht aus wie bisher — eine Reiterzeile, die nicht filtert, wäre
-  schlimmer als keine.
-{% endcomment %}
-
-{%- assign type_filter = null -%}
-{%- assign active_filter_count = 0 -%}
-{%- for filter in collection.filters -%}
-  {%- if filter.param_name == 'filter.p.product_type' -%}
-    {%- assign type_filter = filter -%}
-  {%- endif -%}
-  {%- if filter.type == 'price_range' -%}
-    {%- if filter.min_value.value or filter.max_value.value -%}
-      {%- assign active_filter_count = active_filter_count | plus: 1 -%}
-    {%- endif -%}
-  {%- else -%}
-    {%- assign active_filter_count = active_filter_count | plus: filter.active_values.size -%}
-  {%- endif -%}
-{%- endfor -%}
-
 <section class="collection-page page-width">
   <header class="page-hero-small">
     <p class="eyebrow">OFFICIAL TEAM STORE</p>
     <h1>{{ collection.title }}</h1>
     {% if collection.description != blank %}<div class="rte">{{ collection.description }}</div>{% endif %}
   </header>
-
-  {% if type_filter and type_filter.values.size > 1 %}
-    <nav class="category-nav" aria-label="Kategorien">
-      <a class="category-chip{% if type_filter.active_values.size == 0 %} is-active{% endif %}"
-         href="{{ type_filter.url_to_remove }}"
-         {% if type_filter.active_values.size == 0 %}aria-current="true"{% endif %}>Alle</a>
-      {% for value in type_filter.values %}
-        {% if value.count == 0 and value.active == false %}{% continue %}{% endif %}
-        <a class="category-chip{% if value.active %} is-active{% endif %}"
-           href="{% if value.active %}{{ value.url_to_remove }}{% else %}{{ value.url_to_add }}{% endif %}"
-           {% if value.active %}aria-current="true"{% endif %}>
-          {{- value.label -}}<i>{{ value.count }}</i>
-        </a>
-      {% endfor %}
-    </nav>
-  {% endif %}
-
   <div class="collection-toolbar">
     <span>{{ collection.products_count }} Produkte</span>
-    <form method="get" class="collection-filter-form">
-      {% comment %}
-        Die Reiter sind Links, die Sortierung ist ein Formular. Ohne diese
-        versteckten Felder wirft ein Wechsel der Sortierung die gewählte
-        Kategorie weg — man wäre danach wieder bei "Alle", ohne es
-        angefasst zu haben.
-      {% endcomment %}
-      {% if type_filter %}
-        {% for value in type_filter.active_values %}
-          <input type="hidden" name="{{ value.param_name }}" value="{{ value.value }}">
-        {% endfor %}
-      {% endif %}
-
-      {% for filter in collection.filters %}
-        {% if filter.param_name == 'filter.p.product_type' %}{% continue %}{% endif %}
-        <details class="filter-drop">
-          <summary>
-            {{- filter.label -}}
-            {% if filter.active_values.size > 0 %}<b>{{ filter.active_values.size }}</b>{% endif %}
-            <i class="nav-caret" aria-hidden="true">&#9662;</i>
-          </summary>
-          <div class="filter-panel">
-            {% if filter.type == 'price_range' %}
-              <div class="filter-price">
-                <label><span>von</span>
-                  <input type="number" name="{{ filter.min_value.param_name }}" min="0" step="1" inputmode="decimal" placeholder="0"
-                         value="{% if filter.min_value.value %}{{ filter.min_value.value | money_without_currency | replace: ',', '.' }}{% endif %}">
-                </label>
-                <label><span>bis</span>
-                  <input type="number" name="{{ filter.max_value.param_name }}" min="0" step="1" inputmode="decimal"
-                         placeholder="{{ filter.range_max | money_without_currency | replace: ',', '.' }}"
-                         value="{% if filter.max_value.value %}{{ filter.max_value.value | money_without_currency | replace: ',', '.' }}{% endif %}">
-                </label>
-                <button class="button button-primary filter-apply" type="submit">Übernehmen</button>
-              </div>
-            {% else %}
-              {% for value in filter.values %}
-                <label class="filter-option{% if value.count == 0 and value.active == false %} is-empty{% endif %}">
-                  <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"
-                         {% if value.active %}checked{% endif %}
-                         {% if value.count == 0 and value.active == false %}disabled{% endif %}
-                         onchange="this.form.submit()">
-                  <span>{{ value.label }}</span><i>{{ value.count }}</i>
-                </label>
-              {% endfor %}
-            {% endif %}
-          </div>
-        </details>
-      {% endfor %}
-
+    <form method="get">
       <label for="SortBy">Sortieren</label>
       <select id="SortBy" name="sort_by" onchange="this.form.submit()">
         {% assign sort_by = collection.sort_by | default: collection.default_sort_by %}
@@ -121,33 +14,9 @@
       </select>
     </form>
   </div>
-
-  {% if active_filter_count > 0 %}
-    <div class="active-filters">
-      {% for filter in collection.filters %}
-        {% if filter.param_name == 'filter.p.product_type' %}{% continue %}{% endif %}
-        {% for value in filter.active_values %}
-          <a href="{{ value.url_to_remove }}">{{ value.label }} &times;</a>
-        {% endfor %}
-      {% endfor %}
-    </div>
-  {% endif %}
-
   {% paginate collection.products by 24 %}
     <div class="product-grid">
-      {% for product in collection.products %}
-        {% render 'product-card', product: product %}
-      {% else %}
-        <div class="empty-state">
-          {% if active_filter_count > 0 or type_filter.active_values.size > 0 %}
-            <b>NICHTS IN DIESER AUSWAHL.</b>
-            <p>Mit diesen Filtern ist gerade kein Artikel da.</p>
-            <a class="button button-outline" href="{{ collection.url }}">Alle Artikel zeigen <span>&rarr;</span></a>
-          {% else %}
-            <b>NOCH KEINE PRODUKTE.</b>
-          {% endif %}
-        </div>
-      {% endfor %}
+      {% for product in collection.products %}{% render 'product-card', product: product %}{% else %}<div class="empty-state"><b>NOCH KEINE PRODUKTE.</b></div>{% endfor %}
     </div>
     {% if paginate.pages > 1 %}<nav class="pagination">{{ paginate | default_pagination }}</nav>{% endif %}
   {% endpaginate %}

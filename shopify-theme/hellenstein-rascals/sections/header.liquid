@@ -1,22 +1,3 @@
-{% comment %}
-  DIE NAVIGATION WAR FEST EINPROGRAMMIERT.
-
-  "Shop / Team / Über uns / Service" standen als fünf <a> im Code. Im
-  Shopify-Admin liess sich daran nichts ändern — es gab kein Menü, auf das
-  das Theme geschaut hätte. Ein Eintrag "Shop ▸ Old-School / Basic / Standard"
-  war damit nicht möglich, egal was man im Admin angelegt hätte.
-
-  Jetzt wird ein echtes Menü gelesen, mit zweiter Ebene. Das Aufklappen läuft
-  über :hover und :focus-within, ohne JavaScript, damit es auch per Tabulator
-  geht und nicht mit dem mobilen Menü kollidiert, das sein eigenes Skript hat.
-
-  SOLANGE KEIN MENÜ GESETZT IST, BLEIBT ALLES WIE ES WAR.
-
-  Ohne zugewiesenes Menü rendert exakt die alte Linkleiste. Der Shop sieht
-  also unverändert aus, bis jemand im Admin ein Menü einträgt — kein Zustand
-  dazwischen, in dem die Kopfzeile leer ist.
-{% endcomment %}
-
 {% liquid
   assign team_page = pages['team']
   if team_page != blank
@@ -24,7 +5,6 @@
   else
     assign team_url = '/pages/team'
   endif
-  assign menu = section.settings.menu
 %}
 {% if section.settings.announcement_text != blank %}
   <div class="announcement">
@@ -48,30 +28,36 @@
   </button>
 
   <nav class="main-navigation" id="MainNavigation" data-menu aria-label="Hauptnavigation">
-    {% if menu.links.size > 0 %}
-      {% for link in menu.links %}
-        {% if link.links.size > 0 %}
-          <div class="nav-item has-subnav">
-            <a href="{{ link.url }}"{% if link.current or link.child_active %} aria-current="page"{% endif %}>
-              {{- link.title | escape -}}<i class="nav-caret" aria-hidden="true">&#9662;</i>
-            </a>
-            <div class="subnav">
-              {% for child in link.links %}
-                <a href="{{ child.url }}"{% if child.current %} aria-current="page"{% endif %}>{{ child.title | escape }}</a>
-              {% endfor %}
-            </div>
-          </div>
-        {% else %}
-          <a href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>{{ link.title | escape }}</a>
-        {% endif %}
-      {% endfor %}
-    {% else %}
+    {%- comment -%}
+      DIE DREI LINIEN: OLD-SCHOOL, BASIC, STANDARD.
+
+      Jede erscheint nur, wenn es die Sammlung im Shop wirklich gibt — ein
+      fest verdrahteter Link auf eine nicht angelegte Sammlung waere ein 404
+      in der Hauptnavigation. Beide Schreibweisen werden geprueft, damit es
+      auch mit "Oldschool" statt "Old-School" greift.
+
+      Sie ersetzen den Punkt "Shop": nachgemessen brauchen sieben Punkte
+      502 px, zwischen Logo und Symbolen sind bei 1140 px aber nur 501 da —
+      ein Pixel zu wenig, und die Leiste bricht auf zwei Zeilen. Ohne "Shop"
+      sind es 444 px. Ein Shop-Reiter im Shop fuehrt ausserdem nur dorthin,
+      wo man schon ist. Gibt es keine der drei Sammlungen, bleibt er stehen.
+    {%- endcomment -%}
+    {%- assign line_handles = 'old-school,oldschool,basic,standard' | split: ',' -%}
+    {%- capture line_links -%}
+      {%- for line_handle in line_handles -%}
+        {%- assign line = collections[line_handle] -%}
+        {%- if line.handle != blank -%}<a href="{{ line.url }}">{{ line.title | escape }}</a>{%- endif -%}
+      {%- endfor -%}
+    {%- endcapture -%}
+    {%- if line_links == blank -%}
       <a href="{{ routes.all_products_collection_url }}">Shop</a>
-      <a href="{{ team_url }}">Team</a>
-      <a href="{{ routes.root_url }}#story">Über uns</a>
-      <a href="{{ routes.root_url }}#service">Service</a>
-      {% if section.settings.show_sponsors_link %}<a href="{{ routes.root_url }}#sponsors">Sponsoren</a>{% endif %}
-    {% endif %}
+    {%- else -%}
+      {{ line_links }}
+    {%- endif -%}
+    <a href="{{ team_url }}">Team</a>
+    <a href="{{ routes.root_url }}#story">Über uns</a>
+    <a href="{{ routes.root_url }}#service">Service</a>
+    {% if section.settings.show_sponsors_link %}<a href="{{ routes.root_url }}#sponsors">Sponsoren</a>{% endif %}
   </nav>
 
   <div class="header-actions">
@@ -86,10 +72,9 @@
 {
   "name": "Rascals Header",
   "settings": [
-    { "type": "link_list", "id": "menu", "label": "Menü", "info": "Ohne Auswahl bleibt die bisherige feste Linkleiste stehen. Unterpunkte werden als Aufklappmenü angezeigt." },
     { "type": "text", "id": "announcement_text", "label": "Hinweistext", "default": "Kostenloser Versand ab 80 € · Abholung beim nächsten Heimspiel möglich" },
     { "type": "url", "id": "announcement_link", "label": "Hinweis-Link" },
-    { "type": "checkbox", "id": "show_sponsors_link", "label": "Sponsoren-Link anzeigen (nur ohne Menü)", "default": false }
+    { "type": "checkbox", "id": "show_sponsors_link", "label": "Sponsoren-Link anzeigen", "default": false }
   ]
 }
 {% endschema %}
