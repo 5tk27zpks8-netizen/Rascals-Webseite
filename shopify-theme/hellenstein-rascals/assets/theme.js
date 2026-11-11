@@ -66,3 +66,30 @@ document.querySelectorAll('[data-hero]').forEach((hero) => {
   show(0);
   start();
 });
+
+/* Football als Mauszeiger. Folgt dem Zeiger ueber eine Animationsbild-Schleife
+   statt direkt im pointermove: der Browser feuert das Ereignis oefter als er
+   zeichnet, und jedes Setzen von style.left erzwingt sonst ein Layout. Nur bei
+   echter Maus, nicht auf Touch, und nicht bei reduzierter Bewegung. */
+(() => {
+  const ball = document.querySelector('.football-cursor');
+  if (!ball) return;
+  if (!window.matchMedia('(pointer: fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  let x = 0, y = 0, pending = false, shown = false;
+
+  const draw = () => {
+    pending = false;
+    ball.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(-20deg)`;
+    if (!shown) { ball.classList.add('is-visible'); shown = true; }
+  };
+
+  window.addEventListener('pointermove', (event) => {
+    if (event.pointerType !== 'mouse') return;
+    x = event.clientX; y = event.clientY;
+    if (!pending) { pending = true; requestAnimationFrame(draw); }
+  }, { passive: true });
+
+  document.addEventListener('mouseleave', () => { ball.classList.remove('is-visible'); shown = false; });
+})();

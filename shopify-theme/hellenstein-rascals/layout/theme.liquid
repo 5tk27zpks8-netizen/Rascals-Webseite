@@ -19,6 +19,7 @@
   </head>
   <body class="template-{{ template.name | handle }}">
     <a class="skip-link" href="#MainContent">Zum Inhalt springen</a>
+    <div class="football-cursor" aria-hidden="true"></div>
     {% section 'header' %}
     <main id="MainContent" tabindex="-1">{{ content_for_layout }}</main>
     {% section 'footer' %}

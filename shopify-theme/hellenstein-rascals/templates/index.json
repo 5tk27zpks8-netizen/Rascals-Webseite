@@ -1,1 +1,59 @@
-{"sections":{"hero":{"type":"hero-slider","settings":{}},"arrivals":{"type":"featured-products","settings":{"eyebrow":"LATEST DROP","heading":"NEW ARRIVALS","products_to_show":4}},"story":{"type":"brand-story","settings":{}},"team":{"type":"team-teaser","settings":{}},"shop":{"type":"featured-products","settings":{"eyebrow":"OFFICIAL TEAM STORE","heading":"SHOP ALL","products_to_show":8}},"trust":{"type":"trust-strip","settings":{}},"sponsors":{"type":"sponsor-marquee","settings":{}},"community":{"type":"community","settings":{}}},"order":["hero","arrivals","story","team","shop","trust","sponsors","community"]}
+{
+  "sections": {
+    "hero": {
+      "type": "hero-slider",
+      "settings": {}
+    },
+    "arrivals": {
+      "type": "featured-products",
+      "settings": {
+        "eyebrow": "LATEST DROP",
+        "heading": "NEW ARRIVALS",
+        "products_to_show": 4
+      }
+    },
+    "story": {
+      "type": "brand-story",
+      "settings": {}
+    },
+    "team": {
+      "type": "team-teaser",
+      "settings": {}
+    },
+    "shop": {
+      "type": "featured-products",
+      "settings": {
+        "eyebrow": "OFFICIAL TEAM STORE",
+        "heading": "SHOP ALL",
+        "products_to_show": 8
+      }
+    },
+    "trust": {
+      "type": "trust-strip",
+      "settings": {}
+    },
+    "sponsors": {
+      "type": "sponsor-marquee",
+      "settings": {}
+    },
+    "community": {
+      "type": "community",
+      "settings": {}
+    },
+    "ticker": {
+      "type": "diagonal-ticker",
+      "settings": {}
+    }
+  },
+  "order": [
+    "ticker",
+    "hero",
+    "arrivals",
+    "story",
+    "team",
+    "shop",
+    "trust",
+    "sponsors",
+    "community"
+  ]
+}

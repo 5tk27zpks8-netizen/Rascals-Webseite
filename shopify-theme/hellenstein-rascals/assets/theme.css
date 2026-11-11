@@ -15,3 +15,33 @@
 @media(max-width:720px){.page-width{padding-left:18px;padding-right:18px}.announcement{font-size:8px}.site-header{height:74px;padding:0 12px;gap:5px}.brand-logo{width:50px;height:40px}.site-brand{gap:8px}.brand-wordmark{font-size:22px}.main-navigation{top:74px}.header-actions{gap:0}.icon-link{width:42px;justify-content:center;padding:0}.hero-slider{height:720px;min-height:720px}.hero-slide{align-items:flex-end;padding-bottom:92px}.hero-image{object-position:62% center}.hero-overlay{background:linear-gradient(0deg,#070914fa 0%,#11152fd9 46%,transparent 83%)}.hero-content:before{left:18px}.hero-content>*{margin-left:28px}.hero-content h1{font-size:clamp(56px,16vw,82px)}.hero-actions{align-items:flex-start;flex-direction:column;gap:12px}.hero-actions .button{width:100%}.hero-controls{right:16px;bottom:18px}.hero-controls button{width:52px}.schedule-content h2{font-size:clamp(70px,19vw,96px)}.schedule-list>div{grid-template-columns:85px 1fr}.schedule-list small{grid-column:2}.products-section{padding-top:75px;padding-bottom:75px}.section-heading{align-items:flex-start;flex-direction:column}.product-grid{grid-template-columns:1fr}.product-card-media{height:410px}.brand-story{min-height:670px;align-items:flex-end;padding-bottom:65px}.story-overlay{background:linear-gradient(0deg,#070914f9 0%,#11152fd9 53%,transparent 90%)}.brand-story-copy h2{font-size:clamp(45px,13vw,64px)}.team-teaser{padding-top:75px;padding-bottom:75px}.team-teaser-copy h2{font-size:clamp(58px,17vw,78px)}.team-cards{grid-template-columns:1fr}.team-card{min-height:390px}.trust-strip{grid-template-columns:1fr;padding:25px 18px}.trust-strip>div{min-height:86px;align-content:center;border-right:0;border-bottom:1px solid #d1d3d7}.community{padding-top:75px;padding-bottom:75px}.community-grid{grid-template-columns:1fr}.community-grid img{height:450px}.footer-main{grid-template-columns:1fr;padding-top:60px}.footer-brand,.newsletter{grid-column:auto}.footer-bottom{flex-direction:column}.newsletter-form{grid-template-columns:1fr}.newsletter-form button{height:48px}.main-product{padding-top:45px}.product-gallery{grid-template-columns:1fr}.product-media{min-height:380px}.collection-toolbar{align-items:flex-start;flex-direction:column;gap:12px}.cart-line{grid-template-columns:90px 1fr}.cart-line img{width:90px;height:110px}.cart-line label,.remove-link{grid-column:2}.search-form{grid-template-columns:1fr}.search-form .button{width:100%}.collection-list{grid-template-columns:1fr}.team-page-hero{min-height:640px;padding-bottom:70px}.team-page-hero h1{font-size:clamp(59px,17vw,84px)}.team-index{top:74px}.team-index a{min-height:56px;font-size:9px}.team-intro{grid-template-columns:1fr;padding-top:75px;padding-bottom:70px}.team-intro>p:last-child{grid-column:auto}.team-group-image{min-height:460px}.team-group-copy{padding:60px 20px}.team-group-copy h2{font-size:clamp(46px,13vw,62px)}}
 @media(max-width:390px){.brand-wordmark{font-size:18px}.brand-logo{width:44px}.hero-content h1{font-size:55px}.header-actions .search-link{display:none}}
 .hero-content h1 em{color:var(--red)}
+
+/* === Schraeges Laufband (links nach rechts) === */
+/* Die Hoehe folgt dem Winkel, nicht umgekehrt. Ein Band, das bei 20 Grad von
+   Kante zu Kante laufen soll, legt ueber die Seitenbreite 100vw * tan(20°)
+   = rund 524 px in der Senkrechten zurueck. Ist der Abschnitt niedriger,
+   schneidet er die Enden ab und es bleibt ein Mittelstueck stehen.
+   Ohne tan() im Browser eine grosszuegige feste Hoehe. */
+.diagonal-ticker{position:relative;display:grid;align-content:center;overflow:hidden;min-height:clamp(180px,38vw,640px);background:var(--night)}
+@supports (height: calc(1px * tan(45deg))){
+  .diagonal-ticker{min-height:calc(100vw * tan(var(--dt-angle,20deg)) + 96px)}
+}
+.diagonal-ticker__band{width:150%;margin-left:-25%;overflow:hidden;color:var(--dt-fg,#fff);background:var(--dt-bg,var(--red));border-top:1px solid #ffffff22;border-bottom:1px solid #00000040;transform:rotate(calc(var(--dt-angle,20deg) * -1))}
+.diagonal-ticker__track{display:flex;width:max-content;animation:diagonalFlow var(--dt-speed,30s) linear infinite}
+.diagonal-ticker__seq{display:flex;align-items:center}
+.diagonal-ticker span{flex:none;padding:clamp(10px,1.4vw,18px) clamp(16px,2vw,30px);font-size:clamp(20px,2.6vw,42px);font-weight:950;font-style:italic;letter-spacing:-.03em;text-transform:uppercase;white-space:nowrap}
+.diagonal-ticker b{flex:none;font-size:clamp(12px,1.4vw,20px);opacity:.55}
+.diagonal-ticker:hover .diagonal-ticker__track{animation-play-state:paused}
+/* Von links nach rechts: der Streifen startet eine halbe Laenge weiter links
+   und laeuft auf 0 zu. Gegenrichtung zum Sponsorenband, das auf -50% laeuft. */
+@keyframes diagonalFlow{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+
+/* === Football als Mauszeiger === */
+.football-cursor{position:fixed;z-index:999;top:0;left:0;width:26px;height:17px;pointer-events:none;background:radial-gradient(circle at 34% 32%,#b9632c,#7d3d13);border:1.5px solid #f3efe6;border-radius:50% 50% 50% 50%/60% 60% 60% 60%;opacity:0;transform:translate(-50%,-50%) rotate(-20deg);transition:opacity .25s ease}
+.football-cursor::before{position:absolute;top:50%;left:28%;width:44%;height:1.5px;content:"";background:#f3efe6;transform:translateY(-50%)}
+.football-cursor::after{position:absolute;top:50%;left:34%;width:32%;height:7px;content:"";background:repeating-linear-gradient(90deg,#f3efe6 0 1.5px,transparent 1.5px 5px);transform:translateY(-50%)}
+.football-cursor.is-visible{opacity:.85}
+
+@media(max-width:720px){.diagonal-ticker__band{width:190%;margin-left:-45%}}
+@media(pointer:coarse){.football-cursor{display:none}}
+@media(prefers-reduced-motion:reduce){.diagonal-ticker__track{animation:none}.football-cursor{display:none}}
