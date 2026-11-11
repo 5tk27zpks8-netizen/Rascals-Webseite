@@ -41,6 +41,24 @@
             assign tile_image = tile_collection.products.first.featured_media
           endif
 
+          # Darstellung: Ein eigenes Bild im Block ist meist ein freigestelltes
+          # Produktfoto und steht dann zentriert auf der dunklen Kachel, wie in
+          # der Vorlage. Sammlungs- und Produktbilder aus Shopify haben fast
+          # immer einen hellen Hintergrund; zentriert waeren das helle Kaesten,
+          # also fuellen sie die Kachel. "auto" entscheidet danach, woher das
+          # Bild kommt; im Block laesst es sich festlegen.
+          assign mode = block.settings.display | default: 'auto'
+          if mode == 'auto'
+            if block.settings.image != blank
+              assign mode = 'cutout'
+            else
+              assign mode = 'fill'
+            endif
+          endif
+          if tile_image == blank
+            assign mode = 'icon'
+          endif
+
           assign tile_url = block.settings.link
           if tile_url == blank
             assign tile_url = tile_collection.url
@@ -49,10 +67,12 @@
             assign tile_url = routes.all_products_collection_url
           endif
         -%}
-        <a class="cat-tile" href="{{ tile_url }}" {{ block.shopify_attributes }}>
+        <a class="cat-tile cat-tile--{{ mode }}" href="{{ tile_url }}" {{ block.shopify_attributes }}>
           <span class="cat-tile__skew">
             <span class="cat-tile__media">
-              {%- if tile_image != blank -%}
+              {%- if mode == 'icon' -%}
+                {%- render 'line-icon', name: block.settings.icon -%}
+              {%- else -%}
                 {{ tile_image | image_url: width: 520 | image_tag: widths: '260, 380, 520', sizes: '(min-width: 990px) 16vw, 55vw', loading: 'lazy', alt: '' }}
               {%- endif -%}
             </span>
@@ -85,7 +105,15 @@
         { "type": "collection", "id": "collection", "label": "Sammlung" },
         { "type": "text", "id": "label", "label": "Name", "info": "Leer lassen: dann wird der Name der Sammlung verwendet." },
         { "type": "url", "id": "link", "label": "Abweichender Link" },
-        { "type": "image_picker", "id": "image", "label": "Eigenes Bild" },
+        { "type": "image_picker", "id": "image", "label": "Eigenes Bild", "info": "Am besten ein freigestelltes Produktfoto (PNG ohne Hintergrund)." },
+        {
+          "type": "select", "id": "display", "label": "Bilddarstellung", "default": "auto",
+          "options": [
+            { "value": "auto", "label": "Automatisch" },
+            { "value": "cutout", "label": "Freigestellt, zentriert" },
+            { "value": "fill", "label": "Füllend" }
+          ]
+        },
         {
           "type": "select", "id": "icon", "label": "Symbol", "default": "shirt",
           "options": [

@@ -12,8 +12,6 @@
 
 {%- if section.blocks.size > 0 -%}
   <section class="trust-bar" aria-label="{{ section.settings.heading | default: 'Leistungen' | escape }}">
-    <span class="trust-bar__slashes trust-bar__slashes--left" aria-hidden="true"></span>
-    <span class="trust-bar__slashes trust-bar__slashes--right" aria-hidden="true"></span>
     <ul class="trust-bar__inner page-width">
       {%- for block in section.blocks -%}
         <li {{ block.shopify_attributes }}>

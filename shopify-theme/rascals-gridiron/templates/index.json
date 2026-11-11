@@ -13,7 +13,13 @@
         "full_height": false,
         "meta": "TEAM | TRAINING | COACHES | FANS",
         "button_icon": "bag",
-        "secondary_icon": "star"
+        "secondary_icon": "play",
+        "show_smoke": true,
+        "show_left": true,
+        "show_right": true,
+        "left_height": 86,
+        "left_opacity": 62,
+        "right_height": 88
       }
     },
     "ticker": {
@@ -223,12 +229,26 @@
       "settings": {
         "heading": "Leistungen"
       }
+    },
+    "promo": {
+      "type": "promo-band",
+      "settings": {
+        "eyebrow": "LIMITED COLLECTION",
+        "title": "RASCALS",
+        "title_accent": "DEFENSE",
+        "text": "Performance-Teamwear für maximale Leistung – auf und neben dem Field.",
+        "button_label": "JETZT ENTDECKEN",
+        "button_link": "/collections/all",
+        "show_product": true,
+        "product_alt": "Rascals Teamwear Hoodie, Vorder- und Rückseite"
+      }
     }
   },
   "order": [
     "hero",
     "kacheln",
     "vertrauen",
+    "promo",
     "ticker",
     "featured",
     "story",

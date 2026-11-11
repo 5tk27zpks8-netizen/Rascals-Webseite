@@ -31,36 +31,63 @@
 -%}
 <section class="hero-gridiron{% if section.settings.full_height %} hero-gridiron--full{% endif %}{% if section.settings.show_left %} hero-gridiron--with-left{% endif %}" data-hero style="--hero-left-h: {{ section.settings.left_height | default: 86 }}%; --hero-left-o: {{ section.settings.left_opacity | default: 45 | divided_by: 100.0 }}; --hero-right-h: {{ section.settings.right_height | default: 88 }}%;">
   {%- comment -%}
-    Der Hintergrund ist in Ebenen aufgebaut statt als ein gedehntes Foto.
+    DIE BUEHNE.
 
-    Die beiden Spielerfotos sind hochkant und laufen am Rand ins Dunkle aus.
-    Ueber die volle Breite gezogen wuerden sie hochskaliert und matschig;
-    als Figuren vor einer dunklen Flaeche stehen sie dagegen scharf, fuegen
-    sich ueber ihr eigenes Dunkel ein und bleiben auf jedem Seitenverhaeltnis
-    an derselben Stelle — unten angesetzt, so wie jemand auf dem Platz steht.
+    Der Hero ist ein Stadion bei Nacht, in Ebenen von hinten nach vorn:
 
-    Ein durchgehendes Hintergrundbild bleibt moeglich: ist eines gesetzt,
-    liegt es unter den Figuren. Ohne Bild traegt die dunkle Flaeche.
+      1. Stadionfoto, auf Nacht eingefaerbt und leicht unscharf, damit die
+         Figuren davor scharf stehen wie bei offener Blende.
+      2. Flutlicht: Lampenreihen oben links und rechts mit Lichthof, leise
+         flackernd. Sie sitzen dort, wo im Foto die Masten stehen.
+      3. Dunst quer durch das Bild — er gibt die Tiefe, die eine flache
+         dunkle Flaeche nicht hat.
+      4. Roter Rauch hinter der rechten Figur. Echte Rauchstruktur aus einem
+         SVG-Rauschfilter statt eines runden Farbflecks; bewegt wird nur die
+         fertige Flaeche, nicht der Filter, damit das nichts kostet.
+      5. Rasen unten, auf dem die Figuren stehen.
+
+    Alles davon ist Dekoration und fuer Screenreader ausgeblendet. Unter
+    prefers-reduced-motion steht die Buehne still.
+
+    Ein eigenes Hintergrundbild aus dem Theme-Editor ersetzt nur Ebene 1;
+    Licht, Dunst, Rauch und Rasen bleiben darueber liegen.
   {%- endcomment -%}
-  {%- if hero_image != blank -%}
-    <div class="hero-gridiron__media">
-      {{ hero_image | image_url: width: 3000 | image_tag: widths: '750, 1100, 1600, 2200, 3000', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: hero_image.alt }}
-    </div>
-  {%- endif -%}
-  <div class="hero-gridiron__shade"></div>
-  <div class="field-lines" aria-hidden="true"></div>
+  <div class="hero-stage" aria-hidden="true">
+    {%- if hero_image != blank -%}
+      {{ hero_image | image_url: width: 2400 | image_tag: widths: '780, 1200, 1800, 2400', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: '', class: 'hero-stage__photo' }}
+    {%- else -%}
+      <picture>
+        <source media="(max-width: 760px)" srcset="{{ 'hero-stadium-portrait.webp' | asset_url }}" width="780" height="1064">
+        <img class="hero-stage__photo" src="{{ 'hero-stadium.webp' | asset_url }}" width="1920" height="740" alt="" loading="eager" fetchpriority="high">
+      </picture>
+    {%- endif -%}
+    <span class="hero-stage__night"></span>
+    <span class="hero-lights hero-lights--left"></span>
+    <span class="hero-lights hero-lights--right"></span>
+    <span class="hero-haze"></span>
+    {%- if section.settings.show_smoke -%}
+      <svg class="hero-smoke" viewBox="0 0 800 600" preserveAspectRatio="none" focusable="false">
+        <filter id="smoke-{{ section.id }}" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.009 0.016" numOctaves="4" seed="11"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 0.89  0 0 0 0 0.07  0 0 0 0 0.16  0 0 0 1.6 -0.62"/>
+          <feGaussianBlur stdDeviation="5"/>
+        </filter>
+        <rect width="800" height="600" filter="url(#smoke-{{ section.id }})"/>
+      </svg>
+    {%- endif -%}
+    <span class="hero-turf"></span>
+  </div>
 
   <div class="hero-figures" aria-hidden="true">
     {%- if section.settings.show_left -%}
-      <img class="hero-figure hero-figure--left" src="{{ figure_left_src }}" width="1086" height="1448" alt="" loading="eager" fetchpriority="high">
+      <img class="hero-figure hero-figure--left" src="{{ figure_left_src }}" width="1086" height="1448" alt="" loading="eager">
     {%- endif -%}
     {%- if section.settings.show_right -%}
-      <img class="hero-figure hero-figure--right" src="{{ figure_right_src }}" width="1086" height="1448" alt="" loading="eager" fetchpriority="high">
+      <img class="hero-figure hero-figure--right" src="{{ figure_right_src }}" width="1086" height="1448" alt="" loading="eager">
     {%- endif -%}
   </div>
 
   <div class="hero-scrim" aria-hidden="true"></div>
-  <div class="hero-slash" aria-hidden="true"></div>
 
   <div class="hero-gridiron__content page-width reveal">
     {%- if section.settings.eyebrow != blank -%}
@@ -112,7 +139,8 @@
   "tag": "section",
   "class": "section-hero",
   "settings": [
-    { "type": "image_picker", "id": "image", "label": "Hintergrundbild", "info": "Optional. Liegt hinter den Figuren. Ohne Bild trägt die dunkle Fläche." },
+    { "type": "image_picker", "id": "image", "label": "Hintergrundbild", "info": "Optional. Ersetzt das Stadion. Flutlicht, Dunst, Rauch und Rasen bleiben darüber liegen." },
+    { "type": "checkbox", "id": "show_smoke", "label": "Roten Rauch hinter der rechten Figur zeigen", "default": true },
     { "type": "header", "content": "Figuren" },
     { "type": "checkbox", "id": "show_left", "label": "Linke Figur zeigen", "default": true },
     { "type": "image_picker", "id": "figure_left", "label": "Linke Figur", "info": "Leer lassen: Jubelbild aus dem Theme." },
@@ -137,8 +165,9 @@
     { "type": "text", "id": "secondary_label", "label": "Zweiter Button", "default": "KOLLEKTION ENTDECKEN" },
     { "type": "url", "id": "secondary_link", "label": "Link des zweiten Buttons" },
     {
-      "type": "select", "id": "secondary_icon", "label": "Symbol im zweiten Button", "default": "star",
+      "type": "select", "id": "secondary_icon", "label": "Symbol im zweiten Button", "default": "play",
       "options": [
+        { "value": "play", "label": "Play" },
         { "value": "star", "label": "Stern" }, { "value": "cup", "label": "Pokal" },
         { "value": "tag", "label": "Anhänger" }, { "value": "none", "label": "Keins" }
       ]

@@ -1,0 +1,78 @@
+{%- comment -%}
+  DAS PROMO-BANNER.
+
+  Eine Kollektion gross in Szene setzen: Text links, das Produkt in der
+  Mitte, das Team rechts dahinter. Aufbau wie im Hero, nur flacher, damit es
+  als zweiter Akzent unter der Kachelreihe steht und nicht als zweiter Hero.
+
+  Das Produktbild ist am besten ein freigestelltes PNG ohne Hintergrund. Es
+  steht dann frei vor dem dunklen Grund und ueberlappt in das Teamfoto. Als
+  Vorgabe liegt der echte Rascals-Hoodie bei, freigestellt aus dem
+  Shopfoto. Es wird also kein Platzhalterprodukt gezeigt, das es gar nicht
+  gibt.
+{%- endcomment -%}
+{%- liquid
+  assign bg_src = 'promo-huddle.webp' | asset_url
+  if section.settings.image != blank
+    assign bg_src = section.settings.image | image_url: width: 2000
+  endif
+  assign product_src = 'promo-product.webp' | asset_url
+  if section.settings.product_image != blank
+    assign product_src = section.settings.product_image | image_url: width: 1100
+  endif
+  assign link = section.settings.button_link | default: routes.all_products_collection_url
+-%}
+<section class="promo-band" aria-labelledby="promo-{{ section.id }}">
+  <div class="promo-band__bg" aria-hidden="true">
+    <img src="{{ bg_src }}" width="2000" height="1294" alt="" loading="lazy">
+  </div>
+  <div class="promo-band__shade" aria-hidden="true"></div>
+  <span class="promo-band__slash" aria-hidden="true"></span>
+
+  <div class="promo-band__inner page-width">
+    <div class="promo-band__copy">
+      {%- if section.settings.eyebrow != blank -%}
+        <p class="promo-band__eyebrow">{{ section.settings.eyebrow | escape }}</p>
+      {%- endif -%}
+      <h2 class="promo-band__title" id="promo-{{ section.id }}">
+        <span>{{ section.settings.title | escape }}</span>
+        {%- if section.settings.title_accent != blank %} <span class="promo-band__accent">{{ section.settings.title_accent | escape }}</span>{%- endif -%}
+      </h2>
+      {%- if section.settings.text != blank -%}
+        <p class="promo-band__text">{{ section.settings.text | escape }}</p>
+      {%- endif -%}
+      {%- if section.settings.button_label != blank -%}
+        <a class="button button--red button--icon button--skew" href="{{ link }}">
+          <span>{{ section.settings.button_label | escape }}</span>
+          <b aria-hidden="true">&rarr;</b>
+        </a>
+      {%- endif -%}
+    </div>
+    {%- if section.settings.show_product -%}
+      <div class="promo-band__product">
+        <img src="{{ product_src }}" width="1100" height="682" alt="{{ section.settings.product_alt | escape }}" loading="lazy">
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Promo-Banner",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Kleine Zeile", "default": "LIMITED COLLECTION" },
+    { "type": "text", "id": "title", "label": "Überschrift", "default": "RASCALS" },
+    { "type": "text", "id": "title_accent", "label": "Überschrift, rotes Wort", "default": "DEFENSE" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Performance-Teamwear für maximale Leistung – auf und neben dem Field." },
+    { "type": "text", "id": "button_label", "label": "Button", "default": "JETZT ENTDECKEN" },
+    { "type": "url", "id": "button_link", "label": "Button-Link" },
+    { "type": "header", "content": "Bilder" },
+    { "type": "image_picker", "id": "image", "label": "Hintergrundfoto (rechts)", "info": "Leer lassen: Teamfoto aus dem Theme." },
+    { "type": "checkbox", "id": "show_product", "label": "Produktbild zeigen", "default": true },
+    { "type": "image_picker", "id": "product_image", "label": "Produktbild", "info": "Am besten freigestellt (PNG ohne Hintergrund). Leer lassen: Rascals-Hoodie aus dem Theme." },
+    { "type": "text", "id": "product_alt", "label": "Bildbeschreibung für Screenreader", "default": "Rascals Teamwear Hoodie, Vorder- und Rückseite" }
+  ],
+  "presets": [{ "name": "Promo-Banner" }]
+}
+{% endschema %}
