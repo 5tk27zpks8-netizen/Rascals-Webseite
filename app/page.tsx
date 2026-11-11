@@ -47,8 +47,12 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
   const state = isStudioMirror ? await readSiteBuilderState() : await readPublishedSiteBuilderState();
   const builderPage = findBuilderPage(state, "");
 
+  // Artikel aus dem Shop fuer den Teamwear-Block. Faellt der Shop aus, kommt
+  // eine leere Liste zurueck und der Block zeigt seine eigenen Bilder.
+  const shopProducts = await readShopProducts((await readCmsState()).shopUrl);
+
   if (builderPage && (builderPage.enabled || isStudioMirror)) {
-    return <SiteBuilderPage state={state} page={builderPage} />;
+    return <SiteBuilderPage state={state} page={builderPage} shopProducts={shopProducts} />;
   }
 
   // Which complete design is live is a CMS setting, chosen under /admin/designs.
@@ -59,8 +63,5 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
   if (design === "hybrid") return <HomeHybrid />;
 
   const brand = brandFromTheme(state.theme);
-  // Artikel aus dem Shop fuer den Teamwear-Block. Faellt der Shop aus, kommt
-  // eine leere Liste zurueck und der Block zeigt seine eigenen Bilder.
-  const shopProducts = await readShopProducts((await readCmsState()).shopUrl);
   return <><SiteShell page="home" brand={brand} heroOverride={<CmsHero/>} shopProducts={shopProducts}/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
 }

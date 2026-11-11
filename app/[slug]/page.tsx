@@ -45,7 +45,10 @@ export default async function ContentPage({ params }: { params: Promise<{ slug: 
   const builderPage = findBuilderPage(state, slug);
 
   if (builderPage?.enabled) {
-    return <SiteBuilderPage state={state} page={builderPage} />;
+    // Nur die Shop-Seite zeigt den Teamwear-Block; sonst waere es eine
+    // Anfrage an Shopify bei jedem Aufruf von /team oder /galerie.
+    const builderShop = slug === "shop" ? await readShopProducts((await readCmsState()).shopUrl) : [];
+    return <SiteBuilderPage state={state} page={builderPage} shopProducts={builderShop} />;
   }
 
   if (legacyPages.includes(slug as PageName)) {
