@@ -1,18 +1,100 @@
+{%- comment -%}
+  DIE SHOP-ÜBERSICHT.
+
+  Vorher lief ein `for collection in collections` über alles, was der Shop hat,
+  in einer Reihe, alle gleich groß. Mit drei Linien und fünf Kategorien wären
+  das acht gleichberechtigte Kacheln ohne Aussage darüber, was wovon eine
+  Unterteilung ist.
+
+  Jetzt sind es zwei Blöcke: die Linien groß, weil das die Entscheidung ist,
+  mit der jemand in den Shop einsteigt, und die Kategorien als Reihe darunter,
+  für den, der nicht nach Linie sucht, sondern nach einer Mütze.
+
+  Beide Listen werden im Theme-Editor gesetzt, nicht aus allen Kollektionen
+  geraten: sonst landen Automatik-Kollektionen und Aktions-Listen zwischen den
+  Linien. Ist nichts gesetzt, fällt die Seite auf das alte Verhalten zurück,
+  damit sie nie leer ist.
+{%- endcomment -%}
+
+{%- assign lines = section.settings.lines -%}
+{%- assign categories = section.settings.categories -%}
+{%- assign lines_size = lines | size -%}
+{%- assign categories_size = categories | size -%}
+{%- assign has_curated = false -%}
+{%- if lines_size > 0 or categories_size > 0 -%}{%- assign has_curated = true -%}{%- endif -%}
+
 <section class="section-shell page-width">
-  <header class="page-title reveal"><p class="eyebrow eyebrow--red">CHOOSE YOUR UNIT</p><h1>{{ section.settings.heading | escape }}</h1></header>
-  <div class="collection-list">
-    {%- for collection in collections -%}
-      <a class="collection-card reveal" href="{{ collection.url }}">
-        {%- if collection.featured_image -%}{{ collection.featured_image | image_url: width: 1200 | image_tag: widths: '450, 750, 1000, 1200', loading: 'lazy', alt: collection.featured_image.alt }}{%- else -%}{{ 'collection-1' | placeholder_svg_tag }}{%- endif -%}
-        <span>{{ collection.title | escape }} <b>→</b></span>
-      </a>
-    {%- endfor -%}
-  </div>
+  <header class="page-title reveal">
+    <p class="eyebrow eyebrow--red">{{ section.settings.eyebrow | escape }}</p>
+    <h1>{{ section.settings.heading | escape }}</h1>
+    {%- if section.settings.text != blank -%}<div class="rte">{{ section.settings.text }}</div>{%- endif -%}
+  </header>
+
+  {%- if has_curated -%}
+
+    {%- if lines_size > 0 -%}
+      <div class="collection-list">
+        {%- for collection in lines -%}
+          <a class="collection-card reveal" href="{{ collection.url }}">
+            {%- if collection.featured_image -%}
+              {{ collection.featured_image | image_url: width: 1200 | image_tag: widths: '450, 750, 1000, 1200', loading: 'lazy', alt: collection.featured_image.alt }}
+            {%- else -%}
+              {{ 'collection-1' | placeholder_svg_tag }}
+            {%- endif -%}
+            <span>{{ collection.title | escape }} <b>&rarr;</b></span>
+          </a>
+        {%- endfor -%}
+      </div>
+    {%- endif -%}
+
+    {%- if categories_size > 0 -%}
+      <header class="page-title page-title--sub reveal">
+        <h2>{{ section.settings.categories_heading | escape }}</h2>
+      </header>
+      <div class="category-tiles">
+        {%- for collection in categories -%}
+          <a class="category-tile reveal" href="{{ collection.url }}">
+            {%- if collection.featured_image -%}
+              {{ collection.featured_image | image_url: width: 600 | image_tag: widths: '240, 360, 480, 600', loading: 'lazy', alt: collection.featured_image.alt }}
+            {%- else -%}
+              {{ 'collection-2' | placeholder_svg_tag }}
+            {%- endif -%}
+            <span>{{ collection.title | escape }}</span>
+          </a>
+        {%- endfor -%}
+      </div>
+    {%- endif -%}
+
+  {%- else -%}
+
+    <div class="collection-list">
+      {%- for collection in collections -%}
+        <a class="collection-card reveal" href="{{ collection.url }}">
+          {%- if collection.featured_image -%}
+            {{ collection.featured_image | image_url: width: 1200 | image_tag: widths: '450, 750, 1000, 1200', loading: 'lazy', alt: collection.featured_image.alt }}
+          {%- else -%}
+            {{ 'collection-1' | placeholder_svg_tag }}
+          {%- endif -%}
+          <span>{{ collection.title | escape }} <b>&rarr;</b></span>
+        </a>
+      {%- endfor -%}
+    </div>
+
+  {%- endif -%}
 </section>
 
 {% schema %}
 {
   "name": "Kollektionsliste",
-  "settings": [{ "type": "text", "id": "heading", "label": "Heading", "default": "SHOP BY POSITION." }]
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Kleine Überschrift", "default": "OFFICIAL TEAMWEAR" },
+    { "type": "text", "id": "heading", "label": "Überschrift", "default": "DER SHOP." },
+    { "type": "richtext", "id": "text", "label": "Einleitung" },
+    { "type": "header", "content": "Linien" },
+    { "type": "collection_list", "id": "lines", "label": "Kollektionen (Old-School, Basic, Standard)", "limit": 6 },
+    { "type": "header", "content": "Kategorien" },
+    { "type": "text", "id": "categories_heading", "label": "Überschrift", "default": "NACH KATEGORIE." },
+    { "type": "collection_list", "id": "categories", "label": "Kategorien (Mützen, Pullover, Jacken …)", "limit": 12 }
+  ]
 }
 {% endschema %}

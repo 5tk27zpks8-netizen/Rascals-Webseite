@@ -1,3 +1,20 @@
+{%- comment -%}
+  DER HEADER, JETZT MIT ZWEI EBENEN.
+
+  Vorher lief die Navigation flach durch `menu.links` und hat Unterpunkte
+  einfach verschluckt: ein Menü wie "Shop → Old-School / Basic / Standard"
+  war im Theme nicht darstellbar, egal was im Shopify-Admin eingetragen war.
+
+  Shopify liefert die zweite Ebene als `link.links` mit. Das Aufklappen läuft
+  bewusst ohne JavaScript, über :hover und :focus-within — damit funktioniert
+  es auch per Tastatur, und es gibt keinen Zustand, der mit dem DOM aus dem
+  Takt geraten kann.
+
+  Mobil wird nicht aufgeklappt, sondern eingerückt: bei drei Kollektionen und
+  fünf Kategorien sind das zehn Zeilen, und zehn Zeilen lesen sich schneller
+  als zwei Tipp-Ebenen.
+{%- endcomment -%}
+
 <header class="site-header{% if section.settings.sticky %} site-header--sticky{% endif %}">
   <div class="site-header__inner page-width">
     <a class="brand" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
@@ -11,22 +28,37 @@
     <nav class="desktop-nav" aria-label="Hauptnavigation">
       <ul>
         {%- for link in section.settings.menu.links -%}
-          <li>
-            <a href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>{{ link.title | escape }}</a>
+          <li{% if link.links.size > 0 %} class="has-subnav"{% endif %}>
+            <a href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>
+              {{- link.title | escape -}}
+              {%- if link.links.size > 0 -%}<i aria-hidden="true">&#9662;</i>{%- endif -%}
+            </a>
+            {%- if link.links.size > 0 -%}
+              <ul class="subnav">
+                {%- for child in link.links -%}
+                  <li><a href="{{ child.url }}"{% if child.current %} aria-current="page"{% endif %}>{{ child.title | escape }}</a></li>
+                {%- endfor -%}
+              </ul>
+            {%- endif -%}
           </li>
         {%- endfor -%}
       </ul>
     </nav>
 
     <div class="header-actions">
-      <a class="header-action" href="{{ routes.search_url }}" aria-label="{{ 'general.search.search' | t }}">⌕</a>
+      <a class="header-action" href="{{ routes.search_url }}" aria-label="{{ 'general.search.search' | t }}">&#8981;</a>
       <a class="header-action header-cart" href="{{ routes.cart_url }}" aria-label="{{ 'cart.title' | t }}">
-        <span>▱</span><b data-cart-count>{{ cart.item_count }}</b>
+        <span>&#9649;</span><b data-cart-count>{{ cart.item_count }}</b>
       </a>
       <details class="mobile-menu">
         <summary aria-label="Navigation öffnen"><span></span><span></span><span></span></summary>
         <nav aria-label="Mobile Navigation">
-          {%- for link in section.settings.menu.links -%}<a href="{{ link.url }}">{{ link.title | escape }}</a>{%- endfor -%}
+          {%- for link in section.settings.menu.links -%}
+            <a href="{{ link.url }}">{{ link.title | escape }}</a>
+            {%- for child in link.links -%}
+              <a class="mobile-menu__child" href="{{ child.url }}">{{ child.title | escape }}</a>
+            {%- endfor -%}
+          {%- endfor -%}
         </nav>
       </details>
     </div>

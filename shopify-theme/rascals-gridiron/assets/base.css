@@ -390,3 +390,178 @@ body:hover .football-cursor { opacity: .8; }
 
 .motion-disabled *, .motion-disabled *::before, .motion-disabled *::after { animation: none !important; transition: none !important; }
 .motion-disabled .reveal { opacity: 1; transform: none; }
+
+/* ==========================================================================
+   KOLLEKTIONEN UND KATEGORIEN
+   Navigation mit zweiter Ebene, Kategorie-Reiter, Filterkasten.
+   Alles eckig und in der Kleinschrift-Stimme des Themes (.68rem/900/.12em) —
+   die Impact-Kursive bleibt den Überschriften, sonst schreit die halbe Seite.
+   ========================================================================== */
+
+/* --- Zweite Navigationsebene. Kein JS: :hover und :focus-within reichen,
+       und damit geht es auch per Tabulator. --- */
+.desktop-nav li { position: relative; }
+.desktop-nav .has-subnav > a i { margin-left: .4em; font-size: .62em; font-style: normal; vertical-align: .12em; }
+.desktop-nav .subnav {
+  position: absolute;
+  z-index: 90;
+  top: 100%;
+  left: 50%;
+  display: grid;
+  /* .desktop-nav ul setzt fuer die Hauptzeile Abstand und Zentrierung. Die
+     Regel greift auch hier — ohne diese drei Zeilen stehen die Unterpunkte
+     3vw auseinander und das Menue wird dreimal so hoch wie noetig. */
+  gap: 0;
+  justify-content: normal;
+  align-items: normal;
+  min-width: 230px;
+  margin: 0;
+  padding: .45rem 0;
+  background: var(--navy);
+  box-shadow: 0 18px 44px rgba(3, 12, 24, .34);
+  list-style: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 10px);
+  transition: opacity .2s ease, transform .2s ease, visibility .2s;
+}
+.desktop-nav .has-subnav:hover > .subnav,
+.desktop-nav .has-subnav:focus-within > .subnav { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+.desktop-nav .subnav li { position: static; }
+.desktop-nav .subnav a { display: block; padding: .72rem 1.3rem; color: var(--white); font-size: .74rem; white-space: nowrap; }
+.desktop-nav .subnav a::after { display: none; }
+.desktop-nav .subnav a:hover, .desktop-nav .subnav a[aria-current="page"] { color: var(--red); }
+/* Das letzte Menü sitzt am rechten Rand; zentriert würde es über die Seite
+   hinausragen und von body{overflow-x:hidden} abgeschnitten. */
+.desktop-nav li:last-child .subnav { right: 0; left: auto; transform: translate(0, 10px); }
+.desktop-nav li:last-child.has-subnav:hover > .subnav,
+.desktop-nav li:last-child.has-subnav:focus-within > .subnav { transform: translate(0, 0); }
+
+/* Mobil wird eingerückt statt aufgeklappt. */
+.mobile-menu nav a.mobile-menu__child {
+  padding: .68rem 0 .68rem 1.1rem;
+  font-size: 1.02rem;
+  letter-spacing: .04em;
+  opacity: .78;
+}
+
+/* --- Kategorie-Reiter über dem Raster --- */
+.category-nav { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.6rem; }
+.category-nav__item {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .62rem 1rem;
+  border: 1px solid rgba(6, 20, 38, .2);
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transition: color .18s ease, background .18s ease, border-color .18s ease;
+}
+.category-nav__item i { font-size: .9em; font-style: normal; font-weight: 700; letter-spacing: 0; opacity: .55; }
+.category-nav__item:hover { border-color: var(--navy); }
+.category-nav__item.is-active { color: var(--white); background: var(--navy); border-color: var(--navy); }
+.category-nav__item.is-active i { opacity: .7; }
+
+/* --- Filterkasten --- */
+.collection-toolbar { flex-wrap: wrap; }
+.filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-right: auto; }
+.filter-bar .active-filters { margin-right: 0; }
+.filter-drop { position: relative; }
+/* Ein geschlossenes <details> blendet seinen Inhalt ueber content-visibility
+   aus. Das Panel ist aber position:absolute mit .filter-drop als Bezugsrahmen,
+   also liegt sein Bezugsrahmen AUSSERHALB des ausgeblendeten Bereichs — es
+   entkommt und bliebe offen stehen. Darum ausdruecklich weg. */
+.filter-drop:not([open]) .filter-drop__panel { display: none; }
+.filter-drop > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .62rem .9rem;
+  border: 1px solid rgba(6, 20, 38, .2);
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  list-style: none;
+}
+.filter-drop > summary::-webkit-details-marker { display: none; }
+.filter-drop > summary i { font-size: .6em; font-style: normal; }
+.filter-drop > summary b { padding: 0 .35rem; color: var(--white); background: var(--red); font-size: .62rem; }
+.filter-drop[open] > summary { color: var(--white); background: var(--navy); border-color: var(--navy); }
+.filter-drop__panel {
+  position: absolute;
+  z-index: 70;
+  top: calc(100% + 4px);
+  left: 0;
+  display: grid;
+  gap: .1rem;
+  min-width: 250px;
+  max-height: 320px;
+  padding: .7rem;
+  overflow-y: auto;
+  background: var(--white);
+  border: 1px solid rgba(6, 20, 38, .18);
+  box-shadow: 0 18px 44px rgba(3, 12, 24, .18);
+}
+.filter-option { display: flex; align-items: center; gap: .6rem; padding: .4rem .3rem; font-size: .82rem; cursor: pointer; }
+.filter-option:hover { background: var(--ice); }
+.filter-option input { width: 17px; height: 17px; accent-color: var(--red); }
+.filter-option span { margin-right: auto; }
+.filter-option i { font-size: .76rem; font-style: normal; opacity: .5; }
+.filter-option.is-empty { opacity: .4; cursor: not-allowed; }
+.filter-price { display: grid; gap: .6rem; }
+.filter-price label {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr;
+  align-items: center;
+  gap: .5rem;
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.filter-price input { padding: .55rem; background: var(--white); border: 1px solid rgba(6, 20, 38, .18); }
+.filter-apply { min-height: 44px; padding: .6rem 1rem; font-size: .7rem; }
+
+/* --- Kategorie-Kacheln auf der Shop-Übersicht --- */
+.page-title--sub { margin-top: 3.6rem; }
+.category-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; }
+.category-tile { position: relative; height: 240px; color: var(--white); background: var(--navy); overflow: hidden; }
+.category-tile img, .category-tile svg { width: 100%; height: 100%; object-fit: cover; transition: transform .45s ease; }
+.category-tile:hover img { transform: scale(1.06); }
+.category-tile > span {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 2.4rem .9rem .9rem;
+  background: linear-gradient(0deg, rgba(6, 20, 38, .95), transparent);
+  font: italic 900 1.15rem Impact, Haettenschweiler, sans-serif;
+  text-transform: uppercase;
+}
+
+.collection-empty { grid-column: 1 / -1; padding: 3rem 0; }
+.collection-empty a { color: var(--red); text-decoration: underline; }
+
+@media (max-width: 1100px) {
+  .category-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .category-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .category-tile { height: 180px; }
+  .category-tile > span { font-size: .95rem; }
+  .category-nav { gap: .4rem; }
+  .category-nav__item { padding: .55rem .75rem; font-size: .62rem; letter-spacing: .08em; }
+  .filter-bar { width: 100%; }
+  .filter-drop { flex: 1 1 8rem; }
+  .filter-drop > summary { justify-content: center; width: 100%; }
+  .filter-drop__panel { right: 0; left: 0; min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-nav .subnav, .category-tile img, .category-nav__item { transition: none; }
+  .category-tile:hover img { transform: none; }
+}
