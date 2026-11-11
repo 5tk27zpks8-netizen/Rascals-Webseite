@@ -113,8 +113,8 @@ function legacyHomeSections(template: BuilderPage): BuilderSection[] {
     },
     items: [
       { id: "shop-main", eyebrow: "SHOP DROP · 01", title: "Puli", subtitle: "25,00 €", image: "/shop-product-4k.webp", linkLabel: "Puli", linkUrl: productUrl },
-      { id: "shop-detail", eyebrow: "DETAIL", title: "Teamwear", subtitle: "Shop ansehen", image: "/shop-product-4k.webp", linkLabel: "Shop ansehen", linkUrl: productUrl },
-      { id: "shop-online", eyebrow: "ONLINE", title: "Rascals Gear", subtitle: "Alle Artikel", image: "/shop-product-4k.webp", linkLabel: "Alle Artikel", linkUrl: shopUrl },
+      { id: "shop-detail", eyebrow: "DETAIL", title: "Teamwear", subtitle: "Shop ansehen", image: "/team-walk-4k.webp", linkLabel: "Shop ansehen", linkUrl: shopUrl },
+      { id: "shop-online", eyebrow: "ONLINE", title: "Rascals Gear", subtitle: "Alle Artikel", image: "/team-celebrate-4k.webp", linkLabel: "Alle Artikel", linkUrl: shopUrl },
     ],
   };
 

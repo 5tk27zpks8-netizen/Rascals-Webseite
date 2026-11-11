@@ -278,6 +278,71 @@ function shopAheadOfTheStory(state: Partial<SiteBuilderState>): Partial<SiteBuil
  */
 const UNITS_PLAIN_IN = 9;
 
+/**
+ * DREIMAL DASSELBE PRODUKT AUF DER STARTSEITE.
+ *
+ * Der Teamwear-Block der Startseite ist eine cards-Sektion in der Variante
+ * "legacy-shop". Ihre drei Karten trugen alle dasselbe Bild,
+ * /shop-product-4k.webp. Was sie auseinanderhielt, war ausschliesslich CSS:
+ * die zweite Karte wurde auf 1.55 gezoomt und bei 18 % angeschnitten, die
+ * dritte auf 1.45 bei 78 %. Aus einem Hoodie-Foto wurden so drei
+ * vermeintliche Artikel.
+ *
+ * Dieselbe Stelle gab es auch in SiteShell, fuer /shop. Die ist bereits
+ * behoben — aber die Startseite rendert ueber den Builder, und dessen Inhalt
+ * steht in der Datenbank, nicht im Code. Eine Aenderung am Startwert haette
+ * dort nichts bewirkt.
+ *
+ * NUR DIE WIEDERHOLUNG WIRD ANGEFASST.
+ *
+ * Getauscht wird eine Karte nur, wenn sie wirklich dasselbe Bild traegt wie
+ * die erste. Hat jemand im Editor laengst ein eigenes Bild gesetzt, bleibt
+ * es stehen — eine Migration, die fremde Entscheidungen ueberschreibt, waere
+ * schlimmer als das Problem.
+ */
+const SHOP_IMAGES_IN = 10;
+
+const SHOP_TEAMWEAR_IMAGE = "/team-walk-4k.webp";
+const SHOP_GEAR_IMAGE = "/team-celebrate-4k.webp";
+
+function distinctShopImages(state: Partial<SiteBuilderState>): Partial<SiteBuilderState> {
+  const pages = state.pages;
+  if (!Array.isArray(pages)) return state;
+  return {
+    ...state,
+    pages: pages.map((page) => {
+      const sections = page?.sections;
+      if (!Array.isArray(sections)) return page;
+      return {
+        ...page,
+        sections: sections.map((section) => {
+          if (section?.type !== "cards" || section?.variant !== "legacy-shop") return section;
+          const items = section.items;
+          if (!Array.isArray(items) || items.length < 2) return section;
+
+          const first = (items[0]?.image ?? "").trim();
+          if (!first) return section;
+
+          const ersatz = [SHOP_TEAMWEAR_IMAGE, SHOP_GEAR_IMAGE];
+          let getauscht = false;
+          const neu = items.map((item, index) => {
+            if (index === 0) return item;
+            const bild = (item?.image ?? "").trim();
+            if (bild !== first) return item;
+            const nachfolger = ersatz[index - 1];
+            if (!nachfolger) return item;
+            getauscht = true;
+            return { ...item, image: nachfolger };
+          });
+
+          return getauscht ? { ...section, items: neu } : section;
+        }),
+      };
+    }),
+  };
+}
+
+
 const PLAIN_HEADLINE = "EIN TEAM.";
 const RETIRED_HEADLINE = "EIN KADER. JEDE POSITION.";
 const RETIRED_STRAPLINE =
@@ -320,7 +385,7 @@ function normalizeItem(item:BuilderItem):BuilderItem{return{id:item.id||crypto.r
 function normalizeSection(section:Partial<BuilderSection>):BuilderSection{const s=section.style??{};const desktopAlign=alignOr(s.align,"left");const desktopMin=Math.max(0,numberOr(s.minHeight,0));return{id:section.id||crypto.randomUUID(),type:section.type||"text",variant:section.variant||"default",visible:section.visible!==false,eyebrow:section.eyebrow??"",title:section.title??"",accent:section.accent??"",text:section.text??"",image:section.image??"",image2:section.image2??"",buttonLabel:section.buttonLabel??"",buttonUrl:section.buttonUrl??"",elementStyles:normalizeElementStyles(section.elementStyles),style:{background:s.background||"#050d18",textColor:s.textColor||"#ffffff",accentColor:s.accentColor||"#e7192d",paddingTop:Math.max(0,numberOr(s.paddingTop,64)),paddingBottom:Math.max(0,numberOr(s.paddingBottom,64)),minHeight:desktopMin,align:desktopAlign,maxWidth:Math.max(320,numberOr(s.maxWidth,1600)),rounded:Math.max(0,numberOr(s.rounded,0)),border:s.border||"",borderWidth:clamp(s.borderWidth,0,20,s.border?1:0),borderStyle:s.borderStyle==="dashed"||s.borderStyle==="dotted"||s.borderStyle==="none"?s.borderStyle:"solid",boxShadow:s.boxShadow||"",opacity:clamp(s.opacity,0,1,1),headingScale:clamp(s.headingScale,.45,1.8,1),backgroundMode:s.backgroundMode==="gradient"||s.backgroundMode==="image"||s.backgroundMode==="video"?s.backgroundMode:"color",backgroundImage:s.backgroundImage||"",backgroundVideo:s.backgroundVideo||"",backgroundGradient:s.backgroundGradient||"linear-gradient(135deg,#050d18,#0b1725)",overlayColor:s.overlayColor||"#020812",overlayOpacity:clamp(s.overlayOpacity,0,1,.45),backgroundPosition:s.backgroundPosition||"center",backgroundFixed:s.backgroundFixed===true,tablet:normalizeResponsive(s.tablet,{paddingTop:56,paddingBottom:56,minHeight:desktopMin,align:desktopAlign,maxWidth:1200,headingScale:.9}),mobile:normalizeResponsive(s.mobile,{paddingTop:40,paddingBottom:40,minHeight:0,align:desktopAlign,maxWidth:720,headingScale:.72})},items:Array.isArray(section.items)?section.items.map(normalizeItem):[]}}
 function normalizePage(page:Partial<BuilderPage>):BuilderPage{return{id:page.id||crypto.randomUUID(),name:page.name||"Neue Seite",slug:cleanSlug(page.slug||""),enabled:page.enabled===true,showInNav:page.showInNav===true,navLabel:page.navLabel||page.name||"Seite",title:page.title||"",description:page.description||"",sections:Array.isArray(page.sections)?page.sections.map(normalizeSection):[]}}
 function migratePages(input:Partial<SiteBuilderState>):BuilderPage[]{const incoming=Array.isArray(input.pages)?input.pages:[];const base=templates();const merged=base.map(template=>{const previous=incoming.find(page=>page.id===template.id||cleanSlug(page.slug||"")===template.slug);if(!previous)return template;const normalized=normalizePage(previous);return normalized.sections.length?normalized:{...template,enabled:normalized.enabled,showInNav:normalized.showInNav,navLabel:normalized.navLabel,title:normalized.title||template.title,description:normalized.description||template.description}});const custom=incoming.filter(page=>!base.some(template=>template.id===page.id||template.slug===cleanSlug(page.slug||""))).map(normalizePage);return[...merged,...custom]}
-function normalizeState(incoming:Partial<SiteBuilderState>):SiteBuilderState{const stored=numberOr(incoming.version,1);const restored:Partial<SiteBuilderState>=stored<BRAND_RESTORED_IN?restoreBrandLine(incoming):incoming;const moved:Partial<SiteBuilderState>=stored<NEWS_MOVED_IN?newsUnderTheSchedule(restored):restored;const merged:Partial<SiteBuilderState>=stored<UNITS_MERGED_IN?shopAheadOfTheStory(mergeUnitSections(moved)):moved;const input:Partial<SiteBuilderState>=stored<UNITS_PLAIN_IN?unitsHeadline(merged):merged;const raw=input.theme??{};const theme:BuilderTheme={...defaultSiteBuilderState.theme,...raw,contentWidth:Math.max(800,numberOr(raw.contentWidth,1600)),radius:Math.max(0,numberOr(raw.radius,0)),headingWeight:clamp(raw.headingWeight,100,1000,950),headingTracking:clamp(raw.headingTracking,-.12,.2,-.04),bodyLineHeight:clamp(raw.bodyLineHeight,1,2.4,1.65),headingTransform:raw.headingTransform==="none"?"none":"uppercase",bodyFontSize:clamp(raw.bodyFontSize,8,40,16),bodyFontWeight:clamp(raw.bodyFontWeight,100,1000,400),bodyLetterSpacing:clamp(raw.bodyLetterSpacing,-.1,.2,0),bodyItalic:raw.bodyItalic===true,headingItalic:raw.headingItalic===true};const pages=numberOr(input.version,1)<2?migratePages(input):Array.isArray(input.pages)?input.pages.map(normalizePage):templates();return{version:UNITS_PLAIN_IN,editorInitialized:input.editorInitialized===true,theme,pages}}
+function normalizeState(incoming:Partial<SiteBuilderState>):SiteBuilderState{const stored=numberOr(incoming.version,1);const restored:Partial<SiteBuilderState>=stored<BRAND_RESTORED_IN?restoreBrandLine(incoming):incoming;const moved:Partial<SiteBuilderState>=stored<NEWS_MOVED_IN?newsUnderTheSchedule(restored):restored;const merged:Partial<SiteBuilderState>=stored<UNITS_MERGED_IN?shopAheadOfTheStory(mergeUnitSections(moved)):moved;const headline:Partial<SiteBuilderState>=stored<UNITS_PLAIN_IN?unitsHeadline(merged):merged;const input:Partial<SiteBuilderState>=stored<SHOP_IMAGES_IN?distinctShopImages(headline):headline;const raw=input.theme??{};const theme:BuilderTheme={...defaultSiteBuilderState.theme,...raw,contentWidth:Math.max(800,numberOr(raw.contentWidth,1600)),radius:Math.max(0,numberOr(raw.radius,0)),headingWeight:clamp(raw.headingWeight,100,1000,950),headingTracking:clamp(raw.headingTracking,-.12,.2,-.04),bodyLineHeight:clamp(raw.bodyLineHeight,1,2.4,1.65),headingTransform:raw.headingTransform==="none"?"none":"uppercase",bodyFontSize:clamp(raw.bodyFontSize,8,40,16),bodyFontWeight:clamp(raw.bodyFontWeight,100,1000,400),bodyLetterSpacing:clamp(raw.bodyLetterSpacing,-.1,.2,0),bodyItalic:raw.bodyItalic===true,headingItalic:raw.headingItalic===true};const pages=numberOr(input.version,1)<2?migratePages(input):Array.isArray(input.pages)?input.pages.map(normalizePage):templates();return{version:SHOP_IMAGES_IN,editorInitialized:input.editorInitialized===true,theme,pages}}
 async function readKey(key:string):Promise<SiteBuilderState|null>{await ensureCmsSchema();const{DB}=bindings();const row=await DB.prepare("SELECT value FROM cms_settings WHERE key = ?").bind(key).first<{value:string}>();if(!row?.value)return null;try{return normalizeState(JSON.parse(row.value) as SiteBuilderState)}catch{return null}}
 async function writeKey(key:string,state:SiteBuilderState){await ensureCmsSchema();const normalized=normalizeState(state);const{DB}=bindings();await DB.prepare(`INSERT INTO cms_settings (key,value,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP`).bind(key,JSON.stringify(normalized)).run();return normalized}
 export async function readSiteBuilderState():Promise<SiteBuilderState>{return await readKey(DRAFT_KEY)??await readKey(LEGACY_KEY)??defaultSiteBuilderState}
