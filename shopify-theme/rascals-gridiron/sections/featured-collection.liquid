@@ -33,9 +33,9 @@
     <div class="section-heading reveal">
       <div><p class="eyebrow eyebrow--red">{{ section.settings.eyebrow | escape }}</p><h2>{{ section.settings.heading | escape }}</h2></div>
       {%- if featured_collection != blank -%}
-        <a class="text-link text-link--dark" href="{{ featured_collection.url }}">ALLE ANSEHEN <span>&rarr;</span></a>
+        <a class="button button--red button--icon button--skew" href="{{ featured_collection.url }}"><span>ALLE ANSEHEN</span><b aria-hidden="true">&rarr;</b></a>
       {%- elsif source_products -%}
-        <a class="text-link text-link--dark" href="{{ routes.all_products_collection_url }}">ALLE ANSEHEN <span>&rarr;</span></a>
+        <a class="button button--red button--icon button--skew" href="{{ routes.all_products_collection_url }}"><span>ALLE ANSEHEN</span><b aria-hidden="true">&rarr;</b></a>
       {%- endif -%}
     </div>
     <div class="product-grid">
@@ -47,7 +47,12 @@
         {%- for index in (1..4) -%}
           <article class="product-card reveal">
             <div class="product-card__media product-placeholder">{{ 'product-' | append: index | placeholder_svg_tag }}</div>
-            <div class="product-card__body"><div><span class="eyebrow">RASCALS GEAR</span><h3>Dein Produkt {{ index }}</h3><div class="price"><strong>€59,00</strong></div></div><span class="quick-add">+</span></div>
+            <div class="product-card__body">
+              <h3>Dein Produkt {{ index }}</h3>
+              <p class="product-card__sub">RASCALS GEAR</p>
+              <div class="price"><strong>59,00 €</strong></div>
+              <span class="product-card__go" aria-hidden="true">&rarr;</span>
+            </div>
           </article>
         {%- endfor -%}
       {%- endif -%}

@@ -12,11 +12,11 @@
       {% render 'price', product: featured_product %}
       {% form 'product', featured_product %}
         <input type="hidden" name="id" value="{{ featured_product.selected_or_first_available_variant.id }}">
-        <button class="button button--red" type="submit">{{ 'products.product.add_to_cart' | t }} →</button>
+        <button class="button button--red button--icon button--skew" type="submit"><span>{{ 'products.product.add_to_cart' | t }}</span><b aria-hidden="true">→</b></button>
         {%- if section.settings.show_dynamic_checkout -%}{{ form | payment_button }}{%- endif -%}
       {% endform %}
     {%- else -%}
-      <p>{{ section.settings.text }}</p><a class="button button--red" href="{{ routes.all_products_collection_url }}">SHOP NOW →</a>
+      <p>{{ section.settings.text }}</p><a class="button button--red button--icon button--skew" href="{{ routes.all_products_collection_url }}"><span>SHOP NOW</span><b aria-hidden="true">→</b></a>
     {%- endif -%}
     {%- for block in section.blocks -%}{%- case block.type -%}{%- when '@app' -%}{% render block %}{%- when 'custom_liquid' -%}<div class="rte" {{ block.shopify_attributes }}>{{ block.settings.custom_liquid }}</div>{%- endcase -%}{%- endfor -%}
   </div>

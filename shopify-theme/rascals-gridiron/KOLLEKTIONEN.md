@@ -147,13 +147,45 @@ Schriftgröße lesbar bleibt. Leer lassen blendet ihn aus.
 
 ---
 
+## Größe und Farbe in der Filterspalte
+
+Die Filterspalte links auf jeder Linienseite zeigt **Kategorie** immer, sobald
+Artikel getaggt sind. **Größe**, **Farbe** und **Preis** erscheinen erst, wenn
+Shopify die Filter liefert — vorher bleiben diese Gruppen weg, statt
+Kästchen zu zeigen, die nichts filtern.
+
+So schaltest du sie ein:
+
+1. Im Shopify-Admin die App **Search & Discovery** öffnen (von Shopify, kostenlos;
+   ist sie nicht installiert, im App Store danach suchen).
+2. **Filter → Filter hinzufügen** und nacheinander anlegen:
+   - **Produktoption „Größe"** (bzw. so, wie die Option bei euren Artikeln heißt)
+   - **Produktoption „Farbe"**
+   - **Preis**
+   - optional **Verfügbarkeit**
+3. Speichern. Die Gruppen erscheinen sofort in der Filterspalte.
+
+Das Theme erkennt die Gruppen am Namen: alles mit „Größe" oder „Size" wird als
+Kästchen-Raster (XS, S, M …) dargestellt, alles mit „Farbe" oder „Color" als
+Farbkreise.
+
+**Farbkreise:** Sind in Shopify für die Farboption Farbfelder hinterlegt, nimmt
+das Theme genau diese Farbe. Sonst übersetzt es gängige Namen (Schwarz, Weiß,
+Navy, Rot, Grau, Blau, Grün …) in einen Farbton. Ein Name, den es nicht kennt,
+erscheint als Text statt als geratener Kreis.
+
+---
+
 ## Was das Theme daraus macht
 
-- **Kollektionsseite** (`/collections`): Überschrift „KOLLEKTIONEN", darunter
+- **Kollektionsübersicht** (`/collections`): Überschrift „KOLLEKTIONEN", darunter
   eine Knopfreihe der Linien und die Bildkacheln.
-- **Linienseite** (`/collections/old-school`): Knopfreihe der
-  Unterkategorien über dem Raster, „Alle" ganz links.
+- **Linienseite** (`/collections/old-school`): links die Filterspalte mit
+  Kategorie, Größe, Farbe und Preis, rechts Titel („OLD-SCHOOL KOLLEKTION"),
+  Produktanzahl, Sortierung und das Raster. Auf dem Telefon klappt die Spalte
+  zu einem „Filter"-Knopf über dem Raster zusammen.
 - **Kopfzeile:** zweite Menüebene, aufklappbar per Maus und per Tabulator.
 
-Das Design ist unverändert: am bestehenden CSS wurde keine Zeile geändert,
-nur ergänzt.
+Seit dem Umbau auf das neue Shop-Design (dunkle Leisten, Stadion-Hero,
+Kategoriekacheln, Promo-Banner, neue Produktkarten) ist das CSS bewusst
+überarbeitet, nicht mehr nur ergänzt.
