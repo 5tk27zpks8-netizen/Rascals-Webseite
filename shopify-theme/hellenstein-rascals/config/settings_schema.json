@@ -1,0 +1,20 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Hellenstein Rascals",
+    "theme_version": "1.0.0",
+    "theme_author": "Hellenstein Rascals",
+    "theme_documentation_url": "https://shopify.dev/docs/storefronts/themes",
+    "theme_support_url": "https://hellenstein-rascals.myshopify.com"
+  },
+  {
+    "name": "Branding",
+    "settings": [
+      { "type": "image_picker", "id": "logo", "label": "Logo (optional)" },
+      { "type": "color", "id": "color_night", "label": "Hintergrund", "default": "#070914" },
+      { "type": "color", "id": "color_surface", "label": "Flächen", "default": "#11152f" },
+      { "type": "color", "id": "color_red", "label": "Rascals Rot", "default": "#9e210f" },
+      { "type": "color", "id": "color_text", "label": "Text", "default": "#ffffff" }
+    ]
+  }
+]

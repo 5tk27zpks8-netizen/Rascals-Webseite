@@ -1,0 +1,55 @@
+{% liquid
+  assign team_page = pages['team']
+  if team_page != blank
+    assign team_url = team_page.url
+  else
+    assign team_url = '/pages/team'
+  endif
+%}
+{% if section.settings.announcement_text != blank %}
+  <div class="announcement">
+    {% if section.settings.announcement_link != blank %}<a href="{{ section.settings.announcement_link }}">{% endif %}
+      {{ section.settings.announcement_text }}
+    {% if section.settings.announcement_link != blank %}</a>{% endif %}
+  </div>
+{% endif %}
+<header class="site-header" data-site-header>
+  <a class="site-brand" href="{{ routes.root_url }}" aria-label="{{ shop.name | escape }} – Startseite">
+    {% if settings.logo != blank %}
+      {{ settings.logo | image_url: width: 360 | image_tag: class: 'brand-logo', widths: '120,180,240,360', alt: shop.name }}
+    {% else %}
+      <img class="brand-logo" src="{{ 'rascals-helmet-logo-clean.png' | asset_url }}" width="998" height="578" alt="">
+    {% endif %}
+    <span class="brand-wordmark">RASCALS</span>
+  </a>
+
+  <button class="menu-button" type="button" data-menu-toggle aria-controls="MainNavigation" aria-expanded="false" aria-label="Menü öffnen">
+    <span></span><span></span><span></span>
+  </button>
+
+  <nav class="main-navigation" id="MainNavigation" data-menu aria-label="Hauptnavigation">
+    <a href="{{ routes.all_products_collection_url }}">Shop</a>
+    <a href="{{ team_url }}">Team</a>
+    <a href="{{ routes.root_url }}#story">Über uns</a>
+    <a href="{{ routes.root_url }}#service">Service</a>
+    {% if section.settings.show_sponsors_link %}<a href="{{ routes.root_url }}#sponsors">Sponsoren</a>{% endif %}
+  </nav>
+
+  <div class="header-actions">
+    <a class="icon-link search-link" href="{{ routes.search_url }}" aria-label="Suche"><span class="search-icon"></span><span>Suche</span></a>
+    <a class="icon-link cart-link" href="{{ routes.cart_url }}" aria-label="Warenkorb mit {{ cart.item_count }} Artikeln">
+      <span class="bag-icon"></span><span>Warenkorb</span><b data-cart-count>{{ cart.item_count }}</b>
+    </a>
+  </div>
+</header>
+
+{% schema %}
+{
+  "name": "Rascals Header",
+  "settings": [
+    { "type": "text", "id": "announcement_text", "label": "Hinweistext", "default": "Kostenloser Versand ab 80 € · Abholung beim nächsten Heimspiel möglich" },
+    { "type": "url", "id": "announcement_link", "label": "Hinweis-Link" },
+    { "type": "checkbox", "id": "show_sponsors_link", "label": "Sponsoren-Link anzeigen", "default": false }
+  ]
+}
+{% endschema %}

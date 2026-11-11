@@ -1,0 +1,70 @@
+<section class="hero-slider" data-hero data-interval="{{ section.settings.interval | times: 1000 }}">
+  <article class="hero-slide is-active" data-hero-slide>
+    {% if section.settings.hero_image != blank %}
+      {{ section.settings.hero_image | image_url: width: 2400 | image_tag: class: 'hero-image', loading: 'eager', fetchpriority: 'high', widths: '640,960,1440,1920,2400', sizes: '100vw' }}
+    {% else %}
+      <img class="hero-image" src="{{ 'rascals-gameday-hero-1448.webp' | asset_url }}" width="1448" height="1086" fetchpriority="high" alt="Rascals Footballhelm auf dem Spielfeld">
+    {% endif %}
+    <div class="hero-overlay"></div>
+    <div class="hero-content page-width">
+      <p class="eyebrow">{{ section.settings.eyebrow }}</p>
+      <h1>{{ section.settings.heading_line_1 }}<br><em>{{ section.settings.heading_line_2 }}</em></h1>
+      <p class="hero-text">{{ section.settings.text }}</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="{{ routes.all_products_collection_url }}">Zum Fanshop <span>→</span></a>
+        <a class="text-link" href="/pages/team">Unser Team <span>→</span></a>
+      </div>
+    </div>
+  </article>
+
+  <article class="hero-slide schedule-slide" data-hero-slide hidden>
+    <div class="schedule-field"><span>50</span></div>
+    <div class="schedule-content page-width">
+      <p class="eyebrow">SAISON {{ section.settings.season }}</p>
+      <h2>NEXT<br><em>GAMES.</em></h2>
+      {% if section.blocks.size > 0 %}
+        <div class="schedule-list">
+          {% for block in section.blocks %}
+            <div {{ block.shopify_attributes }}><b>{{ block.settings.date }}</b><span>{{ block.settings.opponent }}</span><small>{{ block.settings.location }}</small></div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="schedule-empty"><b>SPIELPLAN IN VORBEREITUNG</b><span>Die offiziellen Termine der Saison werden hier ergänzt.</span></div>
+      {% endif %}
+      <a class="text-link" href="/pages/team">Team kennenlernen <span>→</span></a>
+    </div>
+  </article>
+
+  <div class="hero-controls">
+    <button class="is-active" type="button" data-hero-control="0" aria-label="Startmotiv anzeigen"><span>01</span></button>
+    <button type="button" data-hero-control="1" aria-label="Saisonspielplan anzeigen"><span>02</span></button>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Rascals Hero & Spielplan",
+  "settings": [
+    { "type": "image_picker", "id": "hero_image", "label": "Startbild (optional)" },
+    { "type": "text", "id": "eyebrow", "label": "Kleine Überschrift", "default": "HELLENSTEIN RASCALS · HEIDENHEIM" },
+    { "type": "text", "id": "heading_line_1", "label": "Überschrift Zeile 1", "default": "BUILT" },
+    { "type": "text", "id": "heading_line_2", "label": "Überschrift Zeile 2", "default": "DIFFERENT." },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Teamwear, Gameday und Community. Ein Team. Ein Standard." },
+    { "type": "text", "id": "season", "label": "Saison", "default": "2026" },
+    { "type": "range", "id": "interval", "label": "Bildwechsel in Sekunden", "min": 4, "max": 12, "step": 1, "default": 7 }
+  ],
+  "blocks": [
+    {
+      "type": "game",
+      "name": "Spiel",
+      "limit": 6,
+      "settings": [
+        { "type": "text", "id": "date", "label": "Datum", "default": "DATUM" },
+        { "type": "text", "id": "opponent", "label": "Gegner", "default": "VS. GEGNER" },
+        { "type": "text", "id": "location", "label": "Ort", "default": "HEIDENHEIM" }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Rascals Hero & Spielplan" }]
+}
+{% endschema %}

@@ -1,0 +1,31 @@
+<section class="team-page-hero">
+  <img src="{{ 'rascals-flags-dark.webp' | asset_url }}" width="1536" height="1024" fetchpriority="high" alt="Hellenstein Rascals auf dem Footballfeld">
+  <div class="team-page-overlay"></div>
+  <div class="page-width">
+    <p class="eyebrow">HELLENSTEIN FOOTBALL</p>
+    <h1>ONE TEAM.<br><em>ONE STANDARD.</em></h1>
+    <p>Coaches, Defense und Offense – gemeinsam für Heidenheim.</p>
+  </div>
+</section>
+<nav class="team-index" aria-label="Teambereiche"><a href="#coaches">01 Coaches</a><a href="#defense">02 Defense</a><a href="#offense">03 Offense</a></nav>
+<section class="team-intro page-width"><p class="eyebrow">MEET THE RASCALS</p><h2>THE PEOPLE<br>BEHIND THE GAME.</h2><p>Coaches, Defense und Offense – die Menschen hinter unserem Football.</p></section>
+{% assign ids = 'coaches,defense,offense' | split: ',' %}
+{% assign labels = 'Coaches,Defense,Offense' | split: ',' %}
+{% assign headings = 'LEAD THE STANDARD.,FAST. PHYSICAL. RELENTLESS.,EXECUTE. ATTACK. SCORE.' | split: ',' %}
+{% assign images = 'rascals-flags-warm.webp,rascals-action-21.webp,rascals-offense-group.webp' | split: ',' %}
+<div class="team-groups">
+  {% for label in labels %}
+    <section class="team-group" id="{{ ids[forloop.index0] }}">
+      <div class="team-group-image"><img src="{{ images[forloop.index0] | asset_url }}" width="1536" height="1024" loading="lazy" alt="{{ label }} der Hellenstein Rascals"><span>0{{ forloop.index }}</span></div>
+      <div class="team-group-copy"><p class="eyebrow">{{ label }}</p><h2>{{ headings[forloop.index0] }}</h2><p>Portraits, Namen, Positionen und Rückennummern können hier im nächsten Schritt ergänzt werden.</p><div class="roster-status"><b>KADERDATEN FOLGEN</b><span>Portrait · Name · Position · Nummer</span></div></div>
+    </section>
+  {% endfor %}
+</div>
+
+{% schema %}
+{
+  "name": "Rascals Teamseite",
+  "settings": [],
+  "presets": [{ "name": "Rascals Teamseite" }]
+}
+{% endschema %}

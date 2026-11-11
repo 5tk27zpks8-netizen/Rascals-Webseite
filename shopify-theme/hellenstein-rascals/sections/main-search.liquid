@@ -1,0 +1,14 @@
+<section class="search-page page-width">
+  <header class="page-hero-small"><p class="eyebrow">FIND YOUR GEAR</p><h1>SUCHE</h1></header>
+  <form action="{{ routes.search_url }}" method="get" class="search-form"><label class="visually-hidden" for="SearchInput">Suche</label><input id="SearchInput" type="search" name="q" value="{{ search.terms | escape }}" placeholder="Jersey, Hoodie, Cap …"><button class="button button-primary" type="submit">Suchen →</button></form>
+  {% if search.performed %}
+    {% paginate search.results by 24 %}
+      <p class="search-count">{{ search.results_count }} Ergebnisse für „{{ search.terms }}“</p>
+      <div class="product-grid">
+        {% for item in search.results %}{% if item.object_type == 'product' %}{% render 'product-card', product: item %}{% endif %}{% endfor %}
+      </div>
+      {% if paginate.pages > 1 %}<nav class="pagination">{{ paginate | default_pagination }}</nav>{% endif %}
+    {% endpaginate %}
+  {% endif %}
+</section>
+{% schema %}{ "name": "Suche", "settings": [] }{% endschema %}
