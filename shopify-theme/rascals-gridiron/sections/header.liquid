@@ -92,7 +92,28 @@
     <div class="header-actions">
       <a class="header-action" href="{{ routes.search_url }}" aria-label="{{ 'general.search.search' | t }}">&#8981;</a>
       <a class="header-action header-cart" href="{{ routes.cart_url }}" aria-label="{{ 'cart.title' | t }}">
-        <span>&#9649;</span><b data-cart-count>{{ cart.item_count }}</b>
+        {%- comment -%}
+          Einkaufswagen mit Football darin. Vorher stand hier das Zeichen
+          U+25B1 — ein weisses Parallelogramm, das je nach Schriftart des
+          Geraets anders oder gar nicht dargestellt wird. Als SVG sieht es
+          ueberall gleich aus.
+
+          Der Rahmen nimmt currentColor, faerbt sich also beim Ueberfahren
+          mit. Der Ball bleibt Leder und Naht, damit er sich vom Wagen
+          absetzt und auf rotem Grund nicht verschwindet.
+        {%- endcomment -%}
+        <svg class="cart-icon" viewBox="0 0 30 28" fill="none" aria-hidden="true" focusable="false">
+          <path d="M1 2.2H4.1L7.3 16.2H23.9L27.2 6.2H5.4"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="10" cy="23.4" r="2.1" fill="currentColor"/>
+          <circle cx="22" cy="23.4" r="2.1" fill="currentColor"/>
+          <g transform="rotate(-20 16.6 11)">
+            <ellipse cx="16.6" cy="11" rx="5.1" ry="3.3" fill="#8a4a1e" stroke="#f3efe6" stroke-width="1.1"/>
+            <path d="M12.9 11h7.4" stroke="#f3efe6" stroke-width="1" stroke-linecap="round"/>
+            <path d="M15 9.9v2.2M16.6 9.7v2.6M18.2 9.9v2.2" stroke="#f3efe6" stroke-width=".9" stroke-linecap="round"/>
+          </g>
+        </svg>
+        <b data-cart-count>{{ cart.item_count }}</b>
       </a>
       <details class="mobile-menu">
         <summary aria-label="Navigation öffnen"><span></span><span></span><span></span></summary>

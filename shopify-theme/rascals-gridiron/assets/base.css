@@ -579,3 +579,5 @@ body:hover .football-cursor { opacity: .8; }
 .play-ticker__info b { color: var(--red); }
 /* Fanware in der Kopfzeile: rot wie der Knopf, damit klar ist, dass es noch nichts zu kaufen gibt */
 .desktop-nav .nav-teaser { color: var(--red); }
+/* Warenkorb-Symbol: Einkaufswagen mit Football */
+.cart-icon { width: 24px; height: 22px; display: block; }
