@@ -108,22 +108,22 @@ h3 { font-size: 1.6rem; }
 .mobile-menu nav { position: fixed; z-index: 80; top: 126px; right: 0; left: 0; display: grid; padding: 1.2rem 1.5rem 2rem; background: var(--navy); box-shadow: 0 20px 40px rgba(0,0,0,.3); }
 .mobile-menu nav a { padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,.12); font: italic 900 1.6rem Impact, sans-serif; text-transform: uppercase; }
 
-.hero-gridiron { position: relative; display: flex; align-items: center; min-height: 540px; color: var(--white); background: var(--ink); isolation: isolate; overflow: hidden; }
+.hero-gridiron { position: relative; display: flex; align-items: center; min-height: 580px; color: var(--white); background: var(--ink); isolation: isolate; overflow: hidden; }
 .hero-gridiron--full { min-height: calc(100svh - 126px); }
 .hero-gridiron__media, .hero-gridiron__shade, .field-lines { position: absolute; inset: 0; }
 .hero-gridiron__media img { width: 100%; height: 100%; object-fit: cover; object-position: center 58%; animation: hero-breathe 12s ease-in-out infinite alternate; }
 .hero-gridiron__shade { z-index: 1; background: linear-gradient(90deg, rgba(7,9,14,.97) 0%, rgba(7,9,14,.74) 46%, rgba(7,9,14,.18) 100%), linear-gradient(0deg, rgba(7,9,14,.88), transparent 42%); }
 .field-lines { z-index: 2; opacity: .12; background: repeating-linear-gradient(90deg, transparent 0 calc(12.5% - 2px), #fff calc(12.5% - 2px) 12.5%); transform: perspective(700px) rotateX(62deg) scale(1.45); transform-origin: bottom; }
-.hero-gridiron__content { position: relative; z-index: 4; padding-block: clamp(3.5rem, 7vw, 6rem); }
+.hero-gridiron__content { position: relative; z-index: 6; padding-block: clamp(3.5rem, 7vw, 6rem); }
 .hero-eyebrow { margin: 0 0 1.1rem; color: var(--white); font-size: .7rem; font-weight: 700; letter-spacing: .46em; text-transform: uppercase; }
 .hero-title { display: grid; gap: .04em; max-width: 16ch; margin: 0 0 1.4rem; font-size: calc(clamp(3rem, 7.2vw, 6.4rem) * var(--heading-scale)); line-height: .86; }
 .hero-title__line--accent { color: var(--red); }
 .hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 1.4rem; margin: 0 0 2rem; padding: 0; list-style: none; font-size: .68rem; font-weight: 700; letter-spacing: .34em; text-transform: uppercase; color: rgba(255,255,255,.82); }
 .hero-meta li { position: relative; }
 .hero-meta li + li::before { position: absolute; top: 50%; left: -.75rem; width: 1px; height: 11px; content: ""; background: rgba(255,255,255,.3); transform: translateY(-50%); }
-.hero-slash { position: absolute; z-index: 2; top: 0; bottom: 0; left: 57%; width: 150px; background: repeating-linear-gradient(104deg, rgba(227,19,43,.85) 0 7px, transparent 7px 30px); opacity: .55; pointer-events: none; }
+.hero-slash { position: absolute; z-index: 5; top: 0; bottom: 0; left: 57%; width: 150px; background: repeating-linear-gradient(104deg, rgba(227,19,43,.85) 0 7px, transparent 7px 30px); opacity: .55; pointer-events: none; }
 .hero-gridiron__buttons { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem; margin-top: 0; }
-.hero-number { position: absolute; z-index: 3; right: -2vw; bottom: -8vw; color: transparent; font: italic 900 clamp(15rem, 32vw, 34rem)/.7 Impact, sans-serif; -webkit-text-stroke: 2px rgba(255,255,255,.12); transform: rotate(-7deg); }
+.hero-number { position: absolute; z-index: 2; right: -2vw; bottom: -8vw; color: transparent; font: italic 900 clamp(15rem, 32vw, 34rem)/.7 Impact, sans-serif; -webkit-text-stroke: 2px rgba(255,255,255,.12); transform: rotate(-7deg); }
 .hero-scroll { position: absolute; z-index: 5; right: 2rem; bottom: 2rem; display: flex; align-items: center; gap: .7rem; font-size: .6rem; font-weight: 800; letter-spacing: .16em; writing-mode: vertical-rl; }
 .hero-scroll span { width: 1px; height: 44px; background: var(--red); animation: scroll-pulse 1.6s ease-in-out infinite; }
 
@@ -715,4 +715,66 @@ body:hover .football-cursor { opacity: .8; }
   .hero-slash { display: none; }
   .hero-meta { gap: 1rem; font-size: .58rem; letter-spacing: .22em; }
   .hero-gridiron__buttons .button { flex: 1 1 100%; }
+}
+
+/* --- FIGUREN IM HERO ---------------------------------------------------
+   Beide Fotos sind hochkant und laufen am Rand ins Dunkle aus, deshalb
+   stehen sie als Figuren vor der dunklen Flaeche statt ueber die volle
+   Breite gezogen zu werden: so werden sie nicht hochskaliert und fuegen
+   sich ueber ihr eigenes Dunkel ein.
+
+   Beide sitzen unten auf, wie jemand, der auf dem Platz steht. Die Hoehe
+   kommt als Variable aus dem Abschnitt, damit die Groesse im Theme-Editor
+   verstellt werden kann, ohne dass jemand CSS anfasst.
+
+   Die linke Figur ist Atmosphaere: halbdurchsichtig und nach rechts
+   ausgeblendet, damit sie unter der Schlagzeile nicht mit ihr konkurriert.
+   Die rechte traegt das Bild und bleibt voll da. */
+.hero-figures { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.hero-figure {
+  position: absolute; bottom: 0; width: auto; max-width: none;
+  object-fit: contain; object-position: bottom;
+  -webkit-mask-image: radial-gradient(ellipse 78% 86% at 50% 48%, #000 58%, transparent 100%);
+          mask-image: radial-gradient(ellipse 78% 86% at 50% 48%, #000 58%, transparent 100%);
+}
+.hero-figure--left {
+  left: clamp(-6rem, -2vw, 0rem);
+  height: var(--hero-left-h, 86%);
+  opacity: var(--hero-left-o, .45);
+}
+.hero-figure--right { right: clamp(0rem, 3vw, 4rem); height: var(--hero-right-h, 88%); }
+
+/* Der Schleier liegt ueber den Figuren, nicht unter ihnen: sonst muesste er
+   so dunkel sein, dass die Fotos verschwinden. Links deckt er, damit die
+   Schlagzeile steht; nach rechts gibt er die Figur frei. */
+.hero-scrim {
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  background: var(--hero-scrim, linear-gradient(90deg, rgba(7,9,14,.94) 0%, rgba(7,9,14,.8) 32%, rgba(7,9,14,.3) 58%, rgba(7,9,14,0) 78%)),
+              linear-gradient(0deg, rgba(7,9,14,.92) 0%, rgba(7,9,14,0) 38%);
+}
+
+/* Ab 1280 px bekommt die linke Figur eine eigene Spalte und der Text rueckt
+   ein — die Aufteilung aus der Vorlage: Spieler links, Schlagzeile in der
+   Mitte, Helm rechts. Der Schleier wird dort zum Spot hinter dem Text statt
+   zu einer Wand von links, sonst waere die linke Figur wieder verdeckt.
+   Darunter faellt die Spalte weg, der Text steht wieder am Rand und der
+   Schleier deckt von links. */
+@media (min-width: 1280px) {
+  .hero-gridiron--with-left { --hero-scrim: linear-gradient(90deg, rgba(7,9,14,.42) 0%, rgba(7,9,14,.86) 17%, rgba(7,9,14,.84) 48%, rgba(7,9,14,.26) 70%, rgba(7,9,14,0) 86%); }
+  .hero-gridiron--with-left .hero-gridiron__content { padding-left: clamp(150px, 15vw, 250px); }
+}
+
+@media (max-width: 1100px) {
+  .hero-figure--left { opacity: calc(var(--hero-left-o, .45) * .6); }
+  .hero-figure--right { height: calc(var(--hero-right-h, 88%) * .82); right: -2rem; }
+}
+
+@media (max-width: 760px) {
+  /* Auf dem Telefon steht der Text ueber der ganzen Breite. Die rechte Figur
+     bleibt als Hintergrund stehen, aber zurueckgenommen, und die linke faellt
+     weg — zwei halbdurchsichtige Figuren hinter einer Schlagzeile sind auf
+     390 px nur noch Unruhe. */
+  .hero-figure--left { display: none; }
+  .hero-figure--right { right: -3rem; height: 72%; opacity: .5; }
+  .hero-scrim { background: linear-gradient(0deg, rgba(7,9,14,.95) 0%, rgba(7,9,14,.55) 55%, rgba(7,9,14,.35) 100%); }
 }

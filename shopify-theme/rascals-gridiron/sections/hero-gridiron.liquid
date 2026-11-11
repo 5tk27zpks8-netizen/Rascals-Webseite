@@ -15,20 +15,51 @@
 {%- endcomment -%}
 {%- liquid
   assign hero_image = section.settings.image
-  assign fallback_image = 'helmet-hero.webp' | asset_url
+
+  assign figure_left = section.settings.figure_left
+  assign figure_right = section.settings.figure_right
+  assign figure_left_src = 'hero-figure-celebrate.webp' | asset_url
+  assign figure_right_src = 'hero-figure-helmet.webp' | asset_url
+  if figure_left != blank
+    assign figure_left_src = figure_left | image_url: width: 900
+  endif
+  if figure_right != blank
+    assign figure_right_src = figure_right | image_url: width: 900
+  endif
   assign heading_lines = section.settings.heading | strip | newline_to_br | split: '<br />'
   assign meta_items = section.settings.meta | split: '|'
 -%}
-<section class="hero-gridiron{% if section.settings.full_height %} hero-gridiron--full{% endif %}" data-hero>
-  <div class="hero-gridiron__media">
-    {%- if hero_image != blank -%}
+<section class="hero-gridiron{% if section.settings.full_height %} hero-gridiron--full{% endif %}{% if section.settings.show_left %} hero-gridiron--with-left{% endif %}" data-hero style="--hero-left-h: {{ section.settings.left_height | default: 86 }}%; --hero-left-o: {{ section.settings.left_opacity | default: 45 | divided_by: 100.0 }}; --hero-right-h: {{ section.settings.right_height | default: 88 }}%;">
+  {%- comment -%}
+    Der Hintergrund ist in Ebenen aufgebaut statt als ein gedehntes Foto.
+
+    Die beiden Spielerfotos sind hochkant und laufen am Rand ins Dunkle aus.
+    Ueber die volle Breite gezogen wuerden sie hochskaliert und matschig;
+    als Figuren vor einer dunklen Flaeche stehen sie dagegen scharf, fuegen
+    sich ueber ihr eigenes Dunkel ein und bleiben auf jedem Seitenverhaeltnis
+    an derselben Stelle — unten angesetzt, so wie jemand auf dem Platz steht.
+
+    Ein durchgehendes Hintergrundbild bleibt moeglich: ist eines gesetzt,
+    liegt es unter den Figuren. Ohne Bild traegt die dunkle Flaeche.
+  {%- endcomment -%}
+  {%- if hero_image != blank -%}
+    <div class="hero-gridiron__media">
       {{ hero_image | image_url: width: 3000 | image_tag: widths: '750, 1100, 1600, 2200, 3000', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: hero_image.alt }}
-    {%- else -%}
-      <img src="{{ fallback_image }}" width="3840" height="2160" loading="eager" fetchpriority="high" alt="Hellenstein Rascals Football-Helm auf dem Spielfeld">
-    {%- endif -%}
-  </div>
+    </div>
+  {%- endif -%}
   <div class="hero-gridiron__shade"></div>
   <div class="field-lines" aria-hidden="true"></div>
+
+  <div class="hero-figures" aria-hidden="true">
+    {%- if section.settings.show_left -%}
+      <img class="hero-figure hero-figure--left" src="{{ figure_left_src }}" width="1086" height="1448" alt="" loading="eager" fetchpriority="high">
+    {%- endif -%}
+    {%- if section.settings.show_right -%}
+      <img class="hero-figure hero-figure--right" src="{{ figure_right_src }}" width="1086" height="1448" alt="" loading="eager" fetchpriority="high">
+    {%- endif -%}
+  </div>
+
+  <div class="hero-scrim" aria-hidden="true"></div>
   <div class="hero-slash" aria-hidden="true"></div>
 
   <div class="hero-gridiron__content page-width reveal">
@@ -81,7 +112,16 @@
   "tag": "section",
   "class": "section-hero",
   "settings": [
-    { "type": "image_picker", "id": "image", "label": "Bild" },
+    { "type": "image_picker", "id": "image", "label": "Hintergrundbild", "info": "Optional. Liegt hinter den Figuren. Ohne Bild trägt die dunkle Fläche." },
+    { "type": "header", "content": "Figuren" },
+    { "type": "checkbox", "id": "show_left", "label": "Linke Figur zeigen", "default": true },
+    { "type": "image_picker", "id": "figure_left", "label": "Linke Figur", "info": "Leer lassen: Jubelbild aus dem Theme." },
+    { "type": "range", "id": "left_height", "min": 40, "max": 100, "step": 2, "unit": "%", "label": "Höhe der linken Figur", "default": 86 },
+    { "type": "range", "id": "left_opacity", "min": 10, "max": 100, "step": 5, "unit": "%", "label": "Deckkraft der linken Figur", "default": 62 },
+    { "type": "checkbox", "id": "show_right", "label": "Rechte Figur zeigen", "default": true },
+    { "type": "image_picker", "id": "figure_right", "label": "Rechte Figur", "info": "Leer lassen: Helmbild aus dem Theme." },
+    { "type": "range", "id": "right_height", "min": 40, "max": 100, "step": 2, "unit": "%", "label": "Höhe der rechten Figur", "default": 88 },
+    { "type": "header", "content": "Text" },
     { "type": "text", "id": "eyebrow", "label": "Kleine Zeile", "default": "HELLENSTEIN RASCALS" },
     { "type": "textarea", "id": "heading", "label": "Schlagzeile", "default": "OFFIZIELLE\nTEAMWEAR", "info": "Alles ab der zweiten Zeile wird rot." },
     { "type": "text", "id": "meta", "label": "Einordnung", "default": "TEAM | TRAINING | COACHES | FANS", "info": "Mit | trennen." },
