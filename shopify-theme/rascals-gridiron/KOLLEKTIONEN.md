@@ -33,7 +33,23 @@ Einsortieren ist ein Artikel, den niemand findet.
 *Onlineshop → Themes → Theme hinzufügen → Zip-Datei hochladen.* Erst als
 Entwurf ansehen, dann veröffentlichen.
 
-### 2. „Katalog" in „Kollektion" umbenennen
+### 2. Die Navigation
+
+**Old-School, Basic, Standard und Fanware hängen sich von selbst an** die
+Kopfzeile, sobald es die Sammlungen bzw. die Seite gibt. Dafür musst du
+nichts einstellen. Was schon im Menü steht, wird übersprungen.
+
+Es bleibt nur Shopifys Vorgabe aufzuräumen — *Inhalte → Menüs → Hauptmenü*:
+
+- „Katalog" umbenennen in **Kollektion**, Ziel auf `/collections`
+  (oder ganz entfernen, wenn dir die Linien genügen)
+- „Startseite" und „Kontakt" stehen lassen
+
+> **Wenn nach dem Hochladen nichts Neues in der Leiste steht,** fehlen die
+> Sammlungen selbst — siehe Schritt 3. Das Theme kann nur zeigen, was es
+> gibt; eine Verknüpfung auf eine nicht angelegte Sammlung wäre ein 404.
+
+### 2b. Optional: Menü aufräumen
 
 Das steht **nicht im Theme** — es ist Shopifys Standard-Menüeintrag.
 
