@@ -90,7 +90,29 @@
     </nav>
 
     <div class="header-actions">
-      <a class="header-action" href="{{ routes.search_url }}" aria-label="{{ 'general.search.search' | t }}">&#8981;</a>
+      {%- comment -%}
+        Suche als echtes Feld statt als Lupen-Zeichen. Auf schmalen Schirmen
+        klappt das Feld ueber CSS auf die Lupe zusammen, damit die Leiste
+        nicht umbricht — das Formular bleibt dabei dasselbe, es gibt also
+        keinen zweiten Zustand, der auseinanderlaufen koennte.
+      {%- endcomment -%}
+      <form class="header-search" action="{{ routes.search_url }}" method="get" role="search">
+        <label class="visually-hidden" for="header-search-field">{{ 'general.search.search' | t }}</label>
+        <button class="header-search__go" type="submit" aria-label="{{ 'general.search.search' | t }}">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+            <circle cx="8.6" cy="8.6" r="6.1" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M13.2 13.2 18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <input id="header-search-field" type="search" name="q" autocomplete="off"
+               placeholder="{{ section.settings.search_placeholder | default: 'Produkt suchen …' | escape }}">
+      </form>
+      <a class="header-action" href="{{ routes.account_url }}" aria-label="{{ 'customer.account.title' | t }}">
+        <svg viewBox="0 0 22 22" fill="none" aria-hidden="true" focusable="false">
+          <circle cx="11" cy="7.2" r="3.9" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M3.6 19.4c0-3.6 3.3-6.1 7.4-6.1s7.4 2.5 7.4 6.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </a>
       <a class="header-action header-cart" href="{{ routes.cart_url }}" aria-label="{{ 'cart.title' | t }}">
         {%- comment -%}
           Einkaufswagen mit Football darin. Vorher stand hier das Zeichen
@@ -195,6 +217,12 @@
       "label": "Zusätzliche Seite",
       "default": "fanware",
       "info": "Adressname einer Seite, z. B. fanware. Erscheint nur, wenn die Seite angelegt ist."
+    },
+    {
+      "type": "text",
+      "id": "search_placeholder",
+      "label": "Platzhalter im Suchfeld",
+      "default": "Produkt suchen …"
     }
   ]
 }

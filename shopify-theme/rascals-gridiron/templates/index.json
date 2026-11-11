@@ -3,21 +3,34 @@
     "hero": {
       "type": "hero-gridiron",
       "settings": {
-        "eyebrow": "OFFICIAL HELLENSTEIN RASCALS SHOP",
-        "heading": "WEAR THE\nRASCALS.",
-        "text": "<p>Deine Farben. Dein Team. Dein nächster Spielzug.</p>",
-        "button_label": "SHOP THE DROP",
+        "eyebrow": "HELLENSTEIN RASCALS",
+        "heading": "OFFIZIELLE\nTEAMWEAR",
+        "button_label": "ZUM SHOP",
         "button_link": "/collections/all",
-        "secondary_label": "UNSERE STORY",
-        "secondary_link": "/pages/ueber-uns",
+        "secondary_label": "KOLLEKTION ENTDECKEN",
+        "secondary_link": "/collections",
         "number": "23",
-        "full_height": true
+        "full_height": false,
+        "meta": "TEAM | TRAINING | COACHES | FANS",
+        "button_icon": "bag",
+        "secondary_icon": "star"
       }
     },
-    "ticker": { "type": "play-ticker", "settings": { "label": "Rascals Motto", "text": "ALL GRIT • ALL HEART • ALL RASCALS" } },
+    "ticker": {
+      "type": "play-ticker",
+      "settings": {
+        "label": "Rascals Motto",
+        "text": "ALL GRIT • ALL HEART • ALL RASCALS"
+      }
+    },
     "featured": {
       "type": "featured-collection",
-      "settings": { "eyebrow": "NEW SEASON • NEW GEAR", "heading": "STARTING LINEUP.", "products_to_show": 4, "show_vendor": false }
+      "settings": {
+        "eyebrow": "NEW SEASON • NEW GEAR",
+        "heading": "STARTING LINEUP.",
+        "products_to_show": 4,
+        "show_vendor": false
+      }
     },
     "story": {
       "type": "image-with-text",
@@ -33,20 +46,193 @@
     },
     "feature_product": {
       "type": "featured-product",
-      "settings": { "heading": "THE GAME CHANGER.", "text": "Dein neues Lieblingspiece in den Farben der Rascals.", "show_dynamic_checkout": true }
+      "settings": {
+        "heading": "THE GAME CHANGER.",
+        "text": "Dein neues Lieblingspiece in den Farben der Rascals.",
+        "show_dynamic_checkout": true
+      }
     },
     "partners": {
       "type": "logo-list",
       "blocks": {
-        "partner1": { "type": "logo", "settings": { "fallback_logo": "sponsor-cap.webp", "name": "CAP EDEKA" } },
-        "partner2": { "type": "logo", "settings": { "fallback_logo": "sponsor-hsb.webp", "name": "HSB 1846" } },
-        "partner3": { "type": "logo", "settings": { "fallback_logo": "sponsor-grimmelsen.webp", "name": "MEIN BODENBELAG" } },
-        "partner4": { "type": "logo", "settings": { "fallback_logo": "sponsor-appalachian.webp", "name": "APPALACHIAN" } },
-        "partner5": { "type": "logo", "settings": { "fallback_logo": "sponsor-brauchle.webp", "name": "DR. BRAUCHLE" } }
+        "partner1": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-cap.webp",
+            "name": "CAP EDEKA"
+          }
+        },
+        "partner2": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-hsb.webp",
+            "name": "HSB 1846"
+          }
+        },
+        "partner3": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-grimmelsen.webp",
+            "name": "MEIN BODENBELAG"
+          }
+        },
+        "partner4": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-appalachian.webp",
+            "name": "APPALACHIAN"
+          }
+        },
+        "partner5": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-brauchle.webp",
+            "name": "DR. BRAUCHLE"
+          }
+        }
       },
-      "block_order": ["partner1", "partner2", "partner3", "partner4", "partner5"],
-      "settings": { "eyebrow": "PROUDLY POWERED BY", "heading": "UNSERE PARTNER." }
+      "block_order": [
+        "partner1",
+        "partner2",
+        "partner3",
+        "partner4",
+        "partner5"
+      ],
+      "settings": {
+        "eyebrow": "PROUDLY POWERED BY",
+        "heading": "UNSERE PARTNER."
+      }
+    },
+    "kacheln": {
+      "type": "category-tiles",
+      "blocks": {
+        "t1": {
+          "type": "tile",
+          "settings": {
+            "label": "T-SHIRTS",
+            "icon": "shirt"
+          }
+        },
+        "t2": {
+          "type": "tile",
+          "settings": {
+            "label": "HOODIES",
+            "icon": "hoodie"
+          }
+        },
+        "t3": {
+          "type": "tile",
+          "settings": {
+            "label": "JACKEN",
+            "icon": "jacket"
+          }
+        },
+        "t4": {
+          "type": "tile",
+          "settings": {
+            "label": "POLOS",
+            "icon": "polo"
+          }
+        },
+        "t5": {
+          "type": "tile",
+          "settings": {
+            "label": "TRAINING",
+            "icon": "shorts"
+          }
+        },
+        "t6": {
+          "type": "tile",
+          "settings": {
+            "label": "CAPS",
+            "icon": "cap"
+          }
+        },
+        "t7": {
+          "type": "tile",
+          "settings": {
+            "label": "COACHES",
+            "icon": "whistle"
+          }
+        },
+        "t8": {
+          "type": "tile",
+          "settings": {
+            "label": "FANWEAR",
+            "icon": "star"
+          }
+        }
+      },
+      "block_order": [
+        "t1",
+        "t2",
+        "t3",
+        "t4",
+        "t5",
+        "t6",
+        "t7",
+        "t8"
+      ],
+      "settings": {
+        "heading": "Kategorien",
+        "overlap": true
+      }
+    },
+    "vertrauen": {
+      "type": "trust-bar",
+      "blocks": {
+        "v1": {
+          "type": "point",
+          "settings": {
+            "title": "OFFIZIELLE TEAMWEAR",
+            "text": "Original Hellenstein Rascals",
+            "icon": "shield"
+          }
+        },
+        "v2": {
+          "type": "point",
+          "settings": {
+            "title": "SCHNELLER VERSAND",
+            "text": "Innerhalb Deutschlands",
+            "icon": "truck"
+          }
+        },
+        "v3": {
+          "type": "point",
+          "settings": {
+            "title": "14 TAGE RÜCKGABE",
+            "text": "Unkompliziert & fair",
+            "icon": "return"
+          }
+        },
+        "v4": {
+          "type": "point",
+          "settings": {
+            "title": "INDIVIDUALISIERUNG",
+            "text": "Name, Nummer & Teamrolle",
+            "icon": "needle"
+          }
+        }
+      },
+      "block_order": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "settings": {
+        "heading": "Leistungen"
+      }
     }
   },
-  "order": ["hero", "ticker", "featured", "story", "feature_product", "partners"]
+  "order": [
+    "hero",
+    "kacheln",
+    "vertrauen",
+    "ticker",
+    "featured",
+    "story",
+    "feature_product",
+    "partners"
+  ]
 }

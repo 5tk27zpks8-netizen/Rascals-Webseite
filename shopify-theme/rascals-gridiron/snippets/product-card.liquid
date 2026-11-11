@@ -35,6 +35,13 @@
         {%- if on_sale -%}<span class="product-badge">SALE</span>{%- endif -%}
       </div>
     {%- endif -%}
+    {%- comment -%}
+      Die rote Ecke unten rechts ist der Hinweis "hier geht es weiter". Sie
+      sitzt im Bild-Link, nicht als eigener Knopf daneben: zwei anklickbare
+      Flaechen fuer dasselbe Ziel sind fuer die Tastatur und den Screenreader
+      doppelte Arbeit ohne Gewinn.
+    {%- endcomment -%}
+    <span class="product-card__go" aria-hidden="true">&rarr;</span>
   </a>
   <div class="product-card__body">
     <div>

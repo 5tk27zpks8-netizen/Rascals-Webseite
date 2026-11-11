@@ -9,7 +9,9 @@
     "heading_scale": 100,
     "use_motion": true,
     "instagram_url": "https://www.instagram.com/hellenstein_rascals/",
-    "facebook_url": "https://www.facebook.com/HellensteinRascals/"
+    "facebook_url": "https://www.facebook.com/HellensteinRascals/",
+    "color_ink": "#0b0e14",
+    "color_ink_soft": "#141822"
   },
   "presets": {
     "Rascals Gridiron": {
@@ -20,7 +22,9 @@
       "color_ice": "#f2f4f3",
       "page_width": 1400,
       "heading_scale": 100,
-      "use_motion": true
+      "use_motion": true,
+      "color_ink": "#0b0e14",
+      "color_ink_soft": "#141822"
     }
   }
 }

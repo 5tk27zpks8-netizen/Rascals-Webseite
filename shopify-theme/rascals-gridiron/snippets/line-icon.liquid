@@ -1,0 +1,53 @@
+{%- comment -%}
+  EINE EINZIGE SYMBOLQUELLE.
+
+  Serviceleiste, Vertrauensleiste und die Kategoriekacheln brauchen dieselben
+  Strichzeichnungen. Liegen die Pfade an drei Stellen, laufen sie nach der
+  zweiten Aenderung auseinander — unterschiedliche Strichstaerken auf einer
+  Seite fallen sofort auf. Deshalb steht hier alles einmal, mit gleichem
+  Raster (24x24), gleicher Strichstaerke und currentColor.
+
+  Aufruf: {% render 'line-icon', name: 'truck' %}
+{%- endcomment -%}
+{%- unless name == 'none' or name == blank -%}
+<svg class="line-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+  {%- case name -%}
+    {%- when 'truck' -%}
+      <path d="M1.8 6.4h11.4v9.2H1.8z"/><path d="M13.2 9.6h4l3 3.2v2.8h-7z"/><circle cx="6.4" cy="18" r="1.9"/><circle cx="16.8" cy="18" r="1.9"/><path d="M8.3 18h6.6M1.8 18h2.7"/>
+    {%- when 'return' -%}
+      <path d="M3.4 9.2A8.8 8.8 0 1 1 3 14.4"/><path d="M3.4 4.3v4.9h4.9"/>
+    {%- when 'shield' -%}
+      <path d="M12 2.6 20 5.6v5.6c0 4.8-3.3 8.3-8 10-4.7-1.7-8-5.2-8-10V5.6z"/><path d="M8.6 11.8l2.3 2.4 4.5-4.7"/>
+    {%- when 'star' -%}
+      <path d="M12 2.8l2.9 5.9 6.5.95-4.7 4.6 1.1 6.5L12 17.7l-5.8 3.05 1.1-6.5-4.7-4.6 6.5-.95z"/>
+    {%- when 'cup' -%}
+      <path d="M7 3.6h10v4.9a5 5 0 0 1-10 0z"/><path d="M7 5h-3v1.6a3 3 0 0 0 3 3M17 5h3v1.6a3 3 0 0 1-3 3"/><path d="M12 13.4v3.6M8.4 20.4h7.2l-.9-3.4H9.3z"/>
+    {%- when 'team' -%}
+      <circle cx="9" cy="8" r="3.1"/><path d="M3.2 19.2c0-3 2.6-4.9 5.8-4.9s5.8 1.9 5.8 4.9"/><path d="M16.2 5.3a3.1 3.1 0 0 1 0 5.9M17.6 14.6c2 .6 3.3 2.2 3.3 4.6"/>
+    {%- when 'needle' -%}
+      <path d="M20.6 3.4 9.9 14.1M20.6 3.4l-1.2 4.2M20.6 3.4l-4.2 1.2"/><path d="M9.9 14.1 7.1 17a2.6 2.6 0 1 0 3.7 3.7l2.8-2.8"/><circle cx="12.6" cy="11.4" r="1"/>
+    {%- when 'heart' -%}
+      <path d="M12 20.4 4.4 13A4.6 4.6 0 0 1 12 7.9 4.6 4.6 0 0 1 19.6 13z"/>
+    {%- when 'bag' -%}
+      <path d="M5.2 7.6h13.6l-1.1 12.2H6.3z"/><path d="M8.7 10V6.6a3.3 3.3 0 0 1 6.6 0V10"/>
+    {%- when 'shirt' -%}
+      <path d="M8.6 3.4 5 5 2.8 9l3.2 1.5v10h12v-10L21.2 9 19 5l-3.6-1.6c-.2 2.2-6.6 2.2-6.8 0z"/>
+    {%- when 'hoodie' -%}
+      <path d="M8.6 3.6 5 5.2 2.8 9.6l3.2 1.5v9.5h12v-9.5l3.2-1.5-2.2-4.4-3.6-1.6"/><path d="M8.6 3.6c0 2.6 6.8 2.6 6.8 0"/><path d="M8.4 13.8h7.2v2.6H8.4z"/>
+    {%- when 'jacket' -%}
+      <path d="M8.8 3.4 4.6 5.2v15.4h14.8V5.2l-4.2-1.8z"/><path d="M12 3.4v17.2M8.8 3.4 12 7.4l3.2-4"/>
+    {%- when 'cap' -%}
+      <path d="M3.6 15.4c0-5.5 3.8-9.2 8.4-9.2s8.4 3.7 8.4 9.2z"/><path d="M2.2 15.4h19.6"/><path d="M12 6.2V3.8"/>
+    {%- when 'polo' -%}
+      <path d="M8.6 3.4 5 5 2.8 9l3.2 1.5v10h12v-10L21.2 9 19 5l-3.6-1.6"/><path d="M8.6 3.4 12 8l3.4-4.6"/><path d="M12 8v4"/>
+    {%- when 'shorts' -%}
+      <path d="M5.4 4.4h13.2l-1.1 15.2h-4.3L12 11.6l-1.2 8H6.5z"/>
+    {%- when 'whistle' -%}
+      <circle cx="8.6" cy="14" r="5.4"/><path d="M13.4 11.4h7.4v4.4h-7.4"/><path d="M8.6 3.4v3.6"/>
+    {%- when 'tag' -%}
+      <path d="M3.6 12.2 12.2 3.6h8v8l-8.6 8.6z"/><circle cx="16.4" cy="7.6" r="1.4"/>
+    {%- else -%}
+      <circle cx="12" cy="12" r="8.6"/>
+  {%- endcase -%}
+</svg>
+{%- endunless -%}
