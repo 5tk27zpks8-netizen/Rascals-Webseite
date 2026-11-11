@@ -37,6 +37,13 @@
     "subtotal": "Zwischensumme"
   },
   "gift_cards": {
-    "issued": { "title": "Gutschein über {{ value }} für {{ shop }}" }
+    "issued": {
+      "title": "Gutschein über {{ value }} für {{ shop }}"
+    }
+  },
+  "customer": {
+    "account": {
+      "title": "Konto"
+    }
   }
 }

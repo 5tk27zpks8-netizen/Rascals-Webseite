@@ -1,0 +1,76 @@
+{%- comment -%}
+  DAS PROMO-BANNER.
+
+  Drei schraeg geschnittene Felder nebeneinander, wie in der Vorlage:
+  Text | Produkt | Team. Die Schnitte macht clip-path, nicht ein gedrehtes
+  Element — so bleiben Text und Bild gerade und nur die Kanten laufen schraeg.
+
+  Das Produkt ist am besten ein freigestelltes PNG. Als Vorgabe liegt der
+  echte Rascals-Hoodie bei, freigestellt aus dem Shopfoto — kein
+  Platzhalterprodukt, das es nicht gibt.
+
+  Auf schmalen Schirmen stehen die Felder untereinander; die Schnitte
+  fallen dort weg, weil ein schraeger Schnitt ueber die volle Breite nur
+  Flaeche kostet.
+{%- endcomment -%}
+{%- liquid
+  assign team_src = 'promo-team.webp' | asset_url
+  if section.settings.image != blank
+    assign team_src = section.settings.image | image_url: width: 1400
+  endif
+  assign product_src = 'promo-product.webp' | asset_url
+  if section.settings.product_image != blank
+    assign product_src = section.settings.product_image | image_url: width: 1100
+  endif
+  assign link = section.settings.button_link | default: routes.all_products_collection_url
+-%}
+<section class="promo-band" aria-labelledby="promo-{{ section.id }}">
+  <div class="promo-band__copy">
+    <span class="promo-band__slash" aria-hidden="true"></span>
+    <div class="promo-band__copy-inner">
+      {%- if section.settings.eyebrow != blank -%}<p class="promo-band__eyebrow">{{ section.settings.eyebrow | escape }}</p>{%- endif -%}
+      <h2 class="promo-band__title" id="promo-{{ section.id }}">
+        <span>{{ section.settings.title | escape }}</span>
+        {%- if section.settings.title_accent != blank %} <span class="promo-band__accent">{{ section.settings.title_accent | escape }}</span>{%- endif -%}
+      </h2>
+      {%- if section.settings.text != blank -%}<p class="promo-band__text">{{ section.settings.text | escape }}</p>{%- endif -%}
+      {%- if section.settings.button_label != blank -%}
+        <a class="button button--red button--skew" href="{{ link }}">
+          <span>{{ section.settings.button_label | escape }}</span>
+          <b class="arrow" aria-hidden="true">{%- render 'line-icon', name: 'arrow' -%}</b>
+        </a>
+      {%- endif -%}
+    </div>
+  </div>
+
+  {%- if section.settings.show_product -%}
+    <div class="promo-band__product">
+      <img src="{{ product_src }}" width="1100" height="682" alt="{{ section.settings.product_alt | escape }}" loading="lazy">
+    </div>
+  {%- endif -%}
+
+  <div class="promo-band__team" aria-hidden="true">
+    <img src="{{ team_src }}" width="1400" height="1867" alt="" loading="lazy">
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Promo-Banner",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Kleine Zeile", "default": "LIMITED COLLECTION" },
+    { "type": "text", "id": "title", "label": "Überschrift", "default": "RASCALS" },
+    { "type": "text", "id": "title_accent", "label": "Überschrift, rotes Wort", "default": "DEFENSE" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Performance-Teamwear für maximale Leistung – auf und neben dem Field." },
+    { "type": "text", "id": "button_label", "label": "Button", "default": "JETZT ENTDECKEN" },
+    { "type": "url", "id": "button_link", "label": "Button-Link" },
+    { "type": "header", "content": "Bilder" },
+    { "type": "checkbox", "id": "show_product", "label": "Produktbild zeigen", "default": true },
+    { "type": "image_picker", "id": "product_image", "label": "Produktbild (Mitte)", "info": "Am besten freigestellt (PNG ohne Hintergrund). Leer lassen: Rascals-Hoodie." },
+    { "type": "text", "id": "product_alt", "label": "Bildbeschreibung für Screenreader", "default": "Rascals Teamwear Hoodie, Vorder- und Rückseite" },
+    { "type": "image_picker", "id": "image", "label": "Teamfoto (rechts)", "info": "Leer lassen: Rascals-Team aus dem Theme." }
+  ],
+  "presets": [{ "name": "Promo-Banner" }]
+}
+{% endschema %}

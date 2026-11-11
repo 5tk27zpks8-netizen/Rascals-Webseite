@@ -1,0 +1,50 @@
+{%- comment -%}
+  404-SEITE.
+
+  Shopify liefert diese Seite auch dann aus, wenn ein Produkt nicht mehr im
+  Online-Shop veroeffentlicht ist — also genau dann, wenn ein Artikel aus
+  dem Sortiment genommen wurde. Wer einen alten Link anklickt, landet hier.
+
+  Deshalb unterscheiden wir: kommt die Anfrage von einer Produkt-URL,
+  zeigen wir "AUSVERKAUFT" statt der allgemeinen 404-Meldung. Erkennbar
+  ist das an request.path, das Shopify auch auf der 404 noch mitgibt.
+{%- endcomment -%}
+{%- assign sold_out = false -%}
+{%- if request.path contains '/products/' -%}{%- assign sold_out = true -%}{%- endif -%}
+
+<section class="error-page{% if sold_out %} error-page--sold{% endif %}">
+  <div class="field-lines" aria-hidden="true"></div>
+  <div class="error-page__content">
+    {%- if settings.logo != blank -%}
+      {{ settings.logo | image_url: width: 560 | image_tag: widths: '180, 280, 400, 560', loading: 'eager', alt: shop.name, class: 'error-page__mark' }}
+    {%- else -%}
+      <img class="error-page__mark" src="{{ 'rascals-logo.png' | asset_img_url: '560x' }}" width="240" height="156" alt="{{ shop.name }}" loading="eager">
+    {%- endif -%}
+
+    {%- if sold_out -%}
+      <p class="eyebrow">{{ section.settings.sold_eyebrow }}</p>
+      <h2>{{ section.settings.sold_title }}</h2>
+      <p>{{ section.settings.sold_text }}</p>
+      <a class="button button--red" href="{{ routes.all_products_collection_url }}">{{ section.settings.sold_button }} <b class="arrow" aria-hidden="true">{%- render 'line-icon', name: 'arrow' -%}</b></a>
+    {%- else -%}
+      <p class="eyebrow">FLAG ON THE PLAY</p>
+      <h1>404</h1>
+      <h2>FALSE START.</h2>
+      <p>Diese Seite ist im Aus gelandet.</p>
+      <a class="button button--red" href="{{ routes.root_url }}">ZURÜCK INS SPIEL <b class="arrow" aria-hidden="true">{%- render 'line-icon', name: 'arrow' -%}</b></a>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "404-Seite",
+  "settings": [
+    { "type": "header", "content": "Nicht mehr verfügbarer Artikel" },
+    { "type": "text", "id": "sold_eyebrow", "label": "Kleine Zeile", "default": "OUT OF STOCK" },
+    { "type": "text", "id": "sold_title", "label": "Überschrift", "default": "AUSVERKAUFT." },
+    { "type": "textarea", "id": "sold_text", "label": "Text", "default": "Dieser Artikel ist aktuell nicht mehr verfügbar. Schau im Shop vorbei – Nachschub kommt." },
+    { "type": "text", "id": "sold_button", "label": "Button", "default": "ZUM SHOP" }
+  ]
+}
+{% endschema %}

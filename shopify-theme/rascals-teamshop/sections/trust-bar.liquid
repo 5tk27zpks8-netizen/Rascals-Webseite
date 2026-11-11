@@ -1,0 +1,74 @@
+{%- comment -%}
+  DIE VERTRAUENSLEISTE.
+
+  Vier bis sechs Punkte, jeder mit Symbol, fetter Zeile und Erklaerung
+  darunter. Sie steht direkt unter den Kategoriekacheln, also an der Stelle,
+  an der jemand entscheidet, ob er weiterliest oder weggeht.
+
+  Bewusst Bloecke und kein fester Text: was ein Shop versprechen kann,
+  aendert sich (Versanddauer, Rueckgabefrist), und das gehoert in den
+  Theme-Editor, nicht in eine Datei.
+{%- endcomment -%}
+
+{%- if section.blocks.size > 0 -%}
+  <section class="trust-bar trust-bar--{{ section.settings.edge | default: 'lines' }}" aria-label="{{ section.settings.heading | default: 'Leistungen' | escape }}">
+    {%- if section.settings.edge == 'slashes' -%}<span class="trust-bar__edge" aria-hidden="true"></span>{%- endif -%}
+    <ul class="trust-bar__inner page-width">
+      {%- for block in section.blocks -%}
+        <li {{ block.shopify_attributes }}>
+          {%- render 'line-icon', name: block.settings.icon -%}
+          <span>
+            <b>{{ block.settings.title | escape }}</b>
+            {%- if block.settings.text != blank -%}<small>{{ block.settings.text | escape }}</small>{%- endif -%}
+          </span>
+        </li>
+      {%- endfor -%}
+    </ul>
+  </section>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Vertrauensleiste",
+  "tag": "section",
+  "max_blocks": 6,
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Überschrift (nur für Screenreader)", "default": "Leistungen" },
+    {
+      "type": "select", "id": "edge", "label": "Randgestaltung", "default": "lines",
+      "options": [
+        { "value": "lines", "label": "Rote Linien links und rechts" },
+        { "value": "slashes", "label": "Rote Schrägstriche links" }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "point",
+      "name": "Punkt",
+      "settings": [
+        { "type": "text", "id": "title", "label": "Zeile", "default": "OFFIZIELLE TEAMWEAR" },
+        { "type": "text", "id": "text", "label": "Erklärung", "default": "Original Hellenstein Rascals" },
+        {
+          "type": "select", "id": "icon", "label": "Symbol", "default": "shield",
+          "options": [
+            { "value": "shield", "label": "Schild" }, { "value": "truck", "label": "Versand" },
+            { "value": "return", "label": "Rückgabe" }, { "value": "needle", "label": "Veredelung" },
+            { "value": "star", "label": "Stern" }, { "value": "cup", "label": "Pokal" },
+            { "value": "team", "label": "Team" }
+          ]
+        }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Vertrauensleiste" }],
+  "default": {
+    "blocks": [
+      { "type": "point", "settings": { "title": "OFFIZIELLE TEAMWEAR", "text": "Original Hellenstein Rascals", "icon": "shield" } },
+      { "type": "point", "settings": { "title": "SCHNELLER VERSAND", "text": "Innerhalb Deutschlands", "icon": "truck" } },
+      { "type": "point", "settings": { "title": "14 TAGE RÜCKGABE", "text": "Unkompliziert & fair", "icon": "return" } },
+      { "type": "point", "settings": { "title": "INDIVIDUALISIERUNG", "text": "Name, Nummer & Teamrolle", "icon": "needle" } }
+    ]
+  }
+}
+{% endschema %}

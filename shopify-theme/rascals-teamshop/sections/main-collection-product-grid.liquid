@@ -1,0 +1,311 @@
+{%- comment -%}
+  DIE KOLLEKTIONSSEITE.
+
+  DREI LINIEN, FUENF KATEGORIEN, NICHT FUENFZEHN KOLLEKTIONEN.
+
+  "Old-School" und "Muetzen" sind keine zwei Kollektionen, sondern zwei Achsen:
+  die Linie, zu der ein Artikel gehoert, und was der Artikel ist. Wer beides als
+  Kollektion anlegt, pflegt 3 x 5 = 15 Listen. Deshalb: die Linie ist die
+  Kollektion, die Kategorie ein Tag (oder der Produkttyp). "Old-School ->
+  Pullover" ist dann kein eigener Datensatz, sondern diese Seite mit gesetzter
+  Kategorie.
+
+  AUFBAU WIE IN DER VORLAGE.
+
+  Links die Filterspalte: Kategorie, Groesse als Kaestchen, Farbe als Kreise,
+  Preis. Rechts Kleinzeile, Titel, Anzahl, Sortierung und das Raster. Auf
+  schmalen Schirmen klappt die Spalte zu einem "Filter"-Knopf ueber dem
+  Raster zusammen.
+
+  KEINE VERSCHACHTELTEN FORMULARE.
+
+  Die Produktkarten enthalten eigene Formulare (Schnell-Hinzufuegen). Ein
+  Filterformular um das ganze Raster waere ungueltiges HTML, und Browser
+  loesen das unterschiedlich auf. Deshalb ist nur die Filterspalte das
+  Formular; die Sortierung oben rechts gehoert ueber das form-Attribut
+  trotzdem dazu.
+
+  NICHTS WIRD ERFUNDEN.
+
+  Groessen, Farben und Preis kommen aus collection.filters. Die gibt es erst,
+  wenn im Shopify-Admin Storefront-Filter eingerichtet sind (App "Search &
+  Discovery"). Bis dahin erscheinen diese Gruppen nicht — eine Groessenliste,
+  die nicht filtert, waere schlimmer als keine. Was einzurichten ist, steht
+  in KOLLEKTIONEN.md.
+{%- endcomment -%}
+
+{%- assign type_filter = null -%}
+{%- assign active_filter_count = 0 -%}
+{%- for filter in collection.filters -%}
+  {%- if filter.param_name == 'filter.p.product_type' -%}
+    {%- assign type_filter = filter -%}
+  {%- endif -%}
+  {%- if filter.type == 'price_range' -%}
+    {%- if filter.min_value.value or filter.max_value.value -%}
+      {%- assign active_filter_count = active_filter_count | plus: 1 -%}
+    {%- endif -%}
+  {%- else -%}
+    {%- assign active_filter_count = active_filter_count | plus: filter.active_values.size -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- assign active_filter_count = active_filter_count | plus: collection.current_tags.size -%}
+{%- assign sort_by = collection.sort_by | default: collection.default_sort_by -%}
+
+{%- comment -%}
+  Unterkategorien ueber Tags: /collections/old-school/pullover ist Bordmittel
+  und braucht keine App. Deshalb haben die Tags Vorrang vor dem
+  Produkttyp-Filter.
+{%- endcomment -%}
+{%- assign category_tags = section.settings.category_tags | split: ',' -%}
+{%- capture category_items -%}
+  {%- for raw_tag in category_tags -%}
+    {%- assign tag = raw_tag | strip -%}
+    {%- if tag == blank -%}{%- continue -%}{%- endif -%}
+    {%- unless collection.all_tags contains tag -%}{%- continue -%}{%- endunless -%}
+    {%- assign tag_active = false -%}
+    {%- if collection.current_tags contains tag -%}{%- assign tag_active = true -%}{%- endif -%}
+    <li>
+      <a class="filter-check{% if tag_active %} is-active{% endif %}"
+         href="{% if tag_active %}{{ collection.url }}{% else %}{{ collection.url }}/{{ tag | handleize }}{% endif %}"
+         {% if tag_active %}aria-current="true"{% endif %}>
+        <span class="filter-check__box" aria-hidden="true"></span><span class="filter-check__label">{{ tag | escape }}</span>
+      </a>
+    </li>
+  {%- endfor -%}
+{%- endcapture -%}
+
+{%- liquid
+  assign title_text = collection.title
+  assign title_lower = collection.title | downcase
+  unless title_lower contains 'kollektion' or section.settings.title_suffix == blank
+    assign title_text = collection.title | append: ' ' | append: section.settings.title_suffix
+  endunless
+  assign count = collection.products_count
+-%}
+
+<section class="collection-page page-width">
+  <div class="collection-layout">
+
+    <details class="collection-aside" id="FilterSheet-{{ section.id }}" open>
+      <summary class="collection-aside__toggle">
+        {%- render 'line-icon', name: 'sliders' -%}
+        <span>FILTER</span>
+        {%- if active_filter_count > 0 -%}<b>{{ active_filter_count }}</b>{%- endif -%}
+      </summary>
+
+      <form class="collection-aside__panel" id="CollectionFilters" method="get">
+        <div class="filter-head">
+          <span class="filter-head__title">{%- render 'line-icon', name: 'sliders' -%}FILTER</span>
+          <a class="filter-head__reset" href="{{ collection.url }}{% if sort_by != collection.default_sort_by %}?sort_by={{ sort_by }}{% endif %}">
+            Alles zurücksetzen {%- render 'line-icon', name: 'return' -%}
+          </a>
+        </div>
+
+        {%- if category_items != blank -%}
+          {%- comment -%}
+            Die Kategorie-Tags sind Links, keine Felder. Ein gesetzter
+            Produkttyp-Filter wuerde beim Absenden sonst verloren gehen.
+          {%- endcomment -%}
+          {%- if type_filter -%}
+            {%- for value in type_filter.active_values -%}
+              <input type="hidden" name="{{ value.param_name }}" value="{{ value.value }}">
+            {%- endfor -%}
+          {%- endif -%}
+          <details class="filter-group" open>
+            <summary>Kategorie{%- render 'line-icon', name: 'chevron' -%}</summary>
+            <ul class="filter-list" role="list">{{ category_items }}</ul>
+          </details>
+        {%- elsif type_filter and type_filter.values.size > 1 -%}
+          <details class="filter-group" open>
+            <summary>Kategorie{%- render 'line-icon', name: 'chevron' -%}</summary>
+            <ul class="filter-list" role="list">
+              {%- for value in type_filter.values -%}
+                {%- if value.count == 0 and value.active == false -%}{%- continue -%}{%- endif -%}
+                <li>
+                  <label class="filter-check">
+                    <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %} onchange="this.form.submit()">
+                    <span class="filter-check__box" aria-hidden="true"></span>
+                    <span class="filter-check__label">{{ value.label | escape }}</span>
+                    <i>({{ value.count }})</i>
+                  </label>
+                </li>
+              {%- endfor -%}
+            </ul>
+          </details>
+        {%- endif -%}
+
+        {%- for filter in collection.filters -%}
+          {%- if filter.param_name == 'filter.p.product_type' -%}{%- continue -%}{%- endif -%}
+          {%- liquid
+            assign fl = filter.label | downcase
+            assign kind = 'list'
+            if filter.type == 'price_range'
+              assign kind = 'price'
+            elsif fl contains 'größe' or fl contains 'groesse' or fl contains 'size'
+              assign kind = 'size'
+            elsif fl contains 'farbe' or fl contains 'color' or fl contains 'colour'
+              assign kind = 'color'
+            endif
+          -%}
+          <details class="filter-group filter-group--{{ kind }}" open>
+            <summary>{{ filter.label | escape }}{%- render 'line-icon', name: 'chevron' -%}</summary>
+
+            {%- case kind -%}
+              {%- when 'price' -%}
+                <div class="filter-price">
+                  <label><span>von</span>
+                    <input type="number" name="{{ filter.min_value.param_name }}" min="0" step="1" inputmode="decimal"
+                           value="{% if filter.min_value.value %}{{ filter.min_value.value | money_without_currency | replace: ',', '.' }}{% endif %}" placeholder="0">
+                  </label>
+                  <label><span>bis</span>
+                    <input type="number" name="{{ filter.max_value.param_name }}" min="0" step="1" inputmode="decimal"
+                           value="{% if filter.max_value.value %}{{ filter.max_value.value | money_without_currency | replace: ',', '.' }}{% endif %}"
+                           placeholder="{{ filter.range_max | money_without_currency | replace: ',', '.' }}">
+                  </label>
+                  <button class="filter-apply" type="submit">Übernehmen</button>
+                </div>
+
+              {%- when 'size' -%}
+                <div class="size-chips">
+                  {%- for value in filter.values -%}
+                    {%- assign value_empty = false -%}
+                    {%- if value.count == 0 and value.active == false -%}{%- assign value_empty = true -%}{%- endif -%}
+                    <label class="size-chip{% if value_empty %} is-empty{% endif %}">
+                      <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if value_empty %} disabled{% endif %} onchange="this.form.submit()">
+                      <span>{{ value.label | escape }}</span>
+                    </label>
+                  {%- endfor -%}
+                </div>
+
+              {%- when 'color' -%}
+                <div class="color-swatches">
+                  {%- for value in filter.values -%}
+                    {%- assign value_empty = false -%}
+                    {%- if value.count == 0 and value.active == false -%}{%- assign value_empty = true -%}{%- endif -%}
+                    {%- liquid
+                      assign hex = ''
+                      if value.swatch.color
+                        assign hex = value.swatch.color | append: ''
+                      endif
+                    -%}
+                    {%- if hex == blank -%}
+                      {%- capture hex -%}{%- render 'swatch-color', name: value.label -%}{%- endcapture -%}
+                      {%- assign hex = hex | strip -%}
+                    {%- endif -%}
+                    <label class="color-swatch{% if value_empty %} is-empty{% endif %}{% if hex == blank and value.swatch.image == blank %} color-swatch--text{% endif %}" title="{{ value.label | escape }}">
+                      <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if value_empty %} disabled{% endif %} onchange="this.form.submit()">
+                      {%- if value.swatch.image -%}
+                        <span class="color-swatch__dot" style="background-image: url('{{ value.swatch.image | image_url: width: 64 }}');" aria-hidden="true"></span>
+                        <span class="visually-hidden">{{ value.label | escape }}</span>
+                      {%- elsif hex != blank -%}
+                        <span class="color-swatch__dot" style="--swatch: {{ hex }};" aria-hidden="true"></span>
+                        <span class="visually-hidden">{{ value.label | escape }}</span>
+                      {%- else -%}
+                        <span class="color-swatch__name">{{ value.label | escape }}</span>
+                      {%- endif -%}
+                    </label>
+                  {%- endfor -%}
+                </div>
+
+              {%- else -%}
+                <ul class="filter-list" role="list">
+                  {%- for value in filter.values -%}
+                    {%- assign value_empty = false -%}
+                    {%- if value.count == 0 and value.active == false -%}{%- assign value_empty = true -%}{%- endif -%}
+                    <li>
+                      <label class="filter-check{% if value_empty %} is-empty{% endif %}">
+                        <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if value_empty %} disabled{% endif %} onchange="this.form.submit()">
+                        <span class="filter-check__box" aria-hidden="true"></span>
+                        <span class="filter-check__label">{{ value.label | escape }}</span>
+                        <i>({{ value.count }})</i>
+                      </label>
+                    </li>
+                  {%- endfor -%}
+                </ul>
+            {%- endcase -%}
+          </details>
+        {%- endfor -%}
+
+        <noscript><button class="filter-apply" type="submit">Filter anwenden</button></noscript>
+      </form>
+    </details>
+    <script>
+      (function () {
+        /* Auf schmalen Schirmen startet die Filterspalte zugeklappt, sonst
+           stuende sie vor dem ersten Produkt. Ohne JavaScript bleibt sie offen —
+           dann ist sie lang, aber benutzbar. Wird das Fenster breit gezogen,
+           klappt sie wieder auf, weil der Knopf dort ausgeblendet ist. */
+        var sheet = document.getElementById('FilterSheet-{{ section.id }}');
+        var mq = window.matchMedia('(max-width: 1100px)');
+        if (!sheet) return;
+        if (mq.matches) sheet.open = false;
+        var sync = function (e) { if (!e.matches) sheet.open = true; };
+        if (mq.addEventListener) mq.addEventListener('change', sync); else if (mq.addListener) mq.addListener(sync);
+      })();
+    </script>
+
+    <div class="collection-main">
+      <header class="collection-head">
+        <div class="collection-head__title">
+          {%- if section.settings.eyebrow != blank -%}<p class="collection-head__eyebrow">{{ section.settings.eyebrow | escape }}</p>{%- endif -%}
+          <h1>{{ title_text | escape }}</h1>
+        </div>
+        <p class="collection-head__count">{{ count }} {% if count == 1 %}PRODUKT{% else %}PRODUKTE{% endif %}</p>
+        <label class="collection-sort">
+          <span>Sortieren nach:</span>
+          <select name="sort_by" form="CollectionFilters" onchange="this.form.submit()">
+            {%- for option in collection.sort_options -%}
+              <option value="{{ option.value }}"{% if option.value == sort_by %} selected{% endif %}>{{ option.name }}</option>
+            {%- endfor -%}
+          </select>
+        </label>
+      </header>
+
+      {%- if collection.description != blank -%}<div class="collection-head__text rte">{{ collection.description }}</div>{%- endif -%}
+
+      {%- if active_filter_count > 0 -%}
+        <div class="active-filters" aria-label="Aktive Filter">
+          {%- for tag in collection.current_tags -%}
+            <a href="{{ collection.url }}">{{ tag | escape }} <span aria-hidden="true">&times;</span><span class="visually-hidden">entfernen</span></a>
+          {%- endfor -%}
+          {%- for filter in collection.filters -%}
+            {%- for value in filter.active_values -%}
+              <a href="{{ value.url_to_remove }}">{{ value.label | escape }} <span aria-hidden="true">&times;</span><span class="visually-hidden">entfernen</span></a>
+            {%- endfor -%}
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+
+      {%- paginate collection.products by section.settings.products_per_page -%}
+        <div class="product-grid product-grid--collection">
+          {%- for product in collection.products -%}
+            {% render 'product-card', card_product: product, show_vendor: section.settings.show_vendor, new_days: section.settings.new_days %}
+          {%- else -%}
+            <p class="collection-empty">
+              {%- if active_filter_count > 0 -%}
+                Mit dieser Auswahl ist gerade nichts da. <a href="{{ collection.url }}">Alle Artikel zeigen</a>
+              {%- else -%}
+                Diese Kollektion ist gerade im Locker Room.
+              {%- endif -%}
+            </p>
+          {%- endfor -%}
+        </div>
+        {% render 'pagination', paginate: paginate %}
+      {%- endpaginate -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Collection products",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Kleine Zeile über dem Titel", "default": "TRAINING / GAME DAY / OFFICIAL GEAR" },
+    { "type": "text", "id": "title_suffix", "label": "Zusatz hinter dem Kollektionsnamen", "default": "KOLLEKTION", "info": "Aus „Old-School“ wird „Old-School Kollektion“. Steht „Kollektion“ schon im Namen, entfällt der Zusatz." },
+    { "type": "text", "id": "category_tags", "label": "Unterkategorien", "default": "Kopfbedeckung, T-Shirts, Pullover, Jacken, Hosen, Schuhe, Accessoires", "info": "Durch Komma getrennt. Erscheinen in der Filterspalte, sobald Artikel diesen Tag tragen." },
+    { "type": "range", "id": "products_per_page", "label": "Produkte pro Seite", "min": 8, "max": 32, "step": 4, "default": 16 },
+    { "type": "range", "id": "new_days", "label": "„NEW“ für Artikel jünger als", "min": 0, "max": 90, "step": 5, "unit": "T", "default": 30, "info": "0 schaltet das Abzeichen ab." },
+    { "type": "checkbox", "id": "show_vendor", "label": "Anbieter statt Produkttyp anzeigen", "default": false }
+  ]
+}
+{% endschema %}

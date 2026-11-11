@@ -168,10 +168,10 @@
               {%- when 'size' -%}
                 <div class="size-chips">
                   {%- for value in filter.values -%}
-                    {%- assign empty = false -%}
-                    {%- if value.count == 0 and value.active == false -%}{%- assign empty = true -%}{%- endif -%}
-                    <label class="size-chip{% if empty %} is-empty{% endif %}">
-                      <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if empty %} disabled{% endif %} onchange="this.form.submit()">
+                    {%- assign value_empty = false -%}
+                    {%- if value.count == 0 and value.active == false -%}{%- assign value_empty = true -%}{%- endif -%}
+                    <label class="size-chip{% if value_empty %} is-empty{% endif %}">
+                      <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if value_empty %} disabled{% endif %} onchange="this.form.submit()">
                       <span>{{ value.label | escape }}</span>
                     </label>
                   {%- endfor -%}
@@ -180,8 +180,8 @@
               {%- when 'color' -%}
                 <div class="color-swatches">
                   {%- for value in filter.values -%}
-                    {%- assign empty = false -%}
-                    {%- if value.count == 0 and value.active == false -%}{%- assign empty = true -%}{%- endif -%}
+                    {%- assign value_empty = false -%}
+                    {%- if value.count == 0 and value.active == false -%}{%- assign value_empty = true -%}{%- endif -%}
                     {%- liquid
                       assign hex = ''
                       if value.swatch.color
@@ -192,8 +192,8 @@
                       {%- capture hex -%}{%- render 'swatch-color', name: value.label -%}{%- endcapture -%}
                       {%- assign hex = hex | strip -%}
                     {%- endif -%}
-                    <label class="color-swatch{% if empty %} is-empty{% endif %}{% if hex == blank and value.swatch.image == blank %} color-swatch--text{% endif %}" title="{{ value.label | escape }}">
-                      <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if empty %} disabled{% endif %} onchange="this.form.submit()">
+                    <label class="color-swatch{% if value_empty %} is-empty{% endif %}{% if hex == blank and value.swatch.image == blank %} color-swatch--text{% endif %}" title="{{ value.label | escape }}">
+                      <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if value_empty %} disabled{% endif %} onchange="this.form.submit()">
                       {%- if value.swatch.image -%}
                         <span class="color-swatch__dot" style="background-image: url('{{ value.swatch.image | image_url: width: 64 }}');" aria-hidden="true"></span>
                         <span class="visually-hidden">{{ value.label | escape }}</span>
@@ -210,11 +210,11 @@
               {%- else -%}
                 <ul class="filter-list" role="list">
                   {%- for value in filter.values -%}
-                    {%- assign empty = false -%}
-                    {%- if value.count == 0 and value.active == false -%}{%- assign empty = true -%}{%- endif -%}
+                    {%- assign value_empty = false -%}
+                    {%- if value.count == 0 and value.active == false -%}{%- assign value_empty = true -%}{%- endif -%}
                     <li>
-                      <label class="filter-check{% if empty %} is-empty{% endif %}">
-                        <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if empty %} disabled{% endif %} onchange="this.form.submit()">
+                      <label class="filter-check{% if value_empty %} is-empty{% endif %}">
+                        <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if value_empty %} disabled{% endif %} onchange="this.form.submit()">
                         <span class="filter-check__box" aria-hidden="true"></span>
                         <span class="filter-check__label">{{ value.label | escape }}</span>
                         <i>({{ value.count }})</i>
