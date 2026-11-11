@@ -585,3 +585,17 @@ body:hover .football-cursor { opacity: .8; }
 .product-badges { position: absolute; top: 1rem; left: 1rem; display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; }
 .product-badges .product-badge { position: static; top: auto; left: auto; }
 .product-badge--new { color: var(--navy); background: var(--white); }
+
+/* 404-SEITE: Logo + "Ausverkauft"-Zustand
+   Das Logo steht ueber der Meldung. Auf der Ausverkauft-Variante faellt die
+   grosse 404-Ziffer weg, deshalb bekommt h2 dort wieder einen normalen
+   Abstand statt des negativen, der die Ziffer ueberlappen soll. */
+.error-page__mark { display: block; width: min(160px, 38vw); height: auto; margin: 0 auto 1.75rem; }
+.error-page--sold .error-page__mark { width: min(240px, 55vw); margin-bottom: 2.25rem; }
+.error-page--sold h2 { margin: 0 0 1.5rem; font-size: clamp(2.2rem, 8.5vw, 6rem); }
+.error-page--sold p { max-width: 42ch; margin-left: auto; margin-right: auto; }
+
+/* Ausverkaufte Kacheln: Abzeichen in Navy, Bild leicht zurueckgenommen,
+   damit lieferbare Artikel im Raster zuerst ins Auge fallen. */
+.product-badge--sold { color: var(--white); background: var(--navy); }
+.product-card--sold .product-card__media img { opacity: .55; }

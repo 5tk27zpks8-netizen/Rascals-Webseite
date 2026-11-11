@@ -1,32 +1,36 @@
-<article class="product-card reveal" data-tilt-card>
+{%- comment -%}
+  NEU-ABZEICHEN.
+
+  "Neu" heisst: vor weniger als `new_days` Tagen in Shopify angelegt.
+  Gerechnet wird ueber Unix-Sekunden, weil Liquid keine Datumsdifferenz
+  kennt — beide Seiten mit %s in Sekunden, dann subtrahieren.
+
+  Ohne uebergebenes new_days bleibt das Abzeichen aus. So entscheidet
+  jeder Abschnitt selbst, ob er es zeigt, statt dass es ueberall im Shop
+  auftaucht, wo eine Kachel gerendert wird.
+{%- endcomment -%}
+{%- assign is_new = false -%}
+{%- if new_days and new_days > 0 -%}
+  {%- assign now_s = 'now' | date: '%s' | times: 1 -%}
+  {%- assign made_s = card_product.created_at | date: '%s' | times: 1 -%}
+  {%- assign age_days = now_s | minus: made_s | divided_by: 86400 -%}
+  {%- if age_days < new_days -%}{%- assign is_new = true -%}{%- endif -%}
+{%- endif -%}
+{%- assign on_sale = false -%}
+{%- if card_product.compare_at_price > card_product.price -%}{%- assign on_sale = true -%}{%- endif -%}
+{%- assign sold_out = false -%}
+{%- unless card_product.available -%}{%- assign sold_out = true -%}{%- endunless -%}
+
+<article class="product-card reveal{% if sold_out %} product-card--sold{% endif %}" data-tilt-card>
   <a class="product-card__media" href="{{ card_product.url }}">
     {%- if card_product.featured_media -%}
       {{ card_product.featured_media | image_url: width: 900 | image_tag: widths: '320, 480, 640, 900', sizes: '(min-width: 990px) 25vw, 50vw', loading: 'lazy', alt: card_product.featured_media.alt }}
     {%- else -%}
       <div class="product-placeholder">{{ 'product-1' | placeholder_svg_tag }}</div>
     {%- endif -%}
-    {%- comment -%}
-      NEU-ABZEICHEN.
-
-      "Neu" heisst: vor weniger als `new_days` Tagen in Shopify angelegt.
-      Gerechnet wird ueber Unix-Sekunden, weil Liquid keine Datumsdifferenz
-      kennt — beide Seiten mit %s in Sekunden, dann subtrahieren.
-
-      Ohne uebergebenes new_days bleibt das Abzeichen aus. So entscheidet
-      jeder Abschnitt selbst, ob er es zeigt, statt dass es ueberall im Shop
-      auftaucht, wo eine Kachel gerendert wird.
-    {%- endcomment -%}
-    {%- assign is_new = false -%}
-    {%- if new_days and new_days > 0 -%}
-      {%- assign now_s = 'now' | date: '%s' | times: 1 -%}
-      {%- assign made_s = card_product.created_at | date: '%s' | times: 1 -%}
-      {%- assign age_days = now_s | minus: made_s | divided_by: 86400 -%}
-      {%- if age_days < new_days -%}{%- assign is_new = true -%}{%- endif -%}
-    {%- endif -%}
-    {%- assign on_sale = false -%}
-    {%- if card_product.compare_at_price > card_product.price -%}{%- assign on_sale = true -%}{%- endif -%}
-    {%- if is_new or on_sale -%}
+    {%- if is_new or on_sale or sold_out -%}
       <div class="product-badges">
+        {%- if sold_out -%}<span class="product-badge product-badge--sold">AUSVERKAUFT</span>{%- endif -%}
         {%- if is_new -%}<span class="product-badge product-badge--new">NEW</span>{%- endif -%}
         {%- if on_sale -%}<span class="product-badge">SALE</span>{%- endif -%}
       </div>
