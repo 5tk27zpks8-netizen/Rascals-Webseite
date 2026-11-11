@@ -1,0 +1,41 @@
+{% comment %}
+  COMING SOON.
+
+  Eine leere Kollektion sagt dem Besucher nichts — er sieht ein leeres
+  Raster und zieht daraus seine eigenen Schluesse. Diese Seite sagt klar,
+  dass die Ware kommt, statt es dem Raster zu ueberlassen.
+
+  Nutzt nur Klassen, die es im Theme schon gibt. Kein neues CSS.
+{% endcomment %}
+
+<section class="section-shell page-width">
+  <header class="page-title reveal">
+    <p class="eyebrow eyebrow--red">{{ section.settings.eyebrow | escape }}</p>
+    <h1>{{ section.settings.heading | newline_to_br }}</h1>
+  </header>
+
+  <div class="empty-state reveal">
+    <b>{{ section.settings.statement | escape }}</b>
+    {%- if section.settings.text != blank -%}<div class="rte">{{ section.settings.text }}</div>{%- endif -%}
+    {%- if section.settings.button_label != blank -%}
+      <a class="button button--navy" href="{{ section.settings.button_url | default: routes.collections_url }}">
+        {{- section.settings.button_label | escape }} <span>&rarr;</span>
+      </a>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Coming soon",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Kleine Überschrift", "default": "OFFICIAL TEAMWEAR" },
+    { "type": "textarea", "id": "heading", "label": "Überschrift", "default": "FANWARE." },
+    { "type": "text", "id": "statement", "label": "Aussage", "default": "COMING SOON." },
+    { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Die erste Fanware-Kollektion ist in Arbeit. Bis dahin findest du unsere Teamwear in den Kollektionen.</p>" },
+    { "type": "text", "id": "button_label", "label": "Knopf", "default": "Zu den Kollektionen" },
+    { "type": "url", "id": "button_url", "label": "Knopf-Ziel" }
+  ],
+  "presets": [{ "name": "Coming soon" }]
+}
+{% endschema %}

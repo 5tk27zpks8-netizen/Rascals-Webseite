@@ -569,3 +569,11 @@ body:hover .football-cursor { opacity: .8; }
 /* Knopfreihe der Kollektionen auf der Kollektionsseite */
 .line-buttons { display: flex; flex-wrap: wrap; gap: .8rem; margin-bottom: 2.4rem; }
 @media (max-width: 760px) { .line-buttons { flex-direction: column; } .line-buttons .button { width: 100%; } }
+/* Zwischentext im Laufband. Navy SCHRIFT auf dem roten Band waere nur
+   3.87:1 — am Desktop bei 28px noch in Ordnung, mobil schrumpft die
+   Laufschrift aber auf 17.6px und faellt damit unter die Schwelle fuer
+   grosse Schrift. Darum umgekehrt: navy Flaeche, weisse Schrift. Das setzt
+   den Einschub deutlicher ab und liegt bei jedem Schriftgrad weit ueber AA.
+   Der Stern ist sonst navy auf navy, also hier rot. */
+.play-ticker__info { color: var(--white); background: var(--navy); }
+.play-ticker__info b { color: var(--red); }

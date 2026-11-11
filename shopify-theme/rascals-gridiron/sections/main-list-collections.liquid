@@ -40,6 +40,14 @@
       {%- for collection in lines -%}
         <a class="button button--navy" href="{{ collection.url }}">{{ collection.title | escape }} <span>&rarr;</span></a>
       {%- endfor -%}
+      {%- comment -%}
+        Fanware steht neben den Linien, ist aber keine Kollektion: es gibt
+        noch nichts zu zeigen. Darum ein eigener Knopf auf eine Seite, die
+        das sagt, statt einer leeren Sammlung, die es offen laesst.
+      {%- endcomment -%}
+      {%- if section.settings.extra_label != blank -%}
+        <a class="button button--red" href="{{ section.settings.extra_url | default: '/pages/fanware' }}">{{ section.settings.extra_label | escape }} <span>&rarr;</span></a>
+      {%- endif -%}
     </div>
   {%- endif -%}
 
@@ -126,6 +134,19 @@
       "id": "show_line_buttons",
       "label": "Kollektionen auch als Knöpfe zeigen",
       "default": true
+    },
+    {
+      "type": "text",
+      "id": "extra_label",
+      "label": "Zusätzlicher Knopf",
+      "default": "Fanware",
+      "info": "Für etwas, das noch keine Kollektion ist. Leer lassen, um ihn auszublenden."
+    },
+    {
+      "type": "url",
+      "id": "extra_url",
+      "label": "Ziel des Knopfs",
+      "info": "Ohne Angabe: /pages/fanware"
     },
     {
       "type": "collection_list",

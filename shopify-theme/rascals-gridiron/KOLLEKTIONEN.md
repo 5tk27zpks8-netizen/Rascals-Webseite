@@ -99,6 +99,36 @@ Seite **Kollektion**, Abschnitt *Collection products*:
 - **Unterkategorien:** `Mützen, Caps, Pullover, Jacken, Accessoires, Zubehör`
   (durch Komma getrennt, frei änderbar)
 
+### 6. Fanware-Seite anlegen
+
+Der rote Knopf **Fanware** steht neben den Linien, ist aber keine Sammlung —
+es gibt noch nichts zu zeigen. Er führt auf eine Seite, die genau das sagt.
+
+*Inhalte → Seiten → Seite hinzufügen:*
+
+- Titel: **Fanware**
+- Inhalt: leer lassen
+- rechts unter *Theme-Vorlage*: **fanware** auswählen
+- speichern
+
+Fertig — `/pages/fanware` zeigt „FANWARE. / COMING SOON." Text und Knopf sind
+im Theme-Editor änderbar.
+
+Sobald es echte Fanware gibt: eine normale Sammlung daraus machen und im
+Theme-Editor unter *Zusätzlicher Knopf* das Ziel umhängen (oder das Feld
+leeren, dann verschwindet der Knopf).
+
+### 7. Laufband
+
+Das rote Band unter dem Hero zeigt abwechselnd zwei Texte. Im Theme-Editor
+unter *Game ticker*:
+
+- **Text:** `ALL GRIT • ALL HEART • ALL RASCALS`
+- **Zwischentext (Info):** `FANWARE COMING SOON`
+
+Der Zwischentext steht auf navy Fläche, damit er sich absetzt und bei jeder
+Schriftgröße lesbar bleibt. Leer lassen blendet ihn aus.
+
 ---
 
 ## Was das Theme daraus macht
