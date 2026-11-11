@@ -1,17 +1,47 @@
+{%- comment -%}
+  DIE NEUESTEN ARTIKEL.
+
+  Ohne gewaehlte Kollektion stand hier bisher ein fester Platzhalter: vier
+  Kacheln "Dein Produkt 1-4" zu 59,00 EUR. Die standen auch dann noch da,
+  wenn der Shop laengst Artikel hatte — man musste erst im Theme-Editor
+  eine Kollektion zuweisen, damit ueberhaupt etwas Echtes erschien.
+
+  Jetzt greift der Abschnitt von selbst auf alle Artikel zu und sortiert
+  sie nach Anlagedatum, neueste zuerst.
+
+  GRENZE, DIE MAN KENNEN MUSS: Liquid bekommt aus collections.all nur die
+  ersten 50 Artikel. Sortiert wird also innerhalb dieser 50. Solange der
+  Shop darunter bleibt, ist das Ergebnis exakt; darueber koennte ein ganz
+  neuer Artikel durchrutschen. Wer mehr fuehrt, weist dem Abschnitt eine
+  Kollektion zu, die im Admin auf "Datum, neu zu alt" sortiert ist — dann
+  kommt die Reihenfolge von Shopify und die Grenze faellt weg.
+{%- endcomment -%}
+
 {%- liquid
   assign products_to_show = section.settings.products_to_show
   assign featured_collection = section.settings.collection
+  assign source_products = null
+
+  if featured_collection != blank and featured_collection.products_count > 0
+    assign source_products = featured_collection.products
+  elsif section.settings.fallback_newest and collections.all.products_count > 0
+    assign source_products = collections.all.products | sort: 'created_at' | reverse
+  endif
 -%}
 <section class="section-shell product-section">
   <div class="page-width">
     <div class="section-heading reveal">
       <div><p class="eyebrow eyebrow--red">{{ section.settings.eyebrow | escape }}</p><h2>{{ section.settings.heading | escape }}</h2></div>
-      {%- if featured_collection != blank -%}<a class="text-link text-link--dark" href="{{ featured_collection.url }}">ALLE ANSEHEN <span>→</span></a>{%- endif -%}
+      {%- if featured_collection != blank -%}
+        <a class="text-link text-link--dark" href="{{ featured_collection.url }}">ALLE ANSEHEN <span>&rarr;</span></a>
+      {%- elsif source_products -%}
+        <a class="text-link text-link--dark" href="{{ routes.all_products_collection_url }}">ALLE ANSEHEN <span>&rarr;</span></a>
+      {%- endif -%}
     </div>
     <div class="product-grid">
-      {%- if featured_collection != blank and featured_collection.products_count > 0 -%}
-        {%- for product in featured_collection.products limit: products_to_show -%}
-          {% render 'product-card', card_product: product, show_vendor: section.settings.show_vendor %}
+      {%- if source_products -%}
+        {%- for product in source_products limit: products_to_show -%}
+          {% render 'product-card', card_product: product, show_vendor: section.settings.show_vendor, new_days: section.settings.new_days %}
         {%- endfor -%}
       {%- else -%}
         {%- for index in (1..4) -%}
@@ -29,12 +59,61 @@
 {
   "name": "Featured products",
   "settings": [
-    { "type": "text", "id": "eyebrow", "label": "Subheading", "default": "NEW SEASON • NEW GEAR" },
-    { "type": "text", "id": "heading", "label": "Heading", "default": "STARTING LINEUP." },
-    { "type": "collection", "id": "collection", "label": "Kollektion" },
-    { "type": "range", "id": "products_to_show", "label": "Produktanzahl", "min": 2, "max": 8, "step": 1, "default": 4 },
-    { "type": "checkbox", "id": "show_vendor", "label": "Anbieter anzeigen", "default": false }
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Subheading",
+      "default": "NEW SEASON • NEW GEAR"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "STARTING LINEUP."
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Kollektion"
+    },
+    {
+      "type": "checkbox",
+      "id": "fallback_newest",
+      "label": "Ohne Auswahl die neuesten Artikel zeigen",
+      "default": true,
+      "info": "Greift nur, wenn oben keine Kollektion gewählt ist."
+    },
+    {
+      "type": "range",
+      "id": "new_days",
+      "label": "NEW-Abzeichen bis … Tage nach dem Anlegen",
+      "min": 0,
+      "max": 120,
+      "step": 5,
+      "unit": "T",
+      "default": 30,
+      "info": "0 blendet das Abzeichen aus."
+    },
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "label": "Produktanzahl",
+      "min": 2,
+      "max": 8,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "checkbox",
+      "id": "show_vendor",
+      "label": "Anbieter anzeigen",
+      "default": false
+    }
   ],
-  "presets": [{ "name": "Featured products" }]
+  "presets": [
+    {
+      "name": "Featured products"
+    }
+  ]
 }
 {% endschema %}

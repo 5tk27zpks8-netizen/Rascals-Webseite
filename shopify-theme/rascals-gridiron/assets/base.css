@@ -581,3 +581,7 @@ body:hover .football-cursor { opacity: .8; }
 .desktop-nav .nav-teaser { color: var(--red); }
 /* Warenkorb-Symbol: Einkaufswagen mit Football */
 .cart-icon { width: 24px; height: 22px; display: block; }
+/* Abzeichen stapeln sich, falls NEW und SALE zusammentreffen */
+.product-badges { position: absolute; top: 1rem; left: 1rem; display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; }
+.product-badges .product-badge { position: static; top: auto; left: auto; }
+.product-badge--new { color: var(--navy); background: var(--white); }

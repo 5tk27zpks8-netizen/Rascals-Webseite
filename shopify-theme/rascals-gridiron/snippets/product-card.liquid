@@ -5,7 +5,32 @@
     {%- else -%}
       <div class="product-placeholder">{{ 'product-1' | placeholder_svg_tag }}</div>
     {%- endif -%}
-    {%- if card_product.compare_at_price > card_product.price -%}<span class="product-badge">SALE</span>{%- endif -%}
+    {%- comment -%}
+      NEU-ABZEICHEN.
+
+      "Neu" heisst: vor weniger als `new_days` Tagen in Shopify angelegt.
+      Gerechnet wird ueber Unix-Sekunden, weil Liquid keine Datumsdifferenz
+      kennt — beide Seiten mit %s in Sekunden, dann subtrahieren.
+
+      Ohne uebergebenes new_days bleibt das Abzeichen aus. So entscheidet
+      jeder Abschnitt selbst, ob er es zeigt, statt dass es ueberall im Shop
+      auftaucht, wo eine Kachel gerendert wird.
+    {%- endcomment -%}
+    {%- assign is_new = false -%}
+    {%- if new_days and new_days > 0 -%}
+      {%- assign now_s = 'now' | date: '%s' | times: 1 -%}
+      {%- assign made_s = card_product.created_at | date: '%s' | times: 1 -%}
+      {%- assign age_days = now_s | minus: made_s | divided_by: 86400 -%}
+      {%- if age_days < new_days -%}{%- assign is_new = true -%}{%- endif -%}
+    {%- endif -%}
+    {%- assign on_sale = false -%}
+    {%- if card_product.compare_at_price > card_product.price -%}{%- assign on_sale = true -%}{%- endif -%}
+    {%- if is_new or on_sale -%}
+      <div class="product-badges">
+        {%- if is_new -%}<span class="product-badge product-badge--new">NEW</span>{%- endif -%}
+        {%- if on_sale -%}<span class="product-badge">SALE</span>{%- endif -%}
+      </div>
+    {%- endif -%}
   </a>
   <div class="product-card__body">
     <div>
