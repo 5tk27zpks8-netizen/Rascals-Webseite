@@ -15,3 +15,66 @@
 @media(max-width:720px){.page-width{padding-left:18px;padding-right:18px}.announcement{font-size:8px}.site-header{height:74px;padding:0 12px;gap:5px}.brand-logo{width:50px;height:40px}.site-brand{gap:8px}.brand-wordmark{font-size:22px}.main-navigation{top:74px}.header-actions{gap:0}.icon-link{width:42px;justify-content:center;padding:0}.hero-slider{height:720px;min-height:720px}.hero-slide{align-items:flex-end;padding-bottom:92px}.hero-image{object-position:62% center}.hero-overlay{background:linear-gradient(0deg,#070914fa 0%,#11152fd9 46%,transparent 83%)}.hero-content:before{left:18px}.hero-content>*{margin-left:28px}.hero-content h1{font-size:clamp(56px,16vw,82px)}.hero-actions{align-items:flex-start;flex-direction:column;gap:12px}.hero-actions .button{width:100%}.hero-controls{right:16px;bottom:18px}.hero-controls button{width:52px}.schedule-content h2{font-size:clamp(70px,19vw,96px)}.schedule-list>div{grid-template-columns:85px 1fr}.schedule-list small{grid-column:2}.products-section{padding-top:75px;padding-bottom:75px}.section-heading{align-items:flex-start;flex-direction:column}.product-grid{grid-template-columns:1fr}.product-card-media{height:410px}.brand-story{min-height:670px;align-items:flex-end;padding-bottom:65px}.story-overlay{background:linear-gradient(0deg,#070914f9 0%,#11152fd9 53%,transparent 90%)}.brand-story-copy h2{font-size:clamp(45px,13vw,64px)}.team-teaser{padding-top:75px;padding-bottom:75px}.team-teaser-copy h2{font-size:clamp(58px,17vw,78px)}.team-cards{grid-template-columns:1fr}.team-card{min-height:390px}.trust-strip{grid-template-columns:1fr;padding:25px 18px}.trust-strip>div{min-height:86px;align-content:center;border-right:0;border-bottom:1px solid #d1d3d7}.community{padding-top:75px;padding-bottom:75px}.community-grid{grid-template-columns:1fr}.community-grid img{height:450px}.footer-main{grid-template-columns:1fr;padding-top:60px}.footer-brand,.newsletter{grid-column:auto}.footer-bottom{flex-direction:column}.newsletter-form{grid-template-columns:1fr}.newsletter-form button{height:48px}.main-product{padding-top:45px}.product-gallery{grid-template-columns:1fr}.product-media{min-height:380px}.collection-toolbar{align-items:flex-start;flex-direction:column;gap:12px}.cart-line{grid-template-columns:90px 1fr}.cart-line img{width:90px;height:110px}.cart-line label,.remove-link{grid-column:2}.search-form{grid-template-columns:1fr}.search-form .button{width:100%}.collection-list{grid-template-columns:1fr}.team-page-hero{min-height:640px;padding-bottom:70px}.team-page-hero h1{font-size:clamp(59px,17vw,84px)}.team-index{top:74px}.team-index a{min-height:56px;font-size:9px}.team-intro{grid-template-columns:1fr;padding-top:75px;padding-bottom:70px}.team-intro>p:last-child{grid-column:auto}.team-group-image{min-height:460px}.team-group-copy{padding:60px 20px}.team-group-copy h2{font-size:clamp(46px,13vw,62px)}}
 @media(max-width:390px){.brand-wordmark{font-size:18px}.brand-logo{width:44px}.hero-content h1{font-size:55px}.header-actions .search-link{display:none}}
 .hero-content h1 em{color:var(--red)}
+
+/* === Navigation mit zweiter Ebene, Kategorie-Reiter, Filter === */
+.nav-item{position:relative;display:flex;align-items:center}
+.nav-caret{margin-left:6px;font-size:8px;font-style:normal;vertical-align:1px}
+.subnav{position:absolute;z-index:60;top:100%;left:-18px;display:flex;flex-direction:column;min-width:230px;padding:8px 0;background:#0b0e1c;border:1px solid #ffffff1f;box-shadow:0 22px 50px #00000080;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s}
+.has-subnav:hover>.subnav,.has-subnav:focus-within>.subnav{opacity:1;visibility:visible;transform:translateY(0)}
+.main-navigation .subnav a{padding:12px 20px;border-left:2px solid transparent;color:#c0c6d6;font-size:10px}
+.main-navigation .subnav a:after{display:none}
+.main-navigation .subnav a:hover,.main-navigation .subnav a[aria-current]{color:#fff;background:#ffffff08;border-left-color:var(--red)}
+.main-navigation>.nav-item:last-child .subnav{left:auto;right:-18px}
+
+.category-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.category-chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid #ffffff2c;background:#15192e;font-size:10px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;transition:.2s}
+.category-chip i{color:#9299aa;font:650 9px ui-monospace,monospace;font-style:normal;letter-spacing:0}
+.category-chip:hover{border-color:#ffffff6a}
+.category-chip.is-active{color:#fff;background:var(--red);border-color:#bd3b2b}
+.category-chip.is-active i{color:#ffffffb8}
+
+.collection-filter-form{flex-wrap:wrap}
+.filter-drop{position:relative}
+/* Ein geschlossenes <details> blendet seinen Inhalt über content-visibility
+   aus. Das Panel ist aber position:absolute mit .filter-drop als Bezugsrahmen,
+   liegt damit AUSSERHALB des ausgeblendeten Bereichs und bliebe offen stehen.
+   Darum ausdrücklich weg. */
+.filter-drop:not([open]) .filter-panel{display:none}
+.filter-drop>summary{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 14px;border:1px solid #ffffff2c;color:#fff;background:#15192e;font-size:10px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;list-style:none}
+.filter-drop>summary::-webkit-details-marker{display:none}
+.filter-drop>summary b{min-width:18px;height:18px;display:grid;place-items:center;background:var(--red);font:800 9px ui-monospace,monospace}
+.filter-drop[open]>summary{border-color:#ffffff6a}
+.filter-panel{color-scheme:dark;position:absolute;z-index:40;top:calc(100% + 4px);left:0;min-width:250px;max-height:320px;padding:10px;overflow-y:auto;background:#11152f;border:1px solid #ffffff2c;box-shadow:0 22px 50px #00000080}
+.filter-option{display:flex;align-items:center;gap:12px;padding:9px 8px;font-size:13px;cursor:pointer}
+.filter-option:hover{background:#ffffff0b}
+.filter-option input{width:16px;height:16px;accent-color:var(--red)}
+.filter-option span{margin-right:auto}
+.filter-option i{color:#9299aa;font:650 9px ui-monospace,monospace;font-style:normal}
+.filter-option.is-empty{opacity:.4;cursor:not-allowed}
+.filter-price{display:grid;gap:10px}
+.filter-price label{display:grid;grid-template-columns:34px 1fr;align-items:center;gap:10px;font-size:9px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}
+.filter-price input{min-height:42px;padding:0 12px;border:1px solid #ffffff2c;color:#fff;background:#15192e}
+.filter-apply{min-height:42px;justify-content:center;gap:0}
+.active-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px}
+.active-filters a{display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border:1px solid #ffffff2c;color:#c8ccd7;font:650 9px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase}
+.active-filters a:hover{color:#fff;border-color:var(--red)}
+
+.category-row-heading{margin:60px 0 18px;font-size:clamp(28px,3vw,44px);line-height:.9;letter-spacing:-.05em}
+.category-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.category-row a{position:relative;min-height:220px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;overflow:hidden;background:#171b38;border:1px solid #ffffff15;transition:.25s}
+.category-row a:hover{transform:translateY(-4px);border-color:#ffffff36}
+.category-row img{position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:cover;opacity:.42}
+.category-row b,.category-row small{position:relative}
+.category-row b{font-size:18px;text-transform:uppercase}
+.category-row small{color:#9299aa;font:650 8px ui-monospace,monospace;letter-spacing:.11em;text-transform:uppercase}
+
+/* Mit Unterpunkten kann das Menue laenger werden als der Bildschirm.
+   body{overflow:hidden} sperrt waehrenddessen das Scrollen der Seite, die
+   unteren Eintraege waeren also nicht erreichbar. Darum scrollt die Leiste
+   selbst. 100dvh statt 100vh wegen der Adressleiste auf dem Telefon.
+   Abgezogen wird Header PLUS Hinweisleiste: die Leiste liegt ueber dem
+   sticky Header, das Menue haengt im Header, also beginnt es ungescrollt
+   um deren Hoehe tiefer. Gerechnet mit zwei Zeilen Hinweistext — lieber
+   ein paar Pixel zu kurz und scrollbar als der letzte Eintrag unerreichbar. */
+@media(max-width:1100px){.main-navigation.is-open{max-height:calc(100vh - 140px);max-height:calc(100dvh - 140px);overflow-y:auto;overscroll-behavior:contain}.nav-item{display:block}.nav-caret{display:none}.subnav{position:static;min-width:0;padding:0;background:transparent;border:0;box-shadow:none;opacity:1;visibility:visible;transform:none}.main-navigation .subnav a{padding:13px 0 13px 18px;border-left:0;border-bottom:1px solid #ffffff18;color:#aab1c2;font-size:11px}.main-navigation .subnav a:hover{background:transparent}.main-navigation>.nav-item:last-child .subnav{right:auto}.category-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:720px){.main-navigation.is-open{max-height:calc(100vh - 120px);max-height:calc(100dvh - 120px)}.category-row{grid-template-columns:repeat(2,1fr)}.category-row a{min-height:160px}.collection-filter-form{width:100%}.filter-drop{flex:1 1 9rem}.filter-drop>summary{width:100%;justify-content:center}.filter-panel{left:0;right:0;min-width:0}.category-chip{min-height:40px;padding:0 12px;font-size:9px}}
