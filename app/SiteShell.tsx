@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { wide } from "./lib/responsive-image";
 import { DEFAULT_BRAND, type SiteBrand } from "./lib/brand";
+import type { ShopProduct } from "./lib/shop-products";
 import { RascalsField } from "./RascalsField";
 import { TeamUnits } from "./TeamUnits";
 
@@ -148,25 +149,50 @@ function Fixtures() {
   );
 }
 
-function ShopFeature({ full = false }: { full?: boolean }) {
+/**
+ * Die drei Kacheln. Sind Artikel aus dem Shop da, zeigen sie die; sonst
+ * bleiben die bisherigen Bilder stehen. Es wird Kachel fuer Kachel
+ * aufgefuellt, nicht alles oder nichts: hat der Shop nur einen Artikel,
+ * steht der gross links und rechts bleiben die Teamfotos.
+ */
+function ShopFeature({ full = false, products = [] }: { full?: boolean; products?: ShopProduct[] }) {
+  const slots = [
+    { className: "product-card product-main", delay: 0, bild: productImage, titel: "Puli", zusatz: "25,00 €", ziel: productUrl, alt: "Puli aus dem offiziellen RASCALS-SHOP" },
+    { className: "product-card product-detail", delay: 100, bild: teamwearImage, titel: "Teamwear", zusatz: "Shop ansehen", ziel: shopUrl, alt: "Rascals auf dem Weg auf das Feld" },
+    { className: "product-card product-crop", delay: 180, bild: gearImage, titel: "Rascals Gear", zusatz: "Alle Artikel", ziel: shopUrl, alt: "Rascals feiern gemeinsam" },
+  ].map((slot, index) => {
+    const product = products[index];
+    if (!product) return slot;
+    return {
+      ...slot,
+      bild: product.image ?? slot.bild,
+      titel: product.title,
+      zusatz: product.price ?? "Zum Artikel",
+      ziel: product.url,
+      alt: `${product.title} aus dem offiziellen RASCALS-SHOP`,
+    };
+  });
+
   return (
     <section className={full ? "shop-feature page-shop" : "shop-feature"}>
       <div className="shop-copy"><span className="eyebrow" data-reveal>OFFICIAL TEAMWEAR</span><h2 data-reveal data-reveal-delay="80">WEAR THE<br /><i>RASCALS.</i></h2><p data-reveal data-reveal-delay="160">Zeig deine Farben – auf der Tribüne, im Training und überall dazwischen. Direkt im offiziellen RASCALS-SHOP bestellen.</p><a className="button light" href={shopUrl} target="_blank" rel="noreferrer" data-reveal data-reveal-delay="220">Zum Rascals Shop <span>↗</span></a></div>
       <div className="product-cards">
-        {/* Nur die erste Kachel ist ein Artikel und nennt darum als einzige einen
-            Preis. Die beiden anderen fuehren in den Shop und zeigen das Team,
-            nicht erfundene Ware. Vorher trugen alle drei dasselbe Produktfoto,
-            unterschiedlich stark herangezoomt, und lasen sich als drei
-            verschiedene Artikel. */}
-        <a href={productUrl} target="_blank" rel="noreferrer" className="product-card product-main" data-reveal><img {...wide(productImage)} src={productImage} alt="Puli aus dem offiziellen RASCALS-SHOP" /><div><strong>Puli</strong><span>25,00 €</span></div></a>
-        <a href={shopUrl} target="_blank" rel="noreferrer" className="product-card product-detail" data-reveal data-reveal-delay="100"><img {...wide(teamwearImage)} src={teamwearImage} alt="Rascals auf dem Weg auf das Feld" /><div><strong>Teamwear</strong><span>Shop ansehen</span></div></a>
-        <a href={shopUrl} target="_blank" rel="noreferrer" className="product-card product-crop" data-reveal data-reveal-delay="180"><img {...wide(gearImage)} src={gearImage} alt="Rascals feiern gemeinsam" /><div><strong>Rascals Gear</strong><span>Alle Artikel</span></div></a>
+        {slots.map(slot => (
+          <a key={slot.className} href={slot.ziel} target="_blank" rel="noreferrer" className={slot.className} data-reveal data-reveal-delay={slot.delay}>
+            {/* Bilder aus dem Shop liegen auf Shopifys CDN; wide() erzeugt
+                Varianten unserer eigenen Dateien und passt dort nicht. */}
+            {slot.bild.startsWith("/")
+              ? <img {...wide(slot.bild)} src={slot.bild} alt={slot.alt} />
+              : <img src={slot.bild} alt={slot.alt} loading="lazy" />}
+            <div><strong>{slot.titel}</strong><span>{slot.zusatz}</span></div>
+          </a>
+        ))}
       </div>
     </section>
   );
 }
 
-function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
+function HomePage({ heroOverride, shopProducts = [] }: { heroOverride?: React.ReactNode; shopProducts?: ShopProduct[] }) {
   return <>
     {heroOverride ?? <Hero />}
 
@@ -206,7 +232,7 @@ function HomePage({ heroOverride }: { heroOverride?: React.ReactNode }) {
 
     <TeamUnits />
 
-    <ShopFeature />
+    <ShopFeature products={shopProducts} />
 
     <section className="story-split">
       <div className="story-image">
@@ -268,14 +294,14 @@ function Footer({ brand }: { brand: SiteBrand }) {
  * it inside <main>, below the header. Rendering it as a sibling before
  * <SiteShell> pushed the sticky header underneath the hero.
  */
-export function SiteShell({ page, heroOverride, brand = DEFAULT_BRAND }: { page: PageName; heroOverride?: React.ReactNode; brand?: SiteBrand }) {
+export function SiteShell({ page, heroOverride, brand = DEFAULT_BRAND, shopProducts = [] }: { page: PageName; heroOverride?: React.ReactNode; brand?: SiteBrand; shopProducts?: ShopProduct[] }) {
   let content: React.ReactNode;
   if (page === "ueber-uns") content = <AboutPage />;
   else if (page === "team") content = <TeamPage />;
   else if (page === "sponsoring") content = <SponsoringPage />;
-  else if (page === "shop") content = <><PageHero kicker="Official Teamwear" title="WEAR THE" italic="RASCALS." image="/team-players-4k.webp" className="shop-page-hero">Deine Farben. Dein Team. Direkt aus unserem RASCALS-SHOP.</PageHero><ShopFeature full /></>;
+  else if (page === "shop") content = <><PageHero kicker="Official Teamwear" title="WEAR THE" italic="RASCALS." image="/team-players-4k.webp" className="shop-page-hero">Deine Farben. Dein Team. Direkt aus unserem RASCALS-SHOP.</PageHero><ShopFeature full products={shopProducts} /></>;
   else if (page === "news") content = <NewsPage />;
   else if (page === "galerie") content = <GalleryPage />;
-  else content = <HomePage heroOverride={heroOverride} />;
+  else content = <HomePage heroOverride={heroOverride} shopProducts={shopProducts} />;
   return <><a className="skip-link" href="#content">Zum Inhalt</a><Header page={page} brand={brand} /><main id="content">{content}</main><Footer brand={brand} /></>;
 }

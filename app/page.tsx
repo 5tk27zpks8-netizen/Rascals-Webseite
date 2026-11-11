@@ -4,6 +4,8 @@ import { DynamicHomeGames } from "./DynamicHomeGames";
 import { HomeSectionMedia } from "./HomeSectionMedia";
 import { SiteBuilderPage } from "./SiteBuilderPage";
 import { SiteShell } from "./SiteShell";
+import { readShopProducts } from "./lib/shop-products";
+import { readCmsState } from "./lib/cms";
 import { findBuilderPage, readPublishedSiteBuilderState, readSiteBuilderState } from "./lib/site-builder";
 import { readSiteDesign } from "./lib/site-design";
 import { brandFromTheme } from "./lib/brand";
@@ -57,5 +59,8 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
   if (design === "hybrid") return <HomeHybrid />;
 
   const brand = brandFromTheme(state.theme);
-  return <><SiteShell page="home" brand={brand} heroOverride={<CmsHero/>}/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
+  // Artikel aus dem Shop fuer den Teamwear-Block. Faellt der Shop aus, kommt
+  // eine leere Liste zurueck und der Block zeigt seine eigenen Bilder.
+  const shopProducts = await readShopProducts((await readCmsState()).shopUrl);
+  return <><SiteShell page="home" brand={brand} heroOverride={<CmsHero/>} shopProducts={shopProducts}/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
 }
