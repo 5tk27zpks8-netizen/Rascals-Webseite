@@ -577,3 +577,5 @@ body:hover .football-cursor { opacity: .8; }
    Der Stern ist sonst navy auf navy, also hier rot. */
 .play-ticker__info { color: var(--white); background: var(--navy); }
 .play-ticker__info b { color: var(--red); }
+/* Fanware in der Kopfzeile: rot wie der Knopf, damit klar ist, dass es noch nichts zu kaufen gibt */
+.desktop-nav .nav-teaser { color: var(--red); }

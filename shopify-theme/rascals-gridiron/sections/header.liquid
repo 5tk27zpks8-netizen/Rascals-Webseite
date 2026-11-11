@@ -42,6 +42,50 @@
             {%- endif -%}
           </li>
         {%- endfor -%}
+
+        {%- comment -%}
+          DIE KOLLEKTIONEN VON SELBST IN DER LEISTE.
+
+          Vorher kam hier ausschliesslich, was im Shopify-Menue steht. Steht
+          dort noch Shopifys Vorgabe "Startseite, Katalog, Kontakt", dann
+          steht genau das da — das Theme kann nichts hinzuerfinden, und man
+          sucht den Fehler im Theme, obwohl er im Admin liegt.
+
+          Darum haengen Old-School, Basic und Standard sich jetzt selbst an,
+          sobald es die Sammlungen gibt. Was bereits im Menue steht, wird
+          uebersprungen, damit nichts doppelt erscheint. Wer die Leiste lieber
+          vollstaendig selbst baut, schaltet es im Theme-Editor ab.
+        {%- endcomment -%}
+        {%- if section.settings.auto_collections -%}
+          {%- capture menu_urls -%}
+            |{%- for link in section.settings.menu.links -%}
+              {{ link.url }}|{%- for child in link.links -%}{{ child.url }}|{%- endfor -%}
+            {%- endfor -%}
+          {%- endcapture -%}
+
+          {%- assign auto_handles = section.settings.auto_handles | split: ',' -%}
+          {%- for raw_handle in auto_handles -%}
+            {%- assign handle = raw_handle | strip -%}
+            {%- if handle == blank -%}{%- continue -%}{%- endif -%}
+            {%- assign line = collections[handle] -%}
+            {%- if line.handle == blank -%}{%- continue -%}{%- endif -%}
+            {%- assign probe = '|' | append: line.url | append: '|' -%}
+            {%- if menu_urls contains probe -%}{%- continue -%}{%- endif -%}
+            <li><a href="{{ line.url }}"{% if line.handle == collection.handle %} aria-current="page"{% endif %}>{{ line.title | escape }}</a></li>
+          {%- endfor -%}
+
+          {%- comment -%}
+            Fanware nur, wenn die Seite wirklich angelegt ist. Ein fester
+            Link auf eine fehlende Seite waere ein 404 in der Kopfzeile.
+          {%- endcomment -%}
+          {%- assign fanware_page = pages[section.settings.auto_page] -%}
+          {%- if fanware_page.handle != blank -%}
+            {%- assign probe = '|' | append: fanware_page.url | append: '|' -%}
+            {%- unless menu_urls contains probe -%}
+              <li><a class="nav-teaser" href="{{ fanware_page.url }}">{{ fanware_page.title | escape }}</a></li>
+            {%- endunless -%}
+          {%- endif -%}
+        {%- endif -%}
       </ul>
     </nav>
 
@@ -59,6 +103,31 @@
               <a class="mobile-menu__child" href="{{ child.url }}">{{ child.title | escape }}</a>
             {%- endfor -%}
           {%- endfor -%}
+          {%- comment -%} Dieselben Ergaenzungen wie oben, sonst fehlen sie auf dem Telefon. {%- endcomment -%}
+          {%- if section.settings.auto_collections -%}
+            {%- capture m_urls -%}
+              |{%- for link in section.settings.menu.links -%}
+                {{ link.url }}|{%- for child in link.links -%}{{ child.url }}|{%- endfor -%}
+              {%- endfor -%}
+            {%- endcapture -%}
+            {%- assign m_handles = section.settings.auto_handles | split: ',' -%}
+            {%- for raw_handle in m_handles -%}
+              {%- assign handle = raw_handle | strip -%}
+              {%- if handle == blank -%}{%- continue -%}{%- endif -%}
+              {%- assign line = collections[handle] -%}
+              {%- if line.handle == blank -%}{%- continue -%}{%- endif -%}
+              {%- assign m_probe = '|' | append: line.url | append: '|' -%}
+              {%- if m_urls contains m_probe -%}{%- continue -%}{%- endif -%}
+              <a href="{{ line.url }}">{{ line.title | escape }}</a>
+            {%- endfor -%}
+            {%- assign m_page = pages[section.settings.auto_page] -%}
+            {%- if m_page.handle != blank -%}
+              {%- assign m_probe = '|' | append: m_page.url | append: '|' -%}
+              {%- unless m_urls contains m_probe -%}
+                <a href="{{ m_page.url }}">{{ m_page.title | escape }}</a>
+              {%- endunless -%}
+            {%- endif -%}
+          {%- endif -%}
         </nav>
       </details>
     </div>
@@ -69,8 +138,43 @@
 {
   "name": "Header",
   "settings": [
-    { "type": "link_list", "id": "menu", "label": "Main menu", "default": "main-menu" },
-    { "type": "checkbox", "id": "sticky", "label": "Fixierten Header verwenden", "default": true }
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Main menu",
+      "default": "main-menu"
+    },
+    {
+      "type": "checkbox",
+      "id": "sticky",
+      "label": "Fixierten Header verwenden",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Kollektionen automatisch anzeigen"
+    },
+    {
+      "type": "checkbox",
+      "id": "auto_collections",
+      "label": "Kollektionen an die Leiste anhängen",
+      "default": true,
+      "info": "Hängt die Sammlungen an, die es wirklich gibt. Was schon im Menü steht, wird übersprungen."
+    },
+    {
+      "type": "text",
+      "id": "auto_handles",
+      "label": "Sammlungen",
+      "default": "old-school, oldschool, basic, standard",
+      "info": "Adressnamen der Sammlungen, durch Komma getrennt."
+    },
+    {
+      "type": "text",
+      "id": "auto_page",
+      "label": "Zusätzliche Seite",
+      "default": "fanware",
+      "info": "Adressname einer Seite, z. B. fanware. Erscheint nur, wenn die Seite angelegt ist."
+    }
   ]
 }
 {% endschema %}
