@@ -51,7 +51,40 @@
     {%- if collection.description != blank -%}<div class="rte">{{ collection.description }}</div>{%- endif -%}
   </header>
 
-  {%- if type_filter and type_filter.values.size > 1 -%}
+  {%- comment -%}
+    UNTERKATEGORIEN ÜBER TAGS, NICHT ÜBER FILTER.
+
+    Shopify kann eine Kollektion von Haus aus nach einem Tag einschränken:
+    /collections/old-school/pullover. Das ist Bordmittel, es braucht keine
+    App und keine Einrichtung — ein Tag am Produkt genügt.
+
+    Der Produkttyp-Filter weiter unten kann dasselbe, aber nur wenn im Admin
+    Storefront-Filter eingerichtet sind. Deshalb haben die Tags Vorrang: so
+    stehen die Knöpfe da, sobald die Artikel getaggt sind, und nicht erst
+    nach einer App-Installation.
+  {%- endcomment -%}
+  {%- assign category_tags = section.settings.category_tags | split: ',' -%}
+  {%- capture category_buttons -%}
+    {%- for raw_tag in category_tags -%}
+      {%- assign tag = raw_tag | strip -%}
+      {%- if tag == blank -%}{%- continue -%}{%- endif -%}
+      {%- unless collection.all_tags contains tag -%}{%- continue -%}{%- endunless -%}
+      {%- assign tag_active = false -%}
+      {%- if collection.current_tags contains tag -%}{%- assign tag_active = true -%}{%- endif -%}
+      <a class="category-nav__item{% if tag_active %} is-active{% endif %}"
+         href="{% if tag_active %}{{ collection.url }}{% else %}{{ collection.url }}/{{ tag | handleize }}{% endif %}"
+         {% if tag_active %}aria-current="true"{% endif %}>{{ tag | escape }}</a>
+    {%- endfor -%}
+  {%- endcapture -%}
+
+  {%- if category_buttons != blank -%}
+    <nav class="category-nav" aria-label="Kategorien">
+      <a class="category-nav__item{% if collection.current_tags == empty %} is-active{% endif %}"
+         href="{{ collection.url }}"
+         {% if collection.current_tags == empty %}aria-current="true"{% endif %}>Alle</a>
+      {{ category_buttons }}
+    </nav>
+  {%- elsif type_filter and type_filter.values.size > 1 -%}
     <nav class="category-nav" aria-label="Kategorien">
       <a class="category-nav__item{% if type_filter.active_values.size == 0 %} is-active{% endif %}"
          href="{{ type_filter.url_to_remove }}"
@@ -161,6 +194,7 @@
 {
   "name": "Collection products",
   "settings": [
+    { "type": "text", "id": "category_tags", "label": "Unterkategorien", "default": "Mützen, Caps, Pullover, Jacken, Accessoires, Zubehör", "info": "Durch Komma getrennt. Erscheinen als Knöpfe, sobald Artikel diesen Tag tragen." },
     { "type": "range", "id": "products_per_page", "label": "Produkte pro Seite", "min": 8, "max": 32, "step": 4, "default": 16 },
     { "type": "checkbox", "id": "show_vendor", "label": "Anbieter anzeigen", "default": false }
   ]

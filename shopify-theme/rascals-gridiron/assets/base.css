@@ -565,3 +565,7 @@ body:hover .football-cursor { opacity: .8; }
   .desktop-nav .subnav, .category-tile img, .category-nav__item { transition: none; }
   .category-tile:hover img { transform: none; }
 }
+
+/* Knopfreihe der Kollektionen auf der Kollektionsseite */
+.line-buttons { display: flex; flex-wrap: wrap; gap: .8rem; margin-bottom: 2.4rem; }
+@media (max-width: 760px) { .line-buttons { flex-direction: column; } .line-buttons .button { width: 100%; } }

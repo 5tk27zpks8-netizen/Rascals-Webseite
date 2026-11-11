@@ -4,10 +4,12 @@
       "type": "main-list-collections",
       "settings": {
         "eyebrow": "OFFICIAL TEAMWEAR",
-        "heading": "DER SHOP.",
-        "categories_heading": "NACH KATEGORIE."
+        "heading": "KOLLEKTIONEN",
+        "categories_heading": "NACH KATEGORIE"
       }
     }
   },
-  "order": ["main"]
+  "order": [
+    "main"
+  ]
 }
