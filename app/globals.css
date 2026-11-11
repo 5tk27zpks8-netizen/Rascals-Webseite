@@ -128,10 +128,11 @@ h1 i, h2 i { color: var(--red); font-style: italic; line-height: 1.06; padding-b
 .product-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s ease; }
 .product-card:hover img { transform: scale(1.045); }
 .product-main { grid-row: span 2; min-height: 590px; }
-.product-detail img { object-position: center 18%; transform: scale(1.55); }
-.product-detail:hover img { transform: scale(1.62); }
-.product-crop img { object-position: center 78%; transform: scale(1.45); }
-.product-crop:hover img { transform: scale(1.53); }
+/* Die beiden Nebenkacheln trugen dasselbe Produktfoto wie die grosse und
+   wurden nur unterschiedlich stark herangezoomt (1.55 bzw. 1.45), damit es
+   nach verschiedenen Aufnahmen aussah. Jetzt haben sie eigene Bilder und
+   brauchen den Trick nicht mehr — sie verhalten sich wie jede andere Kachel. */
+.product-detail img, .product-crop img { object-position: center 42%; }
 .product-label { position: absolute; z-index: 2; left: 1rem; top: 1rem; padding: .4rem .55rem; color: white; background: var(--red); font-size: .58rem; font-weight: 900; letter-spacing: .14em; }
 .product-card div { position: absolute; inset: auto .8rem .8rem; display: flex; justify-content: space-between; gap: 1rem; padding: .9rem 1rem; background: rgba(255,255,255,.93); font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; }
 .product-card div strong { font-size: 1rem; }

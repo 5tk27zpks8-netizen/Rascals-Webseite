@@ -30,6 +30,8 @@ const gallery = [
 const shopUrl = "https://hellenstein-rascals.myshopify.com";
 const productUrl = `${shopUrl}/products/puli`;
 const productImage = "/shop-product-4k.webp";
+const teamwearImage = "/team-walk-4k.webp";
+const gearImage = "/team-celebrate-4k.webp";
 
 export function Header({ page, brand = DEFAULT_BRAND }: { page: PageName; brand?: SiteBrand }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -149,11 +151,16 @@ function Fixtures() {
 function ShopFeature({ full = false }: { full?: boolean }) {
   return (
     <section className={full ? "shop-feature page-shop" : "shop-feature"}>
-      <div className="shop-copy"><span className="eyebrow" data-reveal>OFFICIAL TEAMWEAR</span><h2 data-reveal data-reveal-delay="80">WEAR THE<br /><i>RAS­CALS.</i></h2><p data-reveal data-reveal-delay="160">Zeig deine Farben – auf der Tribüne, im Training und überall dazwischen. Direkt im offiziellen RASCALS-SHOP bestellen.</p><a className="button light" href={shopUrl} target="_blank" rel="noreferrer" data-reveal data-reveal-delay="220">Zum Rascals Shop <span>↗</span></a></div>
+      <div className="shop-copy"><span className="eyebrow" data-reveal>OFFICIAL TEAMWEAR</span><h2 data-reveal data-reveal-delay="80">WEAR THE<br /><i>RASCALS.</i></h2><p data-reveal data-reveal-delay="160">Zeig deine Farben – auf der Tribüne, im Training und überall dazwischen. Direkt im offiziellen RASCALS-SHOP bestellen.</p><a className="button light" href={shopUrl} target="_blank" rel="noreferrer" data-reveal data-reveal-delay="220">Zum Rascals Shop <span>↗</span></a></div>
       <div className="product-cards">
+        {/* Nur die erste Kachel ist ein Artikel und nennt darum als einzige einen
+            Preis. Die beiden anderen fuehren in den Shop und zeigen das Team,
+            nicht erfundene Ware. Vorher trugen alle drei dasselbe Produktfoto,
+            unterschiedlich stark herangezoomt, und lasen sich als drei
+            verschiedene Artikel. */}
         <a href={productUrl} target="_blank" rel="noreferrer" className="product-card product-main" data-reveal><img {...wide(productImage)} src={productImage} alt="Puli aus dem offiziellen RASCALS-SHOP" /><div><strong>Puli</strong><span>25,00 €</span></div></a>
-        <a href={productUrl} target="_blank" rel="noreferrer" className="product-card product-detail" data-reveal data-reveal-delay="100"><img {...wide(productImage)} src={productImage} alt="Detailansicht des Rascals Pulis" /><div><strong>Teamwear</strong><span>Shop ansehen</span></div></a>
-        <a href={shopUrl} target="_blank" rel="noreferrer" className="product-card product-crop" data-reveal data-reveal-delay="180"><img {...wide(productImage)} src={productImage} alt="Rascals Merchandise Kollektion" /><div><strong>Rascals Gear</strong><span>Alle Artikel</span></div></a>
+        <a href={shopUrl} target="_blank" rel="noreferrer" className="product-card product-detail" data-reveal data-reveal-delay="100"><img {...wide(teamwearImage)} src={teamwearImage} alt="Rascals auf dem Weg auf das Feld" /><div><strong>Teamwear</strong><span>Shop ansehen</span></div></a>
+        <a href={shopUrl} target="_blank" rel="noreferrer" className="product-card product-crop" data-reveal data-reveal-delay="180"><img {...wide(gearImage)} src={gearImage} alt="Rascals feiern gemeinsam" /><div><strong>Rascals Gear</strong><span>Alle Artikel</span></div></a>
       </div>
     </section>
   );
