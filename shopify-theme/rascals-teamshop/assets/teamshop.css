@@ -188,6 +188,13 @@ body:hover .football-cursor { opacity: .85; }
 /* =====================================================================
    SERVICEZEILE
    ===================================================================== */
+/* Laufband ganz oben: duenn, rot, wandert von rechts nach links. */
+.top-ticker { position: relative; z-index: 53; overflow: hidden; color: var(--white); background: linear-gradient(180deg, var(--red-hi), var(--red-lo)); border-bottom: 1px solid rgba(255, 255, 255, .22); }
+.top-ticker__track { display: flex; width: max-content; animation: ticker var(--top-ticker-speed, 35s) linear infinite; }
+.top-ticker__half { display: flex; flex: none; }
+.top-ticker span { flex: none; padding: .42rem 2.6rem; font-size: .74rem; font-weight: 700; font-stretch: 75%; letter-spacing: .2em; line-height: 1.2; text-transform: uppercase; white-space: nowrap; }
+.top-ticker a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.top-ticker:hover .top-ticker__track { animation-play-state: paused; }
 .utility-bar { position: relative; z-index: 52; color: #d6dce5; background: var(--ink); border-bottom: 1px solid var(--line-dark); }
 .utility-bar__inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; min-height: 36px; }
 .utility-bar__lead { display: flex; align-items: center; gap: .55rem; margin: 0; color: var(--white); font-size: .74rem; font-weight: 600; font-stretch: 78%; letter-spacing: .08em; text-transform: uppercase; }
@@ -1020,5 +1027,6 @@ body:hover .football-cursor { opacity: .85; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .js .reveal { opacity: 1; transform: none; }
   .football-cursor { display: none; }
+  .top-ticker__track, .play-ticker__track { animation: none !important; }
 }
 @media (pointer: coarse) { .football-cursor { display: none; } }

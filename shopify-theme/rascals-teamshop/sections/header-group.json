@@ -2,6 +2,15 @@
   "type": "header",
   "name": "Header-Bereich",
   "sections": {
+    "laufband": {
+      "type": "top-ticker",
+      "settings": {
+        "text": "OFFICIAL TEAMWEAR • ALL GRIT. ALL HEART.",
+        "link": "/collections/all",
+        "label": "Ankündigung",
+        "speed": 35
+      }
+    },
     "announcement": {
       "type": "announcement-bar",
       "blocks": {
@@ -49,6 +58,7 @@
     }
   },
   "order": [
+    "laufband",
     "announcement",
     "header"
   ]
