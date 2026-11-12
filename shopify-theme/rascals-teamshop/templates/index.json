@@ -12,7 +12,7 @@
         "secondary_label": "KOLLEKTION ENTDECKEN",
         "secondary_link": "/collections",
         "secondary_icon": "play",
-        "stage_width": 50,
+        "stage_width": 48,
         "show_figure": true,
         "figure_height": 108,
         "figure_opacity": 100,

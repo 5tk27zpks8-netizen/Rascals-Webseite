@@ -342,8 +342,9 @@ body:hover .football-cursor { opacity: .85; }
    Der Rahmen hat die Groesse des Fotos, steht unten auf (der Helm setzt auf
    den Kacheln auf) und ist groesser als der Hero: der Himmel oben im Foto
    liegt ausserhalb und wird abgeschnitten. Der Helm blickt nach links zur
-   Schlagzeile und steht im Foto bei 17-76 % Breite und 27-88 % Hoehe. */
-.hero-stage__stage { z-index: 3; right: var(--stage-x, 3%); bottom: 43px; width: var(--stage-w, 50%); aspect-ratio: 4 / 3; }
+   Schlagzeile, leicht nach vorn gekippt, mit getoentem Visier; er steht im
+   Foto bei 17-79 % Breite und 25-92 % Hoehe. */
+.hero-stage__stage { z-index: 3; right: var(--stage-x, 3%); bottom: 62px; width: var(--stage-w, 50%); aspect-ratio: 4 / 3; }
 .hero-stage:not(.hero-stage--under-tiles) .hero-stage__stage { bottom: -40px; }
 .hero-stage__photo {
   position: absolute; inset: 0; width: 100%; height: 100%;
