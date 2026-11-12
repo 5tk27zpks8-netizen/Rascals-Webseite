@@ -534,11 +534,24 @@ body:hover .football-cursor { opacity: .85; }
    der Sektion darueber abgeschnitten wird. */
 .play-ticker { position: relative; z-index: 5; overflow: hidden; margin-top: calc(1.75vw + 6px); color: var(--white); background: linear-gradient(180deg, var(--red-hi), var(--red-lo)); transform: skewY(-1deg); transform-origin: left; }
 .play-ticker__track { display: flex; width: max-content; animation: ticker 38s linear infinite; }
-.play-ticker span { flex: none; display: inline-flex; align-items: center; padding: 1rem 1.6rem; font-size: clamp(1.1rem, 1.9vw, 1.6rem); font-style: italic; font-weight: 900; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; }
+.play-ticker span { flex: none; display: inline-flex; align-items: center; padding: 1rem 1.6rem; font-size: clamp(1.1rem, 1.9vw, 1.6rem); line-height: 1.2; font-style: italic; font-weight: 900; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; }
 .play-ticker .play-ticker__info { background: var(--ink-2); }
 .tick-mark { display: inline-block; width: .42em; height: .42em; margin-left: 1.4rem; background: currentColor; transform: rotate(45deg); }
 .play-ticker__info .tick-mark { background: var(--red); }
 .play-ticker:hover .play-ticker__track { animation-play-state: paused; }
+/* Folgt das Laufband direkt auf das Promo-Banner, liegt es ueber dessen
+   unterem Rand: das Banner wird um die Hoehe des Laufbands verlaengert, die
+   Bilder laufen darunter weiter, und es bleibt keine helle Luecke. */
+:root { --play-ticker-h: calc(2rem + clamp(1.1rem, 1.9vw, 1.6rem) * 1.2); }
+.shopify-section:has(.promo-band) + .shopify-section > .play-ticker { margin-top: calc(-1 * var(--play-ticker-h)); }
+.shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band { min-height: calc(196px + var(--play-ticker-h)); border-bottom: 0; }
+@media (min-width: 1101px) {
+  .shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band__copy,
+  .shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band__product { padding-bottom: calc(var(--play-ticker-h) + .6rem); }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band__product { padding-bottom: calc(var(--play-ticker-h) + 1.4rem); }
+}
 @keyframes ticker { to { transform: translateX(-50%); } }
 
 /* =====================================================================
