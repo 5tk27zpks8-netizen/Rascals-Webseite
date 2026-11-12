@@ -4,12 +4,13 @@
   Aufgebaut wie die Vorlage, von hinten nach vorn:
 
     1. Stadion links: Tribuenen und Flutlicht, dunkel und unscharf.
-    2. Rechts der Helm auf dem Rasen, Blick nach links zur Schlagzeile, mit
-       getoentem Visier, leicht nach vorn gekippt. Das Foto steht nicht ueber die ganze
+    2. Rechts der Helm auf dem Rasen, Blick nach links zur Schlagzeile: das
+       Originalfoto, nur gespiegelt, mit kraeftigerem Licht. Das Foto steht nicht ueber die ganze
        Breite, sondern rechts angeschlagen und nach links ausgeblendet —
        sonst laege der Helm hinter der Schlagzeile. Die Breite ist
        einstellbar, damit der Helm groesser oder kleiner wirkt.
-    3. Links die Rueckenfigur (Spieler von hinten), vor dem Stadion.
+    3. Links die Figur vor dem Stadion, etwas nach unten versetzt, damit der
+       Kopf nicht unter dem Logo liegt (Einstellung "Figur nach unten").
     4. Ein Schleier, der nur so dunkel ist, wie die Schrift es braucht.
 
   DIE BUEHNE LAEUFT UNTER DEN KACHELN WEITER.
@@ -37,7 +38,7 @@
   assign meta_items = section.settings.meta | split: '|'
 -%}
 <section class="hero-stage{% if section.settings.under_tiles %} hero-stage--under-tiles{% endif %}"
-         style="--stage-w: {{ section.settings.stage_width }}%; --stage-x: {{ section.settings.stage_offset }}%; --figure-h: {{ section.settings.figure_height }}%; --figure-o: {{ section.settings.figure_opacity | divided_by: 100.0 }};">
+         style="--stage-w: {{ section.settings.stage_width }}%; --stage-x: {{ section.settings.stage_offset }}%; --figure-h: {{ section.settings.figure_height }}%; --figure-o: {{ section.settings.figure_opacity | divided_by: 100.0 }}; --figure-y: {{ section.settings.figure_offset }}px;">
   <div class="hero-stage__layers" aria-hidden="true">
     <img class="hero-stage__backdrop" src="{{ back_src }}" width="1920" height="740" alt="" loading="eager">
     <span class="hero-stage__lights hero-stage__lights--left"></span>
@@ -117,6 +118,7 @@
     { "type": "checkbox", "id": "show_figure", "label": "Figur links zeigen", "default": true },
     { "type": "image_picker", "id": "figure", "label": "Figur links", "info": "Leer lassen: Spieler von hinten (Jubelfoto)." },
     { "type": "range", "id": "figure_height", "min": 50, "max": 130, "step": 2, "unit": "%", "label": "Höhe der Figur", "default": 108 },
+    { "type": "range", "id": "figure_offset", "min": 0, "max": 200, "step": 5, "unit": "px", "label": "Figur nach unten versetzen", "default": 85, "info": "Damit der Kopf der Figur nicht unter dem Logo liegt." },
     { "type": "range", "id": "figure_opacity", "min": 20, "max": 100, "step": 5, "unit": "%", "label": "Deckkraft der Figur", "default": 100 },
 
     { "type": "header", "content": "Aufbau" },

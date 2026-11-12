@@ -349,9 +349,9 @@ body:hover .football-cursor { opacity: .85; }
    Der Rahmen hat die Groesse des Fotos, steht unten auf (der Helm setzt auf
    den Kacheln auf) und ist groesser als der Hero: der Himmel oben im Foto
    liegt ausserhalb und wird abgeschnitten. Der Helm blickt nach links zur
-   Schlagzeile, leicht nach vorn gekippt, mit getoentem Visier; er steht im
-   Foto bei 17-79 % Breite und 25-92 % Hoehe. */
-.hero-stage__stage { z-index: 3; right: var(--stage-x, 3%); bottom: 62px; width: var(--stage-w, 50%); aspect-ratio: 4 / 3; }
+   Schlagzeile: das Originalfoto, nur gespiegelt und in Licht und Kontrast
+   kraeftiger. Er steht im Foto bei 17-75 % Breite und 27-88 % Hoehe. */
+.hero-stage__stage { z-index: 3; right: var(--stage-x, 3%); bottom: 46px; width: var(--stage-w, 50%); aspect-ratio: 4 / 3; }
 .hero-stage:not(.hero-stage--under-tiles) .hero-stage__stage { bottom: -40px; }
 .hero-stage__photo {
   position: absolute; inset: 0; width: 100%; height: 100%;
@@ -363,6 +363,8 @@ body:hover .football-cursor { opacity: .85; }
   z-index: 4; left: clamp(-2rem, 2vw, 3rem); bottom: 0;
   width: auto; height: var(--figure-h, 96%); max-width: none;
   opacity: var(--figure-o, .9);
+  /* nach unten versetzt, damit der Kopf nicht unter dem Logo liegt */
+  transform: translateY(var(--figure-y, 0px));
   object-fit: contain; object-position: bottom;
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 22%, #000 70%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 20%, #000 82%, transparent 100%);
   -webkit-mask-composite: source-in;
@@ -374,7 +376,7 @@ body:hover .football-cursor { opacity: .85; }
   z-index: 5; inset: 0; pointer-events: none;
   background:
     linear-gradient(90deg, rgba(5, 11, 20, .25) 0%, rgba(5, 11, 20, .62) 22%, rgba(5, 11, 20, .55) 48%, rgba(5, 11, 20, .1) 66%, rgba(5, 11, 20, 0) 80%),
-    linear-gradient(0deg, rgba(4, 9, 17, .92) 0%, rgba(4, 9, 17, .35) 20%, rgba(4, 9, 17, 0) 38%);
+    linear-gradient(0deg, rgba(4, 9, 17, .86) 0%, rgba(4, 9, 17, .22) 16%, rgba(4, 9, 17, 0) 30%);
 }
 
 .hero-stage__content { position: relative; z-index: 2; padding-block: clamp(2rem, 3vw, 2.8rem) 1rem; }

@@ -17,7 +17,8 @@
         "figure_height": 108,
         "figure_opacity": 100,
         "under_tiles": true,
-        "stage_offset": -3
+        "stage_offset": -3,
+        "figure_offset": 85
       }
     },
     "ticker": {
