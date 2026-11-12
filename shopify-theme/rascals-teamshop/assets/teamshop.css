@@ -211,6 +211,13 @@ body:hover .football-cursor { opacity: .85; }
    ===================================================================== */
 .site-header { z-index: 50; color: var(--white); background: linear-gradient(180deg, #071121 0%, #030a15 100%); border-bottom: 1px solid var(--line-dark); box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
 .site-header--sticky { position: sticky; top: 0; }
+/* Startseite wie in der Vorlage: kein eigener Balken. Der Header liegt
+   durchsichtig ueber dem Stadionbild; nur ein weicher Verlauf von oben
+   haelt die Menuepunkte lesbar. Der Hero rueckt dafuer nach oben unter
+   den Header und gleicht das mit Innenabstand aus. */
+.shopify-section:has(> .site-header--home) { position: relative; z-index: 50; margin-bottom: -75px; }
+.site-header--home { background: linear-gradient(180deg, rgba(2, 7, 16, .62) 0%, rgba(2, 7, 16, .26) 55%, rgba(2, 7, 16, 0) 100%); border-bottom: 0; box-shadow: none; }
+.template-index .hero-stage { padding-top: 75px; }
 .site-header__inner { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: clamp(1rem, 2.4vw, 2.4rem); min-height: 74px; }
 
 /* Logo wie in der Vorlage: ragt als Abzeichen etwas aus der Leiste. */
@@ -241,13 +248,23 @@ body:hover .football-cursor { opacity: .85; }
 }
 .desktop-nav > ul > li > a i { display: inline-flex; opacity: .85; }
 .desktop-nav > ul > li > a i .line-icon { width: 14px; height: 14px; stroke-width: 2; }
-.desktop-nav > ul > li > a:hover { color: #ffb3bd; }
+.desktop-nav > ul > li > a:hover { color: var(--white); }
 /* Aktiver Punkt: rotes Parallelogramm hinter dem Wort. */
-.desktop-nav > ul > li > a[aria-current="page"]::before {
+.desktop-nav > ul > li > a::before {
   position: absolute; z-index: -1; inset: 1.15rem -1rem; content: "";
-  background: linear-gradient(180deg, var(--red-hi) 0%, var(--red) 55%, var(--red-lo) 100%);
-  box-shadow: 0 6px 18px rgba(212, 16, 42, .4);
-  transform: skewX(var(--skew));
+  background: linear-gradient(180deg, rgba(255, 70, 88, .26) 0%, rgba(227, 19, 43, .14) 60%, rgba(150, 8, 24, .1) 100%);
+  border: 1px solid rgba(255, 90, 107, .35);
+  opacity: 0; transform: skewX(var(--skew)) scaleX(.9);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.desktop-nav > ul > li > a:hover::before, .desktop-nav > ul > li > a:focus-visible::before { opacity: 1; transform: skewX(var(--skew)); }
+/* Aktiver Punkt wie in der Vorlage: rotes Parallelogramm mit Verlauf,
+   leicht durchscheinend, damit das Stadion dahinter sichtbar bleibt. */
+.desktop-nav > ul > li > a[aria-current="page"]::before {
+  opacity: 1; transform: skewX(var(--skew));
+  background: linear-gradient(180deg, rgba(255, 61, 80, .92) 0%, rgba(227, 19, 43, .84) 55%, rgba(160, 9, 27, .8) 100%);
+  border: 0; border-top: 1px solid rgba(255, 150, 160, .55);
+  box-shadow: 0 6px 18px rgba(212, 16, 42, .38), inset 0 -10px 18px rgba(90, 0, 12, .25);
 }
 .desktop-nav > ul > li > a[aria-current="page"]:hover { color: var(--white); }
 .desktop-nav .nav-teaser { color: #ff5a6b; }
@@ -313,7 +330,7 @@ body:hover .football-cursor { opacity: .85; }
   background: #0a1626;
 }
 /* Platz unten, in den sich die Kachelreihe schiebt. */
-.hero-stage--under-tiles { min-height: clamp(470px, 32vw, 780px); padding-bottom: 118px; align-items: center; }
+.hero-stage--under-tiles { min-height: clamp(470px, 32vw, 780px); padding-bottom: 138px; align-items: center; }
 .hero-stage__layers { position: absolute; inset: 0; z-index: -1; }
 .hero-stage__layers > * { position: absolute; }
 
@@ -322,7 +339,7 @@ body:hover .football-cursor { opacity: .85; }
 .hero-stage__backdrop {
   z-index: 0; inset: 0; width: 100%; height: 100%;
   object-fit: cover; object-position: center 30%;
-  filter: brightness(.46) saturate(.55) contrast(1.18) blur(2px);
+  filter: brightness(.5) saturate(.6) contrast(1.18) blur(1.4px);
   transform: scale(1.3); transform-origin: 50% 82%;
 }
 .hero-stage__layers::before {
@@ -384,7 +401,7 @@ body:hover .football-cursor { opacity: .85; }
 }
 
 .hero-stage__content { position: relative; z-index: 2; padding-block: clamp(2rem, 3vw, 2.8rem) 1rem; }
-.hero-stage__copy { max-width: 640px; margin-left: clamp(0px, 20vw, 300px); }
+.hero-stage__copy { max-width: 640px; margin-left: clamp(0px, 24vw, 420px); }
 
 .hero-stage__eyebrow { margin: 0 0 .9rem; font-size: .9rem; font-style: italic; font-weight: 400; font-stretch: 100%; letter-spacing: .55em; color: #f2f4f7; text-transform: uppercase; }
 
@@ -426,10 +443,10 @@ body:hover .football-cursor { opacity: .85; }
    an ihrer Aussenkante rot, wie in der Vorlage.
    ===================================================================== */
 .cat-tiles { position: relative; z-index: 6; }
-.cat-tiles--overlap { margin-top: -128px; }
+.cat-tiles--overlap { margin-top: -146px; }
 .cat-tiles__rail { display: flex; gap: 8px; padding: 0 clamp(1rem, 3vw, 2.6rem) 10px; overflow-x: auto; scrollbar-width: none; }
 .cat-tiles__rail::-webkit-scrollbar { display: none; }
-.cat-tile { flex: 1 1 0; min-width: 140px; height: 118px; }
+.cat-tile { flex: 1 1 0; min-width: 140px; height: 138px; }
 .cat-tile:focus-visible { outline: none; }
 .cat-tile__skew {
   position: relative; display: block; height: 100%; overflow: hidden;
@@ -448,8 +465,10 @@ body:hover .football-cursor { opacity: .85; }
 .cat-tile__media { position: absolute; transform: skewX(var(--unskew)); }
 .cat-tile__media img { width: 100%; height: 100%; transition: transform .45s cubic-bezier(.2, .8, .2, 1); }
 .cat-tile:hover .cat-tile__media img { transform: scale(1.07); }
-.cat-tile--cutout .cat-tile__media { inset: 6% 12% 34% 12%; }
-.cat-tile--cutout .cat-tile__media img { object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .6)); }
+.cat-tile--cutout .cat-tile__media { inset: 7% 14% 31% 14%; }
+/* Lichtkegel hinter dem freigestellten Artikel, wie in der Vorlage. */
+.cat-tile--cutout .cat-tile__skew { background: radial-gradient(ellipse 60% 48% at 50% 40%, rgba(70, 98, 140, .42), rgba(70, 98, 140, 0) 70%), linear-gradient(180deg, rgba(22, 33, 52, .94) 0%, rgba(8, 14, 26, .97) 100%); }
+.cat-tile--cutout .cat-tile__media img { object-fit: contain; filter: drop-shadow(0 0 1px rgba(255, 255, 255, .35)) drop-shadow(0 10px 12px rgba(0, 0, 0, .65)); }
 .cat-tile--fill .cat-tile__media { inset: -2% -14%; }
 .cat-tile--fill .cat-tile__media img { object-fit: cover; opacity: .8; }
 .cat-tile--fill .cat-tile__media::after { position: absolute; inset: 0; content: ""; background: linear-gradient(0deg, rgba(8, 14, 26, .96) 0%, rgba(8, 14, 26, .6) 38%, rgba(8, 14, 26, .06) 72%); }
@@ -544,7 +563,10 @@ body:hover .football-cursor { opacity: .85; }
    Bilder laufen darunter weiter, und es bleibt keine helle Luecke. */
 :root { --play-ticker-h: calc(2rem + clamp(1.1rem, 1.9vw, 1.6rem) * 1.2); }
 .shopify-section:has(.promo-band) + .shopify-section > .play-ticker { margin-top: calc(-1 * var(--play-ticker-h)); }
-.shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band { min-height: calc(196px + var(--play-ticker-h)); border-bottom: 0; }
+/* Unterkante des Banners laeuft mit der Schraege des Laufbands (skewY -1deg,
+   rechts um tan(1deg) * Breite hoeher): unter dem Laufband bleibt kein
+   Bildstreifen stehen, links reicht das Bild entsprechend tiefer. */
+.shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band { min-height: calc(196px + var(--play-ticker-h)); border-bottom: 0; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 1.75vw - 1px), 0 calc(100% - 1px)); }
 @media (min-width: 1101px) {
   .shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band__copy,
   .shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band__product { padding-bottom: calc(var(--play-ticker-h) + .6rem); }
@@ -1021,8 +1043,8 @@ body:hover .football-cursor { opacity: .85; }
   .hero-stage__buttons { display: grid; grid-template-columns: 1fr; gap: .8rem; padding-inline: .5rem; }
   .hero-stage__buttons .button { width: 100%; }
 
-  .cat-tiles--overlap { margin-top: -108px; }
-  .cat-tile { min-width: 128px; height: 112px; }
+  .cat-tiles--overlap { margin-top: -120px; }
+  .cat-tile { min-width: 128px; height: 128px; }
 
   .trust-bar__inner li { flex: 1 1 100%; }
 

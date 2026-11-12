@@ -5,8 +5,8 @@
   Text | Produkt | Team. Die Schnitte macht clip-path, nicht ein gedrehtes
   Element — so bleiben Text und Bild gerade und nur die Kanten laufen schraeg.
 
-  Das Produkt ist am besten ein freigestelltes PNG. Als Vorgabe liegt der
-  echte Rascals-Hoodie bei, freigestellt aus dem Shopfoto — kein
+  Das Produkt ist am besten ein freigestelltes PNG. Als Vorgabe liegt die
+  echte Oldschool-Linie bei (Jogger, Cap, Slides), freigestellt aus den Shopfotos — kein
   Platzhalterprodukt, das es nicht gibt.
 
   Auf schmalen Schirmen stehen die Felder untereinander; die Schnitte
@@ -18,7 +18,7 @@
   if section.settings.image != blank
     assign team_src = section.settings.image | image_url: width: 1400
   endif
-  assign product_src = 'promo-product.webp' | asset_url
+  assign product_src = 'promo-oldschool.webp' | asset_url
   if section.settings.product_image != blank
     assign product_src = section.settings.product_image | image_url: width: 1100
   endif
@@ -59,16 +59,16 @@
   "name": "Promo-Banner",
   "tag": "section",
   "settings": [
-    { "type": "text", "id": "eyebrow", "label": "Kleine Zeile", "default": "LIMITED COLLECTION" },
-    { "type": "text", "id": "title", "label": "Überschrift", "default": "RASCALS" },
-    { "type": "text", "id": "title_accent", "label": "Überschrift, rotes Wort", "default": "DEFENSE" },
-    { "type": "textarea", "id": "text", "label": "Text", "default": "Performance-Teamwear für maximale Leistung – auf und neben dem Field." },
+    { "type": "text", "id": "eyebrow", "label": "Kleine Zeile", "default": "NEU IM SHOP" },
+    { "type": "text", "id": "title", "label": "Überschrift", "default": "OLDSCHOOL" },
+    { "type": "text", "id": "title_accent", "label": "Überschrift, rotes Wort", "default": "DROP" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Der Rascals-Schriftzug im Retro-Look – auf Cap, Jogger und Slides." },
     { "type": "text", "id": "button_label", "label": "Button", "default": "JETZT ENTDECKEN" },
     { "type": "url", "id": "button_link", "label": "Button-Link" },
     { "type": "header", "content": "Bilder" },
     { "type": "checkbox", "id": "show_product", "label": "Produktbild zeigen", "default": true },
-    { "type": "image_picker", "id": "product_image", "label": "Produktbild (Mitte)", "info": "Am besten freigestellt (PNG ohne Hintergrund). Leer lassen: Rascals-Hoodie." },
-    { "type": "text", "id": "product_alt", "label": "Bildbeschreibung für Screenreader", "default": "Rascals Teamwear Hoodie, Vorder- und Rückseite" },
+    { "type": "image_picker", "id": "product_image", "label": "Produktbild (Mitte)", "info": "Am besten freigestellt (PNG ohne Hintergrund). Leer lassen: Rascals Oldschool-Linie (Jogger, Cap, Slides)." },
+    { "type": "text", "id": "product_alt", "label": "Bildbeschreibung für Screenreader", "default": "Rascals Oldschool-Kollektion: Jogger, Cap und Slides" },
     { "type": "image_picker", "id": "image", "label": "Teamfoto (rechts)", "info": "Leer lassen: Rascals-Team aus dem Theme." }
   ],
   "presets": [{ "name": "Promo-Banner" }]
