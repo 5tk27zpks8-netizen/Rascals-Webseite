@@ -18,7 +18,7 @@
         "figure_opacity": 100,
         "under_tiles": true,
         "stage_offset": -3,
-        "figure_offset": 85
+        "figure_offset": 140
       }
     },
     "ticker": {
@@ -138,9 +138,9 @@
         "t4": {
           "type": "tile",
           "settings": {
-            "label": "POLOS",
-            "icon": "polo",
-            "search": "polo"
+            "label": "ACCESSOIRES",
+            "icon": "tag",
+            "search": "accessoire"
           }
         },
         "t5": {
@@ -172,7 +172,8 @@
           "settings": {
             "label": "FANWEAR",
             "icon": "star",
-            "search": "fan"
+            "search": "fan",
+            "link": "/collections/all?view=fanware"
           }
         }
       },

@@ -23,8 +23,8 @@
         "max": 260,
         "step": 10,
         "unit": "px",
-        "label": "Logobreite",
-        "default": 140
+        "label": "Logobreite (Startseite)",
+        "default": 180
       },
       {
         "type": "image_picker",

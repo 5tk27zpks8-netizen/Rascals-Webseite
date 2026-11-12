@@ -1,6 +1,6 @@
 {
   "current": {
-    "logo_width": 140,
+    "logo_width": 180,
     "color_ink": "#050b14",
     "color_ink_soft": "#0a1322",
     "color_navy": "#0f1d2c",
@@ -15,7 +15,7 @@
   },
   "presets": {
     "Rascals Teamshop": {
-      "logo_width": 140,
+      "logo_width": 180,
       "color_ink": "#050b14",
       "color_ink_soft": "#0a1322",
       "color_navy": "#0f1d2c",

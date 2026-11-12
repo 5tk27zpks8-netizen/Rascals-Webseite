@@ -1,6 +1,6 @@
 {
   "sections": {
-    "main": { "type": "coming-soon", "settings": {} }
+    "main": { "type": "coming-soon", "settings": { "eyebrow": "FANWEAR", "heading": "COMING SOON." } }
   },
   "order": ["main"]
 }

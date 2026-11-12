@@ -15,7 +15,7 @@
   als zwei Tipp-Ebenen.
 {%- endcomment -%}
 
-<header class="site-header{% if section.settings.sticky %} site-header--sticky{% endif %}">
+<header class="site-header{% if section.settings.sticky %} site-header--sticky{% endif %}{% if template.name == 'index' %} site-header--home{% endif %}">
   <div class="site-header__inner page-width">
     <a class="brand" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
       {%- if settings.logo != blank -%}
