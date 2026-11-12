@@ -306,8 +306,8 @@ const UNITS_PLAIN_IN = 9;
  */
 const SHOP_IMAGES_IN = 10;
 
-const SHOP_TEAMWEAR_IMAGE = "/team-walk-4k.webp";
-const SHOP_GEAR_IMAGE = "/team-celebrate-4k.webp";
+const SHOP_TEAMWEAR_IMAGE = "/shop-cap.webp";
+const SHOP_GEAR_IMAGE = "/shop-kulturbeutel.webp";
 
 function distinctShopImages(state: Partial<SiteBuilderState>): Partial<SiteBuilderState> {
   const pages = state.pages;
@@ -340,6 +340,56 @@ function distinctShopImages(state: Partial<SiteBuilderState>): Partial<SiteBuild
           });
 
           return getauscht ? { ...section, items: neu } : section;
+        }),
+      };
+    }),
+  };
+}
+
+
+/**
+ * SPIELERFOTOS IM SHOP-BLOCK.
+ *
+ * Die Wiederholung oben wurde zuerst durch Teamfotos ersetzt. Nur sind die
+ * Kacheln Produktkacheln — "Shop ansehen" unter einer Spielszene passt
+ * nicht. Ersetzt werden genau die Bilder, die hier einmal vorbelegt wurden,
+ * durch echte Artikelfotos aus dem Shop. Was jemand im Editor selbst gesetzt
+ * hat, bleibt stehen.
+ */
+const SHOP_PRODUCTS_IN = 11;
+const SHOP_MAIN_IMAGE = "/shop-hoody.webp";
+const SEEDED_SHOP_IMAGES: Record<string, string> = {
+  "/shop-product-4k.webp": SHOP_MAIN_IMAGE,
+  "/team-walk-4k.webp": SHOP_TEAMWEAR_IMAGE,
+  "/team-celebrate-4k.webp": SHOP_GEAR_IMAGE,
+};
+const SEEDED_SHOP_TEXT: Record<string, { title: string; subtitle: string; linkLabel: string }> = {
+  "Puli": { title: "Hoodies", subtitle: "Shop ansehen", linkLabel: "Shop ansehen" },
+  "Teamwear": { title: "Caps", subtitle: "Shop ansehen", linkLabel: "Shop ansehen" },
+  "Rascals Gear": { title: "Accessoires", subtitle: "Alle Artikel", linkLabel: "Alle Artikel" },
+};
+
+function productShopImages(state: Partial<SiteBuilderState>): Partial<SiteBuilderState> {
+  const pages = state.pages;
+  if (!Array.isArray(pages)) return state;
+  return {
+    ...state,
+    pages: pages.map((page) => {
+      const sections = page?.sections;
+      if (!Array.isArray(sections)) return page;
+      return {
+        ...page,
+        sections: sections.map((section) => {
+          if (section?.type !== "cards" || section?.variant !== "legacy-shop" || !Array.isArray(section.items)) return section;
+          const items = section.items.map((item) => {
+            const bild = (item?.image ?? "").trim();
+            const ersatz = SEEDED_SHOP_IMAGES[bild];
+            if (!ersatz) return item;
+            const text = SEEDED_SHOP_TEXT[(item?.title ?? "").trim()];
+            const shop = text && typeof item.linkUrl === "string" ? item.linkUrl.replace(/\/products\/[^/?#]+.*$/, "") : item.linkUrl;
+            return text ? { ...item, ...text, image: ersatz, linkUrl: shop } : { ...item, image: ersatz };
+          });
+          return { ...section, items };
         }),
       };
     }),
@@ -389,7 +439,7 @@ function normalizeItem(item:BuilderItem):BuilderItem{return{id:item.id||crypto.r
 function normalizeSection(section:Partial<BuilderSection>):BuilderSection{const s=section.style??{};const desktopAlign=alignOr(s.align,"left");const desktopMin=Math.max(0,numberOr(s.minHeight,0));return{id:section.id||crypto.randomUUID(),type:section.type||"text",variant:section.variant||"default",visible:section.visible!==false,eyebrow:section.eyebrow??"",title:section.title??"",accent:section.accent??"",text:section.text??"",image:section.image??"",image2:section.image2??"",buttonLabel:section.buttonLabel??"",buttonUrl:section.buttonUrl??"",elementStyles:normalizeElementStyles(section.elementStyles),style:{background:s.background||"#050d18",textColor:s.textColor||"#ffffff",accentColor:s.accentColor||"#e7192d",paddingTop:Math.max(0,numberOr(s.paddingTop,64)),paddingBottom:Math.max(0,numberOr(s.paddingBottom,64)),minHeight:desktopMin,align:desktopAlign,maxWidth:Math.max(320,numberOr(s.maxWidth,1600)),rounded:Math.max(0,numberOr(s.rounded,0)),border:s.border||"",borderWidth:clamp(s.borderWidth,0,20,s.border?1:0),borderStyle:s.borderStyle==="dashed"||s.borderStyle==="dotted"||s.borderStyle==="none"?s.borderStyle:"solid",boxShadow:s.boxShadow||"",opacity:clamp(s.opacity,0,1,1),headingScale:clamp(s.headingScale,.45,1.8,1),backgroundMode:s.backgroundMode==="gradient"||s.backgroundMode==="image"||s.backgroundMode==="video"?s.backgroundMode:"color",backgroundImage:s.backgroundImage||"",backgroundVideo:s.backgroundVideo||"",backgroundGradient:s.backgroundGradient||"linear-gradient(135deg,#050d18,#0b1725)",overlayColor:s.overlayColor||"#020812",overlayOpacity:clamp(s.overlayOpacity,0,1,.45),backgroundPosition:s.backgroundPosition||"center",backgroundFixed:s.backgroundFixed===true,tablet:normalizeResponsive(s.tablet,{paddingTop:56,paddingBottom:56,minHeight:desktopMin,align:desktopAlign,maxWidth:1200,headingScale:.9}),mobile:normalizeResponsive(s.mobile,{paddingTop:40,paddingBottom:40,minHeight:0,align:desktopAlign,maxWidth:720,headingScale:.72})},items:Array.isArray(section.items)?section.items.map(normalizeItem):[]}}
 function normalizePage(page:Partial<BuilderPage>):BuilderPage{return{id:page.id||crypto.randomUUID(),name:page.name||"Neue Seite",slug:cleanSlug(page.slug||""),enabled:page.enabled===true,showInNav:page.showInNav===true,navLabel:page.navLabel||page.name||"Seite",title:page.title||"",description:page.description||"",sections:Array.isArray(page.sections)?page.sections.map(normalizeSection):[]}}
 function migratePages(input:Partial<SiteBuilderState>):BuilderPage[]{const incoming=Array.isArray(input.pages)?input.pages:[];const base=templates();const merged=base.map(template=>{const previous=incoming.find(page=>page.id===template.id||cleanSlug(page.slug||"")===template.slug);if(!previous)return template;const normalized=normalizePage(previous);return normalized.sections.length?normalized:{...template,enabled:normalized.enabled,showInNav:normalized.showInNav,navLabel:normalized.navLabel,title:normalized.title||template.title,description:normalized.description||template.description}});const custom=incoming.filter(page=>!base.some(template=>template.id===page.id||template.slug===cleanSlug(page.slug||""))).map(normalizePage);return[...merged,...custom]}
-function normalizeState(incoming:Partial<SiteBuilderState>):SiteBuilderState{const stored=numberOr(incoming.version,1);const restored:Partial<SiteBuilderState>=stored<BRAND_RESTORED_IN?restoreBrandLine(incoming):incoming;const moved:Partial<SiteBuilderState>=stored<NEWS_MOVED_IN?newsUnderTheSchedule(restored):restored;const merged:Partial<SiteBuilderState>=stored<UNITS_MERGED_IN?shopAheadOfTheStory(mergeUnitSections(moved)):moved;const headline:Partial<SiteBuilderState>=stored<UNITS_PLAIN_IN?unitsHeadline(merged):merged;const input:Partial<SiteBuilderState>=stored<SHOP_IMAGES_IN?distinctShopImages(headline):headline;const raw=input.theme??{};const theme:BuilderTheme={...defaultSiteBuilderState.theme,...raw,contentWidth:Math.max(800,numberOr(raw.contentWidth,1600)),radius:Math.max(0,numberOr(raw.radius,0)),headingWeight:clamp(raw.headingWeight,100,1000,950),headingTracking:clamp(raw.headingTracking,-.12,.2,-.04),bodyLineHeight:clamp(raw.bodyLineHeight,1,2.4,1.65),headingTransform:raw.headingTransform==="none"?"none":"uppercase",bodyFontSize:clamp(raw.bodyFontSize,8,40,16),bodyFontWeight:clamp(raw.bodyFontWeight,100,1000,400),bodyLetterSpacing:clamp(raw.bodyLetterSpacing,-.1,.2,0),bodyItalic:raw.bodyItalic===true,headingItalic:raw.headingItalic===true};const pages=numberOr(input.version,1)<2?migratePages(input):Array.isArray(input.pages)?input.pages.map(normalizePage):templates();return{version:SHOP_IMAGES_IN,editorInitialized:input.editorInitialized===true,theme,pages}}
+function normalizeState(incoming:Partial<SiteBuilderState>):SiteBuilderState{const stored=numberOr(incoming.version,1);const restored:Partial<SiteBuilderState>=stored<BRAND_RESTORED_IN?restoreBrandLine(incoming):incoming;const moved:Partial<SiteBuilderState>=stored<NEWS_MOVED_IN?newsUnderTheSchedule(restored):restored;const merged:Partial<SiteBuilderState>=stored<UNITS_MERGED_IN?shopAheadOfTheStory(mergeUnitSections(moved)):moved;const headline:Partial<SiteBuilderState>=stored<UNITS_PLAIN_IN?unitsHeadline(merged):merged;const distinct:Partial<SiteBuilderState>=stored<SHOP_IMAGES_IN?distinctShopImages(headline):headline;const input:Partial<SiteBuilderState>=stored<SHOP_PRODUCTS_IN?productShopImages(distinct):distinct;const raw=input.theme??{};const theme:BuilderTheme={...defaultSiteBuilderState.theme,...raw,contentWidth:Math.max(800,numberOr(raw.contentWidth,1600)),radius:Math.max(0,numberOr(raw.radius,0)),headingWeight:clamp(raw.headingWeight,100,1000,950),headingTracking:clamp(raw.headingTracking,-.12,.2,-.04),bodyLineHeight:clamp(raw.bodyLineHeight,1,2.4,1.65),headingTransform:raw.headingTransform==="none"?"none":"uppercase",bodyFontSize:clamp(raw.bodyFontSize,8,40,16),bodyFontWeight:clamp(raw.bodyFontWeight,100,1000,400),bodyLetterSpacing:clamp(raw.bodyLetterSpacing,-.1,.2,0),bodyItalic:raw.bodyItalic===true,headingItalic:raw.headingItalic===true};const pages=numberOr(input.version,1)<2?migratePages(input):Array.isArray(input.pages)?input.pages.map(normalizePage):templates();return{version:SHOP_PRODUCTS_IN,editorInitialized:input.editorInitialized===true,theme,pages}}
 async function readKey(key:string):Promise<SiteBuilderState|null>{await ensureCmsSchema();const{DB}=bindings();const row=await DB.prepare("SELECT value FROM cms_settings WHERE key = ?").bind(key).first<{value:string}>();if(!row?.value)return null;try{return normalizeState(JSON.parse(row.value) as SiteBuilderState)}catch{return null}}
 async function writeKey(key:string,state:SiteBuilderState){await ensureCmsSchema();const normalized=normalizeState(state);const{DB}=bindings();await DB.prepare(`INSERT INTO cms_settings (key,value,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP`).bind(key,JSON.stringify(normalized)).run();return normalized}
 export async function readSiteBuilderState():Promise<SiteBuilderState>{return await readKey(DRAFT_KEY)??await readKey(LEGACY_KEY)??defaultSiteBuilderState}

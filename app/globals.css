@@ -136,6 +136,9 @@ h1 i, h2 i { color: var(--red); font-style: italic; line-height: 1.06; padding-b
 .product-label { position: absolute; z-index: 2; left: 1rem; top: 1rem; padding: .4rem .55rem; color: white; background: var(--red); font-size: .58rem; font-weight: 900; letter-spacing: .14em; }
 .product-card div { position: absolute; inset: auto .8rem .8rem; display: flex; justify-content: space-between; gap: 1rem; padding: .9rem 1rem; background: rgba(255,255,255,.93); font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; }
 .product-card div strong { font-size: 1rem; }
+/* Artikelfotos stehen auf Weiss: ganz zeigen, nicht anschneiden, und unten Platz fuer das Etikett lassen. */
+.product-card { background: #fff; }
+.product-card img { box-sizing: border-box; object-fit: contain; object-position: center; padding: 1.4rem 1.4rem 4.8rem; }
 .page-shop { padding-top: 7rem; }
 
 .news-preview { background: var(--ice); }

@@ -29,10 +29,11 @@ const gallery = [
 ];
 
 const shopUrl = "https://hellenstein-rascals.myshopify.com";
-const productUrl = `${shopUrl}/products/puli`;
-const productImage = "/shop-product-4k.webp";
-const teamwearImage = "/team-walk-4k.webp";
-const gearImage = "/team-celebrate-4k.webp";
+// Ersatz, falls der Shop nicht antwortet: echte Artikelfotos aus dem Shop,
+// keine Spielerbilder — die Kacheln versprechen Produkte.
+const productImage = "/shop-hoody.webp";
+const teamwearImage = "/shop-cap.webp";
+const gearImage = "/shop-kulturbeutel.webp";
 
 export function Header({ page, brand = DEFAULT_BRAND }: { page: PageName; brand?: SiteBrand }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -157,9 +158,9 @@ function Fixtures() {
  */
 function ShopFeature({ full = false, products = [] }: { full?: boolean; products?: ShopProduct[] }) {
   const slots = [
-    { className: "product-card product-main", delay: 0, bild: productImage, titel: "Puli", zusatz: "25,00 €", ziel: productUrl, alt: "Puli aus dem offiziellen RASCALS-SHOP" },
-    { className: "product-card product-detail", delay: 100, bild: teamwearImage, titel: "Teamwear", zusatz: "Shop ansehen", ziel: shopUrl, alt: "Rascals auf dem Weg auf das Feld" },
-    { className: "product-card product-crop", delay: 180, bild: gearImage, titel: "Rascals Gear", zusatz: "Alle Artikel", ziel: shopUrl, alt: "Rascals feiern gemeinsam" },
+    { className: "product-card product-main", delay: 0, bild: productImage, titel: "Hoodies", zusatz: "Shop ansehen", ziel: shopUrl, alt: "Rascals Hoody aus dem offiziellen RASCALS-SHOP" },
+    { className: "product-card product-detail", delay: 100, bild: teamwearImage, titel: "Caps", zusatz: "Shop ansehen", ziel: shopUrl, alt: "Rascals Cap aus dem offiziellen RASCALS-SHOP" },
+    { className: "product-card product-crop", delay: 180, bild: gearImage, titel: "Accessoires", zusatz: "Alle Artikel", ziel: shopUrl, alt: "Rascals Kulturbeutel aus dem offiziellen RASCALS-SHOP" },
   ].map((slot, index) => {
     const product = products[index];
     if (!product) return slot;

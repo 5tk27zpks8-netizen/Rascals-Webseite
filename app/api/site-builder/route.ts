@@ -6,7 +6,6 @@ import { can, requireCmsPermission } from "../../lib/permissions";
 const reservedSlugs = new Set(["admin", "api", "spielplan"]);
 const legacySlugs = new Set(["", "ueber-uns", "team", "sponsoring", "shop", "news", "galerie"]);
 const shopUrl = "https://hellenstein-rascals.myshopify.com";
-const productUrl = `${shopUrl}/products/puli`;
 
 function validateState(state: SiteBuilderState) {
   if (!state || !Array.isArray(state.pages) || !state.pages.length) return "Mindestens eine Seite ist erforderlich.";
@@ -112,9 +111,9 @@ function legacyHomeSections(template: BuilderPage): BuilderSection[] {
       paddingBottom: 128,
     },
     items: [
-      { id: "shop-main", eyebrow: "SHOP DROP · 01", title: "Puli", subtitle: "25,00 €", image: "/shop-product-4k.webp", linkLabel: "Puli", linkUrl: productUrl },
-      { id: "shop-detail", eyebrow: "DETAIL", title: "Teamwear", subtitle: "Shop ansehen", image: "/team-walk-4k.webp", linkLabel: "Shop ansehen", linkUrl: shopUrl },
-      { id: "shop-online", eyebrow: "ONLINE", title: "Rascals Gear", subtitle: "Alle Artikel", image: "/team-celebrate-4k.webp", linkLabel: "Alle Artikel", linkUrl: shopUrl },
+      { id: "shop-main", eyebrow: "SHOP DROP · 01", title: "Hoodies", subtitle: "Shop ansehen", image: "/shop-hoody.webp", linkLabel: "Shop ansehen", linkUrl: shopUrl },
+      { id: "shop-detail", eyebrow: "DETAIL", title: "Caps", subtitle: "Shop ansehen", image: "/shop-cap.webp", linkLabel: "Shop ansehen", linkUrl: shopUrl },
+      { id: "shop-online", eyebrow: "ONLINE", title: "Accessoires", subtitle: "Alle Artikel", image: "/shop-kulturbeutel.webp", linkLabel: "Alle Artikel", linkUrl: shopUrl },
     ],
   };
 

@@ -259,3 +259,6 @@
     opacity: 0.86;
   }
 }
+/* Artikelfotos auf Weiss: ganz zeigen statt anschneiden, Platz fuer das Etikett. */
+.sb-site .sb-variant-legacy-shop .sb-cards article{background:#fff}
+.sb-site .sb-variant-legacy-shop .sb-cards article>img:not(.sb-card-icon),.sb-site .sb-variant-legacy-shop .sb-cards article:nth-child(2)>img:not(.sb-card-icon),.sb-site .sb-variant-legacy-shop .sb-cards article:nth-child(3)>img:not(.sb-card-icon){box-sizing:border-box;object-fit:contain;object-position:center;padding:3.2rem 1.4rem 4.8rem}

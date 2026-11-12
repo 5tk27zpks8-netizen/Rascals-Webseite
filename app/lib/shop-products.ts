@@ -25,6 +25,7 @@
 
 export type ShopProduct = {
   title: string;
+  type: string;
   url: string;
   image: string | null;
   price: string | null;
@@ -35,6 +36,7 @@ type RawImage = { src?: string };
 type RawProduct = {
   title?: string;
   handle?: string;
+  product_type?: string;
   variants?: RawVariant[];
   images?: RawImage[];
 };
@@ -75,10 +77,43 @@ function toProduct(raw: RawProduct, shopUrl: string): ShopProduct | null {
 
   return {
     title,
+    type: typeof raw.product_type === "string" ? raw.product_type.trim().toLowerCase() : "",
     url: `${shopUrl}/products/${handle}`,
     image: firstImage?.src ?? null,
     price: lowestPrice(raw.variants),
   };
+}
+
+/**
+ * VERSCHIEDENE ARTIKEL STATT DER DREI NEUESTEN.
+ *
+ * Shopify liefert die Artikel nach Anlagedatum. Legt der Verein zwei Slides
+ * und einen Regenponcho zuletzt an, stuenden genau die auf der Startseite —
+ * zweimal fast dasselbe. Darum wird nach Produktart gestreut: erst je ein
+ * Artikel der Arten, die im Block am besten wirken, dann der Rest der Reihe
+ * nach.
+ */
+const BEVORZUGTE_ARTEN = ["pullover", "mützen", "accessoires", "jacken", "hosen", "sleevs", "schuhe"];
+
+function abwechslungsreich(products: ShopProduct[], limit: number): ShopProduct[] {
+  const gewaehlt: ShopProduct[] = [];
+  const arten = new Set<string>();
+  for (const art of BEVORZUGTE_ARTEN) {
+    const treffer = products.find(product => product.type === art);
+    if (treffer) { gewaehlt.push(treffer); arten.add(art); }
+    if (gewaehlt.length >= limit) return gewaehlt;
+  }
+  for (const product of products) {
+    if (gewaehlt.length >= limit) break;
+    if (gewaehlt.includes(product) || (product.type && arten.has(product.type))) continue;
+    gewaehlt.push(product);
+    if (product.type) arten.add(product.type);
+  }
+  for (const product of products) {
+    if (gewaehlt.length >= limit) break;
+    if (!gewaehlt.includes(product)) gewaehlt.push(product);
+  }
+  return gewaehlt;
 }
 
 /**
@@ -93,7 +128,7 @@ export async function readShopProducts(shopUrl: string, limit = 3): Promise<Shop
   if (!/^https:\/\//.test(base)) return [];
 
   try {
-    const response = await fetch(`${base}/products.json?limit=${Math.min(Math.max(limit, 1), 20)}`, {
+    const response = await fetch(`${base}/products.json?limit=50`, {
       headers: { accept: "application/json" },
       // Ohne Zeitgrenze haengt die eigene Seite an der Antwortzeit eines
       // fremden Servers. Lieber die bisherigen Bilder zeigen als warten.
@@ -110,10 +145,9 @@ export async function readShopProducts(shopUrl: string, limit = 3): Promise<Shop
     const products: ShopProduct[] = [];
     for (const raw of data.products) {
       const product = toProduct(raw as RawProduct, base);
-      if (product) products.push(product);
-      if (products.length >= limit) break;
+      if (product?.image) products.push(product);
     }
-    return products;
+    return abwechslungsreich(products, Math.min(Math.max(limit, 1), 20));
   } catch (error) {
     console.error("shop products unavailable", error);
     return [];
