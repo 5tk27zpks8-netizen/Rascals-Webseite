@@ -46,9 +46,6 @@
     <div class="hero-stage__stage">
       <img class="hero-stage__photo" src="{{ stage_src }}" width="2400" height="1800" alt="" loading="eager" fetchpriority="high">
     </div>
-    {%- if section.settings.show_board -%}
-      <img class="hero-stage__board" src="{{ 'hero-scoreboard.webp' | asset_url }}" width="589" height="234" alt="" loading="eager">
-    {%- endif -%}
     {%- if section.settings.show_figure -%}
       <img class="hero-stage__figure" src="{{ figure_src }}" width="780" height="1448" alt="" loading="eager">
     {%- endif -%}
@@ -118,7 +115,6 @@
 
     { "type": "header", "content": "Hintergrund und Figur links" },
     { "type": "image_picker", "id": "backdrop", "label": "Stadion", "info": "Leer lassen: Rascals-Stadion aus dem Theme." },
-    { "type": "checkbox", "id": "show_board", "label": "Anzeigetafel mit RASCALS zeigen", "default": true },
     { "type": "checkbox", "id": "show_figure", "label": "Figur links zeigen", "default": true },
     { "type": "image_picker", "id": "figure", "label": "Figur links", "info": "Leer lassen: Spieler von hinten (Jubelfoto)." },
     { "type": "range", "id": "figure_height", "min": 50, "max": 130, "step": 2, "unit": "%", "label": "Höhe der Figur", "default": 108 },
