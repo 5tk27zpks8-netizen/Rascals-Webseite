@@ -25,7 +25,7 @@ const variantLibrary:Partial<Record<BuilderSectionType,Array<{id:string;label:st
 };
 
 const iconLibrary = [
-  ["Football farbig","/icons/football-color.svg"],["Football Outline","/icons/football.svg"],["Trophy","/icons/trophy-outline.svg"],["Pfeife","/icons/whistle.svg"],["Football Helm","/icons/helmet.svg"],["Team","/icons/team.svg"],["Shield","/icons/shield.svg"],["Heart","/icons/heart.svg"],["Target","/icons/target.svg"],["Star","/icons/star.svg"],
+  ["Football farbig","/icons/football-color.svg"],["Handschlag farbig","/icons/handshake-color.svg"],["Stadion farbig","/icons/stadium-color.svg"],["Medaille farbig","/icons/medal-color.svg"],["Pokal farbig","/icons/trophy-color.svg"],["Football Outline","/icons/football.svg"],["Trophy","/icons/trophy-outline.svg"],["Pfeife","/icons/whistle.svg"],["Football Helm","/icons/helmet.svg"],["Team","/icons/team.svg"],["Shield","/icons/shield.svg"],["Heart","/icons/heart.svg"],["Target","/icons/target.svg"],["Star","/icons/star.svg"],
 ] as const;
 
 type MediaItem={key:string;url:string};

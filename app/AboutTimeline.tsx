@@ -6,17 +6,17 @@ import "./about-timeline.css";
 
 const ICONS = {
   football: "/icons/football-color.svg",
-  whistle: "/icons/whistle.svg",
-  seasonFootball: "/icons/football.svg",
-  helmet: "/icons/helmet.svg",
-  trophy: "/icons/trophy.svg",
+  handshake: "/icons/handshake-color.svg",
+  stadium: "/icons/stadium-color.svg",
+  medal: "/icons/medal-color.svg",
+  trophy: "/icons/trophy-color.svg",
 };
 
 const milestones = [
-  { year:"2023", tag:"KICKOFF", league:"GRÜNDUNG", note:"Gründung der Hellenstein Rascals. Der erste Schritt auf unserem Weg.", points:"", icon:ICONS.whistle },
-  { year:"2024", tag:"FIRST DOWN", league:"KREISLIGA", note:"Unsere erste Saison im Ligabetrieb. Sieben Spiele, viel Lehrgeld und Platz 5 in der Kreisliga: das Fundament für alles, was folgt.", points:"75 : 154", icon:ICONS.seasonFootball },
-  { year:"2025", tag:"NEXT DOWN", league:"KREISLIGA", note:"Viele Spiele, viele Lektionen und ein Team, das zusammen gewachsen ist.", points:"139 : 137", icon:ICONS.seasonFootball },
-  { year:"2026", tag:"MOVING THE CHAINS", league:"KREISOBERLIGA", note:"Mehr Erfahrung, mehr Wille, mehr Team. Der verdiente Aufstieg in die Kreisoberliga.", points:"170 : 66", icon:ICONS.helmet },
+  { year:"2023", tag:"KICKOFF", league:"GRÜNDUNG", note:"Gründung der Hellenstein Rascals. Der erste Schritt auf unserem Weg.", points:"", icon:ICONS.handshake },
+  { year:"2024", tag:"FIRST DOWN", league:"KREISLIGA", note:"Unsere erste Saison im Ligabetrieb. Sieben Spiele, viel Lehrgeld und Platz 5 in der Kreisliga: das Fundament für alles, was folgt.", points:"75 : 154", icon:ICONS.stadium },
+  { year:"2025", tag:"NEXT DOWN", league:"KREISLIGA", note:"Viele Spiele, viele Lektionen und ein Team, das zusammen gewachsen ist.", points:"139 : 137", icon:ICONS.football },
+  { year:"2026", tag:"MOVING THE CHAINS", league:"KREISOBERLIGA", note:"Mehr Erfahrung, mehr Wille, mehr Team. Der verdiente Aufstieg in die Kreisoberliga.", points:"170 : 66", icon:ICONS.medal },
   { year:"2027", tag:"NEXT LEVEL", league:"BEZIRKSLIGA", note:"Unser nächstes Ziel: die Bezirksliga. Wir arbeiten. Wir glauben. Wir werden bereit sein.", points:"", icon:ICONS.trophy },
 ];
 
