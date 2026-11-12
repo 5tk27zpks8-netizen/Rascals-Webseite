@@ -6,6 +6,7 @@
     "color_navy": "#0f1d2c",
     "color_red": "#d4102a",
     "color_ice": "#eef0f3",
+    "full_width": true,
     "page_width": 1400,
     "heading_scale": 100,
     "use_motion": true,
@@ -22,7 +23,8 @@
       "color_ice": "#eef0f3",
       "page_width": 1400,
       "heading_scale": 100,
-      "use_motion": true
+      "use_motion": true,
+      "full_width": true
     }
   }
 }

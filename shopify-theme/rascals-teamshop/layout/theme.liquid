@@ -51,7 +51,7 @@
         --red: {{ settings.color_red | default: '#d4102a' }};
         --ice: {{ settings.color_ice | default: '#eef0f3' }};
         --white: #ffffff;
-        --page-width: {{ settings.page_width }}px;
+        --page-width: {% if settings.full_width %}100vw{% else %}{{ settings.page_width }}px{% endif %};
         --heading-scale: {{ settings.heading_scale | divided_by: 100.0 }};
         --logo-width: {{ settings.logo_width }}px;
       }

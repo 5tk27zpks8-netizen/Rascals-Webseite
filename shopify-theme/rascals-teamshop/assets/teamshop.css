@@ -26,7 +26,7 @@
   --font: "Saira", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --skew: -14deg;
   --unskew: 14deg;
-  --gutter: clamp(1rem, 3vw, 2rem);
+  --gutter: clamp(1rem, 3vw, 3.5rem);
   --shadow-red: 0 10px 28px rgba(212, 16, 42, .34);
 }
 
@@ -309,7 +309,7 @@ body:hover .football-cursor { opacity: .85; }
   background: #0a1626;
 }
 /* Platz unten, in den sich die Kachelreihe schiebt. */
-.hero-stage--under-tiles { min-height: 452px; padding-bottom: 118px; }
+.hero-stage--under-tiles { min-height: clamp(470px, 32vw, 780px); padding-bottom: 118px; align-items: center; }
 .hero-stage__layers { position: absolute; inset: 0; z-index: -1; }
 .hero-stage__layers > * { position: absolute; }
 
@@ -386,7 +386,7 @@ body:hover .football-cursor { opacity: .85; }
 
 .hero-stage__title {
   position: relative; margin: 0 0 1.25rem;
-  font-size: calc(clamp(2.9rem, 5.4vw, 5.1rem) * var(--heading-scale));
+  font-size: calc(clamp(2.9rem, 4.6vw + .6rem, 7.2rem) * var(--heading-scale));
   line-height: .86; font-stretch: 100%;
   filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .35)) drop-shadow(0 14px 26px rgba(0, 0, 0, .55));
 }
@@ -903,6 +903,14 @@ body:hover .football-cursor { opacity: .85; }
          zweispaltig, Filterspalte wird Filter-Knopf
    760   Telefon
    ===================================================================== */
+/* Volle Breite: auf grossen Schirmen mehr Spalten statt riesiger Karten. */
+@media (min-width: 1680px) {
+  .product-grid--collection { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .collection-layout { grid-template-columns: 260px minmax(0, 1fr); }
+}
+@media (min-width: 2200px) {
+  .product-grid--collection { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
 @media (max-width: 1279px) {
   .product-grid--collection { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

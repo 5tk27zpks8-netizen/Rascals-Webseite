@@ -71,13 +71,20 @@
     "name": "Layout",
     "settings": [
       {
+        "type": "checkbox",
+        "id": "full_width",
+        "label": "Volle Bildschirmbreite nutzen",
+        "info": "Inhalte laufen über die ganze Breite, mit seitlichem Rand. Aus: Inhalte enden bei der maximalen Seitenbreite.",
+        "default": true
+      },
+      {
         "type": "range",
         "id": "page_width",
         "min": 1100,
         "max": 1600,
         "step": 50,
         "unit": "px",
-        "label": "Maximale Seitenbreite",
+        "label": "Maximale Seitenbreite (wenn volle Breite aus)",
         "default": 1400
       },
       {
