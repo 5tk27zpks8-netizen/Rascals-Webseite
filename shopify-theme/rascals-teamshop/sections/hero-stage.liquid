@@ -30,9 +30,11 @@
   if section.settings.backdrop != blank
     assign back_src = section.settings.backdrop | image_url: width: 1920
   endif
-  assign figure_src = 'stage-figure.webp' | asset_url
+  assign figure_src = 'stage-figure-cut.webp' | asset_url
+  assign figure_cut = true
   if section.settings.figure != blank
     assign figure_src = section.settings.figure | image_url: width: 900
+    assign figure_cut = false
   endif
   assign heading_lines = section.settings.heading | strip | newline_to_br | split: '<br />'
   assign meta_items = section.settings.meta | split: '|'
@@ -47,7 +49,7 @@
       <img class="hero-stage__photo" src="{{ stage_src }}" width="2400" height="1800" alt="" loading="eager" fetchpriority="high">
     </div>
     {%- if section.settings.show_figure -%}
-      <img class="hero-stage__figure" src="{{ figure_src }}" width="780" height="1448" alt="" loading="eager">
+      <img class="hero-stage__figure{% if figure_cut %} hero-stage__figure--cut{% endif %}" src="{{ figure_src }}" width="780" height="1448" alt="" loading="eager">
     {%- endif -%}
     <span class="hero-stage__scrim"></span>
   </div>
