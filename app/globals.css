@@ -377,11 +377,13 @@ footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; bor
   .news-preview .featured-news a,
   .news-preview .compact-news a { font-size: .78rem; }
 }
-/* Produktkacheln: drei gleich grosse, kompakte Kacheln; Artikelfotos ganz auf Weiss. */
-.product-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); align-self: center; width: 100%; max-width: 900px; justify-self: end; }
-.product-card, .product-main, .product-card:not(.product-main) { grid-column: auto; grid-row: auto; min-height: 0; aspect-ratio: 4 / 5; background: #fff; }
-.product-card img { position: absolute; inset: 0; box-sizing: border-box; object-fit: contain; object-position: center; padding: 1rem .9rem 4.4rem; }
-.product-card div { inset: auto .55rem .55rem; gap: .6rem; padding: .65rem .75rem; }
+/* Produktkacheln: Aufteilung wie gehabt (eine grosse links, zwei gestapelt rechts), nur kompakter. Artikelfotos ganz auf Weiss. */
+.product-cards { grid-template-columns: 1.2fr .8fr; grid-auto-rows: clamp(190px, 15vw, 250px); align-self: center; width: 100%; max-width: 820px; justify-self: end; }
+.product-card, .product-card:not(.product-main) { grid-column: auto; grid-row: auto; min-height: 0; background: #fff; }
+.product-main { grid-column: 1; grid-row: span 2; min-height: 0; }
+.product-card img { position: absolute; inset: 0; box-sizing: border-box; object-fit: contain; object-position: center; padding: 1rem .8rem 3.7rem; }
+.product-main img { padding: 1.4rem 1.2rem 4.4rem; }
+.product-card div { inset: auto .55rem .55rem; gap: .6rem; padding: .6rem .75rem; }
 .product-card div strong { font-size: .82rem; line-height: 1.2; }
-@media (max-width: 950px) { .product-cards { justify-self: stretch; max-width: none; } }
-@media (max-width: 600px) { .product-cards { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 68%; overflow-x: auto; scroll-snap-type: x mandatory; } .product-card { scroll-snap-align: start; } }
+@media (max-width: 950px) { .product-cards { justify-self: stretch; max-width: none; } .product-card img { padding-bottom: 5.4rem; } }
+@media (max-width: 600px) { .product-cards { grid-template-columns: 1fr 1fr; grid-template-rows: 280px; grid-auto-rows: 190px; } .product-main { grid-column: 1 / -1; grid-row: span 1; } }
