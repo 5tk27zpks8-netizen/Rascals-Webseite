@@ -24,7 +24,22 @@
     <div class="cat-tiles__rail">
       {%- for block in section.blocks -%}
         {%- liquid
+          # Sammlung: gewaehlt, sonst eine, deren Handle zum Namen oder
+          # Suchbegriff passt (z. B. "hoodies" fuer HOODIES). So fuehrt eine
+          # Kachel automatisch zur richtigen Sammlung, sobald es sie gibt.
           assign tile_collection = collections[block.settings.collection]
+          if tile_collection.id == blank
+            assign guess = block.settings.label | handleize
+            assign tile_collection = collections[guess]
+          endif
+          if tile_collection.id == blank and block.settings.search != blank
+            assign guess = block.settings.search | handleize
+            assign tile_collection = collections[guess]
+          endif
+          if tile_collection.id == blank and block.settings.search != blank
+            assign guess = block.settings.search | handleize | append: 's'
+            assign tile_collection = collections[guess]
+          endif
           assign label = block.settings.label
           if label == blank
             assign label = tile_collection.title
@@ -59,9 +74,20 @@
             assign mode = 'icon'
           endif
 
+          # Ziel: eigener Link, sonst die Sammlung, sonst die Shop-Suche nach
+          # dem Suchbegriff (bzw. dem Namen). Die Suche findet Artikel ueber
+          # Titel, Produkttyp und Tags; "prefix=last" laesst "hoodie" auch
+          # "Hoodies" finden. Erst ganz zuletzt: alle Produkte.
           assign tile_url = block.settings.link
-          if tile_url == blank
+          if tile_url == blank and tile_collection.id != blank
             assign tile_url = tile_collection.url
+          endif
+          if tile_url == blank
+            assign term = block.settings.search | default: block.settings.label | strip
+            if term != blank
+              assign q = term | downcase | url_encode
+              assign tile_url = routes.search_url | append: '?type=product&options%5Bprefix%5D=last&q=' | append: q
+            endif
           endif
           if tile_url == blank
             assign tile_url = routes.all_products_collection_url
@@ -104,6 +130,7 @@
       "settings": [
         { "type": "collection", "id": "collection", "label": "Sammlung" },
         { "type": "text", "id": "label", "label": "Name", "info": "Leer lassen: dann wird der Name der Sammlung verwendet." },
+        { "type": "text", "id": "search", "label": "Suchbegriff", "info": "Nur wenn keine Sammlung gewählt ist: Die Kachel sucht im Shop nach diesem Wort (Titel, Produkttyp, Tags). Gibt es eine Sammlung mit passendem Handle, z. B. „hoodies“, führt die Kachel automatisch dorthin." },
         { "type": "url", "id": "link", "label": "Abweichender Link" },
         { "type": "image_picker", "id": "image", "label": "Eigenes Bild", "info": "Am besten ein freigestelltes Produktfoto (PNG ohne Hintergrund)." },
         {

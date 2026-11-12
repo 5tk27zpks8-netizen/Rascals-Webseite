@@ -4,13 +4,13 @@
   Aufgebaut wie die Vorlage, von hinten nach vorn:
 
     1. Stadion links: Tribuenen und Flutlicht, dunkel und unscharf.
-    2. Rechts der Helm auf dem Rasen. Das Foto steht nicht ueber die ganze
+    2. Rechts der Helm auf dem Rasen, Blick nach links zur Schlagzeile, mit
+       dem Rascals-Logo als Aufkleber. Das Foto steht nicht ueber die ganze
        Breite, sondern rechts angeschlagen und nach links ausgeblendet —
        sonst laege der Helm hinter der Schlagzeile. Die Breite ist
        einstellbar, damit der Helm groesser oder kleiner wirkt.
-    3. Roter Rauch hinter dem Helm, aus einem SVG-Rauschfilter.
-    4. Links die Rueckenfigur (Spieler von hinten), vor dem Stadion.
-    5. Ein Schleier, der nur so dunkel ist, wie die Schrift es braucht.
+    3. Links die Rueckenfigur (Spieler von hinten), vor dem Stadion.
+    4. Ein Schleier, der nur so dunkel ist, wie die Schrift es braucht.
 
   DIE BUEHNE LAEUFT UNTER DEN KACHELN WEITER.
   In der Vorlage stehen die Kategoriekacheln auf dem Rasen des Heros. Der
@@ -42,26 +42,8 @@
     <img class="hero-stage__backdrop" src="{{ back_src }}" width="1920" height="740" alt="" loading="eager">
     <span class="hero-stage__lights hero-stage__lights--left"></span>
     <span class="hero-stage__lights hero-stage__lights--right"></span>
-    {%- comment -%}
-      Foto, Schein und Rauch teilen sich einen Rahmen in Fotogroesse. So
-      gelten die Lagen relativ zum Foto: der Helm steht im Bild immer an
-      derselben Stelle (25-83 % breit, 27-88 % hoch), und das Loch, das
-      Schein und Rauch fuer ihn freilassen, sitzt bei jeder Fensterbreite
-      genau auf ihm.
-    {%- endcomment -%}
     <div class="hero-stage__stage">
       <img class="hero-stage__photo" src="{{ stage_src }}" width="2400" height="1800" alt="" loading="eager" fetchpriority="high">
-      {%- if section.settings.show_smoke -%}
-        <span class="hero-stage__glow"></span>
-        <svg class="hero-stage__smoke" viewBox="0 0 800 600" preserveAspectRatio="none" focusable="false">
-          <filter id="smoke-{{ section.id }}" x="0" y="0" width="100%" height="100%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.009 0.016" numOctaves="4" seed="11"/>
-            <feColorMatrix type="matrix" values="0 0 0 0 0.9  0 0 0 0 0.06  0 0 0 0 0.14  0 0 0 2.3 -0.72"/>
-            <feGaussianBlur stdDeviation="5"/>
-          </filter>
-          <rect width="800" height="600" filter="url(#smoke-{{ section.id }})"/>
-        </svg>
-      {%- endif -%}
     </div>
     {%- if section.settings.show_figure -%}
       <img class="hero-stage__figure" src="{{ figure_src }}" width="780" height="1448" alt="" loading="eager">
@@ -128,8 +110,7 @@
     { "type": "header", "content": "Bühne rechts" },
     { "type": "image_picker", "id": "stage_image", "label": "Bild rechts", "info": "Leer lassen: Rascals-Helm auf dem Rasen." },
     { "type": "range", "id": "stage_width", "min": 40, "max": 90, "step": 2, "unit": "%", "label": "Größe des Bildes", "default": 50, "info": "Kleiner = Helm kleiner. Das Bild steht unten auf den Kacheln auf." },
-    { "type": "range", "id": "stage_offset", "min": -20, "max": 10, "step": 1, "unit": "%", "label": "Abstand zum rechten Rand", "default": 3, "info": "Negativ schiebt das Bild über den Rand hinaus." },
-    { "type": "checkbox", "id": "show_smoke", "label": "Roter Rauch", "default": true },
+    { "type": "range", "id": "stage_offset", "min": -20, "max": 10, "step": 1, "unit": "%", "label": "Abstand zum rechten Rand", "default": -3, "info": "Negativ schiebt das Bild über den Rand hinaus." },
 
     { "type": "header", "content": "Hintergrund und Figur links" },
     { "type": "image_picker", "id": "backdrop", "label": "Stadion", "info": "Leer lassen: Rascals-Stadion aus dem Theme." },

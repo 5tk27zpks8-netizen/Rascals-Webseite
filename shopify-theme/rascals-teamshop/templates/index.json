@@ -13,12 +13,11 @@
         "secondary_link": "/collections",
         "secondary_icon": "play",
         "stage_width": 50,
-        "show_smoke": true,
         "show_figure": true,
         "figure_height": 108,
         "figure_opacity": 100,
         "under_tiles": true,
-        "stage_offset": 3
+        "stage_offset": -3
       }
     },
     "ticker": {
@@ -115,56 +114,64 @@
           "type": "tile",
           "settings": {
             "label": "T-SHIRTS",
-            "icon": "shirt"
+            "icon": "shirt",
+            "search": "shirt"
           }
         },
         "t2": {
           "type": "tile",
           "settings": {
             "label": "HOODIES",
-            "icon": "hoodie"
+            "icon": "hoodie",
+            "search": "hoodie"
           }
         },
         "t3": {
           "type": "tile",
           "settings": {
             "label": "JACKEN",
-            "icon": "jacket"
+            "icon": "jacket",
+            "search": "jacke"
           }
         },
         "t4": {
           "type": "tile",
           "settings": {
             "label": "POLOS",
-            "icon": "polo"
+            "icon": "polo",
+            "search": "polo"
           }
         },
         "t5": {
           "type": "tile",
           "settings": {
             "label": "TRAINING",
-            "icon": "shorts"
+            "icon": "shorts",
+            "search": "training"
           }
         },
         "t6": {
           "type": "tile",
           "settings": {
             "label": "CAPS",
-            "icon": "cap"
+            "icon": "cap",
+            "search": "cap"
           }
         },
         "t7": {
           "type": "tile",
           "settings": {
             "label": "COACHES",
-            "icon": "whistle"
+            "icon": "whistle",
+            "search": "coach"
           }
         },
         "t8": {
           "type": "tile",
           "settings": {
             "label": "FANWEAR",
-            "icon": "star"
+            "icon": "star",
+            "search": "fan"
           }
         }
       },

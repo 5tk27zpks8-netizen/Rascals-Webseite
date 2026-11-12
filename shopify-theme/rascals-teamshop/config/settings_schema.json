@@ -14,7 +14,7 @@
         "type": "image_picker",
         "id": "logo",
         "label": "Logo",
-        "info": "Am besten das Logo mit Schriftzug als PNG ohne Hintergrund. Ohne Auswahl erscheint das Helm-Logo aus dem Theme."
+        "info": "Nur nötig, wenn ein anderes Logo erscheinen soll. Ohne Auswahl zeigt das Theme das Rascals-Logo mit Schriftzug."
       },
       {
         "type": "range",
@@ -24,7 +24,7 @@
         "step": 10,
         "unit": "px",
         "label": "Logobreite",
-        "default": 170
+        "default": 140
       },
       {
         "type": "image_picker",

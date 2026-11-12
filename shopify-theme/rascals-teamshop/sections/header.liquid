@@ -21,7 +21,7 @@
       {%- if settings.logo != blank -%}
         {{ settings.logo | image_url: width: 680 | image_tag: widths: '240, 360, 520, 680', width: settings.logo_width, loading: 'eager', alt: shop.name }}
       {%- else -%}
-        <img src="{{ 'rascals-logo.png' | asset_url }}" width="{{ settings.logo_width }}" height="120" alt="{{ shop.name }}">
+        <img src="{{ 'rascals-logo.png' | asset_url }}" width="{{ settings.logo_width }}" height="{{ settings.logo_width | times: 0.7 | round }}" alt="{{ shop.name }}">
       {%- endif -%}
     </a>
 

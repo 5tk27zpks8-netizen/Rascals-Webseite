@@ -208,7 +208,14 @@ body:hover .football-cursor { opacity: .85; }
 
 /* Logo wie in der Vorlage: ragt als Abzeichen etwas aus der Leiste. */
 .brand { position: relative; z-index: 3; display: block; }
-.brand img { width: min(var(--logo-width), 34vw); max-height: 104px; margin-block: -14px -26px; object-fit: contain; object-position: left center; filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .55)); }
+.brand img { width: min(var(--logo-width), 34vw); max-height: 124px; margin-block: 3px -29px; object-fit: contain; object-position: left top; filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .55)); }
+/* Wie in der Vorlage vermessen (1440 px): Logo bei x 80, 5 px unter der
+   Oberkante der Leiste, ragt unten ~26 px heraus; Trennstrich bei x 276,
+   erster Menuepunkt bei x 329. */
+@media (min-width: 1280px) {
+  .brand { margin-left: clamp(0px, calc(100vw * .034), 48px); margin-right: 20px; }
+  .site-header .desktop-nav { padding-left: clamp(1rem, 3.8vw, 3.5rem); }
+}
 
 .desktop-nav { position: relative; padding-left: clamp(1rem, 2.2vw, 2.2rem); }
 .desktop-nav::before { position: absolute; top: 50%; left: 0; width: 1px; height: 34px; content: ""; background: rgba(255, 255, 255, .22); transform: translateY(-50%); }
@@ -284,7 +291,7 @@ body:hover .football-cursor { opacity: .85; }
 /* =====================================================================
    HERO: BUEHNE BEI NACHT
    Ebenen (z-index innerhalb von .hero-stage__layers):
-   0 Stadion  1 Nacht-Toenung  2 Flutlicht, Rauch  3 Helmfoto
+   0 Stadion  1 Nacht-Toenung  2 Flutlicht  3 Helmfoto
    4 Rueckenfigur  5 Schleier fuer die Schrift
    ===================================================================== */
 .hero-stage {
@@ -331,45 +338,18 @@ body:hover .football-cursor { opacity: .85; }
 
 
 
-/* --- Helm, Schein und Rauch in einem Rahmen in Fotogroesse -----------
-   Der Rahmen steht unten auf (der Helm setzt auf den Kacheln auf) und ist
-   groesser als der Hero: der Himmel oben im Foto liegt ausserhalb und wird
-   abgeschnitten. Alle Lagen darin sind relativ zum Foto. Der Helm steht im
-   Foto bei 25-83 % Breite und 27-88 % Hoehe; daraus sind die Loecher in
-   Schein und Rauch gerechnet. */
+/* --- Helm auf dem Rasen ---------------------------------------------
+   Der Rahmen hat die Groesse des Fotos, steht unten auf (der Helm setzt auf
+   den Kacheln auf) und ist groesser als der Hero: der Himmel oben im Foto
+   liegt ausserhalb und wird abgeschnitten. Der Helm blickt nach links zur
+   Schlagzeile und steht im Foto bei 17-76 % Breite und 27-88 % Hoehe. */
 .hero-stage__stage { z-index: 3; right: var(--stage-x, 3%); bottom: 43px; width: var(--stage-w, 50%); aspect-ratio: 4 / 3; }
 .hero-stage:not(.hero-stage--under-tiles) .hero-stage__stage { bottom: -40px; }
 .hero-stage__photo {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 24%, #000 90%, transparent 100%);
-          mask-image: linear-gradient(90deg, transparent 0%, #000 24%, #000 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 15%, #000 90%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0%, #000 15%, #000 90%, transparent 100%);
 }
-/* Schein und Rauch liegen UEBER dem Foto: es ist undurchsichtig und wuerde
-   alles darunter verdecken. Im Modus "screen" bleibt der weisse Helm weiss;
-   das Loch an seiner Stelle verhindert, dass die Schale rosa wird. */
-.hero-stage__glow {
-  position: absolute; inset: 0 -14% 4% -6%;
-  pointer-events: none; mix-blend-mode: screen;
-  background:
-    radial-gradient(ellipse 30% 34% at 30% 34%, rgba(240, 30, 55, .9) 0%, rgba(227, 19, 43, .35) 50%, rgba(227, 19, 43, 0) 100%),
-    radial-gradient(ellipse 26% 40% at 86% 48%, rgba(240, 30, 55, .8) 0%, rgba(227, 19, 43, .3) 50%, rgba(227, 19, 43, 0) 100%);
-  filter: blur(10px);
-  /* Helm im Schein-Feld: Mitte 50 % / 60 %, Halbachsen 24 % / 32 % */
-  -webkit-mask-image: radial-gradient(ellipse 30% 40% at 50% 60%, transparent 80%, #000 100%);
-          mask-image: radial-gradient(ellipse 30% 40% at 50% 60%, transparent 80%, #000 100%);
-}
-.hero-stage__smoke {
-  position: absolute; inset: -6% -16% 6% -10%; width: auto; height: auto; max-width: none;
-  pointer-events: none; mix-blend-mode: screen;
-  /* Aussen weich auslaufen, innen das Loch fuer den Helm
-     (Mitte 51 % / 64 %, Halbachsen 23 % / 30 %). */
-  -webkit-mask-image: radial-gradient(ellipse 58% 60% at 50% 52%, #000 34%, transparent 80%), radial-gradient(ellipse 29% 38% at 51% 64%, transparent 80%, #000 100%);
-  -webkit-mask-composite: source-in;
-          mask-image: radial-gradient(ellipse 58% 60% at 50% 52%, #000 34%, transparent 80%), radial-gradient(ellipse 29% 38% at 51% 64%, transparent 80%, #000 100%);
-          mask-composite: intersect;
-  animation: stage-smoke 18s ease-in-out infinite alternate;
-}
-
 /* Rueckenfigur links: steht auf dem Rasen, Raender laufen aus. */
 .hero-stage__figure {
   z-index: 4; left: clamp(-2rem, 2vw, 3rem); bottom: 0;
@@ -425,7 +405,6 @@ body:hover .football-cursor { opacity: .85; }
 .hero-stage__buttons .button { min-width: 180px; }
 
 @keyframes stage-flicker { 0%, 100% { opacity: 1; } 44% { opacity: .86; } 46% { opacity: 1; } 51% { opacity: .92; } 53% { opacity: 1; } }
-@keyframes stage-smoke { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(-3%, -2%, 0) scale(1.08); } }
 
 /* =====================================================================
    KATEGORIEKACHELN
