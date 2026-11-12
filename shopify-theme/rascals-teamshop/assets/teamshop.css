@@ -469,10 +469,10 @@ body:hover .football-cursor { opacity: .85; }
 .cat-tile__media { position: absolute; transform: skewX(var(--unskew)); }
 .cat-tile__media img { width: 100%; height: 100%; transition: transform .45s cubic-bezier(.2, .8, .2, 1); }
 .cat-tile:hover .cat-tile__media img { transform: scale(1.07); }
-.cat-tile--cutout .cat-tile__media { inset: 7% 14% 31% 14%; }
+.cat-tile--cutout .cat-tile__media { inset: 4% 6% 30% 6%; }
 /* Lichtkegel hinter dem freigestellten Artikel, wie in der Vorlage. */
-.cat-tile--cutout .cat-tile__skew { background: radial-gradient(ellipse 60% 48% at 50% 40%, rgba(70, 98, 140, .42), rgba(70, 98, 140, 0) 70%), linear-gradient(180deg, rgba(22, 33, 52, .94) 0%, rgba(8, 14, 26, .97) 100%); }
-.cat-tile--cutout .cat-tile__media img { object-fit: contain; filter: drop-shadow(0 0 1px rgba(255, 255, 255, .35)) drop-shadow(0 10px 12px rgba(0, 0, 0, .65)); }
+.cat-tile--cutout .cat-tile__skew { background: linear-gradient(180deg, rgba(19, 27, 39, .97) 0%, rgba(11, 17, 25, .98) 100%); }
+.cat-tile--cutout .cat-tile__media img { object-fit: contain; object-position: center bottom; }
 .cat-tile--fill .cat-tile__media { inset: -2% -14%; }
 .cat-tile--fill .cat-tile__media img { object-fit: cover; opacity: .8; }
 .cat-tile--fill .cat-tile__media::after { position: absolute; inset: 0; content: ""; background: linear-gradient(0deg, rgba(8, 14, 26, .96) 0%, rgba(8, 14, 26, .6) 38%, rgba(8, 14, 26, .06) 72%); }
