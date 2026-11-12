@@ -85,27 +85,20 @@ function toProduct(raw: RawProduct, shopUrl: string): ShopProduct | null {
 }
 
 /**
- * VERSCHIEDENE ARTIKEL STATT DER DREI NEUESTEN.
+ * DIE NEUESTEN — ABER JEDE KACHEL EIN ANDERES PRODUKT.
  *
- * Shopify liefert die Artikel nach Anlagedatum. Legt der Verein zwei Slides
- * und einen Regenponcho zuletzt an, stuenden genau die auf der Startseite —
- * zweimal fast dasselbe. Darum wird nach Produktart gestreut: erst je ein
- * Artikel der Arten, die im Block am besten wirken, dann der Rest der Reihe
- * nach.
+ * Shopify liefert die Artikel nach Anlagedatum, das neueste zuerst. Legt der
+ * Verein zwei Slides hintereinander an, stuenden beide auf der Startseite —
+ * zweimal fast dasselbe. Darum wird der Reihe nach genommen, aber pro
+ * Produktart nur ein Artikel. Reicht das nicht fuer alle Kacheln, wird mit den
+ * naechstneueren aufgefuellt.
  */
-const BEVORZUGTE_ARTEN = ["pullover", "mützen", "accessoires", "jacken", "hosen", "sleevs", "schuhe"];
-
-function abwechslungsreich(products: ShopProduct[], limit: number): ShopProduct[] {
+function neuesteVerschiedene(products: ShopProduct[], limit: number): ShopProduct[] {
   const gewaehlt: ShopProduct[] = [];
   const arten = new Set<string>();
-  for (const art of BEVORZUGTE_ARTEN) {
-    const treffer = products.find(product => product.type === art);
-    if (treffer) { gewaehlt.push(treffer); arten.add(art); }
-    if (gewaehlt.length >= limit) return gewaehlt;
-  }
   for (const product of products) {
-    if (gewaehlt.length >= limit) break;
-    if (gewaehlt.includes(product) || (product.type && arten.has(product.type))) continue;
+    if (gewaehlt.length >= limit) return gewaehlt;
+    if (product.type && arten.has(product.type)) continue;
     gewaehlt.push(product);
     if (product.type) arten.add(product.type);
   }
@@ -129,10 +122,12 @@ export async function readShopProducts(shopUrl: string, limit = 3): Promise<Shop
 
   try {
     const response = await fetch(`${base}/products.json?limit=50`, {
-      headers: { accept: "application/json" },
+      // Shopify weist Anfragen ohne User-Agent mit 403 ab — und ein Worker
+      // schickt von sich aus keinen. Genau daran scheiterte der Abruf live.
+      headers: { accept: "application/json", "user-agent": "Mozilla/5.0 (compatible; RascalsWebsite/1.0)" },
       // Ohne Zeitgrenze haengt die eigene Seite an der Antwortzeit eines
       // fremden Servers. Lieber die bisherigen Bilder zeigen als warten.
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(4000),
       // Cloudflare-eigene Zwischenspeicherung; der Typ kennt das Feld nicht.
       cf: { cacheTtl: 900, cacheEverything: true },
     } as RequestInit);
@@ -147,7 +142,7 @@ export async function readShopProducts(shopUrl: string, limit = 3): Promise<Shop
       const product = toProduct(raw as RawProduct, base);
       if (product?.image) products.push(product);
     }
-    return abwechslungsreich(products, Math.min(Math.max(limit, 1), 20));
+    return neuesteVerschiedene(products, Math.min(Math.max(limit, 1), 20));
   } catch (error) {
     console.error("shop products unavailable", error);
     return [];

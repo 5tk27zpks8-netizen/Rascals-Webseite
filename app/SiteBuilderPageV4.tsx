@@ -117,9 +117,22 @@ function timelineLabel(value?:string){const[tag="",...rest]=(value||"").split(" 
  * Katalog), bleibt alles unveraendert stehen. Im Editor wird dieser Weg gar
  * nicht erst betreten: dort gehoert der gespeicherte Stand auf den Schirm.
  */
+const SHOP_FALLBACK_IMAGES=["/shop-hoody.webp","/shop-cap.webp","/shop-kulturbeutel.webp"];
 function shopItems(section:BuilderSection,products:ShopProduct[]):BuilderItem[]{
   const items=section.items;
-  if(section.variant!=="legacy-shop"||!products.length||!Array.isArray(items)||!items.length)return items;
+  if(section.variant!=="legacy-shop"||!Array.isArray(items)||!items.length)return items;
+  if(!products.length){
+    // Ohne Shop-Daten: nie zweimal dasselbe Bild, nie ein Spielerfoto in einer Produktkachel.
+    const used=new Set<string>();
+    return items.map(item=>{
+      const bild=(item.image||"").trim();
+      if(bild&&!used.has(bild)&&!/\/team-/.test(bild)){used.add(bild);return item;}
+      const ersatz=SHOP_FALLBACK_IMAGES.find(src=>!used.has(src));
+      if(!ersatz)return item;
+      used.add(ersatz);
+      return {...item,image:ersatz};
+    });
+  }
   return items.map((item,index)=>{
     const product=products[index];
     if(!product)return item;

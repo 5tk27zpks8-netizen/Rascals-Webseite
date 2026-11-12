@@ -136,9 +136,6 @@ h1 i, h2 i { color: var(--red); font-style: italic; line-height: 1.06; padding-b
 .product-label { position: absolute; z-index: 2; left: 1rem; top: 1rem; padding: .4rem .55rem; color: white; background: var(--red); font-size: .58rem; font-weight: 900; letter-spacing: .14em; }
 .product-card div { position: absolute; inset: auto .8rem .8rem; display: flex; justify-content: space-between; gap: 1rem; padding: .9rem 1rem; background: rgba(255,255,255,.93); font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; }
 .product-card div strong { font-size: 1rem; }
-/* Artikelfotos stehen auf Weiss: ganz zeigen, nicht anschneiden, und unten Platz fuer das Etikett lassen. */
-.product-card { background: #fff; }
-.product-card img { box-sizing: border-box; object-fit: contain; object-position: center; padding: 1.4rem 1.4rem 4.8rem; }
 .page-shop { padding-top: 7rem; }
 
 .news-preview { background: var(--ice); }
@@ -380,3 +377,11 @@ footer small { grid-column: 1 / -1; margin-top: 2.5rem; padding-top: 1.3rem; bor
   .news-preview .featured-news a,
   .news-preview .compact-news a { font-size: .78rem; }
 }
+/* Produktkacheln: drei gleich grosse, kompakte Kacheln; Artikelfotos ganz auf Weiss. */
+.product-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); align-self: center; width: 100%; max-width: 900px; justify-self: end; }
+.product-card, .product-main, .product-card:not(.product-main) { grid-column: auto; grid-row: auto; min-height: 0; aspect-ratio: 4 / 5; background: #fff; }
+.product-card img { position: absolute; inset: 0; box-sizing: border-box; object-fit: contain; object-position: center; padding: 1rem .9rem 4.4rem; }
+.product-card div { inset: auto .55rem .55rem; gap: .6rem; padding: .65rem .75rem; }
+.product-card div strong { font-size: .82rem; line-height: 1.2; }
+@media (max-width: 950px) { .product-cards { justify-self: stretch; max-width: none; } }
+@media (max-width: 600px) { .product-cards { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 68%; overflow-x: auto; scroll-snap-type: x mandatory; } .product-card { scroll-snap-align: start; } }
