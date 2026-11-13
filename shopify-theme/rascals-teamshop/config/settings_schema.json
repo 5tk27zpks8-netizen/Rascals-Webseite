@@ -112,11 +112,6 @@
         "type": "url",
         "id": "instagram_url",
         "label": "Instagram-URL"
-      },
-      {
-        "type": "url",
-        "id": "facebook_url",
-        "label": "Facebook-URL"
       }
     ]
   }

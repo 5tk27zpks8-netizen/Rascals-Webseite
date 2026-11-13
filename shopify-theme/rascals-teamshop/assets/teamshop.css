@@ -356,7 +356,7 @@ body:hover .football-cursor { opacity: .85; }
   background: #0a1626;
 }
 /* Platz unten, in den sich die Kachelreihe schiebt. */
-.hero-stage--under-tiles { min-height: clamp(470px, 32vw, 780px); padding-bottom: 138px; align-items: center; }
+.hero-stage--under-tiles { min-height: clamp(470px, 32vw, 780px); padding-bottom: 150px; align-items: center; }
 .hero-stage__layers { position: absolute; inset: 0; z-index: -1; }
 .hero-stage__layers > * { position: absolute; }
 
@@ -469,10 +469,10 @@ body:hover .football-cursor { opacity: .85; }
    an ihrer Aussenkante rot, wie in der Vorlage.
    ===================================================================== */
 .cat-tiles { position: relative; z-index: 6; }
-.cat-tiles--overlap { margin-top: -146px; }
+.cat-tiles--overlap { margin-top: -158px; }
 .cat-tiles__rail { display: flex; gap: 8px; padding: 0 clamp(1rem, 3vw, 2.6rem) 10px; overflow-x: auto; scrollbar-width: none; }
 .cat-tiles__rail::-webkit-scrollbar { display: none; }
-.cat-tile { flex: 1 1 0; min-width: 140px; height: 138px; }
+.cat-tile { flex: 1 1 0; min-width: 140px; height: 150px; }
 .cat-tile:focus-visible { outline: none; }
 .cat-tile__skew {
   position: relative; display: block; height: 100%; overflow: hidden;
@@ -491,7 +491,7 @@ body:hover .football-cursor { opacity: .85; }
 .cat-tile__media { position: absolute; transform: skewX(var(--unskew)); }
 .cat-tile__media img { width: 100%; height: 100%; transition: transform .45s cubic-bezier(.2, .8, .2, 1); }
 .cat-tile:hover .cat-tile__media img { transform: scale(1.07); }
-.cat-tile--cutout .cat-tile__media { inset: 4% 6% 30% 6%; }
+.cat-tile--cutout .cat-tile__media { inset: 5% 5% 29% 5%; }
 /* Lichtkegel hinter dem freigestellten Artikel, wie in der Vorlage. */
 .cat-tile--cutout .cat-tile__skew { background: linear-gradient(180deg, rgba(19, 27, 39, .97) 0%, rgba(11, 17, 25, .98) 100%); }
 .cat-tile--cutout .cat-tile__media img { object-fit: contain; object-position: center bottom; }
@@ -563,7 +563,7 @@ body:hover .football-cursor { opacity: .85; }
 }
 /* Roter Schein an der unteren linken Schnittkante, wie in der Vorlage. */
 .promo-band__product::before { position: absolute; bottom: -30%; left: 4%; width: 46%; height: 70%; content: ""; background: radial-gradient(closest-side, rgba(200, 22, 26, .55), rgba(200, 22, 26, 0)); filter: blur(14px); }
-.promo-band__product img { position: relative; width: auto; max-width: 100%; max-height: 186px; filter: drop-shadow(0 0 1px rgba(255, 255, 255, .45)) drop-shadow(0 18px 22px rgba(0, 0, 0, .7)); transform: rotate(-2deg); transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+.promo-band__product img { position: relative; width: auto; max-width: 100%; max-height: clamp(186px, 13vw, 250px); filter: drop-shadow(0 0 1px rgba(255, 255, 255, .45)) drop-shadow(0 18px 22px rgba(0, 0, 0, .7)); transform: rotate(-2deg); transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
 .promo-band:hover .promo-band__product img { transform: rotate(-.5deg) scale(1.03); }
 
 .promo-band__team { position: relative; z-index: 1; margin-left: -64px; clip-path: polygon(64px 0, 100% 0, 100% 100%, 0 100%); }
@@ -592,7 +592,7 @@ body:hover .football-cursor { opacity: .85; }
 /* Unterkante des Banners laeuft mit der Schraege des Laufbands (skewY -1deg,
    rechts um tan(1deg) * Breite hoeher): unter dem Laufband bleibt kein
    Bildstreifen stehen, links reicht das Bild entsprechend tiefer. */
-.shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band { min-height: calc(196px + var(--play-ticker-h)); border-bottom: 0; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 1.75vw - 1px), 0 calc(100% - 1px)); }
+.shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band { min-height: calc(clamp(196px, 15vw, 290px) + var(--play-ticker-h)); border-bottom: 0; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 1.75vw - 1px), 0 calc(100% - 1px)); }
 @media (min-width: 1101px) {
   .shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band__copy,
   .shopify-section:has(.promo-band):has(+ .shopify-section > .play-ticker) .promo-band__product { padding-bottom: calc(var(--play-ticker-h) + .6rem); }
@@ -1173,3 +1173,42 @@ body:hover .football-cursor { opacity: .85; }
 .template-index .hero-stage__lights--left { top: 14%; left: -14%; }
 .template-index .hero-stage__lights--right { top: 6%; }
 
+
+/* =====================================================================
+   HANDY: BILD OBEN, TEXT DARUNTER
+   Auf schmalen Schirmen lag der Helm halb durchsichtig hinter der Schrift
+   und der Spieler war ausgeblendet; man sah fast nur Dunkel. Jetzt steht
+   die Buehne (Helm + Spieler) hell im oberen Teil, die Schrift darunter
+   auf einem Verlauf, und alle acht Kategorien liegen zweispaltig offen.
+   ===================================================================== */
+@media (max-width: 760px) {
+  :root { --m-stage: min(80vw, 400px); }
+  .hero-stage, .hero-stage--under-tiles { min-height: 0; padding-bottom: 46px; }
+  .hero-stage__content { padding-top: calc(var(--m-stage) * .78); padding-bottom: 1.2rem; }
+  .hero-stage__backdrop { object-position: center 20%; transform: scale(1.15); transform-origin: 50% 30%; filter: brightness(.66) saturate(.9) contrast(1.15) blur(1px); }
+  .hero-stage__layers::before { background: linear-gradient(180deg, rgba(3, 7, 15, .5) 0%, rgba(3, 7, 15, 0) 22%, rgba(3, 7, 15, 0) 40%, rgba(3, 8, 16, .7) 62%, rgba(3, 8, 16, .9) 100%); }
+  .hero-stage__stage { top: calc(var(--home-header-h) - 4px); right: -16%; bottom: auto; width: 108%; opacity: 1; }
+  .hero-stage__stage::after { background: linear-gradient(0deg, rgba(4, 8, 16, .8) 0%, rgba(4, 8, 16, 0) 30%); }
+  .hero-stage__figure, .hero-stage__figure--cut { display: block; z-index: 4; top: calc(var(--home-header-h) + 4px); bottom: auto; left: -3%; height: calc(var(--m-stage) * .9); opacity: 1; transform: none; }
+  .hero-stage__scrim { background: linear-gradient(180deg, rgba(4, 9, 17, 0) 0%, rgba(4, 9, 17, 0) calc(var(--home-header-h) + var(--m-stage) * .5), rgba(4, 9, 17, .78) calc(var(--home-header-h) + var(--m-stage) * .86), rgba(4, 9, 17, .92) 100%); }
+  .hero-stage__lights--left { top: 4%; left: -30%; width: 80%; height: 40%; }
+  .hero-stage__lights--right { top: 2%; right: -20%; width: 70%; height: 34%; }
+  .hero-stage__layers::after { opacity: .55; }
+  .hero-stage__title { font-size: clamp(2.5rem, 13vw, 3.6rem); }
+
+  .cat-tiles--overlap { margin-top: -38px; background: linear-gradient(180deg, transparent 0 38px, #070e1a 38px); }
+  .promo-band__team { min-height: 250px; }
+  .cat-tiles__rail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; overflow: visible; padding: 0 calc(var(--gutter) + 6px) 14px; }
+  .cat-tile { min-width: 0; height: 134px; }
+  .cat-tile--cutout .cat-tile__media { inset: 6% 7% 30% 7%; }
+  .cat-tile__label b { font-size: .98rem; }
+}
+@media (max-width: 360px) {
+  .cat-tile { height: 120px; }
+  .cat-tile__label b { font-size: .86rem; }
+}
+/* Tablet: das grosse Startseiten-Logo ragt in den Hero; die Schrift beginnt
+   darunter, sonst verdeckt das Logo die Kleinzeile. */
+@media (min-width: 761px) and (max-width: 1100px) {
+  .template-index .hero-stage__content { padding-top: calc(min(var(--logo-width), 34vw) * .7 - var(--home-header-h) + 2.4rem); }
+}

@@ -37,18 +37,6 @@
         "show_vendor": false
       }
     },
-    "story": {
-      "type": "image-with-text",
-      "settings": {
-        "fallback_asset": "hero-figure-helmet.webp",
-        "eyebrow": "MORE THAN MERCH",
-        "heading": "REP THE TEAM.\nJOIN THE FAMILY.",
-        "text": "<p>Jedes Piece trägt unsere Farben und unseren Anspruch: gemeinsam antreten, füreinander kämpfen und Heidenheim vertreten.</p>",
-        "button_label": "UNSERE STORY",
-        "button_link": "/pages/ueber-uns",
-        "reverse": false
-      }
-    },
     "feature_product": {
       "type": "featured-product",
       "settings": {
@@ -267,7 +255,6 @@
     "promo",
     "ticker",
     "featured",
-    "story",
     "feature_product",
     "partners"
   ]
