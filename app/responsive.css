@@ -1,0 +1,185 @@
+/* ============================================================
+   THE RESPONSIVE GROUND FLOOR
+
+   One place for the numbers the whole site measures itself in, so
+   a phone fix is a change to a token rather than another media
+   query bolted onto whichever stylesheet happened to own the
+   element.
+
+   This file only defines. It sets no layout of its own and it
+   overrides nothing, so adding it cannot move anything that was
+   already correct — it is loaded first for exactly that reason.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   BREAKPOINTS
+
+   Written here rather than used here, because CSS cannot read a
+   custom property inside a media query condition: `@media
+   (max-width: var(--bp-sm))` does not work in any browser. So
+   these are the values to type, and the comment is the contract.
+
+     phone, small     ≤ 374px    one column, 12px gutter
+     phone            ≤ 430px    one column, 16px gutter
+     phone, large     ≤ 599px    one or two columns
+     tablet           ≤ 1023px   two columns, no hover mechanics
+     desktop          ≥ 1024px   the layout as drawn
+
+   The site carries older breakpoints from before this file — 760,
+   780, 800, 900, 999 among them. They are not swept up wholesale:
+   each is doing a job at a width somebody chose, and a mass rename
+   would be a rewrite of a working desktop for tidiness. New work
+   uses the values above; old values are moved onto them when the
+   rule they guard is being changed anyway.
+
+   One of them is not a preference and must not drift: 999.98px is
+   the exact negation of the drive's own query (see lib/drive-mode),
+   and the stylesheet and the script have to agree to the pixel or
+   the stadium and the page disagree about which one is running.
+   ------------------------------------------------------------ */
+
+:root {
+  /* ----------------------------------------------------------
+     SPACING
+
+     A four-pixel step. Everything the phone layout spaces itself
+     with comes from here, so the rhythm is the same on every page
+     instead of per-component guesswork.
+     ---------------------------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+
+  /* The distance content keeps from the edge of the screen. Nothing
+     sits against the glass. */
+  --gutter: var(--s-4);
+
+  /* ----------------------------------------------------------
+     TOUCH
+
+     The smallest a control may be before a thumb starts missing it.
+     Height is what usually falls short — a link is wide and two
+     lines of text tall — so this is normally spent on min-height
+     plus the padding that fills it.
+     ---------------------------------------------------------- */
+  --tap: 44px;
+
+  /* Room between two controls that do different things, so the
+     wrong one is not hit by a millimetre. */
+  --tap-gap: var(--s-2);
+
+  /* ----------------------------------------------------------
+     TYPE
+
+     Fluid between a floor and a ceiling. The floor is what a phone
+     gets and the ceiling is what the desktop already had, so these
+     can be adopted by a component without changing how it looks on
+     a large screen.
+     ---------------------------------------------------------- */
+  --t-h1: clamp(30px, 8.4vw, 64px);
+  --t-h2: clamp(24px, 6.2vw, 44px);
+  --t-h3: clamp(20px, 4.6vw, 28px);
+  --t-body: clamp(15px, 4.1vw, 17px);
+  --t-small: clamp(13px, 3.5vw, 14px);
+
+  /* Nothing on this site is set smaller than this. Below it the
+     lettering stops being read and starts being looked at. */
+  --t-floor: 11px;
+
+  /* A column of prose wider than this is hard to come back to at
+     the start of the next line. */
+  --measure: 65ch;
+
+  /* ----------------------------------------------------------
+     SAFE AREAS
+
+     A phone's screen is not all usable: a notch or an island eats
+     into the top and the home indicator into the bottom, and in
+     landscape the rounded corners take the sides. These resolve to
+     zero everywhere else, so they are safe to add unconditionally.
+     ---------------------------------------------------------- */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+
+  /* The gutter, widened by whatever the hardware takes on that side.
+     This is what a full-width element should pad itself with. */
+  --gutter-l: calc(var(--gutter) + var(--safe-l));
+  --gutter-r: calc(var(--gutter) + var(--safe-r));
+}
+
+/* ------------------------------------------------------------
+   WHERE A JUMP LANDS
+
+   The bar at the top of the page is sticky, so it is still there
+   when an in-page link arrives — and the browser scrolls the target
+   to the very top of the viewport, which is underneath it. Tapping
+   "Offense" put the heading behind the header and the visitor at
+   what looked like the middle of a list.
+
+   `scroll-padding-top` on the scrolling element tells the browser
+   where the top really is. One declaration covers every anchor on
+   the site, including the ones added later, which is the whole
+   reason it belongs here rather than as a `scroll-margin` on each
+   target. The eight pixels are so the heading is not flush against
+   the bar it just cleared.
+   ------------------------------------------------------------ */
+html {
+  scroll-padding-top: calc(var(--header-h, 78px) + var(--safe-t) + var(--s-2));
+}
+
+/* The narrowest phones still sold: 320 CSS pixels across. Sixteen
+   each side there is a tenth of the screen spent on margin. */
+@media (max-width: 374px) {
+  :root {
+    --gutter: var(--s-3);
+  }
+}
+
+/* ------------------------------------------------------------
+   TOUCH UTILITIES
+
+   `.is-tap` is for a control that is big enough to press but not
+   big enough to look it: the room goes into padding, and the paint
+   stays on the content box, so the control reads at the size it was
+   drawn while answering to a thumb at 44.
+
+   It is opt-in. A control that already clears 44, or one whose box
+   is the design (a card, a photograph), must not be given it.
+   ------------------------------------------------------------ */
+.is-tap {
+  position: relative;
+  min-height: var(--tap);
+}
+
+/* Where padding would push a neighbour, the room is taken as an
+   invisible overlay instead: the control keeps its drawn size and
+   the press area grows around it. */
+.is-tap-halo::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, var(--tap));
+  height: max(100%, var(--tap));
+  transform: translate(-50%, -50%);
+}
+
+/* ------------------------------------------------------------
+   FOCUS
+
+   A keyboard has to be able to see where it is, on every screen.
+   Components that draw their own focus ring override this; nothing
+   is left with none.
+   ------------------------------------------------------------ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

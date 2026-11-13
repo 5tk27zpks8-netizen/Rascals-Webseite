@@ -1,0 +1,261 @@
+{
+  "sections": {
+    "hero": {
+      "type": "hero-stage",
+      "settings": {
+        "eyebrow": "HELLENSTEIN RASCALS",
+        "heading": "OFFIZIELLE\nTEAMWEAR",
+        "meta": "TEAM | TRAINING | COACHES | FANS",
+        "button_label": "ZUM SHOP",
+        "button_link": "/collections/all",
+        "button_icon": "bag",
+        "secondary_label": "KOLLEKTION ENTDECKEN",
+        "secondary_link": "/collections",
+        "secondary_icon": "play",
+        "stage_width": 48,
+        "show_figure": true,
+        "figure_height": 108,
+        "figure_opacity": 100,
+        "under_tiles": true,
+        "stage_offset": -3,
+        "figure_offset": 140
+      }
+    },
+    "ticker": {
+      "type": "play-ticker",
+      "settings": {
+        "label": "Rascals Motto",
+        "text": "ALL GRIT • ALL HEART • ALL RASCALS"
+      }
+    },
+    "featured": {
+      "type": "featured-collection",
+      "settings": {
+        "eyebrow": "NEW SEASON • NEW GEAR",
+        "heading": "STARTING LINEUP.",
+        "products_to_show": 4,
+        "show_vendor": false
+      }
+    },
+    "feature_product": {
+      "type": "featured-product",
+      "settings": {
+        "heading": "THE GAME CHANGER.",
+        "text": "Dein neues Lieblingspiece in den Farben der Rascals.",
+        "show_dynamic_checkout": true
+      }
+    },
+    "partners": {
+      "type": "logo-list",
+      "blocks": {
+        "partner1": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-cap.webp",
+            "name": "CAP EDEKA"
+          }
+        },
+        "partner2": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-hsb.webp",
+            "name": "HSB 1846"
+          }
+        },
+        "partner3": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-grimmelsen.webp",
+            "name": "MEIN BODENBELAG"
+          }
+        },
+        "partner4": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-appalachian.webp",
+            "name": "APPALACHIAN"
+          }
+        },
+        "partner5": {
+          "type": "logo",
+          "settings": {
+            "fallback_logo": "sponsor-brauchle.webp",
+            "name": "DR. BRAUCHLE"
+          }
+        }
+      },
+      "block_order": [
+        "partner1",
+        "partner2",
+        "partner3",
+        "partner4",
+        "partner5"
+      ],
+      "settings": {
+        "eyebrow": "PROUDLY POWERED BY",
+        "heading": "UNSERE PARTNER."
+      }
+    },
+    "kacheln": {
+      "type": "category-tiles",
+      "blocks": {
+        "t1": {
+          "type": "tile",
+          "settings": {
+            "label": "T-SHIRTS",
+            "icon": "shirt",
+            "search": "shirt",
+            "asset": "tile-foto-shirt"
+          }
+        },
+        "t2": {
+          "type": "tile",
+          "settings": {
+            "label": "HOODIES",
+            "icon": "hoodie",
+            "search": "hoodie",
+            "asset": "tile-foto-hoodie"
+          }
+        },
+        "t3": {
+          "type": "tile",
+          "settings": {
+            "label": "JACKEN",
+            "icon": "jacket",
+            "search": "jacke",
+            "asset": "tile-foto-jacke"
+          }
+        },
+        "t4": {
+          "type": "tile",
+          "settings": {
+            "label": "ACCESSOIRES",
+            "icon": "tag",
+            "search": "accessoire",
+            "asset": "tile-foto-accessoires"
+          }
+        },
+        "t5": {
+          "type": "tile",
+          "settings": {
+            "label": "TRAINING",
+            "icon": "shorts",
+            "search": "training",
+            "asset": "tile-foto-training"
+          }
+        },
+        "t6": {
+          "type": "tile",
+          "settings": {
+            "label": "CAPS",
+            "icon": "cap",
+            "search": "cap",
+            "asset": "tile-foto-cap"
+          }
+        },
+        "t7": {
+          "type": "tile",
+          "settings": {
+            "label": "COACHES",
+            "icon": "whistle",
+            "search": "coach",
+            "asset": "tile-foto-coach"
+          }
+        },
+        "t8": {
+          "type": "tile",
+          "settings": {
+            "label": "FANWEAR",
+            "icon": "star",
+            "search": "fan",
+            "link": "/collections/all?view=fanware",
+            "asset": "tile-fanwear"
+          }
+        }
+      },
+      "block_order": [
+        "t1",
+        "t2",
+        "t3",
+        "t4",
+        "t5",
+        "t6",
+        "t7",
+        "t8"
+      ],
+      "settings": {
+        "heading": "Kategorien",
+        "overlap": true
+      }
+    },
+    "vertrauen": {
+      "type": "trust-bar",
+      "blocks": {
+        "v1": {
+          "type": "point",
+          "settings": {
+            "title": "OFFIZIELLE TEAMWEAR",
+            "text": "Original Hellenstein Rascals",
+            "icon": "shield"
+          }
+        },
+        "v2": {
+          "type": "point",
+          "settings": {
+            "title": "SCHNELLER VERSAND",
+            "text": "Innerhalb Deutschlands",
+            "icon": "truck"
+          }
+        },
+        "v3": {
+          "type": "point",
+          "settings": {
+            "title": "14 TAGE RÜCKGABE",
+            "text": "Unkompliziert & fair",
+            "icon": "return"
+          }
+        },
+        "v4": {
+          "type": "point",
+          "settings": {
+            "title": "INDIVIDUALISIERUNG",
+            "text": "Name, Nummer & Teamrolle",
+            "icon": "needle"
+          }
+        }
+      },
+      "block_order": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "settings": {
+        "heading": "Leistungen"
+      }
+    },
+    "promo": {
+      "type": "promo-band",
+      "settings": {
+        "eyebrow": "NEU IM SHOP",
+        "title": "OLDSCHOOL",
+        "title_accent": "DROP",
+        "text": "Der Rascals-Schriftzug im Retro-Look – auf Cap, Jogger und Slides.",
+        "button_label": "JETZT ENTDECKEN",
+        "button_link": "/collections/oldschool",
+        "show_product": true,
+        "product_alt": "Rascals Oldschool-Kollektion: Jogger, Cap und Slides"
+      }
+    }
+  },
+  "order": [
+    "hero",
+    "kacheln",
+    "vertrauen",
+    "promo",
+    "ticker",
+    "featured",
+    "feature_product",
+    "partners"
+  ]
+}

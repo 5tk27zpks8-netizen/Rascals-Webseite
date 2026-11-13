@@ -1,0 +1,42 @@
+{% comment %}
+  COMING SOON (z. B. Fanwear).
+
+  Dunkle Buehne wie die Ausverkauft-Seite: grosses Rascals-Logo, darunter
+  "COMING SOON". Eine leere Kollektion wuerde dem Besucher nichts sagen;
+  diese Seite sagt klar, dass die Ware kommt.
+
+  Erreichbar ohne Einrichtung im Admin ueber /collections/all?view=fanware
+  (Vorlage collection.fanware). Als Seite: Seite "Fanware" anlegen und die
+  Vorlage "page.fanware" waehlen.
+{% endcomment %}
+<section class="error-page error-page--soon">
+  <div class="error-page__content">
+    {%- if settings.logo != blank -%}
+      {{ settings.logo | image_url: width: 900 | image_tag: widths: '320, 480, 640, 900', loading: 'eager', alt: shop.name, class: 'error-page__mark' }}
+    {%- else -%}
+      <img class="error-page__mark" src="{{ 'rascals-logo-640.webp' | asset_url }}" width="420" height="294" alt="{{ shop.name }}" loading="eager">
+    {%- endif -%}
+    {%- if section.settings.eyebrow != blank -%}<p class="eyebrow">{{ section.settings.eyebrow | escape }}</p>{%- endif -%}
+    <h1>{{ section.settings.heading | escape }}</h1>
+    {%- if section.settings.text != blank -%}<div class="error-page__text">{{ section.settings.text }}</div>{%- endif -%}
+    {%- if section.settings.button_label != blank -%}
+      <a class="button button--red" href="{{ section.settings.button_url | default: routes.all_products_collection_url }}">
+        <span>{{ section.settings.button_label | escape }}</span> <b class="arrow" aria-hidden="true">{%- render 'line-icon', name: 'arrow' -%}</b>
+      </a>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Coming soon",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Kleine Zeile", "default": "FANWEAR" },
+    { "type": "text", "id": "heading", "label": "Überschrift", "default": "COMING SOON." },
+    { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Die erste Fanwear-Kollektion ist in Arbeit. Bis dahin findest du unsere Teamwear im Shop.</p>" },
+    { "type": "text", "id": "button_label", "label": "Button", "default": "Zur Teamwear" },
+    { "type": "url", "id": "button_url", "label": "Button-Ziel" }
+  ],
+  "presets": [{ "name": "Coming soon" }]
+}
+{% endschema %}

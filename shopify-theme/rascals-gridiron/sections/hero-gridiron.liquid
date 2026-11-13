@@ -1,28 +1,136 @@
+{%- comment -%}
+  DER KOPF DES SHOPS.
+
+  Aufbau von oben nach unten, genau in der Reihenfolge, in der man ihn liest:
+  kleine gesperrte Zeile, zweizeilige Schlagzeile, Einordnung, zwei Buttons.
+
+  Die zweite Zeile der Schlagzeile ist rot. Das macht nicht die Redaktion
+  ueber Formatierung, sondern der Abschnitt: alles ab der zweiten Zeile
+  bekommt die Akzentfarbe. So bleibt die Trennung erhalten, egal was im
+  Theme-Editor eingetippt wird, und niemand muss HTML schreiben.
+
+  Die Einordnung darunter ist ein Feld mit "|" als Trenner. Als Liste
+  gerendert liest ein Screenreader vier Eintraege statt eines Satzes voller
+  Striche, und die Trennstriche selbst sind CSS, also nicht vorlesbar.
+{%- endcomment -%}
 {%- liquid
   assign hero_image = section.settings.image
-  assign fallback_image = 'helmet-hero.webp' | asset_url
+
+  assign figure_left = section.settings.figure_left
+  assign figure_right = section.settings.figure_right
+  assign figure_left_src = 'hero-figure-celebrate.webp' | asset_url
+  assign figure_right_src = 'hero-figure-helmet.webp' | asset_url
+  if figure_left != blank
+    assign figure_left_src = figure_left | image_url: width: 900
+  endif
+  if figure_right != blank
+    assign figure_right_src = figure_right | image_url: width: 900
+  endif
+  assign heading_lines = section.settings.heading | strip | newline_to_br | split: '<br />'
+  assign meta_items = section.settings.meta | split: '|'
 -%}
-<section class="hero-gridiron{% if section.settings.full_height %} hero-gridiron--full{% endif %}" data-hero>
-  <div class="hero-gridiron__media">
+<section class="hero-gridiron{% if section.settings.full_height %} hero-gridiron--full{% endif %}{% if section.settings.show_left %} hero-gridiron--with-left{% endif %}" data-hero style="--hero-left-h: {{ section.settings.left_height | default: 86 }}%; --hero-left-o: {{ section.settings.left_opacity | default: 45 | divided_by: 100.0 }}; --hero-right-h: {{ section.settings.right_height | default: 88 }}%;">
+  {%- comment -%}
+    DIE BUEHNE.
+
+    Der Hero ist ein Stadion bei Nacht, in Ebenen von hinten nach vorn:
+
+      1. Stadionfoto, auf Nacht eingefaerbt und leicht unscharf, damit die
+         Figuren davor scharf stehen wie bei offener Blende.
+      2. Flutlicht: Lampenreihen oben links und rechts mit Lichthof, leise
+         flackernd. Sie sitzen dort, wo im Foto die Masten stehen.
+      3. Dunst quer durch das Bild — er gibt die Tiefe, die eine flache
+         dunkle Flaeche nicht hat.
+      4. Roter Rauch hinter der rechten Figur. Echte Rauchstruktur aus einem
+         SVG-Rauschfilter statt eines runden Farbflecks; bewegt wird nur die
+         fertige Flaeche, nicht der Filter, damit das nichts kostet.
+      5. Rasen unten, auf dem die Figuren stehen.
+
+    Alles davon ist Dekoration und fuer Screenreader ausgeblendet. Unter
+    prefers-reduced-motion steht die Buehne still.
+
+    Ein eigenes Hintergrundbild aus dem Theme-Editor ersetzt nur Ebene 1;
+    Licht, Dunst, Rauch und Rasen bleiben darueber liegen.
+  {%- endcomment -%}
+  <div class="hero-stage" aria-hidden="true">
     {%- if hero_image != blank -%}
-      {{ hero_image | image_url: width: 3000 | image_tag: widths: '750, 1100, 1600, 2200, 3000', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: hero_image.alt }}
+      {{ hero_image | image_url: width: 2400 | image_tag: widths: '780, 1200, 1800, 2400', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: '', class: 'hero-stage__photo' }}
     {%- else -%}
-      <img src="{{ fallback_image }}" width="3840" height="2160" loading="eager" fetchpriority="high" alt="Hellenstein Rascals Football-Helm auf dem Spielfeld">
+      <picture>
+        <source media="(max-width: 760px)" srcset="{{ 'hero-stadium-portrait.webp' | asset_url }}" width="780" height="1064">
+        <img class="hero-stage__photo" src="{{ 'hero-stadium.webp' | asset_url }}" width="1920" height="740" alt="" loading="eager" fetchpriority="high">
+      </picture>
+    {%- endif -%}
+    <span class="hero-stage__night"></span>
+    <span class="hero-lights hero-lights--left"></span>
+    <span class="hero-lights hero-lights--right"></span>
+    <span class="hero-haze"></span>
+    {%- if section.settings.show_smoke -%}
+      <svg class="hero-smoke" viewBox="0 0 800 600" preserveAspectRatio="none" focusable="false">
+        <filter id="smoke-{{ section.id }}" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.009 0.016" numOctaves="4" seed="11"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 0.89  0 0 0 0 0.07  0 0 0 0 0.16  0 0 0 1.6 -0.62"/>
+          <feGaussianBlur stdDeviation="5"/>
+        </filter>
+        <rect width="800" height="600" filter="url(#smoke-{{ section.id }})"/>
+      </svg>
+    {%- endif -%}
+    <span class="hero-turf"></span>
+  </div>
+
+  <div class="hero-figures" aria-hidden="true">
+    {%- if section.settings.show_left -%}
+      <img class="hero-figure hero-figure--left" src="{{ figure_left_src }}" width="1086" height="1448" alt="" loading="eager">
+    {%- endif -%}
+    {%- if section.settings.show_right -%}
+      <img class="hero-figure hero-figure--right" src="{{ figure_right_src }}" width="1086" height="1448" alt="" loading="eager">
     {%- endif -%}
   </div>
-  <div class="hero-gridiron__shade"></div>
-  <div class="field-lines" aria-hidden="true"></div>
+
+  <div class="hero-scrim" aria-hidden="true"></div>
+
   <div class="hero-gridiron__content page-width reveal">
-    {%- if section.settings.eyebrow != blank -%}<p class="eyebrow">{{ section.settings.eyebrow | escape }}</p>{%- endif -%}
-    <h1>{{ section.settings.heading | newline_to_br }}</h1>
-    {%- if section.settings.text != blank -%}<div class="hero-gridiron__text rte">{{ section.settings.text }}</div>{%- endif -%}
+    {%- if section.settings.eyebrow != blank -%}
+      <p class="hero-eyebrow">{{ section.settings.eyebrow | escape }}</p>
+    {%- endif -%}
+
+    <h1 class="hero-title">
+      {%- for line in heading_lines -%}
+        {%- assign clean = line | strip_html | strip -%}
+        {%- if clean == blank -%}{%- continue -%}{%- endif -%}
+        <span class="hero-title__line{% unless forloop.first %} hero-title__line--accent{% endunless %}">{{ clean }}</span>
+      {%- endfor -%}
+    </h1>
+
+    {%- if section.settings.meta != blank -%}
+      <ul class="hero-meta">
+        {%- for item in meta_items -%}
+          {%- assign label = item | strip -%}
+          {%- if label != blank -%}<li>{{ label | escape }}</li>{%- endif -%}
+        {%- endfor -%}
+      </ul>
+    {%- endif -%}
+
     <div class="hero-gridiron__buttons">
-      {%- if section.settings.button_label != blank -%}<a class="button button--red" href="{{ section.settings.button_link }}">{{ section.settings.button_label | escape }} <span>→</span></a>{%- endif -%}
-      {%- if section.settings.secondary_label != blank -%}<a class="text-link" href="{{ section.settings.secondary_link }}">{{ section.settings.secondary_label | escape }} <span>↗</span></a>{%- endif -%}
+      {%- if section.settings.button_label != blank -%}
+        <a class="button button--red button--icon" href="{{ section.settings.button_link }}">
+          {%- render 'line-icon', name: section.settings.button_icon -%}
+          <span>{{ section.settings.button_label | escape }}</span>
+          <b aria-hidden="true">&rarr;</b>
+        </a>
+      {%- endif -%}
+      {%- if section.settings.secondary_label != blank -%}
+        <a class="button button--ghost button--icon" href="{{ section.settings.secondary_link }}">
+          {%- render 'line-icon', name: section.settings.secondary_icon -%}
+          <span>{{ section.settings.secondary_label | escape }}</span>
+        </a>
+      {%- endif -%}
     </div>
   </div>
-  <div class="hero-number" aria-hidden="true">{{ section.settings.number }}</div>
-  <div class="hero-scroll" aria-hidden="true"><span></span> SCROLL TO KICKOFF</div>
+
+  {%- if section.settings.number != blank -%}
+    <div class="hero-number" aria-hidden="true">{{ section.settings.number }}</div>
+  {%- endif -%}
 </section>
 
 {% schema %}
@@ -31,16 +139,41 @@
   "tag": "section",
   "class": "section-hero",
   "settings": [
-    { "type": "image_picker", "id": "image", "label": "Bild" },
-    { "type": "text", "id": "eyebrow", "label": "Subheading", "default": "OFFICIAL HELLENSTEIN RASCALS SHOP" },
-    { "type": "textarea", "id": "heading", "label": "Heading", "default": "WEAR THE\nRASCALS." },
-    { "type": "richtext", "id": "text", "label": "Body text", "default": "<p>Deine Farben. Dein Team. Dein nächster Spielzug.</p>" },
-    { "type": "text", "id": "button_label", "label": "Button label", "default": "SHOP THE DROP" },
+    { "type": "image_picker", "id": "image", "label": "Hintergrundbild", "info": "Optional. Ersetzt das Stadion. Flutlicht, Dunst, Rauch und Rasen bleiben darüber liegen." },
+    { "type": "checkbox", "id": "show_smoke", "label": "Roten Rauch hinter der rechten Figur zeigen", "default": true },
+    { "type": "header", "content": "Figuren" },
+    { "type": "checkbox", "id": "show_left", "label": "Linke Figur zeigen", "default": true },
+    { "type": "image_picker", "id": "figure_left", "label": "Linke Figur", "info": "Leer lassen: Jubelbild aus dem Theme." },
+    { "type": "range", "id": "left_height", "min": 40, "max": 100, "step": 2, "unit": "%", "label": "Höhe der linken Figur", "default": 86 },
+    { "type": "range", "id": "left_opacity", "min": 10, "max": 100, "step": 1, "unit": "%", "label": "Deckkraft der linken Figur", "default": 62 },
+    { "type": "checkbox", "id": "show_right", "label": "Rechte Figur zeigen", "default": true },
+    { "type": "image_picker", "id": "figure_right", "label": "Rechte Figur", "info": "Leer lassen: Helmbild aus dem Theme." },
+    { "type": "range", "id": "right_height", "min": 40, "max": 100, "step": 2, "unit": "%", "label": "Höhe der rechten Figur", "default": 88 },
+    { "type": "header", "content": "Text" },
+    { "type": "text", "id": "eyebrow", "label": "Kleine Zeile", "default": "HELLENSTEIN RASCALS" },
+    { "type": "textarea", "id": "heading", "label": "Schlagzeile", "default": "OFFIZIELLE\nTEAMWEAR", "info": "Alles ab der zweiten Zeile wird rot." },
+    { "type": "text", "id": "meta", "label": "Einordnung", "default": "TEAM | TRAINING | COACHES | FANS", "info": "Mit | trennen." },
+    { "type": "text", "id": "button_label", "label": "Button", "default": "ZUM SHOP" },
     { "type": "url", "id": "button_link", "label": "Button-Link" },
-    { "type": "text", "id": "secondary_label", "label": "Zweiter Button label", "default": "ALLE PRODUKTE" },
-    { "type": "url", "id": "secondary_link", "label": "Zweiter Button-Link" },
+    {
+      "type": "select", "id": "button_icon", "label": "Symbol im Button", "default": "bag",
+      "options": [
+        { "value": "bag", "label": "Einkaufstasche" }, { "value": "shirt", "label": "Shirt" },
+        { "value": "cup", "label": "Pokal" }, { "value": "star", "label": "Stern" }, { "value": "none", "label": "Keins" }
+      ]
+    },
+    { "type": "text", "id": "secondary_label", "label": "Zweiter Button", "default": "KOLLEKTION ENTDECKEN" },
+    { "type": "url", "id": "secondary_link", "label": "Link des zweiten Buttons" },
+    {
+      "type": "select", "id": "secondary_icon", "label": "Symbol im zweiten Button", "default": "play",
+      "options": [
+        { "value": "play", "label": "Play" },
+        { "value": "star", "label": "Stern" }, { "value": "cup", "label": "Pokal" },
+        { "value": "tag", "label": "Anhänger" }, { "value": "none", "label": "Keins" }
+      ]
+    },
     { "type": "text", "id": "number", "label": "Hintergrundnummer", "default": "23" },
-    { "type": "checkbox", "id": "full_height", "label": "Volle Bildschirmhöhe", "default": true }
+    { "type": "checkbox", "id": "full_height", "label": "Volle Bildschirmhöhe", "default": false }
   ],
   "presets": [{ "name": "Football hero" }]
 }

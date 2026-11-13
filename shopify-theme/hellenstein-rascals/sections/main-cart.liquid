@@ -1,0 +1,24 @@
+<section class="cart-page page-width">
+  <header class="page-hero-small"><p class="eyebrow">DEINE AUSWAHL</p><h1>WARENKORB</h1></header>
+  {% if cart.item_count == 0 %}
+    <div class="empty-state"><b>NOCH NICHTS IM TEAM-BAG.</b><p>Entdecke jetzt deine Rascals Favoriten.</p><a class="button button-primary" href="{{ routes.all_products_collection_url }}">Zum Fanshop →</a></div>
+  {% else %}
+    <form action="{{ routes.cart_url }}" method="post" class="cart-form">
+      <div class="cart-lines">
+        {% for item in cart.items %}
+          <article class="cart-line">
+            <a href="{{ item.url }}">{% if item.image %}{{ item.image | image_url: width: 300 | image_tag: loading: 'lazy', alt: item.product.title }}{% endif %}</a>
+            <div><small>{{ item.product.type }}</small><h2><a href="{{ item.url }}">{{ item.product.title }}</a></h2>{% unless item.product.has_only_default_variant %}<p>{{ item.variant.title }}</p>{% endunless %}<strong>{{ item.final_line_price | money }}</strong></div>
+            <label>Anzahl<input type="number" name="updates[]" value="{{ item.quantity }}" min="0"></label>
+            <a class="remove-link" href="{{ item.url_to_remove }}">Entfernen</a>
+          </article>
+        {% endfor %}
+      </div>
+      <div class="cart-summary"><span>Zwischensumme</span><strong>{{ cart.total_price | money }}</strong><p>Steuern und Versand werden im Checkout berechnet.</p><button class="button button-outline" type="submit" name="update">Warenkorb aktualisieren</button><button class="button button-primary" type="submit" name="checkout">Zur Kasse →</button></div>
+    </form>
+  {% endif %}
+</section>
+
+{% schema %}
+{ "name": "Warenkorb", "settings": [] }
+{% endschema %}

@@ -3,6 +3,7 @@ import { getPlayerBySlug, listPlayerAchievements, listPlayerStats } from "../../
 import { RascalsPlayerCard } from "../RascalsPlayerCard";
 import "../team.css";
 import "./player.css";
+import { positionLine } from "../../lib/positions";
 
 const STAT_LABELS: Record<string, string> = {
   touchdowns: "Touchdowns",
@@ -59,7 +60,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
         <div className="player-profile-layout">
           <div className="player-profile-card"><RascalsPlayerCard player={player} /></div>
           <div className="player-profile-copy">
-            <div className="player-profile-position">{player.position}{player.secondaryPosition ? ` / ${player.secondaryPosition}` : ""}</div>
+            <div className="player-profile-position">{positionLine(player.position, player.secondaryPosition)}</div>
             <h1><span>#{player.jerseyNumber ?? "–"}</span>{player.firstName}<br />{player.lastName}</h1>
             {badges.length > 0 && <div className="player-profile-badges">{badges.map((badge) => <span key={badge}>{badge}</span>)}</div>}
             {player.bio && <p className="player-profile-bio">{player.bio}</p>}

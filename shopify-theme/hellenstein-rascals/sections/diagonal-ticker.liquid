@@ -1,0 +1,48 @@
+{% comment %}
+  DAS SCHRAEGE LAUFBAND.
+
+  Laeuft von links nach rechts und ist um 20 Grad gekippt, sodass es von
+  rechts oben nach links unten verlaeuft. Gegenrichtung zum Sponsorenband
+  weiter unten, das rechts nach links laeuft — so arbeiten die beiden
+  gegeneinander statt gleichfoermig nebeneinander.
+
+  Das Band ist breiter als die Seite und wird vom Abschnitt beschnitten.
+  Bei 20 Grad Neigung muessen die Ecken irgendwo hin; ohne Ueberbreite
+  haengen sie als Dreiecke am Rand, und ohne das overflow:hidden des
+  Abschnitts bekaeme die Seite waagerechtes Scrollen.
+{% endcomment %}
+
+{%- if section.settings.enabled -%}
+  <section class="diagonal-ticker"
+           style="--dt-angle: {{ section.settings.angle }}deg; --dt-speed: {{ section.settings.speed }}s; --dt-bg: {{ section.settings.background }}; --dt-fg: {{ section.settings.text_color }};"
+           aria-label="{{ section.settings.label | escape }}">
+    <div class="diagonal-ticker__band">
+      <div class="diagonal-ticker__track">
+        {%- for repetition in (1..2) -%}
+          <div class="diagonal-ticker__seq"{% if repetition == 2 %} aria-hidden="true"{% endif %}>
+            {%- for cycle in (1..6) -%}
+              <span>{{ section.settings.text }}</span><b aria-hidden="true">{{ section.settings.separator }}</b>
+            {%- endfor -%}
+          </div>
+        {%- endfor -%}
+      </div>
+    </div>
+  </section>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Schräges Laufband",
+  "settings": [
+    { "type": "checkbox", "id": "enabled", "label": "Anzeigen", "default": true },
+    { "type": "text", "id": "text", "label": "Text", "default": "RASCALS ONLINE SHOP" },
+    { "type": "text", "id": "separator", "label": "Trenner", "default": "★" },
+    { "type": "text", "id": "label", "label": "Barrierefreie Bezeichnung", "default": "Rascals Online Shop" },
+    { "type": "range", "id": "angle", "label": "Neigung in Grad", "min": 0, "max": 30, "step": 1, "default": 20 },
+    { "type": "range", "id": "speed", "label": "Ein Durchlauf in Sekunden", "min": 10, "max": 60, "step": 5, "default": 30 },
+    { "type": "color", "id": "background", "label": "Bandfarbe", "default": "#9e210f" },
+    { "type": "color", "id": "text_color", "label": "Schriftfarbe", "default": "#ffffff" }
+  ],
+  "presets": [{ "name": "Schräges Laufband" }]
+}
+{% endschema %}

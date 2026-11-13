@@ -1,0 +1,60 @@
+<section class="partner-section">
+  <div class="page-width">
+    <p class="eyebrow eyebrow--red">{{ section.settings.eyebrow | escape }}</p>
+    <h2>{{ section.settings.heading | escape }}</h2>
+  </div>
+  <div class="partner-marquee" aria-label="Partner">
+    <div class="partner-marquee__track">
+      {%- for repetition in (1..2) -%}
+        <div class="partner-marquee__sequence"{% if repetition == 2 %} aria-hidden="true"{% endif %}>
+          {%- for cycle in (1..4) -%}
+            {%- for block in section.blocks -%}
+              <div class="partner-logo" {{ block.shopify_attributes }}>
+                {%- if block.settings.link != blank -%}<a href="{{ block.settings.link }}" target="_blank" rel="noopener">{%- endif -%}
+                {%- if block.settings.logo != blank -%}
+                  {{ block.settings.logo | image_url: width: 500 | image_tag: widths: '180, 320, 500', loading: 'lazy', alt: block.settings.name }}
+                {%- elsif block.settings.fallback_logo != 'none' -%}
+                  <img src="{{ block.settings.fallback_logo | asset_url }}" width="500" height="300" loading="lazy" alt="{{ block.settings.name | escape }}">
+                {%- else -%}
+                  <span>{{ block.settings.name | escape }}</span>
+                {%- endif -%}
+                {%- if block.settings.link != blank -%}</a>{%- endif -%}
+              </div>
+            {%- endfor -%}
+          {%- endfor -%}
+        </div>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Logo list",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Subheading", "default": "PROUDLY POWERED BY" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "UNSERE PARTNER." }
+  ],
+  "blocks": [
+    {
+      "type": "logo",
+      "name": "Logo",
+      "settings": [
+        { "type": "image_picker", "id": "logo", "label": "Logo" },
+        { "type": "select", "id": "fallback_logo", "label": "Rascals-Partnerlogo", "default": "none", "options": [
+          { "value": "none", "label": "Keins" },
+          { "value": "sponsor-cap.webp", "label": "CAP EDEKA" },
+          { "value": "sponsor-hsb.webp", "label": "HSB 1846" },
+          { "value": "sponsor-grimmelsen.webp", "label": "meinBodenbelag.de" },
+          { "value": "sponsor-appalachian.webp", "label": "Appalachian" },
+          { "value": "sponsor-brauchle.webp", "label": "Dr. Brauchle" }
+        ] },
+        { "type": "text", "id": "name", "label": "Name", "default": "PARTNER" },
+        { "type": "url", "id": "link", "label": "Link" }
+      ]
+    }
+  ],
+  "max_blocks": 12,
+  "presets": [{ "name": "Logo list", "blocks": [{ "type": "logo" }, { "type": "logo" }, { "type": "logo" }, { "type": "logo" }] }]
+}
+{% endschema %}

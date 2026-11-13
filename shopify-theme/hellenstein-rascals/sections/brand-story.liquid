@@ -1,0 +1,27 @@
+<section class="brand-story" id="story">
+  {% if section.settings.image != blank %}
+    {{ section.settings.image | image_url: width: 2400 | image_tag: class: 'story-image', loading: 'lazy', widths: '640,960,1440,1920,2400', sizes: '100vw' }}
+  {% else %}
+    <img class="story-image" src="{{ 'rascals-flags-warm.webp' | asset_url }}" width="1535" height="1024" loading="lazy" alt="Hellenstein Rascals laufen mit Teamflaggen auf das Feld">
+  {% endif %}
+  <div class="story-overlay"></div>
+  <div class="brand-story-copy page-width">
+    <p class="eyebrow">{{ section.settings.eyebrow }}</p>
+    <h2>{{ section.settings.heading | newline_to_br }}</h2>
+    <p>{{ section.settings.text }}</p>
+    <a class="button button-outline" href="{{ routes.root_url }}#community">Unsere Story <span>→</span></a>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Rascals Story",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Bild (optional)" },
+    { "type": "text", "id": "eyebrow", "label": "Kleine Überschrift", "default": "RASCALS APPAREL" },
+    { "type": "textarea", "id": "heading", "label": "Überschrift", "default": "BUILT FOR THE FIELD.\nMADE FOR THE COMMUNITY." },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Von Game Day bis Alltag – Rascals Apparel verbindet Team, Sport und Identität." }
+  ],
+  "presets": [{ "name": "Rascals Story" }]
+}
+{% endschema %}

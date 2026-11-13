@@ -1,0 +1,19 @@
+<article class="product-card">
+  <a class="product-card-media" href="{{ product.url }}">
+    {% if product.featured_image %}
+      {% assign card_alt = product.featured_image.alt | default: product.title %}
+      {{ product.featured_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '320,480,640,900', sizes: '(min-width: 990px) 25vw, 50vw', alt: card_alt }}
+    {% else %}
+      <div class="product-placeholder"><span>R</span></div>
+    {% endif %}
+    {% unless product.available %}<span class="product-badge">Ausverkauft</span>{% endunless %}
+  </a>
+  <div class="product-card-info">
+    <small>{{ product.type | default: 'RASCALS' }}</small>
+    <h3><a href="{{ product.url }}">{{ product.title }}</a></h3>
+    <div class="product-card-bottom">
+      <span>{% if product.price_varies %}ab {% endif %}{{ product.price | money }}</span>
+      <a class="product-arrow" href="{{ product.url }}" aria-label="{{ product.title | escape }} ansehen">+</a>
+    </div>
+  </div>
+</article>

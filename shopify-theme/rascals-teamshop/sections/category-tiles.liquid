@@ -1,0 +1,204 @@
+{%- comment -%}
+  DIE KACHELREIHE UNTER DEM HERO.
+
+  Jede Kachel ist eine schraege Flaeche. Die Schraege macht CSS ueber
+  skewX; der Inhalt wird mit demselben Winkel zurueckgedreht, sonst staende
+  die Schrift schief. Als Bild dienen Bildquellen in dieser Reihenfolge:
+  eigenes Bild, Sammlungsbild, erstes Produkt der Sammlung. Fehlt alles,
+  bleibt die Kachel als Flaeche mit Symbol und Namen stehen — eine leere
+  Luecke waere schlimmer als eine Kachel ohne Foto.
+
+  Der Name kommt aus der Sammlung, solange im Block nichts eingetragen ist.
+  So heisst die Kachel automatisch richtig, wenn jemand die Sammlung im
+  Admin umbenennt.
+
+  Auf schmalen Schirmen wird die Reihe seitlich scrollbar statt umgebrochen:
+  acht Kacheln in zwei Reihen waeren keine Leiste mehr, sondern ein Raster.
+{%- endcomment -%}
+
+{%- if section.blocks.size > 0 -%}
+  <section class="cat-tiles{% if section.settings.overlap %} cat-tiles--overlap{% endif %}" aria-label="{{ section.settings.heading | default: 'Kategorien' | escape }}">
+    {%- if section.settings.heading != blank -%}
+      <h2 class="visually-hidden">{{ section.settings.heading | escape }}</h2>
+    {%- endif -%}
+    <div class="cat-tiles__rail">
+      {%- for block in section.blocks -%}
+        {%- liquid
+          # Sammlung: gewaehlt, sonst eine, deren Handle zum Namen oder
+          # Suchbegriff passt (z. B. "hoodies" fuer HOODIES). So fuehrt eine
+          # Kachel automatisch zur richtigen Sammlung, sobald es sie gibt.
+          assign tile_collection = collections[block.settings.collection]
+          if tile_collection.id == blank
+            assign guess = block.settings.label | handleize
+            assign tile_collection = collections[guess]
+          endif
+          if tile_collection.id == blank and block.settings.search != blank
+            assign guess = block.settings.search | handleize
+            assign tile_collection = collections[guess]
+          endif
+          if tile_collection.id == blank and block.settings.search != blank
+            assign guess = block.settings.search | handleize | append: 's'
+            assign tile_collection = collections[guess]
+          endif
+          assign label = block.settings.label
+          if label == blank
+            assign label = tile_collection.title
+          endif
+          if label == blank
+            assign label = 'Kategorie'
+          endif
+
+          assign tile_image = block.settings.image
+          # Mitgelieferte Illustrationen (Kleidungsstuecke mit Rascals-Logo), je in
+          # zwei Groessen: <name>-640.webp und <name>.webp (ca. 1800 px, 4x KI-hochskaliert).
+          # Greifen nur, wenn kein eigenes Bild gesetzt ist.
+          assign tile_asset = blank
+          if tile_image == blank and block.settings.asset != blank and block.settings.asset != 'none'
+            assign tile_asset = block.settings.asset | append: '.webp' | asset_url
+            assign tile_asset_small = block.settings.asset | append: '-640.webp' | asset_url
+          endif
+          if tile_image == blank and tile_asset == blank
+            assign tile_image = tile_collection.image
+          endif
+          if tile_image == blank and tile_asset == blank
+            assign tile_image = tile_collection.products.first.featured_media
+          endif
+
+          # Darstellung: Ein eigenes Bild im Block ist meist ein freigestelltes
+          # Produktfoto und steht dann zentriert auf der dunklen Kachel, wie in
+          # der Vorlage. Sammlungs- und Produktbilder aus Shopify haben fast
+          # immer einen hellen Hintergrund; zentriert waeren das helle Kaesten,
+          # also fuellen sie die Kachel. "auto" entscheidet danach, woher das
+          # Bild kommt; im Block laesst es sich festlegen.
+          assign mode = block.settings.display | default: 'auto'
+          # Kachelgrafiken (tile-foto-*) sind fertige Motive auf dunklem
+          # Grund: sie fuellen die Kachel, der Name liegt unten darauf.
+          if mode == 'auto' and block.settings.asset contains 'tile-foto-' and block.settings.image == blank
+            assign mode = 'photo'
+          endif
+          if mode == 'auto'
+            if block.settings.image != blank or tile_asset != blank
+              assign mode = 'cutout'
+            else
+              assign mode = 'fill'
+            endif
+          endif
+          if tile_image == blank and tile_asset == blank
+            assign mode = 'icon'
+          endif
+
+          # Ziel: eigener Link, sonst die Sammlung, sonst die Shop-Suche nach
+          # dem Suchbegriff (bzw. dem Namen). Die Suche findet Artikel ueber
+          # Titel, Produkttyp und Tags; "prefix=last" laesst "hoodie" auch
+          # "Hoodies" finden. Erst ganz zuletzt: alle Produkte.
+          assign tile_url = block.settings.link
+          if tile_url == blank and tile_collection.id != blank
+            assign tile_url = tile_collection.url
+          endif
+          if tile_url == blank
+            assign term = block.settings.search | default: block.settings.label | strip
+            if term != blank
+              assign q = term | downcase | url_encode
+              assign tile_url = routes.search_url | append: '?type=product&options%5Bprefix%5D=last&q=' | append: q
+            endif
+          endif
+          if tile_url == blank
+            assign tile_url = routes.all_products_collection_url
+          endif
+        -%}
+        <a class="cat-tile cat-tile--{{ mode }}" href="{{ tile_url }}" {{ block.shopify_attributes }}>
+          <span class="cat-tile__skew">
+            <span class="cat-tile__media">
+              {%- if mode == 'icon' -%}
+                {%- render 'line-icon', name: block.settings.icon -%}
+              {%- elsif tile_asset != blank -%}
+                <img src="{{ tile_asset_small }}" srcset="{{ tile_asset_small }} 640w, {{ tile_asset }} {% if mode == 'photo' %}1000w{% else %}1800w{% endif %}" sizes="(min-width: 1101px) 12vw, (min-width: 761px) 20vw, 45vw" alt="" width="1800" height="960" loading="lazy">
+              {%- else -%}
+                {{ tile_image | image_url: width: 520 | image_tag: widths: '260, 380, 520', sizes: '(min-width: 990px) 16vw, 55vw', loading: 'lazy', alt: '' }}
+              {%- endif -%}
+            </span>
+            <span class="cat-tile__label">
+              {%- render 'line-icon', name: block.settings.icon -%}
+              <b>{{ label | escape }}</b>
+              <i aria-hidden="true">{%- render 'line-icon', name: 'arrow' -%}</i>
+            </span>
+          </span>
+        </a>
+      {%- endfor -%}
+    </div>
+  </section>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Kategoriekacheln",
+  "tag": "section",
+  "max_blocks": 9,
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Überschrift (nur für Screenreader)", "default": "Kategorien" },
+    { "type": "checkbox", "id": "overlap", "label": "In den Hero hineinragen", "default": true }
+  ],
+  "blocks": [
+    {
+      "type": "tile",
+      "name": "Kachel",
+      "settings": [
+        { "type": "collection", "id": "collection", "label": "Sammlung" },
+        { "type": "text", "id": "label", "label": "Name", "info": "Leer lassen: dann wird der Name der Sammlung verwendet." },
+        { "type": "text", "id": "search", "label": "Suchbegriff", "info": "Nur wenn keine Sammlung gewählt ist: Die Kachel sucht im Shop nach diesem Wort (Titel, Produkttyp, Tags). Gibt es eine Sammlung mit passendem Handle, z. B. „hoodies“, führt die Kachel automatisch dorthin." },
+        { "type": "url", "id": "link", "label": "Abweichender Link" },
+        { "type": "image_picker", "id": "image", "label": "Eigenes Bild", "info": "Am besten ein freigestelltes Produktfoto (PNG ohne Hintergrund)." },
+        {
+          "type": "select", "id": "asset", "label": "Mitgelieferte Illustration", "default": "none",
+          "info": "Grafiken und Illustrationen mit Rascals-Logo. Werden nur genutzt, wenn kein eigenes Bild gesetzt ist. „Grafik: …“ füllt die ganze Kachel.",
+          "options": [
+            { "value": "none", "label": "Keins" },
+            { "value": "tile-foto-shirt", "label": "Grafik: T-Shirts" }, { "value": "tile-foto-hoodie", "label": "Grafik: Hoodies" },
+            { "value": "tile-foto-jacke", "label": "Grafik: Jacken" }, { "value": "tile-foto-accessoires", "label": "Grafik: Accessoires" },
+            { "value": "tile-foto-training", "label": "Grafik: Training" }, { "value": "tile-foto-cap", "label": "Grafik: Headwear" },
+            { "value": "tile-foto-coach", "label": "Grafik: Coaches" },
+            { "value": "tile-shirt", "label": "T-Shirt" }, { "value": "tile-hoodie", "label": "Hoodie" },
+            { "value": "tile-jacke", "label": "Jacke" }, { "value": "tile-zip", "label": "Coach-Jacke" },
+            { "value": "tile-accessoires", "label": "Sporttasche" }, { "value": "tile-training", "label": "Trainingsshirt" },
+            { "value": "tile-cap", "label": "Cap" }, { "value": "tile-fanwear", "label": "Schal" },
+            { "value": "tile-polo", "label": "Polo" }
+          ]
+        },
+        {
+          "type": "select", "id": "display", "label": "Bilddarstellung", "default": "auto",
+          "options": [
+            { "value": "auto", "label": "Automatisch" },
+            { "value": "cutout", "label": "Freigestellt, zentriert" },
+            { "value": "fill", "label": "Füllend" }
+          ]
+        },
+        {
+          "type": "select", "id": "icon", "label": "Symbol", "default": "shirt",
+          "options": [
+            { "value": "shirt", "label": "T-Shirt" }, { "value": "hoodie", "label": "Hoodie" },
+            { "value": "jacket", "label": "Jacke" }, { "value": "polo", "label": "Polo" },
+            { "value": "cap", "label": "Cap" }, { "value": "shorts", "label": "Shorts" },
+            { "value": "whistle", "label": "Coaches" }, { "value": "tag", "label": "Zubehör" },
+            { "value": "star", "label": "Fanware" }, { "value": "cup", "label": "Pokal" }
+          ]
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Kategoriekacheln",
+      "blocks": [
+      { "type": "tile", "settings": { "label": "T-SHIRTS", "icon": "shirt", "asset": "tile-foto-shirt" } },
+      { "type": "tile", "settings": { "label": "HOODIES", "icon": "hoodie", "asset": "tile-foto-hoodie" } },
+      { "type": "tile", "settings": { "label": "JACKEN", "icon": "jacket", "asset": "tile-foto-jacke" } },
+      { "type": "tile", "settings": { "label": "ACCESSOIRES", "icon": "tag", "asset": "tile-foto-accessoires" } },
+      { "type": "tile", "settings": { "label": "CAPS", "icon": "cap", "asset": "tile-foto-cap" } },
+      { "type": "tile", "settings": { "label": "TRAINING", "icon": "shorts", "asset": "tile-foto-training" } },
+      { "type": "tile", "settings": { "label": "COACHES", "icon": "whistle", "asset": "tile-foto-coach" } },
+      { "type": "tile", "settings": { "label": "FANWEAR", "icon": "star", "asset": "tile-fanwear" } }
+    ]
+    }
+  ]
+}
+{% endschema %}

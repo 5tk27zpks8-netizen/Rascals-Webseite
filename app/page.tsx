@@ -4,7 +4,14 @@ import { DynamicHomeGames } from "./DynamicHomeGames";
 import { HomeSectionMedia } from "./HomeSectionMedia";
 import { SiteBuilderPage } from "./SiteBuilderPage";
 import { SiteShell } from "./SiteShell";
+import { readShopProducts } from "./lib/shop-products";
+import { readCmsState } from "./lib/cms";
 import { findBuilderPage, readPublishedSiteBuilderState, readSiteBuilderState } from "./lib/site-builder";
+import { readSiteDesign } from "./lib/site-design";
+import { brandFromTheme } from "./lib/brand";
+import { HomeMatchday } from "./HomeMatchday";
+import { HomeArena } from "./HomeArena";
+import { HomeHybrid } from "./HomeHybrid";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,9 +47,21 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
   const state = isStudioMirror ? await readSiteBuilderState() : await readPublishedSiteBuilderState();
   const builderPage = findBuilderPage(state, "");
 
+  // Artikel aus dem Shop fuer den Teamwear-Block. Faellt der Shop aus, kommt
+  // eine leere Liste zurueck und der Block zeigt seine eigenen Bilder.
+  const shopProducts = await readShopProducts((await readCmsState()).shopUrl);
+
   if (builderPage && (builderPage.enabled || isStudioMirror)) {
-    return <SiteBuilderPage state={state} page={builderPage} />;
+    return <SiteBuilderPage state={state} page={builderPage} shopProducts={shopProducts} />;
   }
 
-  return <><CmsHero/><SiteShell page="home"/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
+  // Which complete design is live is a CMS setting, chosen under /admin/designs.
+  // Each one is its own page, not a repaint of the same one.
+  const design = await readSiteDesign();
+  if (design === "matchday") return <HomeMatchday />;
+  if (design === "arena") return <HomeArena />;
+  if (design === "hybrid") return <HomeHybrid />;
+
+  const brand = brandFromTheme(state.theme);
+  return <><SiteShell page="home" brand={brand} heroOverride={<CmsHero/>} shopProducts={shopProducts}/><DynamicHomeFeeds/><DynamicHomeGames/><HomeSectionMedia/></>;
 }

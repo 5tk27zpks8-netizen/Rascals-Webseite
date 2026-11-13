@@ -1,0 +1,212 @@
+/* ============================================================
+   RASCALS DESIGN FOUNDATION
+   Single source of truth for brand tokens, type and motion.
+   Loaded before every other stylesheet so the rest of the site
+   can consume these variables instead of re-declaring values.
+   ============================================================ */
+
+:root {
+  /* --- Brand: one red, everywhere. -------------------------
+     The codebase previously carried three near-identical reds
+     (#dc1726, #e7192d, #e72835) copied between stylesheets.
+     Everything now resolves to this token. */
+  --rascals-red: #e7192d;
+  --rascals-red-deep: #b4101f;
+  --rascals-red-glow: rgb(231 25 45 / 0.28);
+
+  /* Navy field, from deepest to lifted surface */
+  --rascals-navy-950: #030a13;
+  --rascals-navy-900: #050d18;
+  --rascals-navy-800: #0a1725;
+  --rascals-navy-700: #122236;
+  --rascals-line: rgb(255 255 255 / 0.10);
+  --rascals-line-strong: rgb(255 255 255 / 0.18);
+
+  /* Text on dark */
+  --rascals-text: #f4f6f8;
+  --rascals-text-dim: rgb(244 246 248 / 0.68);
+  --rascals-text-faint: rgb(244 246 248 / 0.45);
+
+  /* Light surfaces (kept for sections that stay bright) */
+  --rascals-ice: #f2f3ef;
+  --rascals-ink: #07172b;
+  --rascals-ink-dim: #4e5968;
+
+  /* --- Type ------------------------------------------------
+     One family, two expressions. Display runs condensed and
+     heavy (jersey lettering); body runs normal width. */
+  --font-display: "Archivo Variable", "Arial Narrow", Arial, sans-serif;
+  --font-body: "Archivo Variable", Arial, Helvetica, sans-serif;
+
+  --display-stretch: 76%;
+  --display-weight: 900;
+  --display-tracking: -0.035em;
+
+  /* Fluid display scale */
+  --step-hero: clamp(3.4rem, 8.4vw, 8.5rem);
+  --step-2: clamp(2.6rem, 5.4vw, 5.6rem);
+  --step-3: clamp(1.9rem, 3.2vw, 3.1rem);
+  --step-4: clamp(1.3rem, 2vw, 1.75rem);
+  --step-body: clamp(1rem, 0.96rem + 0.2vw, 1.1rem);
+  --step-small: 0.78rem;
+  --step-label: 0.7rem;
+
+  /* --- Shape: sharp. --------------------------------------
+     The brand is hard-edged. One radius system, no exceptions,
+     so nothing reads as a stray rounded card. */
+  --radius: 0px;
+
+  /* --- Rhythm --------------------------------------------- */
+  --gutter: clamp(1.3rem, 5vw, 6rem);
+  --section-y: clamp(4.5rem, 9vw, 9rem);
+  --stack-sm: 0.75rem;
+  --stack-md: 1.5rem;
+  --stack-lg: 3rem;
+
+  /* --- Motion ---------------------------------------------
+     Two curves: "drive" for entrances (fast out, settled end),
+     "snap" for interface feedback. */
+  --ease-drive: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 180ms;
+  --dur-mid: 420ms;
+  --dur-slow: 900ms;
+}
+
+/* ============================================================
+   TYPOGRAPHY BASE
+   ============================================================ */
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--step-body);
+  font-variation-settings: "wdth" 100;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3,
+.rascals-display {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 76;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  text-transform: uppercase;
+  line-height: 0.86;
+}
+
+/* The italic red accent is the brand's signature. Descenders in
+   italic clip against tight leading, so reserve room for them. */
+h1 i, h2 i, h3 i,
+.rascals-accent {
+  color: var(--rascals-red);
+  font-style: italic;
+  line-height: 1.06;
+  padding-bottom: 0.06em;
+}
+
+/* ============================================================
+   SIGNATURE ELEMENTS
+   ============================================================ */
+
+/* Yard line: a 5-yard field marking used to separate sections.
+   Football-specific, not generic decoration. */
+.rascals-yardline {
+  position: relative;
+  height: 3px;
+  border: 0;
+  margin: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--rascals-line-strong) 0 26px,
+    transparent 26px 44px
+  );
+}
+.rascals-yardline::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--yardline-fill, 0%);
+  background: var(--rascals-red);
+  transition: width var(--dur-slow) var(--ease-drive);
+}
+
+/* Kicker label above a headline. */
+.rascals-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--rascals-red);
+  font-family: var(--font-body);
+  font-size: var(--step-label);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.rascals-kicker::before {
+  content: "";
+  width: 34px;
+  height: 3px;
+  background: var(--rascals-red);
+}
+
+/* ============================================================
+   MOTION PRIMITIVES
+   Elements start hidden and are revealed by the scroll
+   choreographer. If JavaScript never runs, the .is-revealed
+   fallback below keeps everything visible.
+   ============================================================ */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  will-change: transform, opacity;
+}
+
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-slow) var(--ease-drive),
+    transform var(--dur-slow) var(--ease-drive);
+}
+
+/* No-JS and pre-hydration safety: never leave content invisible. */
+.no-js [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Tactile press feedback across all interactive brand elements. */
+.button,
+.sb-button,
+.nav-cta,
+.sb-nav-cta {
+  transition:
+    transform var(--dur-fast) var(--ease-snap),
+    background-color var(--dur-fast) var(--ease-snap),
+    box-shadow var(--dur-fast) var(--ease-snap);
+}
+.button:active,
+.sb-button:active,
+.nav-cta:active,
+.sb-nav-cta:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+/* ============================================================
+   REDUCED MOTION
+   Every reveal, parallax and loop collapses to a static state.
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-reveal].is-revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .rascals-yardline::after {
+    transition: none;
+  }
+}

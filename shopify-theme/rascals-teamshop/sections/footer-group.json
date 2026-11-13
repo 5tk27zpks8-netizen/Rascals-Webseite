@@ -1,0 +1,74 @@
+{
+  "type": "footer",
+  "name": "Footer-Bereich",
+  "sections": {
+    "vertrauen": {
+      "type": "trust-bar",
+      "settings": {
+        "heading": "Leistungen",
+        "edge": "slashes"
+      },
+      "blocks": {
+        "f1": {
+          "type": "point",
+          "settings": {
+            "title": "OFFIZIELLER TEAMSHOP",
+            "text": "Original Rascals Teamwear",
+            "icon": "cup"
+          }
+        },
+        "f2": {
+          "type": "point",
+          "settings": {
+            "title": "PREMIUM QUALITÄT",
+            "text": "Langlebig & funktional",
+            "icon": "shield"
+          }
+        },
+        "f3": {
+          "type": "point",
+          "settings": {
+            "title": "SCHNELLER VERSAND",
+            "text": "Innerhalb Deutschlands",
+            "icon": "truck"
+          }
+        },
+        "f4": {
+          "type": "point",
+          "settings": {
+            "title": "14 TAGE RÜCKGABE",
+            "text": "Unkompliziert & fair",
+            "icon": "return"
+          }
+        },
+        "f5": {
+          "type": "point",
+          "settings": {
+            "title": "FÜR TEAM, COACHES & FANS",
+            "text": "Die komplette Rascals Kollektion",
+            "icon": "team"
+          }
+        }
+      },
+      "block_order": [
+        "f1",
+        "f2",
+        "f3",
+        "f4",
+        "f5"
+      ]
+    },
+    "footer": {
+      "type": "footer",
+      "settings": {
+        "menu": "footer",
+        "heading": "JOIN THE HUDDLE",
+        "text": "Teamwear für alle, die Rascals Football leben."
+      }
+    }
+  },
+  "order": [
+    "vertrauen",
+    "footer"
+  ]
+}

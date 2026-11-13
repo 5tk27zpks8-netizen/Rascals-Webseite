@@ -1,4 +1,11 @@
 import type { Player } from "../lib/football";
+import { positionLine, positionName } from "../lib/positions";
+/* The card carries its own look. It used to be pulled in by the two team
+   pages instead, which held for as long as those were the only places the
+   card appeared — on the Arena roster, where nothing imports it, the card
+   lost its aspect ratio and every one of them grew to five thousand pixels
+   tall. A component's stylesheet belongs to the component. */
+import "./team.css";
 import "./inactive-player-stamp.css";
 
 export const PLAYER_CARD_TEMPLATE = "RASCALS" as const;
@@ -19,6 +26,14 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
         ? "pc-name pc-name-medium"
         : "pc-name";
   const inactive = !player.active;
+  /* Written out — "Linebacker", not "LB". See lib/positions. The two halves
+     stay separate so the line can only ever break between them: set as one
+     string, "Wide Receiver / Defensive End" broke after the slash and again
+     inside the second position, three lines deep, and shoved the name and the
+     number up over the photograph. */
+  const position = positionName(player.position);
+  const secondary = positionName(player.secondaryPosition);
+  const positionLabel = positionLine(player.position, player.secondaryPosition);
 
   const content = (
     <>
@@ -27,7 +42,7 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
       <div className="rpc-brand">
         <div className="rpc-line" />
         <div className="rpc-brand-center">
-          <img src="/rascals-logo-transparent-4k.png" alt="" />
+            <img src="/rascals-logo-768.webp" alt="" loading="lazy" decoding="async" />
           <b>RASCALS</b>
         </div>
         <div className="rpc-line" />
@@ -35,9 +50,11 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
 
       <img
         className="rpc-background-logo"
-        src="/rascals-logo-transparent-4k.png"
+        src="/rascals-logo-1600.webp"
         alt=""
         aria-hidden="true"
+        loading="lazy"
+        decoding="async"
       />
 
       <div className="rpc-smoke rpc-smoke-left" aria-hidden="true" />
@@ -45,7 +62,22 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
 
       <div className="rpc-player-stage">
         {player.portrait ? (
-          <img className="rpc-player-photo" src={player.portrait} alt={fullName} />
+          /* Lazy, because there are seventy-two of these on one page.
+
+             The club's database carries no portraits yet, so today this costs
+             nothing either way — but the day they are filled in, seventy-two
+             photographs would be requested the moment the page opened, for a
+             page somebody scrolls through a squad at a time. The browser still
+             loads the ones near the viewport early enough that scrolling
+             normally shows no gap, and the card reserves its box regardless,
+             so nothing shifts when one arrives. */
+          <img
+            className="rpc-player-photo"
+            src={player.portrait}
+            alt={fullName}
+            loading="lazy"
+            decoding="async"
+          />
         ) : (
           <div className="rpc-player-placeholder">
             <strong>#{number}</strong>
@@ -66,8 +98,11 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
         <div className="rpc-number">{number}</div>
         <div className="rpc-identity">
           <div className="rpc-position">
-            {player.position}
-            {player.secondaryPosition ? ` / ${player.secondaryPosition}` : ""}
+            <span>{position}</span>
+            {/* The spaces are the whole point: two nowrap spans with nothing
+                between them have no break opportunity at all, so the line
+                stopped wrapping and simply ran out of the card instead. */}
+            {secondary && <>{" "}<i aria-hidden="true">/</i>{" "}<span>{secondary}</span></>}
           </div>
           <h3 className={nameClass}>{fullName}</h3>
         </div>
@@ -90,7 +125,7 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
     return (
       <div
         className="rascals-player-card is-inactive"
-        aria-label={`${fullName}, ${player.position}, inaktiv`}
+        aria-label={`${fullName}, ${positionLabel}, inaktiv`}
         data-template={PLAYER_CARD_TEMPLATE}
       >
         {content}
@@ -102,7 +137,7 @@ export function RascalsPlayerCard({ player }: { player: Player }) {
     <a
       href={`/team/${player.slug}`}
       className="rascals-player-card"
-      aria-label={`${fullName}, ${player.position}`}
+      aria-label={`${fullName}, ${positionLabel}`}
       data-template={PLAYER_CARD_TEMPLATE}
     >
       {content}

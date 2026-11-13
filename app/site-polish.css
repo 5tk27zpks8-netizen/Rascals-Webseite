@@ -2,21 +2,43 @@
    Keeps editable builder values intact while restoring the Rascals CTA treatment,
    enlarging the global brand marks and lifting only the schedule card base background. */
 
-/* Builder header brand: slightly larger again for stronger presence.
-   81px -> 96px, with enough header height to avoid clipping. */
+/* Builder header brand: the lockup anchors the header, so it has to outweigh
+   the nav rather than match it. The nav sits at .72rem, so a wordmark at the
+   same size reads as one more link; the club name is set well above it and the
+   mark grows with it. The brand drives the header height, so both move together. */
 .sb-header{
-  min-height:112px!important;
+  min-height:96px!important;
 }
+.sb-header .sb-brand{
+  gap:15px!important;
+}
+/* The mark is landscape (roughly 3:2, and its inked area is nearer 2:1). A square
+   box with object-fit:contain sizes it by its width, so it rendered at well under
+   half the height the header reserved for it — which is why it read as hidden.
+   Sizing by height instead lets the width follow the artwork; max-width only
+   guards against an unusually wide logo uploaded through the CMS. */
 .sb-header .sb-brand img{
-  width:96px!important;
-  height:96px!important;
-  flex:0 0 96px;
+  width:auto!important;
+  height:78px!important;
+  flex:0 0 auto;
+  max-width:140px!important;
   object-fit:contain!important;
+}
+/* "HELLENSTEIN" is the kicker over the name: wide-tracked and small, but still
+   clear of the nav. "RASCALS" is the name itself and carries the weight. */
+.sb-header .sb-brand b{
+  font-size:.84rem!important;
+  font-weight:950!important;
+  letter-spacing:.18em!important;
+}
+.sb-header .sb-brand em{
+  font-size:1.9rem!important;
+  letter-spacing:-.01em!important;
 }
 
 .sb-header .sb-nav-cta{
-  background:#e7192d!important;
-  border-color:#e7192d!important;
+  background:var(--rascals-red)!important;
+  border-color:var(--rascals-red)!important;
   color:#fff!important;
   box-shadow:0 8px 22px rgba(231,25,45,.22);
   transition:transform .18s ease,filter .18s ease,box-shadow .18s ease;
@@ -30,6 +52,14 @@
 /* Legacy fallback pages must visually use the same header system as the builder pages.
    This keeps /sponsoring, /team, /shop, /news, /galerie and /ueber-uns aligned even
    when they are rendered through SiteShell instead of SiteBuilderPage. */
+/* THE HEADER'S HEIGHT, IN ONE PLACE.
+   Declared here because this is the block that sets it — three files style
+   this bar and only this one's !important survives, so a token declared
+   anywhere else describes a header that does not exist. The drop-down menu
+   hangs off the bottom of it and bounds itself by it, and the anchor scroll
+   offset is measured from it, so a wrong number here is a menu that runs off
+   the screen and a heading that lands behind the bar. */
+:root{--header-h:96px}
 .site-header{
   position:sticky!important;
   inset:auto!important;
@@ -39,8 +69,20 @@
   align-items:center!important;
   justify-content:space-between!important;
   height:auto!important;
-  min-height:112px!important;
-  padding:0 4vw!important;
+  min-height:96px!important;
+  /* THE BAR THAT ACTUALLY WINS.
+
+     Three places style this header — the shared stylesheet, this file and the
+     script that unifies the legacy pages — and this one carries !important on
+     every line, so it is the one a phone sees. The insets belong wherever the
+     padding is decided, which is here; putting them only in the shared
+     stylesheet changed nothing at all, which is how this was found.
+
+     The page fills the glass now (viewport-fit=cover in the root layout), so
+     without this the bar's top edge is behind the status bar and the notch,
+     and behind a rounded corner in landscape. Every inset is zero on hardware
+     that has none, so the desktop bar is untouched. */
+  padding:var(--safe-t) calc(4vw + var(--safe-r)) 0 calc(4vw + var(--safe-l))!important;
   border-bottom:1px solid rgba(255,255,255,.08)!important;
   background:#050d18!important;
   color:#fff!important;
@@ -50,40 +92,45 @@
 .site-header .brand{
   display:flex!important;
   align-items:center!important;
-  gap:12px!important;
+  gap:15px!important;
   min-width:0!important;
   color:inherit!important;
   text-decoration:none!important;
 }
-.site-header .brand img{
-  width:96px!important;
-  height:96px!important;
-  flex:0 0 96px!important;
+.site-header .brand img,
+.drive-hud .drive-hud-brand img{
+  width:auto!important;
+  height:78px!important;
+  flex:0 0 auto!important;
+  max-width:140px!important;
   object-fit:contain!important;
 }
-.site-header .brand span{
+.site-header .brand span,
+.drive-hud .drive-hud-brand span{
   display:grid!important;
   justify-items:start!important;
   line-height:.9!important;
   letter-spacing:0!important;
   text-align:left!important;
 }
-.site-header .brand strong{
+.site-header .brand strong,
+.drive-hud .drive-hud-brand strong{
   width:auto!important;
   color:#fff!important;
-  font-family:var(--site-heading-font,Inter,Arial,sans-serif)!important;
-  font-size:.72rem!important;
+  font-family:var(--site-heading-font,var(--font-display))!important;
+  font-size:.84rem!important;
   font-weight:950!important;
-  letter-spacing:.16em!important;
+  letter-spacing:.18em!important;
   text-align:left!important;
 }
-.site-header .brand em{
-  color:#e7192d!important;
-  font-family:var(--site-heading-font,Inter,Arial,sans-serif)!important;
-  font-size:1.1rem!important;
+.site-header .brand em,
+.drive-hud .drive-hud-brand em{
+  color:var(--rascals-red)!important;
+  font-family:var(--site-heading-font,var(--font-display))!important;
+  font-size:1.9rem!important;
   font-style:italic!important;
   font-weight:950!important;
-  letter-spacing:0!important;
+  letter-spacing:-.01em!important;
 }
 .site-header .main-nav{
   display:flex!important;
@@ -104,13 +151,13 @@
   display:none!important;
 }
 .site-header .main-nav a.active{
-  color:#e7192d!important;
+  color:var(--rascals-red)!important;
 }
 .site-header .main-nav .nav-cta{
   padding:11px 16px!important;
-  border:1px solid #e7192d!important;
+  border:1px solid var(--rascals-red)!important;
   border-radius:var(--site-radius,0)!important;
-  background:#e7192d!important;
+  background:var(--rascals-red)!important;
   color:#fff!important;
   box-shadow:0 8px 22px rgba(231,25,45,.22)!important;
   transform:none!important;
@@ -138,6 +185,19 @@
     transform:translateX(-72px);
   }
 }
+/* The same correction was missing on a phone, and it showed: the mark sat a
+   clear step to the right of the Anmelden button and the address under it,
+   because five per cent of the file on each side is empty canvas and nothing
+   was taking it off. A percentage rather than a pixel count, so it stays
+   right whatever width the mark is given — enough to clear the canvas and a
+   little further, which puts the ink just past the column and reads as
+   deliberate rather than as a near miss. */
+@media(max-width:900px){
+  .sb-footer-brand-block img,
+  .footer-brand img{
+    transform:translateX(-7%);
+  }
+}
 
 /* ~10% stronger card atmosphere. Field lines/numbers remain at their current,
    deliberately subtle opacity. */
@@ -150,15 +210,35 @@
 }
 
 @media(max-width:900px){
-  .site-header{
+  :root{--header-h:78px}
+  .site-header,
+  .sb-header{
     position:sticky!important;
-    min-height:94px!important;
+    min-height:78px!important;
+    /* 4vw as before — only the insets are new, so a tablet's bar keeps the
+       side room it had. */
+    padding:var(--safe-t) calc(4vw + var(--safe-r)) 0 calc(4vw + var(--safe-l))!important;
   }
   .site-header .brand img,
-  .sb-header .sb-brand img{
-    width:74px!important;
-    height:74px!important;
-    flex-basis:74px!important;
+  .sb-header .sb-brand img,
+  .drive-hud .drive-hud-brand img{
+    width:auto!important;
+    height:58px!important;
+    flex-basis:auto!important;
+    max-width:104px!important;
+  }
+  /* The lockup stays the heaviest thing in the bar, scaled to the shorter
+     header so the name never crowds the menu button. */
+  .site-header .brand strong,
+  .sb-header .sb-brand b,
+  .drive-hud .drive-hud-brand strong{
+    font-size:.76rem!important;
+    letter-spacing:.16em!important;
+  }
+  .site-header .brand em,
+  .sb-header .sb-brand em,
+  .drive-hud .drive-hud-brand em{
+    font-size:1.45rem!important;
   }
   .site-header .main-nav{
     position:absolute!important;
@@ -187,5 +267,40 @@
   }
   .site-header .menu-button{
     display:block!important;
+  }
+}
+
+/* ============================================================
+   THE BADGE ON THE ARENA PAGES
+
+   The stadium pages carry their own bar — a broadcast overlay, not
+   the site header — and it had grown its own idea of the club's
+   lockup: a mark at forty-four pixels stretched to fill a box it
+   did not fit, and "RASCALS" set upright, small and wide-tracked
+   instead of the italic it is everywhere else. Two headers, two
+   logos, on the same site.
+
+   The rules above now name this badge alongside the other two, so
+   all three take one mark at one size and one wordmark. Only what
+   is genuinely the overlay's own is left here: the bar has to grow
+   to hold the taller lockup, and the badge keeps the gap and the
+   colour it inherits from the page around it.
+   ============================================================ */
+.drive-hud .drive-hud-brand{
+  gap:15px!important;
+}
+.drive-hud .drive-hud-brand img{
+  height:78px!important;
+  max-width:140px!important;
+  object-fit:contain!important;
+}
+.drive-hud .drive-hud-brand span{
+  font-size:inherit!important;
+  letter-spacing:0!important;
+}
+@media(max-width:900px){
+  .drive-hud .drive-hud-brand img{
+    height:58px!important;
+    max-width:104px!important;
   }
 }

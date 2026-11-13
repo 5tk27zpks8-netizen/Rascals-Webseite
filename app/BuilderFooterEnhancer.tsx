@@ -19,7 +19,7 @@ export function BuilderFooterEnhancer() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [footerTitle, setFooterTitle] = useState("HELLENSTEIN RASCALS");
   const [footerSubtitle, setFooterSubtitle] = useState("American Football · Heidenheim");
-  const [logoUrl, setLogoUrl] = useState("/rascals-logo-transparent-4k.png");
+  const [logoUrl, setLogoUrl] = useState("/rascals-logo-768.webp");
 
   useEffect(() => {
     let currentFooter: HTMLElement | null = null;
@@ -88,7 +88,6 @@ export function BuilderFooterEnhancer() {
       <div className="sb-footer-column">
         <b>FOLLOW</b>
         <a href="https://www.instagram.com/hellenstein_rascals/" target="_blank" rel="noreferrer">Instagram ↗</a>
-        <a href="https://www.facebook.com/HellensteinRascals/" target="_blank" rel="noreferrer">Facebook ↗</a>
         <a href="mailto:football@hsb1846.de">E-Mail ↗</a>
       </div>
 
