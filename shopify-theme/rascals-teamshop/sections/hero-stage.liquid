@@ -53,7 +53,7 @@
       <img class="hero-stage__photo" src="{{ stage_src }}"{% if stage_srcset != blank %} srcset="{{ stage_srcset }}" sizes="(min-width: 760px) 55vw, 100vw"{% endif %} width="2400" height="1800" alt="" loading="eager" fetchpriority="high">
     </div>
     {%- if section.settings.show_figure -%}
-      <img class="hero-stage__figure{% if figure_cut %} hero-stage__figure--cut{% endif %}" src="{{ figure_src }}"{% if figure_cut %} srcset="{{ 'stage-figure-cut-420.webp' | asset_url }} 420w, {{ figure_src }} 780w" sizes="(min-width: 1100px) 24vw, 40vw"{% endif %} width="780" height="1448" alt="" loading="eager">
+      <img class="hero-stage__figure{% if figure_cut %} hero-stage__figure--cut{% endif %}" src="{{ figure_src }}"{% if figure_cut %} srcset="{{ 'stage-figure-cut-420.webp' | asset_url }} 420w, {{ figure_src }} 780w, {{ 'stage-figure-cut-1560.webp' | asset_url }} 1560w" sizes="(min-width: 1100px) 24vw, 40vw"{% endif %} width="780" height="1448" alt="" loading="eager">
     {%- endif -%}
     <span class="hero-stage__scrim"></span>
   </div>

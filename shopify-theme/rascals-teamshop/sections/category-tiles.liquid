@@ -49,11 +49,13 @@
           endif
 
           assign tile_image = block.settings.image
-          # Mitgelieferte Illustrationen (Kleidungsstuecke mit Rascals-Logo).
+          # Mitgelieferte Illustrationen (Kleidungsstuecke mit Rascals-Logo), je in
+          # zwei Groessen: <name>-640.webp und <name>.webp (ca. 1800 px, 4x KI-hochskaliert).
           # Greifen nur, wenn kein eigenes Bild gesetzt ist.
           assign tile_asset = blank
           if tile_image == blank and block.settings.asset != blank and block.settings.asset != 'none'
             assign tile_asset = block.settings.asset | append: '.webp' | asset_url
+            assign tile_asset_small = block.settings.asset | append: '-640.webp' | asset_url
           endif
           if tile_image == blank and tile_asset == blank
             assign tile_image = tile_collection.image
@@ -105,7 +107,7 @@
               {%- if mode == 'icon' -%}
                 {%- render 'line-icon', name: block.settings.icon -%}
               {%- elsif tile_asset != blank -%}
-                <img src="{{ tile_asset }}" alt="" width="390" height="520" loading="lazy">
+                <img src="{{ tile_asset_small }}" srcset="{{ tile_asset_small }} 640w, {{ tile_asset }} 1800w" sizes="(min-width: 1101px) 12vw, (min-width: 761px) 20vw, 45vw" alt="" width="1800" height="960" loading="lazy">
               {%- else -%}
                 {{ tile_image | image_url: width: 520 | image_tag: widths: '260, 380, 520', sizes: '(min-width: 990px) 16vw, 55vw', loading: 'lazy', alt: '' }}
               {%- endif -%}
