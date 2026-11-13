@@ -71,6 +71,11 @@
           # also fuellen sie die Kachel. "auto" entscheidet danach, woher das
           # Bild kommt; im Block laesst es sich festlegen.
           assign mode = block.settings.display | default: 'auto'
+          # Kachelgrafiken (tile-foto-*) sind fertige Motive auf dunklem
+          # Grund: sie fuellen die Kachel, der Name liegt unten darauf.
+          if mode == 'auto' and block.settings.asset contains 'tile-foto-' and block.settings.image == blank
+            assign mode = 'photo'
+          endif
           if mode == 'auto'
             if block.settings.image != blank or tile_asset != blank
               assign mode = 'cutout'
@@ -107,7 +112,7 @@
               {%- if mode == 'icon' -%}
                 {%- render 'line-icon', name: block.settings.icon -%}
               {%- elsif tile_asset != blank -%}
-                <img src="{{ tile_asset_small }}" srcset="{{ tile_asset_small }} 640w, {{ tile_asset }} 1800w" sizes="(min-width: 1101px) 12vw, (min-width: 761px) 20vw, 45vw" alt="" width="1800" height="960" loading="lazy">
+                <img src="{{ tile_asset_small }}" srcset="{{ tile_asset_small }} 640w, {{ tile_asset }} {% if mode == 'photo' %}1000w{% else %}1800w{% endif %}" sizes="(min-width: 1101px) 12vw, (min-width: 761px) 20vw, 45vw" alt="" width="1800" height="960" loading="lazy">
               {%- else -%}
                 {{ tile_image | image_url: width: 520 | image_tag: widths: '260, 380, 520', sizes: '(min-width: 990px) 16vw, 55vw', loading: 'lazy', alt: '' }}
               {%- endif -%}
@@ -145,9 +150,13 @@
         { "type": "image_picker", "id": "image", "label": "Eigenes Bild", "info": "Am besten ein freigestelltes Produktfoto (PNG ohne Hintergrund)." },
         {
           "type": "select", "id": "asset", "label": "Mitgelieferte Illustration", "default": "none",
-          "info": "Illustrationen mit Rascals-Logo. Werden nur genutzt, wenn kein eigenes Bild gesetzt ist.",
+          "info": "Grafiken und Illustrationen mit Rascals-Logo. Werden nur genutzt, wenn kein eigenes Bild gesetzt ist. „Grafik: …“ füllt die ganze Kachel.",
           "options": [
             { "value": "none", "label": "Keins" },
+            { "value": "tile-foto-shirt", "label": "Grafik: T-Shirts" }, { "value": "tile-foto-hoodie", "label": "Grafik: Hoodies" },
+            { "value": "tile-foto-jacke", "label": "Grafik: Jacken" }, { "value": "tile-foto-accessoires", "label": "Grafik: Accessoires" },
+            { "value": "tile-foto-training", "label": "Grafik: Training" }, { "value": "tile-foto-cap", "label": "Grafik: Headwear" },
+            { "value": "tile-foto-coach", "label": "Grafik: Coaches" },
             { "value": "tile-shirt", "label": "T-Shirt" }, { "value": "tile-hoodie", "label": "Hoodie" },
             { "value": "tile-jacke", "label": "Jacke" }, { "value": "tile-zip", "label": "Coach-Jacke" },
             { "value": "tile-accessoires", "label": "Sporttasche" }, { "value": "tile-training", "label": "Trainingsshirt" },
@@ -180,13 +189,13 @@
     {
       "name": "Kategoriekacheln",
       "blocks": [
-      { "type": "tile", "settings": { "label": "T-SHIRTS", "icon": "shirt", "asset": "tile-shirt" } },
-      { "type": "tile", "settings": { "label": "HOODIES", "icon": "hoodie", "asset": "tile-hoodie" } },
-      { "type": "tile", "settings": { "label": "JACKEN", "icon": "jacket", "asset": "tile-jacke" } },
-      { "type": "tile", "settings": { "label": "ACCESSOIRES", "icon": "tag", "asset": "tile-accessoires" } },
-      { "type": "tile", "settings": { "label": "CAPS", "icon": "cap", "asset": "tile-cap" } },
-      { "type": "tile", "settings": { "label": "TRAINING", "icon": "shorts", "asset": "tile-training" } },
-      { "type": "tile", "settings": { "label": "COACHES", "icon": "whistle", "asset": "tile-zip" } },
+      { "type": "tile", "settings": { "label": "T-SHIRTS", "icon": "shirt", "asset": "tile-foto-shirt" } },
+      { "type": "tile", "settings": { "label": "HOODIES", "icon": "hoodie", "asset": "tile-foto-hoodie" } },
+      { "type": "tile", "settings": { "label": "JACKEN", "icon": "jacket", "asset": "tile-foto-jacke" } },
+      { "type": "tile", "settings": { "label": "ACCESSOIRES", "icon": "tag", "asset": "tile-foto-accessoires" } },
+      { "type": "tile", "settings": { "label": "CAPS", "icon": "cap", "asset": "tile-foto-cap" } },
+      { "type": "tile", "settings": { "label": "TRAINING", "icon": "shorts", "asset": "tile-foto-training" } },
+      { "type": "tile", "settings": { "label": "COACHES", "icon": "whistle", "asset": "tile-foto-coach" } },
       { "type": "tile", "settings": { "label": "FANWEAR", "icon": "star", "asset": "tile-fanwear" } }
     ]
     }

@@ -1212,3 +1212,25 @@ body:hover .football-cursor { opacity: .85; }
 @media (min-width: 761px) and (max-width: 1100px) {
   .template-index .hero-stage__content { padding-top: calc(min(var(--logo-width), 34vw) * .7 - var(--home-header-h) + 2.4rem); }
 }
+
+/* Kachelgrafiken (tile-foto-*): fertige Motive auf dunklem Grund fuellen
+   die ganze Kachel; unten dunkelt ein Verlauf ab, damit der Name lesbar
+   bleibt. Etwas breiter als die Kachel, weil die Schraege die Ecken kappt. */
+.cat-tile--photo .cat-tile__media { inset: 0 -16%; }
+.cat-tile--photo .cat-tile__media img { object-fit: cover; object-position: center 62%; }
+.cat-tile--photo .cat-tile__media::after { position: absolute; inset: 0; content: ""; pointer-events: none;
+  background: linear-gradient(0deg, rgba(6, 11, 21, .94) 0%, rgba(6, 11, 21, .62) 24%, rgba(6, 11, 21, 0) 48%); }
+.cat-tile--photo .cat-tile__skew { background: radial-gradient(ellipse 70% 80% at 50% 35%, #142034, #0b1424 70%); }
+/* Auf dem Desktop ist die Kachel breit und flach: das ganze Motiv zeigen
+   statt hineinzuzoomen, sonst bleibt vom T-Shirt nur das Logo. Der Rand der
+   Grafiken ist dasselbe dunkle Blau wie die Kachel, es entsteht keine Kante. */
+@media (min-width: 761px) {
+  .cat-tile--photo .cat-tile__media { inset: 0 2% 12%; }
+  .cat-tile--photo .cat-tile__media img { object-fit: contain; object-position: center top;
+    -webkit-mask-image: radial-gradient(ellipse 62% 78% at 50% 42%, #000 62%, transparent 100%);
+            mask-image: radial-gradient(ellipse 62% 78% at 50% 42%, #000 62%, transparent 100%); }
+  .cat-tile--photo .cat-tile__media::after { background: none; }
+  .cat-tile--photo .cat-tile__skew::before { position: absolute; inset: auto 0 0; height: 46%; content: ""; z-index: 1; pointer-events: none;
+    background: linear-gradient(0deg, rgba(6, 11, 21, .9) 0%, rgba(6, 11, 21, 0) 100%); }
+  .cat-tile--photo .cat-tile__label { z-index: 2; }
+}
