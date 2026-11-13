@@ -23,12 +23,16 @@
 {%- endcomment -%}
 {%- liquid
   assign stage_src = 'stage-helmet.webp' | asset_url
+  assign stage_srcset = 'stage-helmet-1200.webp' | asset_url | append: ' 1200w, ' | append: stage_src | append: ' 2400w'
   if section.settings.stage_image != blank
     assign stage_src = section.settings.stage_image | image_url: width: 2400
+    assign stage_srcset = section.settings.stage_image | image_url: width: 1200 | append: ' 1200w, ' | append: stage_src | append: ' 2400w'
   endif
   assign back_src = 'hero-stadium.webp' | asset_url
+  assign back_srcset = 'hero-stadium-960.webp' | asset_url | append: ' 960w, ' | append: back_src | append: ' 1920w'
   if section.settings.backdrop != blank
     assign back_src = section.settings.backdrop | image_url: width: 1920
+    assign back_srcset = section.settings.backdrop | image_url: width: 960 | append: ' 960w, ' | append: back_src | append: ' 1920w'
   endif
   assign figure_src = 'stage-figure-cut.webp' | asset_url
   assign figure_cut = true
@@ -42,14 +46,14 @@
 <section class="hero-stage{% if section.settings.under_tiles %} hero-stage--under-tiles{% endif %}"
          style="--stage-w: {{ section.settings.stage_width }}%; --stage-x: {{ section.settings.stage_offset }}%; --figure-h: {{ section.settings.figure_height }}%; --figure-o: {{ section.settings.figure_opacity | divided_by: 100.0 }}; --figure-y: {{ section.settings.figure_offset }}px;">
   <div class="hero-stage__layers" aria-hidden="true">
-    <img class="hero-stage__backdrop" src="{{ back_src }}" width="1920" height="740" alt="" loading="eager">
+    <img class="hero-stage__backdrop" src="{{ back_src }}"{% if back_srcset != blank %} srcset="{{ back_srcset }}" sizes="130vw"{% endif %} width="1920" height="740" alt="" loading="eager">
     <span class="hero-stage__lights hero-stage__lights--left"></span>
     <span class="hero-stage__lights hero-stage__lights--right"></span>
     <div class="hero-stage__stage">
-      <img class="hero-stage__photo" src="{{ stage_src }}" width="2400" height="1800" alt="" loading="eager" fetchpriority="high">
+      <img class="hero-stage__photo" src="{{ stage_src }}"{% if stage_srcset != blank %} srcset="{{ stage_srcset }}" sizes="(min-width: 760px) 55vw, 100vw"{% endif %} width="2400" height="1800" alt="" loading="eager" fetchpriority="high">
     </div>
     {%- if section.settings.show_figure -%}
-      <img class="hero-stage__figure{% if figure_cut %} hero-stage__figure--cut{% endif %}" src="{{ figure_src }}" width="780" height="1448" alt="" loading="eager">
+      <img class="hero-stage__figure{% if figure_cut %} hero-stage__figure--cut{% endif %}" src="{{ figure_src }}"{% if figure_cut %} srcset="{{ 'stage-figure-cut-420.webp' | asset_url }} 420w, {{ figure_src }} 780w" sizes="(min-width: 1100px) 24vw, 40vw"{% endif %} width="780" height="1448" alt="" loading="eager">
     {%- endif -%}
     <span class="hero-stage__scrim"></span>
   </div>

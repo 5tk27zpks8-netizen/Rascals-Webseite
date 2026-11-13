@@ -19,6 +19,7 @@ class RascalsTheme {
       return;
     }
 
+    document.documentElement.classList.add('reveal-ready');
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
@@ -29,7 +30,7 @@ class RascalsTheme {
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
 
     elements.forEach((element, index) => {
-      element.style.transitionDelay = `${Math.min(index % 4, 3) * 70}ms`;
+      element.style.transitionDelay = `${Math.min(index % 4, 3) * 50}ms`;
       observer.observe(element);
     });
   }
@@ -392,4 +393,54 @@ class RascalsTheme {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => new RascalsTheme());
+/*
+ * Kopfzeile: passt das Menue nicht in die verfuegbare Breite, wird auf das
+ * Klappmenue umgeschaltet, statt dass Warenkorb und Konto aus dem Bild
+ * rutschen. Gemessen wird die tatsaechliche Breite der Menuepunkte, daher
+ * funktioniert das bei jeder Anzahl und Laenge von Menuepunkten und jeder
+ * Zoomstufe.
+ */
+class HeaderFit {
+  constructor(header) {
+    this.header = header;
+    this.inner = header.querySelector('.site-header__inner');
+    this.brand = header.querySelector('.brand');
+    this.nav = header.querySelector('.desktop-nav');
+    this.list = header.querySelector('.desktop-nav > ul');
+    this.actions = header.querySelector('.header-actions');
+    if (!this.inner || !this.nav || !this.list || !this.actions) return;
+    this.check = this.check.bind(this);
+    new ResizeObserver(this.check).observe(this.inner);
+    if (document.fonts) document.fonts.ready.then(this.check);
+    this.check();
+  }
+
+  check() {
+    // Unterhalb der festen Grenze blendet das CSS das Menue ohnehin aus.
+    if (getComputedStyle(this.nav).display === 'none') return;
+    const px = (style, prop) => parseFloat(style[prop]) || 0;
+    const inner = getComputedStyle(this.inner);
+    const brand = getComputedStyle(this.brand);
+    const list = getComputedStyle(this.list);
+    const items = [...this.list.children];
+    // Natuerliche Breite der Menuepunkte - auch messbar, wenn das Menue
+    // gerade (unsichtbar) ausgeblendet ist.
+    const needed = items.reduce((sum, li) => sum + li.getBoundingClientRect().width, 0)
+      + px(list, 'columnGap') * Math.max(0, items.length - 1);
+    // Rechte Gruppe ohne den Klappmenue-Knopf, der nur im Kompaktmodus da ist.
+    let actions = this.actions.getBoundingClientRect().width;
+    const burger = this.actions.querySelector('.mobile-menu');
+    if (burger && getComputedStyle(burger).display !== 'none') {
+      actions -= burger.getBoundingClientRect().width + px(getComputedStyle(this.actions), 'columnGap');
+    }
+    const available = this.inner.clientWidth - px(inner, 'paddingLeft') - px(inner, 'paddingRight')
+      - this.brand.getBoundingClientRect().width - px(brand, 'marginLeft') - px(brand, 'marginRight')
+      - actions - 2 * px(inner, 'columnGap') - px(getComputedStyle(this.nav), 'paddingLeft');
+    this.header.classList.toggle('is-compact', needed > available - 2);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  new RascalsTheme();
+  document.querySelectorAll('.site-header').forEach((header) => new HeaderFit(header));
+});

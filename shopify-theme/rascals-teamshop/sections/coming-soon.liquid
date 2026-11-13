@@ -14,7 +14,7 @@
     {%- if settings.logo != blank -%}
       {{ settings.logo | image_url: width: 900 | image_tag: widths: '320, 480, 640, 900', loading: 'eager', alt: shop.name, class: 'error-page__mark' }}
     {%- else -%}
-      <img class="error-page__mark" src="{{ 'rascals-logo.png' | asset_url }}" width="420" height="294" alt="{{ shop.name }}" loading="eager">
+      <img class="error-page__mark" src="{{ 'rascals-logo-640.webp' | asset_url }}" width="420" height="294" alt="{{ shop.name }}" loading="eager">
     {%- endif -%}
     {%- if section.settings.eyebrow != blank -%}<p class="eyebrow">{{ section.settings.eyebrow | escape }}</p>{%- endif -%}
     <h1>{{ section.settings.heading | escape }}</h1>

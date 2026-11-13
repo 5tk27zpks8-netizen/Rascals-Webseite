@@ -21,7 +21,8 @@
       {%- if settings.logo != blank -%}
         {{ settings.logo | image_url: width: 680 | image_tag: widths: '240, 360, 520, 680', width: settings.logo_width, loading: 'eager', alt: shop.name }}
       {%- else -%}
-        <img src="{{ 'rascals-logo.png' | asset_url }}" width="{{ settings.logo_width }}" height="{{ settings.logo_width | times: 0.7 | round }}" alt="{{ shop.name }}">
+        {%- comment -%} WebP in zwei Groessen statt des 360-KB-PNG; der Browser waehlt nach Anzeigebreite. {%- endcomment -%}
+        <img src="{{ 'rascals-logo-640.webp' | asset_url }}" srcset="{{ 'rascals-logo-320.webp' | asset_url }} 320w, {{ 'rascals-logo-640.webp' | asset_url }} 640w" sizes="{% if template.name == 'index' %}(min-width: 750px) {{ settings.logo_width }}px, 72px{% else %}(min-width: 750px) 90px, 72px{% endif %}" width="{{ settings.logo_width }}" height="{{ settings.logo_width | times: 0.7 | round }}" alt="{{ shop.name }}" fetchpriority="high">
       {%- endif -%}
     </a>
 

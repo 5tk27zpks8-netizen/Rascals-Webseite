@@ -15,8 +15,10 @@
 {%- endcomment -%}
 {%- liquid
   assign team_src = 'promo-team.webp' | asset_url
+  assign team_srcset = 'promo-team-700.webp' | asset_url | append: ' 700w, ' | append: team_src | append: ' 1400w'
   if section.settings.image != blank
     assign team_src = section.settings.image | image_url: width: 1400
+    assign team_srcset = section.settings.image | image_url: width: 700 | append: ' 700w, ' | append: team_src | append: ' 1400w'
   endif
   assign product_src = 'promo-oldschool.webp' | asset_url
   if section.settings.product_image != blank
@@ -50,7 +52,7 @@
   {%- endif -%}
 
   <div class="promo-band__team" aria-hidden="true">
-    <img src="{{ team_src }}" width="1400" height="1867" alt="" loading="lazy">
+    <img src="{{ team_src }}" srcset="{{ team_srcset }}" sizes="(min-width: 1101px) 33vw, 100vw" width="1400" height="1867" alt="" loading="lazy">
   </div>
 </section>
 

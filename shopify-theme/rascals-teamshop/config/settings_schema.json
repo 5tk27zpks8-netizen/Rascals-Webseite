@@ -51,13 +51,13 @@
         "type": "color",
         "id": "color_navy",
         "label": "Navy (Schrift auf hellem Grund, Hero)",
-        "default": "#0f1d2c"
+        "default": "#21254b"
       },
       {
         "type": "color",
         "id": "color_red",
         "label": "Rot",
-        "default": "#d4102a"
+        "default": "#c8161a"
       },
       {
         "type": "color",
