@@ -1154,7 +1154,7 @@ body:hover .football-cursor { opacity: .85; }
    dunklen Fotohintergrund als "Schatten" ins Stadion), nur Randlicht. */
 .hero-stage__figure--cut {
   -webkit-mask-image: none; mask-image: none;
-  filter: drop-shadow(-2px 0 0 rgba(190, 210, 255, .22)) drop-shadow(0 18px 28px rgba(0, 0, 0, .55)) brightness(.96) contrast(1.06);
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, .55)) brightness(.96) contrast(1.06);
 }
 /* Schlagzeile hebt sich vom dunkleren Zentrum ab. */
 .hero-stage__title { filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .35)) drop-shadow(0 14px 26px rgba(0, 0, 0, .55)) drop-shadow(0 0 40px rgba(0, 0, 0, .5)); }
@@ -1187,7 +1187,7 @@ body:hover .football-cursor { opacity: .85; }
   .hero-stage__content { padding-top: calc(var(--m-stage) * .78); padding-bottom: 1.2rem; }
   .hero-stage__backdrop { object-position: center 20%; transform: scale(1.15); transform-origin: 50% 30%; filter: brightness(.66) saturate(.9) contrast(1.15) blur(1px); }
   .hero-stage__layers::before { background: linear-gradient(180deg, rgba(3, 7, 15, .5) 0%, rgba(3, 7, 15, 0) 22%, rgba(3, 7, 15, 0) 40%, rgba(3, 8, 16, .7) 62%, rgba(3, 8, 16, .9) 100%); }
-  .hero-stage__stage { top: calc(var(--home-header-h) - 4px); right: -16%; bottom: auto; width: 108%; opacity: 1; }
+  .hero-stage__stage { top: calc(var(--home-header-h) - 4px); right: -27%; bottom: auto; width: 108%; opacity: 1; }
   .hero-stage__stage::after { background: linear-gradient(0deg, rgba(4, 8, 16, .8) 0%, rgba(4, 8, 16, 0) 30%); }
   .hero-stage__figure, .hero-stage__figure--cut { display: block; z-index: 4; top: calc(var(--home-header-h) + 4px); bottom: auto; left: -3%; height: calc(var(--m-stage) * .9); opacity: 1; transform: none; }
   .hero-stage__scrim { background: linear-gradient(180deg, rgba(4, 9, 17, 0) 0%, rgba(4, 9, 17, 0) calc(var(--home-header-h) + var(--m-stage) * .5), rgba(4, 9, 17, .78) calc(var(--home-header-h) + var(--m-stage) * .86), rgba(4, 9, 17, .92) 100%); }
