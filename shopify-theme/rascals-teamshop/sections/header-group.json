@@ -1,0 +1,65 @@
+{
+  "type": "header",
+  "name": "Header-Bereich",
+  "sections": {
+    "laufband": {
+      "type": "top-ticker",
+      "settings": {
+        "text": "OFFICIAL TEAMWEAR • ALL GRIT. ALL HEART.",
+        "link": "/collections/all",
+        "label": "Ankündigung",
+        "speed": 35
+      }
+    },
+    "announcement": {
+      "type": "announcement-bar",
+      "blocks": {
+        "p1": {
+          "type": "point",
+          "settings": {
+            "text": "Schneller Versand",
+            "icon": "truck"
+          }
+        },
+        "p2": {
+          "type": "point",
+          "settings": {
+            "text": "Einfache Rückgabe",
+            "icon": "return"
+          }
+        },
+        "p3": {
+          "type": "point",
+          "settings": {
+            "text": "Offizielle Teamwear",
+            "icon": "star"
+          }
+        }
+      },
+      "block_order": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "settings": {
+        "text": "HELLENSTEIN RASCALS – OFFIZIELLER TEAMWEAR SHOP",
+        "link": "/collections/all"
+      }
+    },
+    "header": {
+      "type": "header",
+      "settings": {
+        "menu": "main-menu",
+        "sticky": true,
+        "auto_collections": true,
+        "auto_handles": "old-school, oldschool, basic, standard",
+        "auto_page": "fanware"
+      }
+    }
+  },
+  "order": [
+    "laufband",
+    "announcement",
+    "header"
+  ]
+}

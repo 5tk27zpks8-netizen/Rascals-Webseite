@@ -1,0 +1,209 @@
+{%- comment -%}
+  DER HEADER, JETZT MIT ZWEI EBENEN.
+
+  Vorher lief die Navigation flach durch `menu.links` und hat Unterpunkte
+  einfach verschluckt: ein Menü wie "Shop → Old-School / Basic / Standard"
+  war im Theme nicht darstellbar, egal was im Shopify-Admin eingetragen war.
+
+  Shopify liefert die zweite Ebene als `link.links` mit. Das Aufklappen läuft
+  bewusst ohne JavaScript, über :hover und :focus-within — damit funktioniert
+  es auch per Tastatur, und es gibt keinen Zustand, der mit dem DOM aus dem
+  Takt geraten kann.
+
+  Mobil wird nicht aufgeklappt, sondern eingerückt: bei drei Kollektionen und
+  fünf Kategorien sind das zehn Zeilen, und zehn Zeilen lesen sich schneller
+  als zwei Tipp-Ebenen.
+{%- endcomment -%}
+
+<header class="site-header{% if section.settings.sticky %} site-header--sticky{% endif %}{% if template.name == 'index' %} site-header--home{% endif %}">
+  <div class="site-header__inner page-width">
+    <a class="brand" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
+      {%- if settings.logo != blank -%}
+        {{ settings.logo | image_url: width: 680 | image_tag: widths: '240, 360, 520, 680', width: settings.logo_width, loading: 'eager', alt: shop.name }}
+      {%- else -%}
+        {%- comment -%} WebP in zwei Groessen statt des 360-KB-PNG; der Browser waehlt nach Anzeigebreite. {%- endcomment -%}
+        <img src="{{ 'rascals-logo-640.webp' | asset_url }}" srcset="{{ 'rascals-logo-320.webp' | asset_url }} 320w, {{ 'rascals-logo-640.webp' | asset_url }} 640w" sizes="{% if template.name == 'index' %}(min-width: 750px) {{ settings.logo_width }}px, 72px{% else %}(min-width: 750px) 90px, 72px{% endif %}" width="{{ settings.logo_width }}" height="{{ settings.logo_width | times: 0.7 | round }}" alt="{{ shop.name }}" fetchpriority="high">
+      {%- endif -%}
+    </a>
+
+    <nav class="desktop-nav" aria-label="Hauptnavigation">
+      <ul>
+        {%- for link in section.settings.menu.links -%}
+          <li{% if link.links.size > 0 %} class="has-subnav"{% endif %}>
+            <a href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>
+              {{- link.title | escape -}}
+              {%- if link.links.size > 0 -%}<i aria-hidden="true">{%- render 'line-icon', name: 'chevron-down' -%}</i>{%- endif -%}
+            </a>
+            {%- if link.links.size > 0 -%}
+              <ul class="subnav">
+                {%- for child in link.links -%}
+                  <li><a href="{{ child.url }}"{% if child.current %} aria-current="page"{% endif %}>{{ child.title | escape }}</a></li>
+                {%- endfor -%}
+              </ul>
+            {%- endif -%}
+          </li>
+        {%- endfor -%}
+
+        {%- comment -%}
+          DIE KOLLEKTIONEN VON SELBST IN DER LEISTE.
+
+          Vorher kam hier ausschliesslich, was im Shopify-Menue steht. Steht
+          dort noch Shopifys Vorgabe "Startseite, Katalog, Kontakt", dann
+          steht genau das da — das Theme kann nichts hinzuerfinden, und man
+          sucht den Fehler im Theme, obwohl er im Admin liegt.
+
+          Darum haengen Old-School, Basic und Standard sich jetzt selbst an,
+          sobald es die Sammlungen gibt. Was bereits im Menue steht, wird
+          uebersprungen, damit nichts doppelt erscheint. Wer die Leiste lieber
+          vollstaendig selbst baut, schaltet es im Theme-Editor ab.
+        {%- endcomment -%}
+        {%- if section.settings.auto_collections -%}
+          {%- capture menu_urls -%}
+            |{%- for link in section.settings.menu.links -%}
+              {{ link.url }}|{%- for child in link.links -%}{{ child.url }}|{%- endfor -%}
+            {%- endfor -%}
+          {%- endcapture -%}
+
+          {%- assign auto_handles = section.settings.auto_handles | split: ',' -%}
+          {%- for raw_handle in auto_handles -%}
+            {%- assign handle = raw_handle | strip -%}
+            {%- if handle == blank -%}{%- continue -%}{%- endif -%}
+            {%- assign line = collections[handle] -%}
+            {%- if line.handle == blank -%}{%- continue -%}{%- endif -%}
+            {%- assign probe = '|' | append: line.url | append: '|' -%}
+            {%- if menu_urls contains probe -%}{%- continue -%}{%- endif -%}
+            <li><a href="{{ line.url }}"{% if line.handle == collection.handle %} aria-current="page"{% endif %}>{{ line.title | escape }}</a></li>
+          {%- endfor -%}
+
+          {%- comment -%}
+            Fanware nur, wenn die Seite wirklich angelegt ist. Ein fester
+            Link auf eine fehlende Seite waere ein 404 in der Kopfzeile.
+          {%- endcomment -%}
+          {%- assign fanware_page = pages[section.settings.auto_page] -%}
+          {%- if fanware_page.handle != blank -%}
+            {%- assign probe = '|' | append: fanware_page.url | append: '|' -%}
+            {%- unless menu_urls contains probe -%}
+              <li><a class="nav-teaser" href="{{ fanware_page.url }}">{{ fanware_page.title | escape }}</a></li>
+            {%- endunless -%}
+          {%- endif -%}
+        {%- endif -%}
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      {%- comment -%}
+        Rechts nur Symbole, wie in der Vorlage: Suche, Konto, Warenkorb. Die
+        Suche fuehrt auf die Suchseite, die das Feld gross und mit Ergebnissen
+        darunter zeigt — ein schmales Feld in der Leiste waere auf dem Telefon
+        ohnehin wieder zur Lupe zusammengeklappt.
+      {%- endcomment -%}
+      <a class="header-action" href="{{ routes.search_url }}" aria-label="{{ 'general.search.search' | t }}">{%- render 'line-icon', name: 'search' -%}</a>
+      <a class="header-action" href="{{ routes.account_url }}" aria-label="{{ 'customer.account.title' | t }}">{%- render 'line-icon', name: 'user' -%}</a>
+      <a class="header-action header-cart" href="{{ routes.cart_url }}" aria-label="{{ 'cart.title' | t }}">
+        {%- comment -%}
+          Einkaufswagen mit Football darin. Vorher stand hier das Zeichen
+          U+25B1 — ein weisses Parallelogramm, das je nach Schriftart des
+          Geraets anders oder gar nicht dargestellt wird. Als SVG sieht es
+          ueberall gleich aus.
+
+          Der Rahmen nimmt currentColor, faerbt sich also beim Ueberfahren
+          mit. Der Ball bleibt Leder und Naht, damit er sich vom Wagen
+          absetzt und auf rotem Grund nicht verschwindet.
+        {%- endcomment -%}
+        <svg class="cart-icon" viewBox="0 0 30 28" fill="none" aria-hidden="true" focusable="false">
+          <path d="M1 2.2H4.1L7.3 16.2H23.9L27.2 6.2H5.4"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="10" cy="23.4" r="2.1" fill="currentColor"/>
+          <circle cx="22" cy="23.4" r="2.1" fill="currentColor"/>
+          <g transform="rotate(-20 16.6 11)">
+            <ellipse cx="16.6" cy="11" rx="5.1" ry="3.3" fill="#8a4a1e" stroke="#f3efe6" stroke-width="1.1"/>
+            <path d="M12.9 11h7.4" stroke="#f3efe6" stroke-width="1" stroke-linecap="round"/>
+            <path d="M15 9.9v2.2M16.6 9.7v2.6M18.2 9.9v2.2" stroke="#f3efe6" stroke-width=".9" stroke-linecap="round"/>
+          </g>
+        </svg>
+        <b data-cart-count>{{ cart.item_count }}</b>
+      </a>
+      <details class="mobile-menu">
+        <summary aria-label="Navigation öffnen"><span></span><span></span><span></span></summary>
+        <nav aria-label="Mobile Navigation">
+          {%- for link in section.settings.menu.links -%}
+            <a href="{{ link.url }}">{{ link.title | escape }}</a>
+            {%- for child in link.links -%}
+              <a class="mobile-menu__child" href="{{ child.url }}">{{ child.title | escape }}</a>
+            {%- endfor -%}
+          {%- endfor -%}
+          {%- comment -%} Dieselben Ergaenzungen wie oben, sonst fehlen sie auf dem Telefon. {%- endcomment -%}
+          {%- if section.settings.auto_collections -%}
+            {%- capture m_urls -%}
+              |{%- for link in section.settings.menu.links -%}
+                {{ link.url }}|{%- for child in link.links -%}{{ child.url }}|{%- endfor -%}
+              {%- endfor -%}
+            {%- endcapture -%}
+            {%- assign m_handles = section.settings.auto_handles | split: ',' -%}
+            {%- for raw_handle in m_handles -%}
+              {%- assign handle = raw_handle | strip -%}
+              {%- if handle == blank -%}{%- continue -%}{%- endif -%}
+              {%- assign line = collections[handle] -%}
+              {%- if line.handle == blank -%}{%- continue -%}{%- endif -%}
+              {%- assign m_probe = '|' | append: line.url | append: '|' -%}
+              {%- if m_urls contains m_probe -%}{%- continue -%}{%- endif -%}
+              <a href="{{ line.url }}">{{ line.title | escape }}</a>
+            {%- endfor -%}
+            {%- assign m_page = pages[section.settings.auto_page] -%}
+            {%- if m_page.handle != blank -%}
+              {%- assign m_probe = '|' | append: m_page.url | append: '|' -%}
+              {%- unless m_urls contains m_probe -%}
+                <a href="{{ m_page.url }}">{{ m_page.title | escape }}</a>
+              {%- endunless -%}
+            {%- endif -%}
+          {%- endif -%}
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>
+
+{% schema %}
+{
+  "name": "Header",
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Main menu",
+      "default": "main-menu"
+    },
+    {
+      "type": "checkbox",
+      "id": "sticky",
+      "label": "Fixierten Header verwenden",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Kollektionen automatisch anzeigen"
+    },
+    {
+      "type": "checkbox",
+      "id": "auto_collections",
+      "label": "Kollektionen an die Leiste anhängen",
+      "default": true,
+      "info": "Hängt die Sammlungen an, die es wirklich gibt. Was schon im Menü steht, wird übersprungen."
+    },
+    {
+      "type": "text",
+      "id": "auto_handles",
+      "label": "Sammlungen",
+      "default": "old-school, oldschool, basic, standard",
+      "info": "Adressnamen der Sammlungen, durch Komma getrennt."
+    },
+    {
+      "type": "text",
+      "id": "auto_page",
+      "label": "Zusätzliche Seite",
+      "default": "fanware",
+      "info": "Adressname einer Seite, z. B. fanware. Erscheint nur, wenn die Seite angelegt ist."
+    }
+  ]
+}
+{% endschema %}

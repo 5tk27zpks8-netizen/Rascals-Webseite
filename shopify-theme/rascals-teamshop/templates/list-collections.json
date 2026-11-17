@@ -1,0 +1,15 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-list-collections",
+      "settings": {
+        "eyebrow": "OFFICIAL TEAMWEAR",
+        "heading": "KOLLEKTIONEN",
+        "categories_heading": "NACH KATEGORIE"
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

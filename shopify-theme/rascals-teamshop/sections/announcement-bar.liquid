@@ -1,0 +1,90 @@
+{%- comment -%}
+  DIE SERVICELEISTE GANZ OBEN.
+
+  Vorher lief hier ein Laufband mit einem Werbesatz. Das bewegte Band gibt
+  es weiterhin — als eigener Abschnitt "Play-Ticker" weiter unten, inklusive
+  der Fanware-Einblendung. Hier oben steht jetzt, was im Shop zaehlt, bevor
+  jemand das erste Produkt gesehen hat: Versand, Ruecknahme, Echtheit.
+
+  Die Punkte sind Bloecke, damit sie im Theme-Editor einzeln getauscht,
+  ergaenzt oder entfernt werden koennen, ohne dass jemand Code anfasst. Das
+  Symbol ist eine Auswahl aus festen Strichzeichnungen statt einer freien
+  Bilddatei — so bleiben alle Punkte in Strichstaerke und Groesse gleich.
+{%- endcomment -%}
+
+{%- liquid
+  assign has_blocks = false
+  if section.blocks.size > 0
+    assign has_blocks = true
+  endif
+-%}
+
+{%- if section.settings.text != blank or has_blocks -%}
+  <div class="utility-bar" role="region" aria-label="Service">
+    <div class="utility-bar__inner page-width">
+      {%- if section.settings.text != blank -%}
+        <p class="utility-bar__lead">
+          <span class="utility-bar__pin" aria-hidden="true">{%- render 'line-icon', name: 'pin' -%}</span>
+          {%- if section.settings.link != blank -%}
+            <a href="{{ section.settings.link }}">{{ section.settings.text | escape }}</a>
+          {%- else -%}
+            {{ section.settings.text | escape }}
+          {%- endif -%}
+        </p>
+      {%- endif -%}
+
+      {%- if has_blocks -%}
+        <ul class="utility-bar__points">
+          {%- for block in section.blocks -%}
+            <li {{ block.shopify_attributes }}>
+              {%- render 'line-icon', name: block.settings.icon -%}
+              <span>{{ block.settings.text | escape }}</span>
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Serviceleiste",
+  "max_blocks": 4,
+  "settings": [
+    { "type": "text", "id": "text", "label": "Text links", "default": "HELLENSTEIN RASCALS – OFFIZIELLER TEAMWEAR SHOP" },
+    { "type": "url", "id": "link", "label": "Link" }
+  ],
+  "blocks": [
+    {
+      "type": "point",
+      "name": "Servicepunkt",
+      "settings": [
+        { "type": "text", "id": "text", "label": "Text", "default": "Schneller Versand" },
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Symbol",
+          "default": "truck",
+          "options": [
+            { "value": "truck", "label": "Versand" },
+            { "value": "return", "label": "Rückgabe" },
+            { "value": "shield", "label": "Sichere Zahlung" },
+            { "value": "star", "label": "Offizielle Ware" },
+            { "value": "cup", "label": "Pokal" },
+            { "value": "team", "label": "Team" },
+            { "value": "needle", "label": "Veredelung" }
+          ]
+        }
+      ]
+    }
+  ],
+  "default": {
+    "blocks": [
+      { "type": "point", "settings": { "text": "Schneller Versand", "icon": "truck" } },
+      { "type": "point", "settings": { "text": "Einfache Rückgabe", "icon": "return" } },
+      { "type": "point", "settings": { "text": "Sichere Zahlung", "icon": "shield" } }
+    ]
+  }
+}
+{% endschema %}

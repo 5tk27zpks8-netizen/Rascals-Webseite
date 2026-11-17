@@ -1,0 +1,16 @@
+{
+  "current": {
+    "color_night": "#070914",
+    "color_surface": "#11152f",
+    "color_red": "#9e210f",
+    "color_text": "#ffffff"
+  },
+  "presets": {
+    "Rascals": {
+      "color_night": "#070914",
+      "color_surface": "#11152f",
+      "color_red": "#9e210f",
+      "color_text": "#ffffff"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{%- if paginate.pages > 1 -%}
+  <nav class="pagination" role="navigation" aria-label="Seitennavigation">
+    {%- if paginate.previous -%}<a href="{{ paginate.previous.url }}"><b class="arrow arrow--back" aria-hidden="true">{%- render 'line-icon', name: 'arrow' -%}</b> {{ 'general.pagination.previous' | t }}</a>{%- endif -%}
+    <span>{{ paginate.current_page }} / {{ paginate.pages }}</span>
+    {%- if paginate.next -%}<a href="{{ paginate.next.url }}">{{ 'general.pagination.next' | t }} <b class="arrow" aria-hidden="true">{%- render 'line-icon', name: 'arrow' -%}</b></a>{%- endif -%}
+  </nav>
+{%- endif -%}

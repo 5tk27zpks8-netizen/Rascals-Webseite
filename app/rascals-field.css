@@ -1,0 +1,160 @@
+/* ============================================================
+   FOOTBALL FIELD BACKDROP
+   Lines inherit the section's text colour, so the same drawing
+   works on the dark green Spielplan and on a light section.
+   The whole layer is held well back: it is texture, not art.
+   ============================================================ */
+
+.fixtures-section {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Everything the section renders sits above the field. */
+.fixtures-section > *:not(.rascals-field) {
+  position: relative;
+  z-index: 1;
+}
+
+.rascals-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: inherit;
+  opacity: 0.35;
+}
+
+.rascals-field svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rascals-field line,
+.rascals-field circle,
+.rascals-field rect {
+  fill: none;
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
+}
+
+.rascals-field-bounds {
+  stroke-width: 4;
+}
+
+.rascals-field-yard {
+  stroke-width: 1.5;
+}
+
+.rascals-field-yard.major {
+  stroke-width: 2.5;
+}
+
+.rascals-field-hash line {
+  stroke-width: 1.2;
+}
+
+.rascals-field-endzone {
+  fill: currentColor;
+  fill-opacity: 0.25;
+  stroke: none;
+}
+
+.rascals-field-goal line {
+  stroke-width: 4;
+}
+
+.rascals-field-goal circle {
+  stroke-width: 4;
+}
+
+.rascals-field-numbers {
+  position: absolute;
+  inset: 0;
+  color: inherit;
+}
+
+.rascals-field-numbers span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: var(--font-display, Impact, sans-serif);
+  font-size: clamp(24px, 3.4vw, 46px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  opacity: 0.35;
+}
+
+/* Near sideline reads upright; the far one is inverted, as on a real field. */
+.rascals-field-numbers span.near {
+  top: 14%;
+}
+
+.rascals-field-numbers span.far {
+  bottom: 14%;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+/* On a phone the section is a tall column, and a field drawn across it was
+   squeezed from 1280 units into about 390: twenty-five yard lines and both
+   goal posts pressed into a picket fence with no field left in it.
+
+   So the field is turned a quarter turn and runs down the page instead. It is
+   the same drawing — the yard lines simply cross the screen the way they do
+   when you stand in an end zone and look down the pitch, which is the one view
+   of a field that is taller than it is wide. Sized from the container's own
+   height and width swapped, the 1280 by 430 drawing lands on a box of nearly
+   the same proportions, so almost nothing is stretched any more.
+
+   The numbers stay out of it: they are HTML placed by percentage over the top
+   and would not come round with the drawing. The hash marks come back, because
+   at this scale they are the texture that says football field rather than
+   noise. */
+@media (max-width: 780px) {
+  .rascals-field {
+    container-type: size;
+    opacity: 0.32;
+  }
+  .rascals-field svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100cqh;
+    height: 100cqw;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+  .rascals-field-numbers {
+    display: none;
+  }
+  /* Turned upright the hash marks fall in two columns down the middle of the
+     column of text, which is where they are busiest and least wanted. Held
+     back they do what they do on a real field: read as texture, not as ruling. */
+  .rascals-field-hash {
+    opacity: 0.45;
+  }
+}
+
+/* Where `cqh` is not understood the drawing would sit unrotated at its natural
+   size, so the old behaviour is kept for those browsers: lines across, and the
+   per-yard marks dropped before they become noise. */
+@supports not (width: 100cqh) {
+  @media (max-width: 780px) {
+    .rascals-field svg {
+      position: static;
+      width: 100%;
+      height: 100%;
+      transform: none;
+    }
+    .rascals-field-hash {
+      display: none;
+    }
+  }
+}
+
+@media print {
+  .rascals-field {
+    display: none;
+  }
+}

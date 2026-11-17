@@ -1,0 +1,33 @@
+{%- comment -%}
+  FARBNAME -> FARBWERT, fuer die Farbkreise im Filter.
+
+  Vorrang hat immer der Farbwert, den Shopify selbst mitliefert (wenn im
+  Admin fuer die Option Farbfelder hinterlegt sind). Diese Liste greift nur,
+  wenn der fehlt — dann ist der Filterwert ein blosser Name wie "Navy".
+
+  Unbekannte Namen liefern nichts. Der Filter zeigt dann statt eines Kreises
+  den Namen als Text: ein geratener grauer Kreis waere eine Falschauskunft.
+
+  Aufruf: {%- capture hex -%}{% render 'swatch-color', name: value.label %}{%- endcapture -%}
+{%- endcomment -%}
+{%- assign n = name | downcase | strip -%}
+{%- case n -%}
+  {%- when 'schwarz', 'black' -%}#111317
+  {%- when 'weiß', 'weiss', 'white' -%}#ffffff
+  {%- when 'navy', 'marine', 'navyblau', 'dunkelblau', 'dark blue' -%}#14213d
+  {%- when 'blau', 'blue', 'royal', 'royalblau' -%}#1f4fbf
+  {%- when 'hellblau', 'light blue', 'sky' -%}#7fb3e6
+  {%- when 'rot', 'red' -%}#e3132b
+  {%- when 'bordeaux', 'weinrot', 'burgundy' -%}#6e1423
+  {%- when 'grau', 'grey', 'gray', 'heather grey', 'heather gray' -%}#8a9099
+  {%- when 'dunkelgrau', 'anthrazit', 'charcoal', 'dark grey', 'dark gray' -%}#3b3f45
+  {%- when 'hellgrau', 'light grey', 'light gray' -%}#c9cdd2
+  {%- when 'grün', 'gruen', 'green' -%}#1f7a3a
+  {%- when 'oliv', 'olive' -%}#5b6236
+  {%- when 'gelb', 'yellow' -%}#f2c230
+  {%- when 'orange' -%}#ef7d22
+  {%- when 'beige', 'sand' -%}#d8c7a6
+  {%- when 'braun', 'brown' -%}#6b4428
+  {%- when 'pink', 'rosa' -%}#ea6fa0
+  {%- when 'lila', 'violett', 'purple' -%}#6a3d9a
+{%- endcase -%}

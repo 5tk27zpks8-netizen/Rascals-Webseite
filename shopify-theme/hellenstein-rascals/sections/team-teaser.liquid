@@ -1,0 +1,27 @@
+<section class="team-teaser page-width">
+  <div class="team-teaser-copy">
+    <p class="eyebrow">COACHES · DEFENSE · OFFENSE</p>
+    <h2>MEET THE<br>RASCALS.</h2>
+    <p>Lerne die Menschen kennen, die unseren Standard jeden Gameday auf das Feld bringen.</p>
+    <a class="button button-outline" href="/pages/team">Zum Team <span>→</span></a>
+  </div>
+  <div class="team-cards">
+    {% assign labels = 'Coaches,Defense,Offense' | split: ',' %}
+    {% assign anchors = 'coaches,defense,offense' | split: ',' %}
+    {% assign fallbacks = 'rascals-flags-warm.webp,rascals-action-21.webp,rascals-offense-group.webp' | split: ',' %}
+    {% for label in labels %}
+      <a class="team-card" href="/pages/team#{{ anchors[forloop.index0] }}">
+        <img src="{{ fallbacks[forloop.index0] | asset_url }}" width="1200" height="1500" loading="lazy" alt="{{ label }} der Hellenstein Rascals">
+        <span><small>0{{ forloop.index }}</small><b>{{ label }}</b></span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Team Vorschau",
+  "settings": [],
+  "presets": [{ "name": "Team Vorschau" }]
+}
+{% endschema %}

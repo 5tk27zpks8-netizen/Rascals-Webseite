@@ -14,7 +14,7 @@
     <p class="eyebrow eyebrow--red">{{ section.settings.eyebrow | escape }}</p>
     <h2>{{ section.settings.heading | newline_to_br }}</h2>
     <div class="rte">{{ section.settings.text }}</div>
-    {%- if section.settings.button_label != blank -%}<a class="button button--navy" href="{{ section.settings.button_link }}">{{ section.settings.button_label | escape }} <span>→</span></a>{%- endif -%}
+    {%- if section.settings.button_label != blank -%}<a class="button button--red button--icon button--skew" href="{{ section.settings.button_link }}"><span>{{ section.settings.button_label | escape }}</span><b aria-hidden="true">→</b></a>{%- endif -%}
   </div>
 </section>
 

@@ -1,0 +1,43 @@
+<section class="main-product page-width">
+  <div class="product-gallery">
+    {% if product.media.size > 0 %}
+      {% for media in product.media %}
+        {% assign media_alt = media.alt | default: product.title %}
+        <div class="product-media">{{ media.preview_image | image_url: width: 1600 | image_tag: loading: 'lazy', widths: '480,800,1200,1600', sizes: '(min-width: 900px) 58vw, 100vw', alt: media_alt }}</div>
+      {% endfor %}
+    {% else %}
+      <div class="product-media product-placeholder"><span>R</span></div>
+    {% endif %}
+  </div>
+  <div class="product-details">
+    <p class="eyebrow">{{ product.type | default: 'OFFICIAL TEAM STORE' }}</p>
+    <h1>{{ product.title }}</h1>
+    <div class="product-price">{{ product.selected_or_first_available_variant.price | money }}</div>
+    {% if product.description != blank %}<div class="product-description rte">{{ product.description }}</div>{% endif %}
+    {% form 'product', product, class: 'product-form' %}
+      {% unless product.has_only_default_variant %}
+        <label for="Variant-{{ section.id }}">Variante</label>
+        <select id="Variant-{{ section.id }}" name="id">
+          {% for variant in product.variants %}
+            <option value="{{ variant.id }}"{% if variant == product.selected_or_first_available_variant %} selected{% endif %}{% unless variant.available %} disabled{% endunless %}>
+              {{ variant.title }}{% unless variant.available %} – Ausverkauft{% endunless %}
+            </option>
+          {% endfor %}
+        </select>
+      {% else %}
+        <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+      {% endunless %}
+      <label for="Quantity-{{ section.id }}">Anzahl</label>
+      <input id="Quantity-{{ section.id }}" class="quantity-input" type="number" name="quantity" value="1" min="1">
+      <button class="button button-primary product-submit" type="submit"{% unless product.selected_or_first_available_variant.available %} disabled{% endunless %}>
+        {% if product.selected_or_first_available_variant.available %}In den Warenkorb →{% else %}Ausverkauft{% endif %}
+      </button>
+      {{ form | payment_button }}
+    {% endform %}
+    <div class="product-service"><span>✓ Sicherer Shopify Checkout</span><span>✓ Versand oder Abholung</span></div>
+  </div>
+</section>
+
+{% schema %}
+{ "name": "Produkt", "settings": [] }
+{% endschema %}

@@ -1,0 +1,168 @@
+/* ============================================================
+   DRIVE ROSTER — the squad as a band of cards inside the drive.
+
+   The drive owns the page scroll, so this band cannot bring a
+   scroller of its own. It rides `--panel-progress` (set by
+   ArenaDrive on the active stop) and is pulled across as the
+   drive advances through the team section.
+
+   Where the drive does not run, the variable is never set, the
+   transform resolves to zero, and the band becomes an ordinary
+   swipeable row instead.
+   ============================================================ */
+
+.drive-roster {
+  --card-w: clamp(150px, 13vw, 196px);
+  --gap: 14px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.drive-roster-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8fa1b4;
+}
+.drive-roster-meta b {
+  margin-right: 0.4em;
+  color: var(--rascals-red, #e7192d);
+  font-size: 1.05rem;
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+.drive-roster-hint {
+  color: #64748b;
+}
+
+.drive-roster-viewport {
+  container-type: inline-size;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* The band runs off both edges rather than stopping dead at them. */
+  mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+}
+.drive-roster-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.drive-roster-band {
+  --band-w: calc(var(--count) * (var(--card-w) + var(--gap)));
+  display: flex;
+  gap: var(--gap);
+  width: max-content;
+  padding: 2px 0 6px;
+}
+
+.drive-roster-card {
+  flex: 0 0 var(--card-w);
+  width: var(--card-w);
+}
+
+/* The cards are built for a roster grid; inside the band they only need to be
+   smaller, so the type scales rather than the layout changing. */
+.drive-roster-card .rascals-player-card {
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+}
+.drive-roster-card .rpc-number {
+  font-size: 44px;
+}
+.drive-roster-card .rpc-player-info {
+  bottom: 40px;
+  grid-template-columns: 50px minmax(0, 1fr);
+  gap: 9px;
+}
+.drive-roster-card .pc-name,
+.drive-roster-card .pc-name-medium,
+.drive-roster-card .pc-name-small {
+  font-size: 12px;
+  padding-bottom: 5px;
+}
+.drive-roster-card .rpc-position {
+  margin-bottom: 3px;
+  font-size: 7px;
+}
+.drive-roster-card .rpc-brand-center img {
+  width: 30px;
+  height: 21px;
+}
+.drive-roster-card .rpc-brand-center b {
+  font-size: 8px;
+  line-height: 10px;
+}
+.drive-roster-card .rpc-player-stage {
+  top: calc(18px + 21px + 3px + 10px + 3mm);
+  bottom: 74px;
+}
+.drive-roster-card .rpc-player-placeholder strong {
+  font-size: 44px;
+}
+.drive-roster-card .rpc-player-placeholder span {
+  font-size: 7px;
+}
+.drive-roster-card .rpc-badges {
+  bottom: 13px;
+  padding-top: 6px;
+}
+.drive-roster-card .rpc-badge {
+  padding: 0 6px;
+  gap: 4px;
+}
+.drive-roster-card .rpc-badge i {
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+}
+.drive-roster-card .rpc-badge.starter i {
+  font-size: 19px;
+}
+.drive-roster-card .rpc-badge.captain i {
+  font-size: 11px;
+}
+.drive-roster-card .rpc-badge b {
+  font-size: 5px;
+}
+.drive-roster-card .rpc-frame {
+  inset: 6px;
+}
+
+/* ---- Driving: the band is pulled by the drive, not by the pointer ---- */
+
+.drive-page.is-driving .drive-roster-viewport {
+  overflow: hidden;
+}
+.drive-page.is-driving .drive-roster-band {
+  /* max() keeps a short roster still instead of sliding it out of frame. */
+  transform: translateX(
+    calc(var(--panel-progress, 0) * -1 * max(0px, var(--band-w) - 100cqw))
+  );
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drive-page.is-driving .drive-roster-band {
+    transform: none;
+  }
+  .drive-page.is-driving .drive-roster-viewport {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .drive-roster {
+    --card-w: 142px;
+    --gap: 10px;
+  }
+  .drive-roster-hint {
+    display: none;
+  }
+}

@@ -1,0 +1,39 @@
+<section class="community page-width" id="community">
+  <div class="section-intro">
+    <p class="eyebrow">{{ section.settings.eyebrow }}</p>
+    <h2>{{ section.settings.heading }}</h2>
+    <p>{{ section.settings.text }}</p>
+  </div>
+  <div class="community-grid">
+    {% if section.settings.image_1 != blank %}
+      {{ section.settings.image_1 | image_url: width: 1200 | image_tag: loading: 'lazy', widths: '480,800,1200', alt: 'Rascals Community' }}
+    {% else %}
+      <img src="{{ 'rascals-celebration.webp' | asset_url }}" width="972" height="1617" loading="lazy" alt="Rascals Spieler feiern gemeinsam">
+    {% endif %}
+    {% if section.settings.image_2 != blank %}
+      {{ section.settings.image_2 | image_url: width: 1600 | image_tag: loading: 'lazy', widths: '640,960,1600', alt: 'Rascals Gameday' }}
+    {% else %}
+      <img src="{{ 'rascals-flags-dark.webp' | asset_url }}" width="1536" height="1024" loading="lazy" alt="Hellenstein Rascals laufen mit Teamflaggen auf das Feld">
+    {% endif %}
+    {% if section.settings.image_3 != blank %}
+      {{ section.settings.image_3 | image_url: width: 1200 | image_tag: loading: 'lazy', widths: '480,800,1200', alt: 'Rascals Team' }}
+    {% else %}
+      <img src="{{ 'rascals-team-walk.webp' | asset_url }}" width="1024" height="1536" loading="lazy" alt="Rascals Spieler auf dem Weg zum nächsten Spielzug">
+    {% endif %}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Rascals Community",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Kleine Überschrift", "default": "ONE TEAM · ONE STANDARD" },
+    { "type": "text", "id": "heading", "label": "Überschrift", "default": "RASCALS COMMUNITY" },
+    { "type": "text", "id": "text", "label": "Text", "default": "Auf dem Feld. An der Sideline. Auf der Tribüne." },
+    { "type": "image_picker", "id": "image_1", "label": "Bild links" },
+    { "type": "image_picker", "id": "image_2", "label": "Bild Mitte" },
+    { "type": "image_picker", "id": "image_3", "label": "Bild rechts" }
+  ],
+  "presets": [{ "name": "Rascals Community" }]
+}
+{% endschema %}

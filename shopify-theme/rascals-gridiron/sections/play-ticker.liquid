@@ -1,7 +1,16 @@
 <section class="play-ticker" aria-label="{{ section.settings.label | escape }}">
   <div class="play-ticker__track">
+    {%- comment -%}
+      Zwei Texte wechseln sich ab. Das Band laeuft ueber translateX(-50%),
+      die Spur muss also aus zwei gleichen Haelften bestehen — bei einem
+      Paar je Durchlauf bleibt das Muster alle zwei Elemente gleich, die
+      Schleife springt daher nicht.
+    {%- endcomment -%}
     {%- for repetition in (1..8) -%}
       <span>{{ section.settings.text | escape }} <b>✦</b></span>
+      {%- if section.settings.text_2 != blank -%}
+        <span class="play-ticker__info">{{ section.settings.text_2 | escape }} <b>✦</b></span>
+      {%- endif -%}
     {%- endfor -%}
   </div>
 </section>
@@ -10,9 +19,30 @@
 {
   "name": "Game ticker",
   "settings": [
-    { "type": "text", "id": "label", "label": "Barrierefreie Bezeichnung", "default": "Rascals Motto" },
-    { "type": "text", "id": "text", "label": "Text", "default": "ALL GRIT • ALL HEART • ALL RASCALS" }
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Barrierefreie Bezeichnung",
+      "default": "Rascals Motto"
+    },
+    {
+      "type": "text",
+      "id": "text",
+      "label": "Text",
+      "default": "ALL GRIT • ALL HEART • ALL RASCALS"
+    },
+    {
+      "type": "text",
+      "id": "text_2",
+      "label": "Zwischentext (Info)",
+      "default": "FANWARE COMING SOON",
+      "info": "Wechselt sich mit dem Haupttext ab. Leer lassen, um ihn auszublenden."
+    }
   ],
-  "presets": [{ "name": "Game ticker" }]
+  "presets": [
+    {
+      "name": "Game ticker"
+    }
+  ]
 }
 {% endschema %}

@@ -1,0 +1,52 @@
+<footer class="site-footer">
+  <div class="footer-main page-width">
+    <div class="footer-brand">
+      <a class="site-brand" href="{{ routes.root_url }}">
+        {% if settings.logo != blank %}
+          {{ settings.logo | image_url: width: 300 | image_tag: class: 'brand-logo', alt: shop.name }}
+        {% else %}
+          <img class="brand-logo" src="{{ 'rascals-helmet-logo-clean.png' | asset_url }}" width="998" height="578" loading="lazy" alt="">
+        {% endif %}
+        <span class="brand-wordmark">RASCALS</span>
+      </a>
+      <p>{{ section.settings.footer_text }}</p>
+    </div>
+    <div class="footer-column">
+      <b>Rascals</b>
+      <a href="/pages/team">Unser Team</a>
+      <a href="{{ routes.all_products_collection_url }}">Fanshop</a>
+      <a href="{{ routes.root_url }}#community">Community</a>
+    </div>
+    <div class="footer-column">
+      <b>Service</b>
+      <a href="{{ routes.search_url }}">Suche</a>
+      <a href="{{ routes.cart_url }}">Warenkorb</a>
+      {% if shop.privacy_policy %}<a href="{{ shop.privacy_policy.url }}">Datenschutz</a>{% endif %}
+      {% if shop.terms_of_service %}<a href="{{ shop.terms_of_service.url }}">AGB</a>{% endif %}
+      {% if shop.refund_policy %}<a href="{{ shop.refund_policy.url }}">Widerruf</a>{% endif %}
+    </div>
+    <div class="newsletter">
+      <p class="eyebrow">JOIN THE TEAM</p>
+      <h2>STAY GAME DAY READY.</h2>
+      <p>Neue Drops, Teamwear und Game-Day-News direkt per E-Mail.</p>
+      {% form 'customer', class: 'newsletter-form' %}
+        <input type="hidden" name="contact[tags]" value="newsletter">
+        <label class="visually-hidden" for="NewsletterEmail">E-Mail-Adresse</label>
+        <input id="NewsletterEmail" type="email" name="contact[email]" value="{{ form.email }}" placeholder="DEINE E-MAIL" required>
+        <button type="submit">Anmelden →</button>
+        {% if form.posted_successfully? %}<p class="form-message">Du bist dabei.</p>{% endif %}
+        {{ form.errors | default_errors }}
+      {% endform %}
+    </div>
+  </div>
+  <div class="footer-bottom page-width"><span>© {{ 'now' | date: '%Y' }} {{ shop.name }}</span><span>Heidenheim an der Brenz</span></div>
+</footer>
+
+{% schema %}
+{
+  "name": "Rascals Footer",
+  "settings": [
+    { "type": "textarea", "id": "footer_text", "label": "Beschreibung", "default": "Premium Football Apparel aus Heidenheim. Für Team, Sideline und Community." }
+  ]
+}
+{% endschema %}

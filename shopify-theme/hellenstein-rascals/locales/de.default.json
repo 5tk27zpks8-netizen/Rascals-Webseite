@@ -1,0 +1,18 @@
+{
+  "general": {
+    "continue_shopping": "Weiter einkaufen",
+    "search": "Suche",
+    "cart": "Warenkorb"
+  },
+  "products": {
+    "product": {
+      "add_to_cart": "In den Warenkorb",
+      "sold_out": "Ausverkauft",
+      "quantity": "Anzahl"
+    }
+  },
+  "cart": {
+    "checkout": "Zur Kasse",
+    "empty": "Dein Warenkorb ist leer"
+  }
+}
