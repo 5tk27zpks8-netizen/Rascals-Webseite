@@ -23,16 +23,20 @@
 {%- endcomment -%}
 {%- liquid
   assign stage_src = 'stage-helmet.webp' | asset_url
-  assign stage_srcset = 'stage-helmet-1200.webp' | asset_url | append: ' 1200w, ' | append: stage_src | append: ' 2400w'
+  assign stage_4k = 'stage-helmet-3840.webp' | asset_url
+  assign stage_srcset = 'stage-helmet-1200.webp' | asset_url | append: ' 1200w, ' | append: stage_src | append: ' 2400w, ' | append: stage_4k | append: ' 3840w'
   if section.settings.stage_image != blank
     assign stage_src = section.settings.stage_image | image_url: width: 2400
-    assign stage_srcset = section.settings.stage_image | image_url: width: 1200 | append: ' 1200w, ' | append: stage_src | append: ' 2400w'
+    assign stage_4k = section.settings.stage_image | image_url: width: 3840
+    assign stage_srcset = section.settings.stage_image | image_url: width: 1200 | append: ' 1200w, ' | append: stage_src | append: ' 2400w, ' | append: stage_4k | append: ' 3840w'
   endif
   assign back_src = 'hero-stadium.webp' | asset_url
-  assign back_srcset = 'hero-stadium-960.webp' | asset_url | append: ' 960w, ' | append: back_src | append: ' 1920w'
+  assign back_4k = 'hero-stadium-3840.webp' | asset_url
+  assign back_srcset = 'hero-stadium-960.webp' | asset_url | append: ' 960w, ' | append: back_src | append: ' 1920w, ' | append: back_4k | append: ' 3840w'
   if section.settings.backdrop != blank
     assign back_src = section.settings.backdrop | image_url: width: 1920
-    assign back_srcset = section.settings.backdrop | image_url: width: 960 | append: ' 960w, ' | append: back_src | append: ' 1920w'
+    assign back_4k = section.settings.backdrop | image_url: width: 3840
+    assign back_srcset = section.settings.backdrop | image_url: width: 960 | append: ' 960w, ' | append: back_src | append: ' 1920w, ' | append: back_4k | append: ' 3840w'
   endif
   assign figure_src = 'stage-figure-cut.webp' | asset_url
   assign figure_cut = true
